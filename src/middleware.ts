@@ -146,7 +146,7 @@ export async function middleware(request: NextRequest) {
               const fontCSS = `:root{--font-family-admin-heading:var(${adminHeadingVar});--font-family-admin-body:var(${adminBodyVar});}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(${adminBodyVar}),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(${adminHeadingVar}),system-ui,sans-serif!important;}`;
               
               // Inject blocking script for fonts
-              const fontBlockingScript = `<script>!function(){var d=document,r=d.documentElement,b=d.body;if(r){r.style.setProperty('--font-family-admin-heading','var(${adminHeadingVar})','important');r.style.setProperty('--font-family-admin-body','var(${adminBodyVar})','important');}if(b){b.style.setProperty('font-family','var(${adminBodyVar}),system-ui,sans-serif','important');}var s=d.createElement('style');s.id='font-family-blocking';s.textContent='${fontCSS}';if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='font-family-json='+encodeURIComponent('${fontJson}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
+              const fontBlockingScript = `<script>!function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--font-family-admin-heading','var(${adminHeadingVar})','important');r.style.setProperty('--font-family-admin-body','var(${adminBodyVar})','important');}var s=d.createElement('style');s.id='font-family-blocking';s.textContent='${fontCSS}';if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='font-family-json='+encodeURIComponent('${fontJson}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
               const fontStyleTag = `<style id="font-family-inline">${fontCSS}</style>`;
               fontInjection = fontBlockingScript + fontStyleTag;
             } catch {
@@ -238,12 +238,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
 

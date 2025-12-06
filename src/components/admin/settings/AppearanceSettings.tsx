@@ -97,12 +97,6 @@ export function AppearanceSettings() {
     root.style.setProperty("--font-family-admin-heading", `var(${adminHeadingVar})`, "important");
     root.style.setProperty("--font-family-admin-body", `var(${adminBodyVar})`, "important");
     
-    // Apply font directly to body element
-    const body = document.body;
-    if (body) {
-      body.style.setProperty("font-family", `var(${adminBodyVar}),system-ui,sans-serif`, "important");
-    }
-    
     // Inject style tag
     const style = document.createElement("style");
     style.id = "font-family-client";

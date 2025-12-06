@@ -60,7 +60,11 @@ export async function uploadToBunny(
   }
 
   // Construct and return the CDN URL
-  const pullZoneUrl = config.BUNNY_PULL_ZONE_URL.replace(/\/$/, ""); // Remove trailing slash
+  let pullZoneUrl = config.BUNNY_PULL_ZONE_URL.replace(/\/$/, ""); // Remove trailing slash
+  // Ensure the URL has a protocol
+  if (!pullZoneUrl.startsWith("http://") && !pullZoneUrl.startsWith("https://")) {
+    pullZoneUrl = `https://${pullZoneUrl}`;
+  }
   const cdnUrl = `${pullZoneUrl}/${path}`;
   return cdnUrl;
 }
@@ -110,14 +114,29 @@ export async function moveImageBetweenFolders(
 ): Promise<string> {
   const config = getBunnyConfig();
   // Extract the file path from the CDN URL
-  const pullZoneUrl = config.BUNNY_PULL_ZONE_URL.replace(/\/$/, ""); // Remove trailing slash
-  const filePath = imageUrl.replace(pullZoneUrl + "/", "");
+  let pullZoneUrl = config.BUNNY_PULL_ZONE_URL.replace(/\/$/, ""); // Remove trailing slash
+  // Ensure the URL has a protocol for matching
+  if (!pullZoneUrl.startsWith("http://") && !pullZoneUrl.startsWith("https://")) {
+    pullZoneUrl = `https://${pullZoneUrl}`;
+  }
+  // Try to match with or without protocol
+  let filePath = imageUrl.replace(pullZoneUrl + "/", "");
+  if (filePath === imageUrl) {
+    // If no match, try without protocol
+    const pullZoneUrlNoProtocol = config.BUNNY_PULL_ZONE_URL.replace(/\/$/, "").replace(/^https?:\/\//, "");
+    filePath = imageUrl.replace(`https://${pullZoneUrlNoProtocol}/`, "").replace(`http://${pullZoneUrlNoProtocol}/`, "");
+  }
 
   // Download the file from the current location
-  const downloadResponse = await fetch(imageUrl);
+  // Ensure imageUrl has a protocol for fetching
+  let fetchUrl = imageUrl;
+  if (!fetchUrl.startsWith("http://") && !fetchUrl.startsWith("https://")) {
+    fetchUrl = `https://${fetchUrl}`;
+  }
+  const downloadResponse = await fetch(fetchUrl);
   if (!downloadResponse.ok) {
     throw new Error(
-      `Failed to download file from ${imageUrl}: ${downloadResponse.status} ${downloadResponse.statusText}`
+      `Failed to download file from ${fetchUrl}: ${downloadResponse.status} ${downloadResponse.statusText}`
     );
   }
 
@@ -134,5 +153,10 @@ export async function moveImageBetweenFolders(
     console.error(`Failed to delete old file ${filePath}:`, error);
   }
 
-  return newUrl;
+  // Ensure the returned URL has a protocol
+  let finalUrl = newUrl;
+  if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
+    finalUrl = `https://${finalUrl}`;
+  }
+  return finalUrl;
 }

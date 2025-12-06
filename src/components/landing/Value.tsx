@@ -10,6 +10,19 @@ import {
   faCogs,
   faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
+import { RichText } from '@/components/ui/RichText';
+
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+} | undefined;
+
+type ValueProps = {
+  section?: Section;
+};
 
 const valuePoints = [
   {
@@ -50,7 +63,11 @@ const valuePoints = [
   },
 ];
 
-export const Value = () => {
+export const Value = ({ section }: ValueProps) => {
+  // Use section data if available, otherwise use defaults
+  const title = section?.title || 'A reliable outbound system — built with [[automation]], clean data, and real personalization.';
+  const subtitle = section?.subtitle || 'We build and maintain the automation layer behind your outbound: accurate targeting, automated lead acquisition, clean data pipelines, and consistent results.';
+
   return (
     <section id="services" className="py-32 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,25 +86,30 @@ export const Value = () => {
           >
             Why EvergreenLabs
           </motion.span>
-          <motion.h2
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
           >
-            A reliable outbound system — built with{' '}
-            <span className="text-gradient">automation</span>, clean data, and real personalization.
-          </motion.h2>
-          <motion.p
+            <RichText
+              as="h2"
+              text={title}
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
+            />
+          </motion.div>
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-muted-foreground text-lg mt-6 leading-relaxed max-w-[800px] mx-auto"
           >
-            We build and maintain the automation layer behind your outbound: accurate targeting, automated lead acquisition, clean data pipelines, and consistent results.
-          </motion.p>
+            <RichText
+              as="p"
+              text={subtitle}
+              className="text-muted-foreground text-lg mt-6 leading-relaxed max-w-[800px] mx-auto"
+            />
+          </motion.div>
         </motion.div>
 
         {/* Value Points Grid */}

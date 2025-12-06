@@ -2,7 +2,7 @@
 
 import { useState, Fragment } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import {
   AdminTable,
   TableHeader,
@@ -18,6 +18,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faFile } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
+import { cn } from "@/lib/utils";
 import type { Page } from "../types";
 
 type PagesListProps = {
@@ -27,6 +29,9 @@ type PagesListProps = {
 export function PagesList({ initialPages }: PagesListProps) {
   const [pages, setPages] = useState<Page[]>(initialPages);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
+  const router = useRouter();
+  const { startNavigation } = useNavigationLoading();
 
   const handleDelete = async (id: string) => {
     try {
@@ -65,6 +70,18 @@ export function PagesList({ initialPages }: PagesListProps) {
     );
   });
 
+  const handleRowClick = (pageId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
+    // Don't navigate if clicking on action menu or its children
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-action-menu]')) {
+      return;
+    }
+    setClickedRowId(pageId);
+    const path = `/admin/pages/${pageId}/edit`;
+    startNavigation(path);
+    router.push(path);
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6 md:mb-8 relative">
@@ -101,18 +118,16 @@ export function PagesList({ initialPages }: PagesListProps) {
 
         <AdminTable>
           <TableHeader>
-            <TableRow className="bg-card border-b">
-              <TableHead className="pl-4 w-24 font-bold">Icon</TableHead>
-              <TableHead className="w-64 max-w-64 font-bold">Title</TableHead>
-              <TableHead className="font-bold">Slug</TableHead>
-              <TableHead className="font-bold">Created</TableHead>
-              <TableHead className="text-right pr-4 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
+            <TableRow className="border-b">
+              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
+              <TableHead className="font-bold">Title</TableHead>
+              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredPages.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
                   {searchQuery
                     ? "No pages found matching your search"
                     : "No pages found"}
@@ -123,14 +138,27 @@ export function PagesList({ initialPages }: PagesListProps) {
                 <Fragment key={page.id}>
                   {/* Mobile Layout */}
                   <TableRow
-                    className="md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50"
+                    className={cn(
+                      "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
+                      clickedRowId === page.id && "bg-primary/5"
+                    )}
+                    onClick={(e) => handleRowClick(page.id, e)}
                   >
-                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={5}>
-                      <div className="flex items-start gap-3 md:gap-4">
-                        <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md flex-shrink-0">
+                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
+                      <div className={cn(
+                        "flex items-start gap-3 md:gap-4 transition-transform duration-150",
+                        clickedRowId === page.id && "scale-[0.99]"
+                      )}>
+                        <div className={cn(
+                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
+                          clickedRowId === page.id ? "bg-primary/10" : "bg-muted"
+                        )}>
                           <FontAwesomeIcon
                             icon={faFile}
-                            className="h-6 w-6 text-muted-foreground"
+                            className={cn(
+                              "h-6 w-6 transition-colors duration-150",
+                              clickedRowId === page.id ? "text-primary/70" : "text-muted-foreground"
+                            )}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -141,18 +169,20 @@ export function PagesList({ initialPages }: PagesListProps) {
                             /{page.slug}
                           </div>
                           {page.description && (
-                            <div className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            <div className="text-xs text-muted-foreground line-clamp-2">
                               {page.description}
                             </div>
                           )}
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(page.created_at), "MMM d, yyyy")}
-                          </div>
                         </div>
-                        <div className="flex-shrink-0 ml-2" data-action-menu>
+                        <div 
+                          className="flex-shrink-0 ml-2" 
+                          data-action-menu
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <ActionMenu
                             itemId={page.id}
                             editHref={`/admin/pages/${page.id}/edit`}
+                            openPageHref={`/${page.slug}`}
                             onDelete={handleDelete}
                             deleteLabel={`page "${page.title}"`}
                           />
@@ -163,34 +193,42 @@ export function PagesList({ initialPages }: PagesListProps) {
 
                   {/* Desktop Layout */}
                   <TableRow
-                    className="table-row-responsive group cursor-pointer hover:bg-muted/50"
+                    className={cn(
+                      "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
+                      clickedRowId === page.id && "bg-primary/5"
+                    )}
+                    onClick={(e) => handleRowClick(page.id, e)}
                   >
-                    <TableCell className="pl-4">
-                      <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md">
+                    <TableCell className="pl-4 w-20">
+                      <div className={cn(
+                        "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
+                        clickedRowId === page.id ? "bg-primary/10 scale-[0.99]" : "bg-muted"
+                      )}>
                         <FontAwesomeIcon
                           icon={faFile}
-                          className="h-5 w-5 text-muted-foreground"
+                          className={cn(
+                            "h-5 w-5 transition-colors duration-150",
+                            clickedRowId === page.id ? "text-primary/70" : "text-muted-foreground"
+                          )}
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="w-64 max-w-64 font-medium">
+                    <TableCell className="font-bold">
                       <span className="truncate block" title={page.title}>
                         {page.title}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <span className="block truncate font-mono text-sm" title={page.slug}>
-                        /{page.slug}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(page.created_at), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell className="text-right pr-4" data-action-menu style={{ textAlign: "right" }}>
+                    <TableCell 
+                      className="text-right pr-4 w-24" 
+                      data-action-menu 
+                      style={{ textAlign: "right" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="inline-flex ml-auto">
                         <ActionMenu
                           itemId={page.id}
                           editHref={`/admin/pages/${page.id}/edit`}
+                          openPageHref={`/${page.slug}`}
                           onDelete={handleDelete}
                           deleteLabel={`page "${page.title}"`}
                         />

@@ -2,6 +2,19 @@
 
 import { motion } from 'framer-motion';
 import Marquee from 'react-fast-marquee';
+import { RichText } from '@/components/ui/RichText';
+
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+} | undefined;
+
+type LogosProps = {
+  section?: Section;
+};
 
 const logos = [
   { name: 'n8n', initials: 'N8N' },
@@ -21,18 +34,24 @@ const logos = [
   { name: 'Vercel', initials: 'VC' },
 ];
 
-export const Logos = () => {
+export const Logos = ({ section }: LogosProps) => {
+  // Use section title if available, otherwise use default
+  const title = section?.title || 'Built with industry-leading data & automation tools';
+
   return (
     <section className="py-16 pt-24 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center text-sm text-muted-foreground mb-10 tracking-wider"
         >
-          Built with industry-leading data & automation tools
-        </motion.p>
+          <RichText
+            as="p"
+            text={title}
+            className="text-center text-sm text-muted-foreground mb-10 tracking-wider"
+          />
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -79,12 +79,8 @@ export function InstantFontApply() {
           const adminBodyVar = fontVarMap[fonts.admin?.body] || fontVarMap['geist-sans'];
           
           const root = document.documentElement;
-          const body = document.body;
           root.style.setProperty('--font-family-admin-heading', 'var(' + adminHeadingVar + ')', 'important');
           root.style.setProperty('--font-family-admin-body', 'var(' + adminBodyVar + ')', 'important');
-          if (body) {
-            body.style.setProperty('font-family', 'var(' + adminBodyVar + '),system-ui,sans-serif', 'important');
-          }
           
           // Inject style tag at the very beginning of head with maximum specificity
           var style = document.createElement('style');

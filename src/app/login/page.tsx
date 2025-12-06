@@ -46,7 +46,11 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      console.error("Login error:", err);
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : "An unexpected error occurred. Please check your connection and try again.";
+      setError(errorMessage);
       setLoading(false);
     }
   };

@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
 
 const navigationItems = [
   {
@@ -77,6 +78,7 @@ const navigationItems = [
 
 export function AdminSidebarMobile() {
   const pathname = usePathname();
+  const { startNavigation, pendingPath } = useNavigationLoading();
   const [open, setOpen] = useState(false);
 
   return (
@@ -106,14 +108,27 @@ export function AdminSidebarMobile() {
         </SheetHeader>
         <nav className="p-4 space-y-1">
           {navigationItems.map((item) => {
-            const isActive = pathname === item.href;
+            // Prioritize pendingPath over pathname for instant feedback
+            // If there's a pending navigation, only that item should be active
+            const isActive = pendingPath 
+              ? (item.href === "/admin" 
+                  ? pendingPath === item.href 
+                  : pendingPath.startsWith(item.href + "/") || pendingPath === item.href)
+              : (item.href === "/admin" 
+                  ? pathname === item.href 
+                  : pathname.startsWith(item.href + "/") || pathname === item.href);
+            
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  startNavigation(item.href);
+                  setOpen(false);
+                }}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                  "active:scale-95 active:bg-sidebar-accent/80",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground hover:bg-accent hover:text-accent-foreground"

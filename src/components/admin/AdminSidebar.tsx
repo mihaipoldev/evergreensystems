@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { CircleButton } from "@/components/admin/CircleButton";
+import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
 
 const navigationItems = [
   {
@@ -85,6 +86,7 @@ const navigationItems = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { startNavigation, pendingPath } = useNavigationLoading();
   const [user, setUser] = useState<{
     email: string | null;
     name: string | null;
@@ -145,16 +147,27 @@ export function AdminSidebar() {
         <ScrollArea className="flex-1">
           <nav className="p-4 space-y-1">
             {navigationItems.map((item) => {
-              const isActive = pathname === item.href;
+              // Prioritize pendingPath over pathname for instant feedback
+              // If there's a pending navigation, only that item should be active
+              const isActive = pendingPath 
+                ? (item.href === "/admin" 
+                    ? pendingPath === item.href 
+                    : pendingPath.startsWith(item.href + "/") || pendingPath === item.href)
+                : (item.href === "/admin" 
+                    ? pathname === item.href 
+                    : pathname.startsWith(item.href + "/") || pathname === item.href);
+              
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => startNavigation(item.href)}
                   className={cn(
-                    "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-150",
+                    "active:scale-95 active:bg-sidebar-accent/80",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50"
                   )}
                 >
                   <FontAwesomeIcon icon={item.icon} className="h-4 w-4" />

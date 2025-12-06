@@ -51,7 +51,7 @@ export const Navbar = () => {
             className="flex items-center gap-2"
             whileHover={{ scale: 1.02 }}
           >
-            <span className="text-foreground font-semibold text-lg" style={{ fontFamily: 'var(--font-roboto), Roboto, sans-serif' }}>evergreen labs</span>
+            <span className="text-foreground font-semibold text-lg" style={{ fontFamily: 'var(--font-gotham)' }}>Evergreen Systems</span>
           </motion.a>
 
           {/* Desktop Navigation */}

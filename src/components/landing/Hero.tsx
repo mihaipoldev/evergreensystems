@@ -31,9 +31,56 @@ import Script from 'next/script';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hslToHex } from '@/lib/color-utils';
+import { RichText } from '@/components/ui/RichText';
 
-export const Hero = () => {
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+  media_url: string | null;
+} | undefined;
+
+type HeroProps = {
+  section?: Section;
+};
+
+export const Hero = ({ section }: HeroProps) => {
   const wistiaContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Use section data if available, otherwise use defaults
+  const title = section?.title || 'Your Entire Outbound System\nFully Automated.';
+  const subtitle = section?.subtitle || 'Built for B2B teams who want consistent meetings.';
+  
+  // Extract Wistia video ID from media_url or use default
+  const getWistiaVideoId = (url: string | null | undefined): string => {
+    if (!url) return 'ow2y75tvjk'; // Default video ID
+    
+    // Check if it's a direct Wistia video ID (alphanumeric string)
+    if (/^[a-zA-Z0-9]{10}$/.test(url)) {
+      return url;
+    }
+    
+    // Try to extract from Wistia URL patterns
+    const patterns = [
+      /wistia\.com\/medias\/([a-zA-Z0-9]{10})/,
+      /wi\.st\/([a-zA-Z0-9]{10})/,
+      /fast\.wistia\.com\/embed\/iframe\/([a-zA-Z0-9]{10})/,
+      /fast\.wistia\.com\/embed\/medias\/([a-zA-Z0-9]{10})/,
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return 'ow2y75tvjk'; // Fallback to default
+  };
+  
+  const videoId = getWistiaVideoId(section?.media_url);
 
   useEffect(() => {
     // Get primary color from CSS variable and convert to hex
@@ -75,7 +122,6 @@ export const Hero = () => {
 
     // Initialize Wistia Queue - MUST be set up BEFORE scripts load
     if (typeof window !== 'undefined') {
-      const videoId = 'ow2y75tvjk';
       const primaryColor = getPrimaryColor();
       const hexWithoutHash = primaryColor.replace('#', '');
       
@@ -98,10 +144,10 @@ export const Hero = () => {
           console.log('Wistia video ready, setting color:', hexWithoutHash);
           
           // Remove border-radius from progress bar element
-          const removeBorderRadius = () => {
+              const removeBorderRadius = () => {
             try {
               // Find the iframe containing the Wistia player
-              const iframe = document.querySelector('iframe[src*="ow2y75tvjk"]') as HTMLIFrameElement;
+              const iframe = document.querySelector('iframe[src*="' + videoId + '"]') as HTMLIFrameElement;
               if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
                 // Find all divs - check every div for the progress bar pattern
                 const allDivs = iframe.contentDocument.body.querySelectorAll('div');
@@ -307,7 +353,7 @@ export const Hero = () => {
           // Use MutationObserver to watch for progress bar element creation
           setTimeout(function() {
             try {
-              var iframe = document.querySelector('iframe[src*="ow2y75tvjk"]') as HTMLIFrameElement;
+              var iframe = document.querySelector('iframe[src*="' + videoId + '"]') as HTMLIFrameElement;
               if (iframe && iframe.contentDocument) {
                 var observer = new MutationObserver(function(mutations) {
                   setColor();
@@ -355,7 +401,7 @@ export const Hero = () => {
       
       console.log('Wistia queue initialized with color:', hexWithoutHash, 'for video:', videoId);
     }
-  }, []);
+  }, [videoId]);
 
   return (
     <section className="relative flex items-center justify-center pt-32 overflow-hidden">
@@ -387,48 +433,56 @@ export const Hero = () => {
         transition={{ duration: 10, repeat: Infinity }}
       />
 
-      <div className="relative z-10 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-primary/40 bg-primary/5 text-xs font-regular mb-6"
+          style={{ maxWidth: '100%' }}
         >
-          <span className="w-4 h-4 rounded-full bg-primary animate-pulse" />
+          <span className="w-4 h-4 rounded-full bg-primary animate-pulse flex-shrink-0" />
           <span className="uppercase text-foreground">FOR B2B COMPANIES ABOVE $100K/MO IN REVENUE</span>
         </motion.div>
 
         {/* Headline */}
-        <motion.h1
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-5xl uppercase font-bold text-foreground leading-tight mb-4"
         >
-          Your Entire Outbound System
-          <br />
-          <span className="text-gradient">Fully Automated.</span>
-        </motion.h1>
+          <RichText
+            as="h1"
+            text={title}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-5xl uppercase font-bold text-foreground leading-tight mb-4"
+          />
+        </motion.div>
 
         {/* Subheadline */}
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="font-regular text-sm sm:text-lg text-foreground max-w-2xl mx-auto mb-4"
         >
-          Built for B2B teams who want consistent meetings.
-        </motion.p>
+          <RichText
+            as="p"
+            text={subtitle}
+            className="font-regular text-sm sm:text-lg text-foreground max-w-2xl mx-auto mb-4"
+          />
+        </motion.div>
 
         {/* Initialize Wistia Queue BEFORE any scripts */}
         <Script
+          key={`wistia-queue-${videoId}`}
           id="wistia-queue-setup"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 window._wq = window._wq || [];
+                
+                var videoId = '${videoId}';
                 
                 // ============================================
                 // WISTIA PLAYER COLOR CONFIGURATION
@@ -456,7 +510,7 @@ export const Hero = () => {
                     
                     if (primaryValue) {
                       // Parse from --primary format: "H S% L%" (e.g., "108 65% 50%")
-                      var hslMatch = primaryValue.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+                      var hslMatch = primaryValue.match(/(\\d+)\\s+(\\d+)%\\s+(\\d+)%/);
                       if (hslMatch) {
                         h = parseInt(hslMatch[1]);
                         s = parseInt(hslMatch[2]);
@@ -506,7 +560,7 @@ export const Hero = () => {
                 
                 // Set player color - this affects BOTH play button AND progress bar
                 window._wq.push({
-                  id: 'ow2y75tvjk',
+                  id: videoId,
                   options: {
                     playerColor: color
                   }
@@ -518,10 +572,12 @@ export const Hero = () => {
         
         {/* Wistia Scripts - Load after queue is initialized */}
         <Script
-          src="https://fast.wistia.com/embed/medias/ow2y75tvjk.jsonp"
+          key={`wistia-media-${videoId}`}
+          src={`https://fast.wistia.com/embed/medias/${videoId}.jsonp`}
           strategy="afterInteractive"
         />
         <Script
+          key="wistia-external"
           src="https://fast.wistia.com/assets/external/E-v1.js"
           strategy="afterInteractive"
         />
@@ -531,7 +587,7 @@ export const Hero = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="relative w-full max-w-[1200px] mx-auto mb-8 flex justify-center"
+          className="relative w-full mb-8 flex justify-center"
         >
           {/* Gradient Background Container */}
           <div
@@ -546,19 +602,19 @@ export const Hero = () => {
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none z-10" style={{ boxShadow: '0 0 60px hsl(var(--primary) / 0.3)' }} />
               
               {/* Wistia Video Container */}
-              <div className="relative w-full aspect-video overflow-hidden rounded-lg">
-                <div 
-                  ref={wistiaContainerRef}
-                  className="wistia_embed wistia_async_ow2y75tvjk w-full h-full"
-                  data-seo="false"
-                  data-video-foam="true"
-                  data-player-color="0a7afa"
-                  style={{ 
-                    height: '100%', 
-                    width: '100%',
-                    '--wistia-player-color': '#0a7afa'
-                  } as React.CSSProperties}
-                />
+              <div className="wistia_responsive_padding relative w-full overflow-hidden rounded-lg" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+                <div className="wistia_responsive_wrapper" style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}>
+                  <div 
+                    ref={wistiaContainerRef}
+                    className={`wistia_embed wistia_async_${videoId} seo=false videoFoam=true`}
+                    style={{ 
+                      height: '100%',
+                      position: 'relative',
+                      width: '100%',
+                      '--wistia-player-color': '#0a7afa'
+                    } as React.CSSProperties}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -572,7 +628,7 @@ export const Hero = () => {
           className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto"
         >
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-            <Button className="uppercase h-12 px-8 rounded-lg text-base bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap w-full sm:w-auto">
+            <Button className="h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold whitespace-nowrap w-full sm:w-auto text-base">
             Schedule a Call
             </Button>
           </motion.div>

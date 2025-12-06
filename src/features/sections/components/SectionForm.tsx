@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,9 +9,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { InputShadow } from "@/components/admin/forms/InputShadow";
+import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import {
   Form,
   FormControl,
@@ -28,36 +27,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { VideoUploadField } from "@/components/admin/forms/VideoUploadField";
 import type { Section } from "../types";
-import type { Database } from "@/lib/supabase/types";
-
-type Page = Database["public"]["Tables"]["pages"]["Row"];
 
 const formSchema = z.object({
-  page_id: z.string().min(1, "Page is required"),
   type: z.string().min(1, "Type is required"),
   title: z.string().optional(),
+  admin_title: z.string().optional(),
   subtitle: z.string().optional(),
   content: z.string().optional(),
-  position: z.number().int().min(0),
-  visible: z.boolean(),
+  media_url: z.union([z.string().url("Must be a valid URL"), z.literal(""), z.null()]).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 type SectionFormProps = {
   initialData?: Section | null;
-  pages: Page[];
   isEdit?: boolean;
 };
 
 // Common section types
 const SECTION_TYPES = [
   "hero",
+  "logos",
   "features",
   "testimonials",
   "faq",
   "cta",
+  "results",
+  "stories",
   "content",
   "gallery",
   "pricing",
@@ -65,9 +63,10 @@ const SECTION_TYPES = [
   "about",
 ];
 
-export function SectionForm({ initialData, pages, isEdit = false }: SectionFormProps) {
+export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Parse content JSON if it exists
   const parseContent = (content: any): string => {
@@ -83,15 +82,39 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      page_id: initialData?.page_id || "",
       type: initialData?.type || "",
       title: initialData?.title || "",
+      admin_title: initialData?.admin_title || "",
       subtitle: initialData?.subtitle || "",
       content: parseContent(initialData?.content),
-      position: initialData?.position ?? 0,
-      visible: initialData?.visible ?? true,
+      media_url: initialData?.media_url || "",
     },
   });
+
+  const sectionType = form.watch("type");
+
+  // Clear media_url when type changes away from hero
+  useEffect(() => {
+    if (sectionType !== "hero") {
+      form.setValue("media_url", "");
+      setSelectedFile(null);
+    }
+  }, [sectionType, form]);
+
+  const validateMediaUrl = async (url: string): Promise<{ valid: boolean; error?: string }> => {
+    try {
+      // For videos, we'll do a basic URL validation
+      // The actual file validation will happen on upload
+      try {
+        new URL(url);
+        return { valid: true };
+      } catch {
+        return { valid: false, error: "Invalid URL format" };
+      }
+    } catch (error: any) {
+      return { valid: false, error: error.message || "Failed to validate media URL" };
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -110,15 +133,69 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
         }
       }
 
-      const payload = {
-        page_id: values.page_id,
+      let mediaUrl = values.media_url?.trim() || null;
+      // Normalize existing URL to ensure it has protocol (only if not empty)
+      if (mediaUrl && mediaUrl !== "" && !mediaUrl.startsWith("http://") && !mediaUrl.startsWith("https://")) {
+        mediaUrl = `https://${mediaUrl}`;
+      }
+      // Ensure empty strings become null
+      if (mediaUrl === "") {
+        mediaUrl = null;
+      }
+      const oldMediaUrl = initialData?.media_url || null;
+
+      // Handle file upload (only for hero sections)
+      if (selectedFile && values.type === "hero") {
+        const folderPath = isEdit && initialData
+          ? `sections/${initialData.id}`
+          : "sections/temp";
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("folderPath", folderPath);
+
+        const uploadResponse = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.error || "Failed to upload media");
+        }
+
+        const uploadData = await uploadResponse.json();
+        mediaUrl = uploadData.url;
+        // Ensure URL has protocol
+        if (mediaUrl && !mediaUrl.startsWith("http://") && !mediaUrl.startsWith("https://")) {
+          mediaUrl = `https://${mediaUrl}`;
+        }
+
+        // If this is a new section, the file is in temp folder
+        // We'll move it after creating the section
+      } else if (mediaUrl && mediaUrl !== oldMediaUrl && values.type === "hero") {
+        // Validate URL if it's a new URL
+        const validation = await validateMediaUrl(mediaUrl);
+        if (!validation.valid) {
+          throw new Error(validation.error || "Invalid media URL");
+        }
+      }
+
+      // Only include media_url if type is hero
+      const payload: any = {
         type: values.type,
         title: values.title || null,
+        admin_title: values.admin_title || null,
         subtitle: values.subtitle || null,
         content: parsedContent,
-        position: values.position,
-        visible: values.visible,
       };
+
+      if (values.type === "hero") {
+        payload.media_url = mediaUrl;
+      } else {
+        // Clear media_url if type is not hero
+        payload.media_url = null;
+      }
 
       const url = isEdit && initialData
         ? `/api/admin/sections/${initialData.id}`
@@ -139,6 +216,51 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
         throw new Error(error.error || `Failed to ${isEdit ? "update" : "create"} section`);
       }
 
+      const sectionData = await response.json();
+      const sectionId = sectionData.id || initialData?.id;
+
+      // Move file from temp to permanent folder if this was a new section
+      if (selectedFile && !isEdit && mediaUrl && values.type === "hero") {
+        const tempFolderPath = "sections/temp";
+        const permanentFolderPath = `sections/${sectionId}`;
+
+        // Extract filename from URL
+        const urlParts = mediaUrl.split("/");
+        const filename = urlParts[urlParts.length - 1];
+        const tempPath = `${tempFolderPath}/${filename}`;
+
+        // Move the file
+        const moveResponse = await fetch("/api/admin/upload/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: mediaUrl,
+            newFolderPath: `${permanentFolderPath}/${filename}`,
+          }),
+        });
+
+        if (moveResponse.ok) {
+          const moveData = await moveResponse.json();
+          mediaUrl = moveData.url;
+          // Ensure URL has protocol
+          if (mediaUrl && !mediaUrl.startsWith("http://") && !mediaUrl.startsWith("https://")) {
+            mediaUrl = `https://${mediaUrl}`;
+          }
+
+          // Update section with new URL
+          if (sectionId) {
+            await fetch(`/api/admin/sections/${sectionId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
+              body: JSON.stringify({ media_url: mediaUrl }),
+            });
+          }
+        }
+      }
+
       toast.success(`Section ${isEdit ? "updated" : "created"} successfully`);
       router.push("/admin/sections");
       router.refresh();
@@ -153,33 +275,26 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card/50 border border-border text-card-foreground dark:bg-card/30 shadow-lg p-6 md:p-8 space-y-6">
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Details</h3>
+              <p className="text-sm text-muted-foreground">
+                Basic information about the section
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
-              name="page_id"
+              name="admin_title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Page <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a page" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {pages.map((page) => (
-                        <SelectItem key={page.id} value={page.id}>
-                          {page.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    The page this section belongs to
-                  </FormDescription>
+                  <FormLabel>Admin Title</FormLabel>
+                  <FormControl>
+                    <InputShadow placeholder="Enter admin title" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -195,7 +310,7 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-input-background">
                         <SelectValue placeholder="Select section type" />
                       </SelectTrigger>
                     </FormControl>
@@ -208,9 +323,6 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
                       <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    The type of section
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -224,11 +336,8 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter section title" {...field} />
+                  <InputShadow placeholder="Enter section title" {...field} />
                 </FormControl>
-                <FormDescription>
-                  An optional title for the section
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -241,11 +350,12 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
               <FormItem>
                 <FormLabel>Subtitle</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter section subtitle" {...field} />
+                  <TextareaShadow
+                    placeholder="Enter section subtitle"
+                    className="min-h-[150px]"
+                    {...field}
+                  />
                 </FormControl>
-                <FormDescription>
-                  An optional subtitle for the section
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -258,9 +368,10 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
               <FormItem>
                 <FormLabel>Content (JSON)</FormLabel>
                 <FormControl>
-                  <Textarea
+                  <TextareaShadow
                     placeholder='Enter JSON content, e.g., {"key": "value"}'
-                    className="min-h-[150px] font-mono text-sm"
+                    className="font-mono text-sm resize-y"
+                    style={{ minHeight: '140px' }}
                     {...field}
                   />
                 </FormControl>
@@ -272,56 +383,47 @@ export function SectionForm({ initialData, pages, isEdit = false }: SectionFormP
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="position"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Position</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      min="0"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+          <FormField
+            control={form.control}
+            name="media_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Media URL {sectionType !== "hero" && <span className="text-muted-foreground text-sm font-normal">(Hero sections only)</span>}</FormLabel>
+                <FormControl>
+                  <div className={sectionType !== "hero" ? "opacity-50 pointer-events-none" : ""}>
+                    <VideoUploadField
+                      value={sectionType === "hero" ? (field.value || null) : null}
+                      onChange={(url) => {
+                        if (sectionType === "hero") {
+                          field.onChange(url || "");
+                        }
+                      }}
+                      onFileChange={(file) => {
+                        if (sectionType === "hero") {
+                          setSelectedFile(file);
+                        }
+                      }}
+                      folderPath={isEdit && initialData ? `sections/${initialData.id}` : "sections/temp"}
+                      error={form.formState.errors.media_url?.message}
+                      placeholder="https://example.com/video.mp4"
                     />
-                  </FormControl>
-                  <FormDescription>
-                    Display order (lower numbers appear first)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="visible"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Visible</FormLabel>
-                    <FormDescription>
-                      Whether this section is visible on the page
-                    </FormDescription>
                   </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
+                </FormControl>
+                <FormDescription>
+                  {sectionType === "hero" 
+                    ? "Upload or enter a URL for video media (Hero sections only)"
+                    : "Media URL is only available for Hero sections"}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button
             type="button"
             variant="outline"
+            className="bg-card hover:bg-card/80"
             asChild
             disabled={isSubmitting}
           >

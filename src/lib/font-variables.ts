@@ -18,6 +18,12 @@ const fontVariableMap: Record<FontId, string> = {
   "poppins": "--font-poppins",
   "raleway": "--font-raleway",
   "nunito-sans": "--font-nunito-sans",
+  "jost": "--font-jost",
+  "playfair-display": "--font-playfair-display",
+  "merriweather": "--font-merriweather",
+  "lora": "--font-lora",
+  "eb-garamond": "--font-eb-garamond",
+  "gotham": "--font-gotham",
   "geist-sans": "--font-geist-sans",
   "geist-mono": "--font-geist-mono",
 };

@@ -1,31 +1,74 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Section, SectionWithPage } from "./types";
+import type { Section, SectionWithPages } from "./types";
 import type { Database } from "@/lib/supabase/types";
 
 type Page = Database["public"]["Tables"]["pages"]["Row"];
 
 /**
- * Get all sections with page information, ordered by position
+ * Get all sections with their associated pages via page_sections junction table
  */
-export async function getAllSections(): Promise<SectionWithPage[]> {
+export async function getAllSections(): Promise<SectionWithPages[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  
+  // First get all sections
+  const { data: sections, error: sectionsError } = await supabase
     .from("sections")
+    .select("*")
+    .order("created_at", { ascending: false }) as { data: Database["public"]["Tables"]["sections"]["Row"][] | null; error: any };
+
+  if (sectionsError) {
+    throw sectionsError;
+  }
+
+  if (!sections || sections.length === 0) {
+    return [];
+  }
+
+  // Then get all page_sections relationships for these sections
+  const sectionIds = sections.map(s => s.id);
+  const { data: pageSections, error: pageSectionsError } = await supabase
+    .from("page_sections")
     .select(`
-      *,
+      id,
+      section_id,
+      position,
+      visible,
       pages (
         id,
         slug,
         title
       )
     `)
-    .order("position", { ascending: true });
+    .in("section_id", sectionIds) as { data: Array<{
+      id: string;
+      section_id: string;
+      position: number;
+      visible: boolean;
+      pages: { id: string; slug: string; title: string } | null;
+    }> | null; error: any };
 
-  if (error) {
-    throw error;
+  if (pageSectionsError) {
+    throw pageSectionsError;
   }
 
-  return data || [];
+  // Combine sections with their pages
+  return sections.map(section => {
+    const associatedPages = (pageSections || [])
+      .filter(ps => ps.section_id === section.id)
+      .map(ps => ({
+        id: (ps.pages as any)?.id || "",
+        slug: (ps.pages as any)?.slug || "",
+        title: (ps.pages as any)?.title || "",
+        page_section_id: ps.id,
+        position: ps.position,
+        visible: ps.visible,
+      }));
+
+    return {
+      ...section,
+      pages: associatedPages,
+    };
+  });
 }
 
 /**

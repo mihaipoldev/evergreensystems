@@ -12,6 +12,12 @@ export type FontId =
   | "poppins"
   | "raleway"
   | "nunito-sans"
+  | "jost"
+  | "playfair-display"
+  | "merriweather"
+  | "lora"
+  | "eb-garamond"
+  | "gotham"
   | "geist-sans"
   | "geist-mono";
 

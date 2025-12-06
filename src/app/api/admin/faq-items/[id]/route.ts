@@ -51,10 +51,9 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { section_id, question, answer, position } = body;
+    const { question, answer, position } = body;
 
     const updateData: Record<string, unknown> = {};
-    if (section_id !== undefined) updateData.section_id = section_id;
     if (question !== undefined) updateData.question = question;
     if (answer !== undefined) updateData.answer = answer;
     if (position !== undefined) updateData.position = position;

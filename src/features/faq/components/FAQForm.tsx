@@ -9,8 +9,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { InputShadow } from "@/components/admin/forms/InputShadow";
+import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import {
   Form,
   FormControl,
@@ -20,44 +20,29 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { FAQItem } from "../types";
-import type { Database } from "@/lib/supabase/types";
-
-type Section = Database["public"]["Tables"]["sections"]["Row"];
 
 const formSchema = z.object({
-  section_id: z.string().min(1, "Section is required"),
   question: z.string().min(1, "Question is required"),
   answer: z.string().min(1, "Answer is required"),
-  position: z.number().int().min(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 type FAQFormProps = {
   initialData?: FAQItem | null;
-  sections: Section[];
   isEdit?: boolean;
 };
 
-export function FAQForm({ initialData, sections, isEdit = false }: FAQFormProps) {
+export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      section_id: initialData?.section_id || "",
       question: initialData?.question || "",
       answer: initialData?.answer || "",
-      position: initialData?.position ?? 0,
     },
   });
 
@@ -101,36 +86,15 @@ export function FAQForm({ initialData, sections, isEdit = false }: FAQFormProps)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card/50 border border-border text-card-foreground dark:bg-card/30 shadow-lg p-6 md:p-8 space-y-6">
-          <FormField
-            control={form.control}
-            name="section_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Section <span className="text-destructive">*</span>
-                </FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a section" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {sections.map((section) => (
-                      <SelectItem key={section.id} value={section.id}>
-                        {section.title || `Section ${section.position + 1}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  The section this FAQ item belongs to
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Details</h3>
+              <p className="text-sm text-muted-foreground">
+                Basic information about the FAQ item
+              </p>
+            </div>
+          </div>
 
           <FormField
             control={form.control}
@@ -141,7 +105,7 @@ export function FAQForm({ initialData, sections, isEdit = false }: FAQFormProps)
                   Question <span className="text-destructive">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter the question" {...field} />
+                  <InputShadow placeholder="Enter the question" {...field} />
                 </FormControl>
                 <FormDescription>
                   The question being asked
@@ -160,7 +124,7 @@ export function FAQForm({ initialData, sections, isEdit = false }: FAQFormProps)
                   Answer <span className="text-destructive">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Textarea
+                  <TextareaShadow
                     placeholder="Enter the answer"
                     className="min-h-[120px]"
                     {...field}
@@ -174,33 +138,12 @@ export function FAQForm({ initialData, sections, isEdit = false }: FAQFormProps)
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Position</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Display order (lower numbers appear first)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button
             type="button"
             variant="outline"
+            className="bg-card hover:bg-card/80"
             asChild
             disabled={isSubmitting}
           >

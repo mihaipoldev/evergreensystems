@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AdminTable,
   TableHeader,
@@ -11,22 +12,26 @@ import {
   TableCell,
 } from "@/components/admin/AdminTable";
 import { ActionMenu } from "@/components/admin/ActionMenu";
-import { StateBadge } from "@/components/admin/StateBadge";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faQuoteLeft } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import type { TestimonialWithSection } from "../types";
+import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
+import { cn } from "@/lib/utils";
+import type { Testimonial } from "../types";
 
 type TestimonialsListProps = {
-  initialTestimonials: TestimonialWithSection[];
+  initialTestimonials: Testimonial[];
 };
 
 export function TestimonialsList({ initialTestimonials }: TestimonialsListProps) {
-  const [testimonials, setTestimonials] = useState<TestimonialWithSection[]>(initialTestimonials);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(initialTestimonials);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
+  const router = useRouter();
+  const { startNavigation } = useNavigationLoading();
 
   const handleDelete = async (id: string) => {
     try {
@@ -65,6 +70,18 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
     );
   });
 
+  const handleRowClick = (testimonialId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
+    // Don't navigate if clicking on action menu or its children
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-action-menu]')) {
+      return;
+    }
+    setClickedRowId(testimonialId);
+    const path = `/admin/testimonials/${testimonialId}/edit`;
+    startNavigation(path);
+    router.push(path);
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6 md:mb-8 relative">
@@ -102,16 +119,15 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
         <AdminTable>
           <TableHeader>
             <TableRow className="bg-muted/50 border-b">
-              <TableHead className="pl-4 w-24 font-bold">Icon</TableHead>
-              <TableHead className="w-64 max-w-64 font-bold">Author</TableHead>
-              <TableHead className="w-24 font-bold">Status</TableHead>
-              <TableHead className="text-right pr-4 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
+              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
+              <TableHead className="font-bold">Author</TableHead>
+              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTestimonials.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
                   {searchQuery
                     ? "No testimonials found matching your search"
                     : "No testimonials found"}
@@ -119,15 +135,25 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
               </TableRow>
             ) : (
               filteredTestimonials.map((testimonial) => (
-                <>
+                <Fragment key={testimonial.id}>
                   {/* Mobile Layout */}
                   <TableRow
                     key={`${testimonial.id}-mobile`}
-                    className="md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50"
+                    className={cn(
+                      "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
+                      clickedRowId === testimonial.id && "bg-primary/5"
+                    )}
+                    onClick={(e) => handleRowClick(testimonial.id, e)}
                   >
-                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={4}>
-                      <div className="flex items-start gap-3 md:gap-4">
-                        <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md flex-shrink-0">
+                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
+                      <div className={cn(
+                        "flex items-start gap-3 md:gap-4 transition-transform duration-150",
+                        clickedRowId === testimonial.id && "scale-[0.99]"
+                      )}>
+                        <div className={cn(
+                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
+                          clickedRowId === testimonial.id ? "bg-primary/10 ring ring-primary/20" : "bg-muted"
+                        )}>
                           {testimonial.avatar_url ? (
                             <img
                               src={testimonial.avatar_url}
@@ -135,7 +161,10 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs font-semibold text-muted-foreground">
+                            <span className={cn(
+                              "text-xs font-semibold transition-colors duration-150",
+                              clickedRowId === testimonial.id ? "text-primary/70" : "text-muted-foreground"
+                            )}>
                               {testimonial.author_name
                                 .split(/\s+/)
                                 .map((w) => w[0])
@@ -156,17 +185,15 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                                 : testimonial.author_role || testimonial.company_name}
                             </div>
                           )}
-                          <div className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                          <div className="text-xs text-muted-foreground line-clamp-2">
                             {testimonial.quote}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <StateBadge state={testimonial.approved ? "active" : "inactive"} />
-                            <span className="text-xs text-muted-foreground">
-                              Position: {testimonial.position}
-                            </span>
-                          </div>
                         </div>
-                        <div className="flex-shrink-0 ml-2" data-action-menu>
+                        <div 
+                          className="flex-shrink-0 ml-2" 
+                          data-action-menu
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <ActionMenu
                             itemId={testimonial.id}
                             editHref={`/admin/testimonials/${testimonial.id}/edit`}
@@ -181,10 +208,17 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                   {/* Desktop Layout */}
                   <TableRow
                     key={`${testimonial.id}-desktop`}
-                    className="table-row-responsive group cursor-pointer hover:bg-muted/50"
+                    className={cn(
+                      "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
+                      clickedRowId === testimonial.id && "bg-primary/5"
+                    )}
+                    onClick={(e) => handleRowClick(testimonial.id, e)}
                   >
-                    <TableCell className="pl-4">
-                      <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md">
+                    <TableCell className="pl-4 w-20">
+                      <div className={cn(
+                        "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
+                        clickedRowId === testimonial.id ? "bg-primary/10 ring ring-primary/20 scale-[0.99]" : "bg-muted"
+                      )}>
                         {testimonial.avatar_url ? (
                           <img
                             src={testimonial.avatar_url}
@@ -192,7 +226,10 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <span className="text-xs font-semibold text-muted-foreground">
+                          <span className={cn(
+                            "text-xs font-semibold transition-colors duration-150",
+                            clickedRowId === testimonial.id ? "text-primary/70" : "text-muted-foreground"
+                          )}>
                             {testimonial.author_name
                               .split(/\s+/)
                               .map((w) => w[0])
@@ -203,15 +240,17 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="w-64 max-w-64 font-medium">
+                    <TableCell className="font-bold">
                       <span className="truncate block" title={testimonial.author_name}>
                         {testimonial.author_name}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <StateBadge state={testimonial.approved ? "active" : "inactive"} />
-                    </TableCell>
-                    <TableCell className="text-right pr-4" data-action-menu style={{ textAlign: "right" }}>
+                    <TableCell 
+                      className="text-right pr-4 w-24" 
+                      data-action-menu 
+                      style={{ textAlign: "right" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="inline-flex ml-auto">
                         <ActionMenu
                           itemId={testimonial.id}
@@ -222,7 +261,7 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                       </div>
                     </TableCell>
                   </TableRow>
-                </>
+                </Fragment>
               ))
             )}
           </TableBody>

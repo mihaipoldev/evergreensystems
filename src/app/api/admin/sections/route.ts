@@ -13,15 +13,34 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get("page_id");
 
-    let query = supabase
-      .from("sections")
-      .select("*");
-
+    // If pageId is provided, get sections via page_sections junction table
     if (pageId) {
-      query = query.eq("page_id", pageId);
+      const { data: pageSections, error: pageSectionsError } = await supabase
+        .from("page_sections")
+        .select(`
+          section_id,
+          sections (*)
+        `)
+        .eq("page_id", pageId)
+        .order("position", { ascending: true });
+
+      if (pageSectionsError) {
+        return NextResponse.json({ error: pageSectionsError.message }, { status: 500 });
+      }
+
+      const sections = (pageSections || []).map((ps: any) => ({
+        ...ps.sections,
+        page_section_id: ps.section_id,
+      }));
+
+      return NextResponse.json(sections, { status: 200 });
     }
 
-    const { data, error } = await query.order("position", { ascending: true });
+    // Otherwise return all sections
+    const { data, error } = await supabase
+      .from("sections")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -46,34 +65,34 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { page_id, type, title, subtitle, content, position, visible } = body;
+    const { type, title, admin_title, subtitle, content, media_url } = body;
 
-    if (!page_id || !type) {
+    if (!type) {
       return NextResponse.json(
-        { error: "page_id and type are required" },
+        { error: "type is required" },
         { status: 400 }
       );
     }
 
-    const { data, error } = await (supabase
+    // Create section (no page_id, position, or visible - those are in page_sections)
+    const { data: section, error: sectionError } = await (supabase
       .from("sections") as any)
       .insert({
-        page_id,
         type,
         title: title || null,
+        admin_title: admin_title || null,
         subtitle: subtitle || null,
         content: content || null,
-        position: position ?? 0,
-        visible: visible !== undefined ? visible : true,
+        media_url: media_url || null,
       })
       .select()
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (sectionError) {
+      return NextResponse.json({ error: sectionError.message }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(section, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

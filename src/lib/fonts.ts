@@ -12,6 +12,11 @@ import {
   Poppins,
   Raleway,
   Nunito_Sans,
+  Jost,
+  Playfair_Display,
+  Merriweather,
+  Lora,
+  EB_Garamond,
 } from "next/font/google";
 import type { FontId } from "@/types/fonts";
 
@@ -112,6 +117,41 @@ export const nunitoSans = Nunito_Sans({
   display: "swap",
 });
 
+export const jost = Jost({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jost",
+  display: "swap",
+});
+
+export const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-playfair-display",
+  display: "swap",
+});
+
+export const merriweather = Merriweather({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-merriweather",
+  display: "swap",
+});
+
+export const lora = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-lora",
+  display: "swap",
+});
+
+export const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-eb-garamond",
+  display: "swap",
+});
+
 // Default fonts (using Inter as default)
 export const geistSans = Inter({
   subsets: ["latin"],
@@ -142,6 +182,12 @@ export const fontRegistry: Record<FontId, { variable: string; className: string 
   "poppins": { variable: "--font-poppins", className: poppins.variable },
   "raleway": { variable: "--font-raleway", className: raleway.variable },
   "nunito-sans": { variable: "--font-nunito-sans", className: nunitoSans.variable },
+  "jost": { variable: "--font-jost", className: jost.variable },
+  "playfair-display": { variable: "--font-playfair-display", className: playfairDisplay.variable },
+  "merriweather": { variable: "--font-merriweather", className: merriweather.variable },
+  "lora": { variable: "--font-lora", className: lora.variable },
+  "eb-garamond": { variable: "--font-eb-garamond", className: ebGaramond.variable },
+  "gotham": { variable: "--font-gotham", className: "font-gotham" }, // Custom font, not from Google
   "geist-sans": { variable: "--font-geist-sans", className: geistSans.variable },
   "geist-mono": { variable: "--font-geist-mono", className: geistMono.variable },
 };
@@ -161,6 +207,12 @@ export const fontOptions = [
   { id: "poppins" as FontId, label: "Poppins" },
   { id: "raleway" as FontId, label: "Raleway" },
   { id: "nunito-sans" as FontId, label: "Nunito Sans" },
+  { id: "jost" as FontId, label: "Jost" },
+  { id: "playfair-display" as FontId, label: "Playfair Display" },
+  { id: "merriweather" as FontId, label: "Merriweather" },
+  { id: "lora" as FontId, label: "Lora" },
+  { id: "eb-garamond" as FontId, label: "EB Garamond" },
+  { id: "gotham" as FontId, label: "Gotham" },
   { id: "geist-sans" as FontId, label: "Geist Sans" },
   { id: "geist-mono" as FontId, label: "Geist Mono" },
 ];

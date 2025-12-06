@@ -3,15 +3,29 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RichText } from '@/components/ui/RichText';
+import { usePublicTeam } from '@/providers/PublicTeamProvider';
 
-const teamMembers = [
-  { name: 'Alex', color: 'bg-primary' },
-  { name: 'Sam', color: 'bg-cyan-500' },
-  { name: 'Jordan', color: 'bg-purple-500' },
-  { name: 'Taylor', color: 'bg-blue-400' },
-];
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+} | undefined;
 
-export const CTA = () => {
+type CTAProps = {
+  section?: Section;
+};
+
+export const CTA = ({ section }: CTAProps) => {
+  const { teamMembers, totalTeamCount, displayCount } = usePublicTeam();
+  const remainingCount = totalTeamCount - displayCount;
+  
+  // Use section data if available, otherwise use defaults
+  const title = section?.title || "Let's build your [[automation engine]]";
+  const subtitle = section?.subtitle || "Book a free 30-minute strategy session with our team. We'll analyze your current workflow and show you exactly how automation can transform your business.";
+
   return (
     <section className="py-24 relative">
       {/* Background Effects */}
@@ -39,32 +53,38 @@ export const CTA = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 className={`w-12 h-12 rounded-full ${member.color} border-4 border-background flex items-center justify-center text-white font-semibold text-sm`}
+                title={member.name}
               >
-                {member.name[0]}
+                {member.initial || member.name[0]}
               </motion.div>
             ))}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="w-12 h-12 rounded-full bg-secondary border-4 border-background flex items-center justify-center text-muted-foreground font-semibold text-xs"
-            >
-              +12
-            </motion.div>
+            {remainingCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: displayCount * 0.1 }}
+                className="w-12 h-12 rounded-full bg-secondary border-4 border-background flex items-center justify-center text-muted-foreground font-semibold text-xs"
+                title={`${remainingCount} more team members`}
+              >
+                +{remainingCount}
+              </motion.div>
+            )}
           </div>
 
           <span className="text-primary text-sm font-medium uppercase tracking-wider">
             Ready to Transform?
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6">
-            Let's build your{' '}
-            <span className="text-gradient">automation engine</span>
-          </h2>
-          <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
-            Book a free 30-minute strategy session with our team. We'll analyze your 
-            current workflow and show you exactly how automation can transform your business.
-          </p>
+          <RichText
+            as="h2"
+            text={title}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6"
+          />
+          <RichText
+            as="p"
+            text={subtitle}
+            className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto"
+          />
 
           {/* CTA Form */}
           <motion.div

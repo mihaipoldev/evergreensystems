@@ -6,6 +6,7 @@ type AdminPageTitleProps = {
   entityName?: string;
   description?: string;
   entityType?: "album" | "event" | "update";
+  rightSideContent?: React.ReactNode;
 };
 
 const getEntityTypeBadge = (type?: "album" | "event" | "update") => {
@@ -30,13 +31,17 @@ export function AdminPageTitle({
   entityName,
   description,
   entityType,
+  rightSideContent,
 }: AdminPageTitleProps) {
   if (entityName) {
     return (
       <div>
-        <h1 className="text-4xl font-bold text-foreground">
-          {entityName} <span className="text-muted-foreground text-base font-normal">EDIT</span>
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-4xl font-bold text-foreground">
+            {entityName} <span className="text-muted-foreground text-base font-normal">EDIT</span>
+          </h1>
+          {rightSideContent && <div className="flex items-center">{rightSideContent}</div>}
+        </div>
         {description && <p className="text-muted-foreground mt-2 text-base">{description}</p>}
       </div>
     );
@@ -44,9 +49,12 @@ export function AdminPageTitle({
 
   return (
     <div>
-      <div className="flex items-baseline">
-        <h1 className="text-4xl font-bold text-foreground">{title}</h1>
-        {getEntityTypeBadge(entityType)}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-baseline">
+          <h1 className="text-4xl font-bold text-foreground">{title}</h1>
+          {getEntityTypeBadge(entityType)}
+        </div>
+        {rightSideContent && <div className="flex items-center">{rightSideContent}</div>}
       </div>
       {description && <p className="text-muted-foreground mt-2 text-base">{description}</p>}
     </div>

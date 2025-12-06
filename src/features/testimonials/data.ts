@@ -1,31 +1,47 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Testimonial, TestimonialWithSection } from "./types";
-import type { Database } from "@/lib/supabase/types";
-
-type Section = Database["public"]["Tables"]["sections"]["Row"];
+import type { Testimonial } from "./types";
 
 /**
- * Get all testimonials with section information, ordered by position
+ * Normalize avatar URL to ensure it has a protocol
+ * Returns null for empty strings, null, or undefined
  */
-export async function getAllTestimonials(): Promise<TestimonialWithSection[]> {
+function normalizeAvatarUrl(url: string | null | undefined): string | null {
+  if (!url || url.trim() === "") return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  // If it looks like a CDN URL (contains .b-cdn.net or similar), add https://
+  if (url.includes("b-cdn.net") || url.includes("cdn")) {
+    return `https://${url}`;
+  }
+  return url;
+}
+
+/**
+ * Normalize testimonial data to ensure avatar URLs have protocols
+ */
+function normalizeTestimonial(testimonial: Testimonial): Testimonial {
+  return {
+    ...testimonial,
+    avatar_url: normalizeAvatarUrl(testimonial.avatar_url),
+  };
+}
+
+/**
+ * Get all testimonials, ordered by position
+ */
+export async function getAllTestimonials(): Promise<Testimonial[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("testimonials")
-    .select(`
-      *,
-      sections (
-        id,
-        title,
-        type
-      )
-    `)
+    .select("*")
     .order("position", { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(normalizeTestimonial);
 }
 
 /**
@@ -47,22 +63,5 @@ export async function getTestimonialById(id: string): Promise<Testimonial | null
     throw error;
   }
 
-  return data;
-}
-
-/**
- * Get all sections for dropdown selection
- */
-export async function getAllSections(): Promise<Section[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("sections")
-    .select("*")
-    .order("position", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return data || [];
+  return data ? normalizeTestimonial(data) : null;
 }

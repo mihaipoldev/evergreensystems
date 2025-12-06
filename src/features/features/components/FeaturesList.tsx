@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AdminTable,
   TableHeader,
@@ -14,9 +15,12 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faStar } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
+import { cn } from "@/lib/utils";
+import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import type { OfferFeature } from "../types";
 
 type FeaturesListProps = {
@@ -26,6 +30,9 @@ type FeaturesListProps = {
 export function FeaturesList({ initialFeatures }: FeaturesListProps) {
   const [features, setFeatures] = useState<OfferFeature[]>(initialFeatures);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
+  const router = useRouter();
+  const { startNavigation } = useNavigationLoading();
 
   const handleDelete = async (id: string) => {
     try {
@@ -62,6 +69,18 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
       feature.description?.toLowerCase().includes(query)
     );
   });
+
+  const handleRowClick = (featureId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
+    // Don't navigate if clicking on action menu or its children
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-action-menu]')) {
+      return;
+    }
+    setClickedRowId(featureId);
+    const path = `/admin/features/${featureId}/edit`;
+    startNavigation(path);
+    router.push(path);
+  };
 
   return (
     <div className="w-full">
@@ -100,16 +119,15 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
         <AdminTable>
           <TableHeader>
             <TableRow className="bg-muted/50 border-b">
-              <TableHead className="pl-4 w-24 font-bold">Icon</TableHead>
-              <TableHead className="w-64 max-w-64 font-bold">Title</TableHead>
-              <TableHead className="font-bold">Position</TableHead>
-              <TableHead className="text-right pr-4 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
+              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
+              <TableHead className="font-bold">Title</TableHead>
+              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredFeatures.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
                   {searchQuery
                     ? "No features found matching your search"
                     : "No features found"}
@@ -117,25 +135,33 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
               </TableRow>
             ) : (
               filteredFeatures.map((feature) => (
-                <>
+                <Fragment key={feature.id}>
                   {/* Mobile Layout */}
                   <TableRow
                     key={`${feature.id}-mobile`}
-                    className="md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50"
+                    className={cn(
+                      "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
+                      clickedRowId === feature.id && "bg-primary/5"
+                    )}
+                    onClick={(e) => handleRowClick(feature.id, e)}
                   >
-                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={4}>
-                      <div className="flex items-start gap-3 md:gap-4">
-                        <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md flex-shrink-0">
-                          {feature.icon ? (
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              {feature.icon}
-                            </span>
-                          ) : (
-                            <FontAwesomeIcon
-                              icon={faStar}
-                              className="h-6 w-6 text-muted-foreground"
-                            />
-                          )}
+                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
+                      <div className={cn(
+                        "flex items-start gap-3 md:gap-4 transition-transform duration-150",
+                        clickedRowId === feature.id && "scale-[0.99]"
+                      )}>
+                        <div className={cn(
+                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
+                          clickedRowId === feature.id ? "bg-primary/10" : "bg-muted"
+                        )}>
+                          <FontAwesomeIconFromClass
+                            iconClass={feature.icon}
+                            fallbackIcon={faBullseye}
+                            className={cn(
+                              "h-6 w-6 transition-colors duration-150",
+                              clickedRowId === feature.id ? "text-primary/70" : "text-muted-foreground"
+                            )}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-base mb-1.5 break-words">
@@ -151,11 +177,12 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
                               {feature.description}
                             </div>
                           )}
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            Position: {feature.position}
-                          </div>
                         </div>
-                        <div className="flex-shrink-0 ml-2" data-action-menu>
+                        <div 
+                          className="flex-shrink-0 ml-2" 
+                          data-action-menu
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <ActionMenu
                             itemId={feature.id}
                             editHref={`/admin/features/${feature.id}/edit`}
@@ -170,29 +197,38 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
                   {/* Desktop Layout */}
                   <TableRow
                     key={`${feature.id}-desktop`}
-                    className="table-row-responsive group cursor-pointer hover:bg-muted/50"
+                    className={cn(
+                      "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
+                      clickedRowId === feature.id && "bg-primary/5"
+                    )}
+                    onClick={(e) => handleRowClick(feature.id, e)}
                   >
-                    <TableCell className="pl-4">
-                      <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md">
-                        {feature.icon ? (
-                          <span className="text-xs text-muted-foreground font-semibold">
-                            {feature.icon}
-                          </span>
-                        ) : (
-                          <FontAwesomeIcon
-                            icon={faStar}
-                            className="h-5 w-5 text-muted-foreground"
-                          />
-                        )}
+                    <TableCell className="pl-4 w-20">
+                      <div className={cn(
+                        "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
+                        clickedRowId === feature.id ? "bg-primary/10 scale-[0.99]" : "bg-muted"
+                      )}>
+                        <FontAwesomeIconFromClass
+                          iconClass={feature.icon}
+                          fallbackIcon={faBullseye}
+                          className={cn(
+                            "h-5 w-5 transition-colors duration-150",
+                            clickedRowId === feature.id ? "text-primary/70" : "text-muted-foreground"
+                          )}
+                        />
                       </div>
                     </TableCell>
-                    <TableCell className="w-64 max-w-64 font-medium">
+                    <TableCell className="font-bold">
                       <span className="truncate block" title={feature.title}>
                         {feature.title}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{feature.position}</TableCell>
-                    <TableCell className="text-right pr-4" data-action-menu style={{ textAlign: "right" }}>
+                    <TableCell 
+                      className="text-right pr-4 w-24" 
+                      data-action-menu 
+                      style={{ textAlign: "right" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="inline-flex ml-auto">
                         <ActionMenu
                           itemId={feature.id}
@@ -203,7 +239,7 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
                       </div>
                     </TableCell>
                   </TableRow>
-                </>
+                </Fragment>
               ))
             )}
           </TableBody>

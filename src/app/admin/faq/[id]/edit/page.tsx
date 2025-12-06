@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { FAQForm } from "@/features/faq/components/FAQForm";
-import { getFAQItemById, getAllSections } from "@/features/faq/data";
+import { getFAQItemById } from "@/features/faq/data";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +11,7 @@ type EditFAQPageProps = {
 
 export default async function EditFAQPage({ params }: EditFAQPageProps) {
   const { id } = await params;
-  const [faqItem, sections] = await Promise.all([
-    getFAQItemById(id),
-    getAllSections(),
-  ]);
+  const faqItem = await getFAQItemById(id);
 
   if (!faqItem) {
     notFound();
@@ -30,7 +27,7 @@ export default async function EditFAQPage({ params }: EditFAQPageProps) {
           description="Update the FAQ item details"
         />
       </div>
-      <FAQForm sections={sections} initialData={faqItem} isEdit={true} />
+      <FAQForm initialData={faqItem} isEdit={true} />
     </div>
   );
 }

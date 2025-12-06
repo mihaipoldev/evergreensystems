@@ -1,12 +1,9 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { FAQForm } from "@/features/faq/components/FAQForm";
-import { getAllSections } from "@/features/faq/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewFAQPage() {
-  const sections = await getAllSections();
-
   return (
     <div className="w-full space-y-6">
       <div className="mb-6 md:mb-8 relative">
@@ -16,7 +13,7 @@ export default async function NewFAQPage() {
           description="Create a new frequently asked question"
         />
       </div>
-      <FAQForm sections={sections} isEdit={false} />
+      <FAQForm isEdit={false} />
     </div>
   );
 }

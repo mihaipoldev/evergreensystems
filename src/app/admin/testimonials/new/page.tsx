@@ -1,12 +1,9 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { TestimonialForm } from "@/features/testimonials/components/TestimonialForm";
-import { getAllSections } from "@/features/testimonials/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewTestimonialPage() {
-  const sections = await getAllSections();
-
   return (
     <div className="w-full space-y-6">
       <div className="mb-6 md:mb-8 relative">
@@ -16,7 +13,7 @@ export default async function NewTestimonialPage() {
           description="Create a new testimonial to showcase customer feedback"
         />
       </div>
-      <TestimonialForm sections={sections} isEdit={false} />
+      <TestimonialForm isEdit={false} />
     </div>
   );
 }

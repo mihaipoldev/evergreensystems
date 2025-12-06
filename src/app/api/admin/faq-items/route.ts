@@ -10,18 +10,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const sectionId = searchParams.get("section_id");
-
-    let query = supabase
+    const { data, error } = await supabase
       .from("faq_items")
-      .select("*");
-
-    if (sectionId) {
-      query = query.eq("section_id", sectionId);
-    }
-
-    const { data, error } = await query.order("position", { ascending: true });
+      .select("*")
+      .order("position", { ascending: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -46,11 +38,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { section_id, question, answer, position } = body;
+    const { question, answer, position } = body;
 
-    if (!section_id || !question || !answer) {
+    if (!question || !answer) {
       return NextResponse.json(
-        { error: "section_id, question, and answer are required" },
+        { error: "question and answer are required" },
         { status: 400 }
       );
     }
@@ -58,7 +50,6 @@ export async function POST(request: Request) {
     const { data, error } = await (supabase
       .from("faq_items") as any)
       .insert({
-        section_id,
         question,
         answer,
         position: position ?? 0,

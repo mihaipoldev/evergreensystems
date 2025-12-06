@@ -131,11 +131,43 @@ export interface Database {
       sections: {
         Row: {
           id: string;
-          page_id: string;
           type: string;
           title: string | null;
+          admin_title: string | null;
           subtitle: string | null;
           content: Json | null;
+          media_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          type: string;
+          title?: string | null;
+          admin_title?: string | null;
+          subtitle?: string | null;
+          content?: Json | null;
+          media_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          type?: string;
+          title?: string | null;
+          admin_title?: string | null;
+          subtitle?: string | null;
+          content?: Json | null;
+          media_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      page_sections: {
+        Row: {
+          id: string;
+          page_id: string;
+          section_id: string;
           position: number;
           visible: boolean;
           created_at: string;
@@ -144,10 +176,7 @@ export interface Database {
         Insert: {
           id?: string;
           page_id: string;
-          type: string;
-          title?: string | null;
-          subtitle?: string | null;
-          content?: Json | null;
+          section_id: string;
           position?: number;
           visible?: boolean;
           created_at?: string;
@@ -156,10 +185,7 @@ export interface Database {
         Update: {
           id?: string;
           page_id?: string;
-          type?: string;
-          title?: string | null;
-          subtitle?: string | null;
-          content?: Json | null;
+          section_id?: string;
           position?: number;
           visible?: boolean;
           created_at?: string;
@@ -169,7 +195,6 @@ export interface Database {
       cta_buttons: {
         Row: {
           id: string;
-          section_id: string;
           label: string;
           url: string;
           style: string | null;
@@ -180,7 +205,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          section_id: string;
           label: string;
           url: string;
           style?: string | null;
@@ -191,7 +215,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          section_id?: string;
           label?: string;
           url?: string;
           style?: string | null;
@@ -204,7 +227,6 @@ export interface Database {
       offer_features: {
         Row: {
           id: string;
-          section_id: string;
           title: string;
           subtitle: string | null;
           description: string | null;
@@ -215,7 +237,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          section_id: string;
           title: string;
           subtitle?: string | null;
           description?: string | null;
@@ -226,7 +247,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          section_id?: string;
           title?: string;
           subtitle?: string | null;
           description?: string | null;
@@ -239,13 +259,13 @@ export interface Database {
       testimonials: {
         Row: {
           id: string;
-          section_id: string;
           author_name: string;
           author_role: string | null;
           company_name: string | null;
+          headline: string | null;
           quote: string;
-          video_url: string | null;
           avatar_url: string | null;
+          rating: number | null;
           approved: boolean;
           position: number;
           created_at: string;
@@ -253,13 +273,13 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          section_id: string;
           author_name: string;
           author_role?: string | null;
           company_name?: string | null;
+          headline?: string | null;
           quote: string;
-          video_url?: string | null;
           avatar_url?: string | null;
+          rating?: number | null;
           approved?: boolean;
           position?: number;
           created_at?: string;
@@ -267,13 +287,13 @@ export interface Database {
         };
         Update: {
           id?: string;
-          section_id?: string;
           author_name?: string;
           author_role?: string | null;
           company_name?: string | null;
+          headline?: string | null;
           quote?: string;
-          video_url?: string | null;
           avatar_url?: string | null;
+          rating?: number | null;
           approved?: boolean;
           position?: number;
           created_at?: string;
@@ -283,7 +303,6 @@ export interface Database {
       faq_items: {
         Row: {
           id: string;
-          section_id: string;
           question: string;
           answer: string;
           position: number;
@@ -292,7 +311,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          section_id: string;
           question: string;
           answer: string;
           position?: number;
@@ -301,7 +319,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          section_id?: string;
           question?: string;
           answer?: string;
           position?: number;

@@ -1,20 +1,22 @@
 export type Section = {
   id: string;
-  page_id: string;
   type: string;
   title: string | null;
+  admin_title: string | null;
   subtitle: string | null;
   content: any | null;
-  position: number;
-  visible: boolean;
+  media_url: string | null;
   created_at: string;
   updated_at: string;
 };
 
-export type SectionWithPage = Section & {
-  pages?: {
+export type SectionWithPages = Section & {
+  pages?: Array<{
     id: string;
     slug: string;
     title: string;
-  } | null;
+    page_section_id: string;
+    position: number;
+    visible: boolean;
+  }>;
 };

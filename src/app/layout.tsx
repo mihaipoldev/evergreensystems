@@ -8,7 +8,6 @@ import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
 import { InstantFontApply } from "@/components/admin/InstantFontApply";
 import { getAllFontVariables } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
   title: "Evergreen Labs",
@@ -26,20 +25,18 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning className={getAllFontVariables()}>
-      <body className="font-sans antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         {/* CRITICAL: Server-side color injection - must be first in body */}
         {/* Next.js will move style tags to head automatically */}
         {isAdminPage && <AdminColorStyle />}
         {/* CRITICAL: Server-side font injection */}
-          {isAdminPage && <AdminFontStyle />}
+        {isAdminPage && <AdminFontStyle />}
         {/* Client-side fallback from sessionStorage */}
-          {isAdminPage && <InstantColorApply />}
-          {isAdminPage && <InstantFontApply />}
+        {isAdminPage && <InstantColorApply />}
+        {isAdminPage && <InstantFontApply />}
         <StylePresetProvider />
-          <Toaster />
+        <Toaster />
         {children}
-        </ThemeProvider>
       </body>
     </html>
   );

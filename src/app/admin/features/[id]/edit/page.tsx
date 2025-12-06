@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { FeatureForm } from "@/features/features/components/FeatureForm";
-import { getOfferFeatureById, getAllSections } from "@/features/features/data";
+import { getOfferFeatureById } from "@/features/features/data";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +11,7 @@ type EditFeaturePageProps = {
 
 export default async function EditFeaturePage({ params }: EditFeaturePageProps) {
   const { id } = await params;
-  const [feature, sections] = await Promise.all([
-    getOfferFeatureById(id),
-    getAllSections(),
-  ]);
+  const feature = await getOfferFeatureById(id);
 
   if (!feature) {
     notFound();
@@ -30,7 +27,7 @@ export default async function EditFeaturePage({ params }: EditFeaturePageProps) 
           description="Update the feature details"
         />
       </div>
-      <FeatureForm sections={sections} initialData={feature} isEdit={true} />
+      <FeatureForm initialData={feature} isEdit={true} />
     </div>
   );
 }

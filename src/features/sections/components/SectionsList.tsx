@@ -2,6 +2,7 @@
 
 import { useState, Fragment } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AdminTable,
   TableHeader,
@@ -11,22 +12,26 @@ import {
   TableCell,
 } from "@/components/admin/AdminTable";
 import { ActionMenu } from "@/components/admin/ActionMenu";
-import { StateBadge } from "@/components/admin/StateBadge";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import type { SectionWithPage } from "../types";
+import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
+import { cn } from "@/lib/utils";
+import type { SectionWithPages } from "../types";
 
 type SectionsListProps = {
-  initialSections: SectionWithPage[];
+  initialSections: SectionWithPages[];
 };
 
 export function SectionsList({ initialSections }: SectionsListProps) {
-  const [sections, setSections] = useState<SectionWithPage[]>(initialSections);
+  const [sections, setSections] = useState<SectionWithPages[]>(initialSections);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
+  const router = useRouter();
+  const { startNavigation } = useNavigationLoading();
 
   const handleDelete = async (id: string) => {
     try {
@@ -63,11 +68,24 @@ export function SectionsList({ initialSections }: SectionsListProps) {
       : section.pages;
     return (
       section.title?.toLowerCase().includes(query) ||
+      section.admin_title?.toLowerCase().includes(query) ||
       section.subtitle?.toLowerCase().includes(query) ||
       section.type.toLowerCase().includes(query) ||
       pageData?.title?.toLowerCase().includes(query)
     );
   });
+
+  const handleRowClick = (sectionId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
+    // Don't navigate if clicking on action menu or its children
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-action-menu]')) {
+      return;
+    }
+    setClickedRowId(sectionId);
+    const path = `/admin/sections/${sectionId}/edit`;
+    startNavigation(path);
+    router.push(path);
+  };
 
 
   return (
@@ -107,17 +125,15 @@ export function SectionsList({ initialSections }: SectionsListProps) {
         <AdminTable>
           <TableHeader>
             <TableRow className="bg-muted/50 border-b">
-              <TableHead className="pl-4 w-24 font-bold">Icon</TableHead>
-              <TableHead className="w-64 max-w-64 font-bold">Title</TableHead>
-              <TableHead className="font-bold">Page</TableHead>
-              <TableHead className="w-24 font-bold">Status</TableHead>
-              <TableHead className="text-right pr-4 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
+              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
+              <TableHead className="font-bold">Admin Title</TableHead>
+              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredSections.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
                   {searchQuery
                     ? "No sections found matching your search"
                     : "No sections found"}
@@ -129,19 +145,32 @@ export function SectionsList({ initialSections }: SectionsListProps) {
                   {/* Mobile Layout */}
                     <TableRow
                       key={`${section.id}-mobile`}
-                      className="md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50"
+                      className={cn(
+                        "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
+                        clickedRowId === section.id && "bg-primary/5"
+                      )}
+                      onClick={(e) => handleRowClick(section.id, e)}
                     >
-                      <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={5}>
-                        <div className="flex items-start gap-3 md:gap-4">
-                          <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md flex-shrink-0">
+                      <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
+                        <div className={cn(
+                          "flex items-start gap-3 md:gap-4 transition-transform duration-150",
+                          clickedRowId === section.id && "scale-[0.99]"
+                        )}>
+                          <div className={cn(
+                            "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
+                            clickedRowId === section.id ? "bg-primary/10" : "bg-muted"
+                          )}>
                             <FontAwesomeIcon
                               icon={faLayerGroup}
-                              className="h-6 w-6 text-muted-foreground"
+                              className={cn(
+                                "h-6 w-6 transition-colors duration-150",
+                                clickedRowId === section.id ? "text-primary/70" : "text-muted-foreground"
+                              )}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-base mb-1.5 break-words">
-                              {section.title || section.type}
+                              {section.admin_title || section.title || section.type}
                             </div>
                             {section.subtitle && (
                               <div className="text-sm text-muted-foreground mb-1">
@@ -155,21 +184,21 @@ export function SectionsList({ initialSections }: SectionsListProps) {
                                   ? section.pages[0] 
                                   : section.pages;
                                 return pageData && (
-                                  <div>Page: {pageData.title}</div>
+                                  <div>Position: {pageData.position}</div>
                                 );
                               })()}
-                              <div>Position: {section.position}</div>
-                            </div>
-                            <div className="mt-2">
-                              <StateBadge state={section.visible ? "active" : "inactive"} />
                             </div>
                           </div>
-                          <div className="flex-shrink-0 ml-2" data-action-menu>
+                          <div 
+                            className="flex-shrink-0 ml-2" 
+                            data-action-menu
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <ActionMenu
                               itemId={section.id}
                               editHref={`/admin/sections/${section.id}/edit`}
                               onDelete={handleDelete}
-                              deleteLabel={`section "${section.title || section.type}"`}
+                              deleteLabel={`section "${section.admin_title || section.title || section.type}"`}
                             />
                           </div>
                         </div>
@@ -179,40 +208,37 @@ export function SectionsList({ initialSections }: SectionsListProps) {
                     {/* Desktop Layout */}
                     <TableRow
                       key={`${section.id}-desktop`}
-                      className="table-row-responsive group cursor-pointer hover:bg-muted/50"
+                      className={cn(
+                        "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
+                        clickedRowId === section.id && "bg-primary/5"
+                      )}
+                      onClick={(e) => handleRowClick(section.id, e)}
                     >
-                      <TableCell className="pl-4">
-                        <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center bg-muted shadow-md">
+                      <TableCell className="pl-4 w-16">
+                        <div className={cn(
+                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
+                          clickedRowId === section.id ? "bg-primary/10 scale-[0.99]" : "bg-muted"
+                        )}>
                           <FontAwesomeIcon
                             icon={faLayerGroup}
-                            className="h-5 w-5 text-muted-foreground"
+                            className={cn(
+                              "h-5 w-5 transition-colors duration-150",
+                              clickedRowId === section.id ? "text-primary/70" : "text-muted-foreground"
+                            )}
                           />
                         </div>
                       </TableCell>
-                      <TableCell className="w-64 max-w-64 font-medium">
-                        <span className="truncate block" title={section.title || section.type}>
-                          {section.title || section.type}
+                      <TableCell className="font-bold">
+                        <span className="truncate block" title={section.admin_title || section.title || section.type}>
+                          {section.admin_title || section.title || section.type}
                         </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {(() => {
-                          // Handle pages as array or object
-                          const pageData = Array.isArray(section.pages) 
-                            ? section.pages[0] 
-                            : section.pages;
-                          return pageData ? (
-                            <span className="block truncate" title={pageData.title}>
-                              {pageData.title}
-                            </span>
-                          ) : (
-                            "-"
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        <StateBadge state={section.visible ? "active" : "inactive"} />
-                      </TableCell>
-                      <TableCell className="text-right pr-4" data-action-menu style={{ textAlign: "right" }}>
+                      <TableCell 
+                        className="text-right pr-4 w-24" 
+                        data-action-menu 
+                        style={{ textAlign: "right" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="inline-flex ml-auto">
                           <ActionMenu
                             itemId={section.id}

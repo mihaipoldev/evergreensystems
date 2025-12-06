@@ -1,0 +1,271 @@
+"use client";
+
+import { useState, useRef, useCallback, useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUpload, faX, faLink, faVideo } from "@fortawesome/free-solid-svg-icons";
+import { Button } from "@/components/ui/button";
+import { ShadowInput } from "@/components/admin/ShadowInput";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+type VideoUploadFieldProps = {
+  value: string | null;
+  onChange: (url: string | null) => void;
+  onFileChange?: (file: File | null) => void; // Callback for file changes
+  folderPath: string; // e.g., "sections/123"
+  error?: string;
+  placeholder?: string;
+};
+
+export function VideoUploadField({
+  value,
+  onChange,
+  onFileChange,
+  folderPath,
+  error,
+  placeholder = "https://example.com/video.mp4",
+}: VideoUploadFieldProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoLoadError, setVideoLoadError] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Update preview when value changes
+  useEffect(() => {
+    setPreviewUrl(value || null);
+    setUrlInput(value || "");
+    setVideoLoadError(false); // Reset error when value changes
+  }, [value]);
+
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      // Validate file type
+      const validTypes = [
+        "video/mp4",
+        "video/quicktime", // .mov
+        "video/x-msvideo", // .avi
+        "video/webm",
+        "video/ogg",
+        "video/x-matroska", // .mkv
+      ];
+      if (!validTypes.includes(file.type)) {
+        toast.error(
+          "Invalid file type. Please upload a video file (MP4, MOV, AVI, WebM, OGG, or MKV)."
+        );
+        return;
+      }
+
+      // Validate file size (1GB for videos)
+      const maxSize = 1024 * 1024 * 1024; // 1GB
+      if (file.size > maxSize) {
+        toast.error("File size exceeds 1GB limit.");
+        return;
+      }
+
+      // Store the file and create a preview URL
+      setSelectedFile(file);
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
+      setUrlInput(""); // Clear URL input when file is selected
+      setVideoLoadError(false); // Reset error when file is selected
+      onChange(null); // Clear the URL value, file will be uploaded on save
+      onFileChange?.(file);
+    },
+    [onChange, onFileChange]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+    },
+    [handleFileSelect]
+  );
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+      // Reset input so same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [handleFileSelect]
+  );
+
+  const handleUrlChange = useCallback(
+    (newUrl: string) => {
+      setUrlInput(newUrl);
+      setVideoLoadError(false); // Reset error when URL changes
+      // Clear file selection when URL is entered
+      if (newUrl) {
+        setSelectedFile(null);
+        onFileChange?.(null);
+        setPreviewUrl(newUrl);
+        onChange(newUrl || null);
+      } else {
+        setPreviewUrl(null);
+        onChange(null);
+      }
+    },
+    [onChange, onFileChange]
+  );
+
+  const handleRemove = useCallback(() => {
+    onChange(null);
+    setPreviewUrl(null);
+    setUrlInput("");
+    setSelectedFile(null);
+    setVideoLoadError(false);
+    onFileChange?.(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    // Clean up object URL if it exists
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+  }, [onChange, onFileChange, previewUrl]);
+
+  const handleVideoError = useCallback(() => {
+    setVideoLoadError(true);
+    setPreviewUrl(null);
+    // Don't clear the URL input or onChange - let user see the URL and fix it
+  }, []);
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Compact Layout: Preview + URL Input side by side */}
+      <div className="flex gap-4 items-start">
+        {/* Video Preview - Compact */}
+        <Card
+          ref={dropZoneRef}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleBrowseClick}
+          className={cn(
+            "relative border-2 border-dashed transition-all cursor-pointer overflow-hidden",
+            "flex-shrink-0 w-32 h-32 rounded-lg",
+            isDragging
+              ? "border-primary bg-primary/10 scale-105"
+              : "border-muted-foreground/25 hover:border-primary/40 hover:bg-primary/5",
+            previewUrl && !videoLoadError && "border-solid border-primary/20",
+            // Use a unique group name to avoid conflicts with parent group classes
+            previewUrl &&
+              !videoLoadError &&
+              "[&:hover_.video-overlay]:opacity-100 [&:hover_.video-remove-btn]:opacity-100"
+          )}
+        >
+          {previewUrl && !videoLoadError ? (
+            <>
+              <video
+                ref={videoRef}
+                src={previewUrl}
+                className="w-full h-full object-cover pointer-events-none"
+                onError={handleVideoError}
+                muted
+                playsInline
+              />
+              <div className="video-overlay absolute inset-0 bg-black/60 opacity-0 transition-opacity flex items-center justify-center pointer-events-none">
+                <div className="text-center text-white">
+                  <FontAwesomeIcon icon={faUpload} className="h-5 w-5 mx-auto mb-1" />
+                  <p className="text-xs font-medium">Replace</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="video-remove-btn absolute top-1 right-1 h-6 w-6 opacity-0 transition-opacity pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove();
+                }}
+              >
+                <FontAwesomeIcon icon={faX} className="h-3 w-3" />
+              </Button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-3 text-center">
+              <FontAwesomeIcon icon={faVideo} className="h-6 w-6 text-muted-foreground mb-1.5" />
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {isDragging ? "Drop here" : "Click to upload"}
+              </p>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/ogg,video/x-matroska"
+            onChange={handleFileInputChange}
+            className="hidden"
+          />
+        </Card>
+
+        {/* URL Input - Compact */}
+        <div className="flex-1 space-y-2">
+          <div className="relative">
+            <FontAwesomeIcon icon={faLink} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <ShadowInput
+              type="url"
+              placeholder={placeholder}
+              value={urlInput}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUrlChange(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>or</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleBrowseClick();
+              }}
+              className="h-7 text-xs"
+            >
+              <FontAwesomeIcon icon={faUpload} className="h-3 w-3 mr-1.5" />
+              Browse
+            </Button>
+            <span className="text-[10px]">MP4, MOV, AVI, WebM, OGG, MKV (max 1GB)</span>
+          </div>
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}

@@ -2,6 +2,19 @@
 
 import { motion } from 'framer-motion';
 import { ArrowUp, Users, DollarSign, Clock, BarChart3 } from 'lucide-react';
+import { RichText } from '@/components/ui/RichText';
+
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+} | undefined;
+
+type ResultsProps = {
+  section?: Section;
+};
 
 const results = [
   {
@@ -26,7 +39,10 @@ const metrics = [
   { icon: ArrowUp, value: '95%', label: 'Client Retention' },
 ];
 
-export const Results = () => {
+export const Results = ({ section }: ResultsProps) => {
+  // Use section data if available, otherwise use defaults
+  const title = section?.title || 'Numbers that [[speak for themselves]]';
+
   return (
     <section className="py-24 relative">
       <div className="absolute inset-0 bg-gradient-radial opacity-30" />
@@ -41,9 +57,11 @@ export const Results = () => {
           <span className="text-primary text-sm font-medium uppercase tracking-wider">
             Proven Results
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4">
-            Numbers that <span className="text-gradient">speak for themselves</span>
-          </h2>
+          <RichText
+            as="h2"
+            text={title}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4"
+          />
         </motion.div>
 
         {/* Main Results Cards */}

@@ -2,6 +2,19 @@
 
 import { motion } from 'framer-motion';
 import Masonry from 'react-masonry-css';
+import { RichText } from '@/components/ui/RichText';
+
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+} | undefined;
+
+type StoriesProps = {
+  section?: Section;
+};
 
 const stories = [
   {
@@ -57,7 +70,10 @@ const breakpointColumnsObj = {
   640: 1,
 };
 
-export const Stories = () => {
+export const Stories = ({ section }: StoriesProps) => {
+  // Use section title if available, otherwise use default
+  const title = section?.title || 'Stories of [[Success]]';
+
   return (
     <section id="stories" className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-dot-pattern opacity-20" />
@@ -69,9 +85,11 @@ export const Stories = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground">
-            Stories of Success
-          </h2>
+          <RichText
+            as="h2"
+            text={title}
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground"
+          />
         </motion.div>
 
         <Masonry

@@ -22,6 +22,9 @@ export function AdminTable({ children, className }: AdminTableProps) {
     >
       <table
         className={cn("w-full caption-bottom text-sm", className)}
+        style={{
+          backgroundColor: "hsl(var(--table-background))",
+        }}
       >
         {children}
       </table>
