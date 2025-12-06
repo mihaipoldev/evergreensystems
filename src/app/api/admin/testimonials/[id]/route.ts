@@ -131,7 +131,7 @@ export async function PUT(
     if (author_name !== undefined) updateData.author_name = author_name;
     if (author_role !== undefined) updateData.author_role = author_role || null;
     if (company_name !== undefined) updateData.company_name = company_name || null;
-    if (quote !== undefined) updateData.quote = quote;
+    if (quote !== undefined) updateData.quote = quote || null;
     if (avatar_url !== undefined) updateData.avatar_url = newAvatarUrl;
     if (rating !== undefined) updateData.rating = rating ?? null;
     if (approved !== undefined) updateData.approved = approved;

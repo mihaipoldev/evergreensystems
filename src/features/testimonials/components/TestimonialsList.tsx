@@ -14,6 +14,7 @@ import {
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faQuoteLeft } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
     const query = searchQuery.toLowerCase();
     return (
       testimonial.author_name.toLowerCase().includes(query) ||
-      testimonial.quote.toLowerCase().includes(query) ||
+      testimonial.quote?.toLowerCase().includes(query) ||
       testimonial.company_name?.toLowerCase().includes(query) ||
       testimonial.author_role?.toLowerCase().includes(query)
     );
@@ -121,13 +122,14 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
             <TableRow className="bg-muted/50 border-b">
               <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
               <TableHead className="font-bold">Author</TableHead>
+              <TableHead className="font-bold w-28">Status</TableHead>
               <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTestimonials.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
                   {searchQuery
                     ? "No testimonials found matching your search"
                     : "No testimonials found"}
@@ -185,8 +187,18 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                                 : testimonial.author_role || testimonial.company_name}
                             </div>
                           )}
-                          <div className="text-xs text-muted-foreground line-clamp-2">
-                            {testimonial.quote}
+                          {testimonial.quote && (
+                            <div className="text-xs text-muted-foreground line-clamp-2">
+                              {testimonial.quote}
+                            </div>
+                          )}
+                          <div className="mt-2">
+                            <Badge
+                              variant={testimonial.approved ? "default" : "outline"}
+                              className="text-xs font-semibold"
+                            >
+                              {testimonial.approved ? "Approved" : "Unapproved"}
+                            </Badge>
                           </div>
                         </div>
                         <div 
@@ -244,6 +256,14 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
                       <span className="truncate block" title={testimonial.author_name}>
                         {testimonial.author_name}
                       </span>
+                    </TableCell>
+                    <TableCell className="w-28">
+                      <Badge
+                        variant={testimonial.approved ? "default" : "outline"}
+                        className="text-xs font-semibold"
+                      >
+                        {testimonial.approved ? "Approved" : "Unapproved"}
+                      </Badge>
                     </TableCell>
                     <TableCell 
                       className="text-right pr-4 w-24" 

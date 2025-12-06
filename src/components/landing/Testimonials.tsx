@@ -4,21 +4,7 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faStarHalfStroke } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from '@/components/ui/RichText';
-
-type Testimonial = {
-  id: string;
-  author_name: string;
-  author_role: string | null;
-  company_name: string | null;
-  headline: string | null;
-  quote: string;
-  avatar_url: string | null;
-  rating: number | null;
-  approved: boolean;
-  position: number;
-  created_at: string;
-  updated_at: string;
-};
+import type { Testimonial } from '@/features/testimonials/types';
 
 type Section = {
   id: string;

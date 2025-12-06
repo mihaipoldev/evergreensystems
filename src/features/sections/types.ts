@@ -1,3 +1,6 @@
+import type { MediaWithSection } from "../media/types";
+import type { CTAButtonWithSection } from "../cta/types";
+
 export type Section = {
   id: string;
   type: string;
@@ -8,6 +11,8 @@ export type Section = {
   media_url: string | null;
   created_at: string;
   updated_at: string;
+  media?: MediaWithSection[];
+  ctaButtons?: CTAButtonWithSection[];
 };
 
 export type SectionWithPages = Section & {

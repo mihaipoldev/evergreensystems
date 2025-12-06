@@ -1,5 +1,6 @@
 import { createClient } from "./server";
 import type { Database } from "./types";
+import type { CTAButtonWithSection } from "@/features/cta/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -88,7 +89,7 @@ export async function reorderItems(
 }
 
 /**
- * Get all visible sections for a page (public-facing)
+ * Get all visible sections for a page (public-facing) with media
  */
 export async function getVisibleSectionsByPageId(pageId: string) {
   const supabase = await createClient();
@@ -113,15 +114,86 @@ export async function getVisibleSectionsByPageId(pageId: string) {
     throw error;
   }
 
-  // Transform data to return sections with page_sections metadata
+  if (!data) {
+    return [];
+  }
+
+  // Get all section IDs
+  const sectionIds = data
+    .filter(ps => ps.sections !== null)
+    .map(ps => ps.section_id);
+
+  // Get media for all sections
+  const { data: sectionMediaData } = await supabase
+    .from("section_media")
+    .select(`
+      *,
+      media (*)
+    `)
+    .in("section_id", sectionIds)
+    .order("sort_order", { ascending: true });
+
+  // Group media by section_id
+  const mediaBySectionId = new Map<string, any[]>();
+  (sectionMediaData || []).forEach((item: any) => {
+    if (!mediaBySectionId.has(item.section_id)) {
+      mediaBySectionId.set(item.section_id, []);
+    }
+    mediaBySectionId.get(item.section_id)!.push({
+      ...item.media,
+      section_media: {
+        id: item.id,
+        section_id: item.section_id,
+        media_id: item.media_id,
+        role: item.role,
+        sort_order: item.sort_order,
+        created_at: item.created_at,
+      },
+    });
+  });
+
+  // Get CTA buttons for all sections
+  const { data: sectionCTAData } = await supabase
+    .from("section_cta_buttons")
+    .select(`
+      *,
+      cta_buttons (*)
+    `)
+    .in("section_id", sectionIds)
+    .order("position", { ascending: true });
+
+  // Group CTA buttons by section_id (filter to only active ones)
+  const ctaButtonsBySectionId = new Map<string, CTAButtonWithSection[]>();
+  (sectionCTAData || []).forEach((item: any) => {
+    // Filter out deactivated CTAs
+    if (item.cta_buttons && item.cta_buttons.status === "active") {
+      if (!ctaButtonsBySectionId.has(item.section_id)) {
+        ctaButtonsBySectionId.set(item.section_id, []);
+      }
+      const ctaButton: CTAButtonWithSection = {
+        ...item.cta_buttons,
+        status: item.cta_buttons.status as "active" | "deactivated",
+        section_cta_button: {
+          id: item.id,
+          position: item.position,
+          created_at: item.created_at,
+        },
+      };
+      ctaButtonsBySectionId.get(item.section_id)!.push(ctaButton);
+    }
+  });
+
+  // Transform data to return sections with page_sections metadata, media, and CTA buttons
   return data
-    ?.filter(ps => ps.sections !== null)
+    .filter(ps => ps.sections !== null)
     .map(ps => ({
       ...(ps.sections as Database["public"]["Tables"]["sections"]["Row"]),
       page_section_id: ps.id,
       position: ps.position,
       visible: ps.visible,
-    })) || [];
+      media: mediaBySectionId.get(ps.section_id) || [],
+      ctaButtons: ctaButtonsBySectionId.get(ps.section_id) || [],
+    }));
 }
 
 /**

@@ -18,6 +18,7 @@ import {
   faEllipsisVertical,
   faFile,
   faHome,
+  faMousePointer,
 } from "@fortawesome/free-solid-svg-icons";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,6 +40,11 @@ const navigationItems = [
   {
     title: "Dashboard",
     href: "/admin",
+    icon: faChartLine,
+  },
+  {
+    title: "Analytics",
+    href: "/admin/analytics",
     icon: faChartLine,
   },
   {
@@ -65,6 +71,11 @@ const navigationItems = [
     title: "FAQ",
     href: "/admin/faq",
     icon: faQuestionCircle,
+  },
+  {
+    title: "CTA",
+    href: "/admin/cta",
+    icon: faMousePointer,
   },
   {
     title: "Media Library",

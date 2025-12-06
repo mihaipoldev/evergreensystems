@@ -8,18 +8,15 @@ import { Results } from '@/components/landing/Results';
 import { FAQ } from '@/components/landing/FAQ';
 import { CTA } from '@/components/landing/CTA';
 import { Footer } from '@/components/landing/Footer';
+import { AnalyticsTracker } from '@/components/landing/AnalyticsTracker';
+import { MobileScrollLock } from '@/components/landing/MobileScrollLock';
 import { getPageBySlug, getVisibleSectionsByPageId, getAllFAQItems, getApprovedTestimonials } from '@/lib/supabase/queries';
+import { getAllOfferFeatures } from '@/features/features/data';
 import type { Database } from '@/lib/supabase/types';
+import type { Section } from '@/features/sections/types';
 
-// Section type definition
-type Section = {
-  id: string;
-  type: string;
-  title: string | null;
-  admin_title: string | null;
-  subtitle: string | null;
-  content: any | null;
-  media_url: string | null;
+// Extended section type with page_section metadata
+type SectionWithPageMetadata = Section & {
   page_section_id: string;
   position: number;
   visible: boolean;
@@ -27,10 +24,11 @@ type Section = {
 
 export default async function LandingPage() {
   // Fetch the home page (/ corresponds to "home" slug)
-  let sections: Section[] = [];
+  let sections: SectionWithPageMetadata[] = [];
+  let homePage: Database["public"]["Tables"]["pages"]["Row"] | null = null;
   
   try {
-    const homePage = await getPageBySlug('home');
+    homePage = await getPageBySlug('home');
     if (homePage) {
       sections = await getVisibleSectionsByPageId(homePage.id);
     }
@@ -41,6 +39,7 @@ export default async function LandingPage() {
   // Fetch data for specific sections
   let faqItems: Database["public"]["Tables"]["faq_items"]["Row"][] = [];
   let testimonials: Database["public"]["Tables"]["testimonials"]["Row"][] = [];
+  let offerFeatures: Database["public"]["Tables"]["offer_features"]["Row"][] = [];
   
   try {
     faqItems = await getAllFAQItems();
@@ -54,11 +53,17 @@ export default async function LandingPage() {
     console.error('Error fetching testimonials:', error);
   }
 
+  try {
+    offerFeatures = await getAllOfferFeatures();
+  } catch (error) {
+    console.error('Error fetching offer features:', error);
+  }
+
   // Component mapping based on section type
-  const renderSection = (section: Section) => {
+  const renderSection = (section: SectionWithPageMetadata) => {
     switch (section.type) {
       case 'hero':
-        return <Hero key={section.id} section={section} />;
+        return <Hero key={section.id} section={section} ctaButtons={section.ctaButtons} />;
       
       case 'logos':
         return <Logos key={section.id} section={section} />;
@@ -67,7 +72,7 @@ export default async function LandingPage() {
         return <Stories key={section.id} section={section} />;
       
       case 'features':
-        return <Value key={section.id} section={section} />;
+        return <Value key={section.id} section={section} offerFeatures={offerFeatures} />;
       
       case 'testimonials':
         return (
@@ -91,7 +96,7 @@ export default async function LandingPage() {
         );
       
       case 'cta':
-        return <CTA key={section.id} section={section} />;
+        return <CTA key={section.id} section={section} ctaButtons={section.ctaButtons} />;
       
       default:
         return null;
@@ -99,13 +104,22 @@ export default async function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <Navbar />
-      <main>
-        {/* Render sections dynamically in order from database */}
-        {sections.map((section) => renderSection(section))}
-      </main>
-      <Footer />
-    </div>
+    <>
+      <MobileScrollLock />
+      <div className="bg-background text-foreground w-full">
+        {homePage && (
+          <AnalyticsTracker 
+            pageId={homePage.id} 
+            pageSlug={homePage.slug} 
+          />
+        )}
+        <Navbar sections={sections} />
+        <main className="w-full">
+          {/* Render sections dynamically in order from database */}
+          {sections.map((section) => renderSection(section))}
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }

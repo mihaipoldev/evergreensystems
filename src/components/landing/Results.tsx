@@ -44,7 +44,7 @@ export const Results = ({ section }: ResultsProps) => {
   const title = section?.title || 'Numbers that [[speak for themselves]]';
 
   return (
-    <section className="py-24 relative">
+    <section id="results" className="py-24 relative">
       <div className="absolute inset-0 bg-gradient-radial opacity-30" />
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">

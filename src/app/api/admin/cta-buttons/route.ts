@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { label, url, style, icon, position } = body;
+    const { label, url, style, icon, position, status } = body;
 
     if (!label || !url) {
       return NextResponse.json(
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
         style: style || null,
         icon: icon || null,
         position: position ?? 0,
+        status: status || "active",
       })
       .select()
       .single();

@@ -200,6 +200,7 @@ export interface Database {
           style: string | null;
           icon: string | null;
           position: number;
+          status: string;
           created_at: string;
           updated_at: string;
         };
@@ -210,6 +211,7 @@ export interface Database {
           style?: string | null;
           icon?: string | null;
           position?: number;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -220,6 +222,7 @@ export interface Database {
           style?: string | null;
           icon?: string | null;
           position?: number;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -263,7 +266,7 @@ export interface Database {
           author_role: string | null;
           company_name: string | null;
           headline: string | null;
-          quote: string;
+          quote: string | null;
           avatar_url: string | null;
           rating: number | null;
           approved: boolean;
@@ -277,7 +280,7 @@ export interface Database {
           author_role?: string | null;
           company_name?: string | null;
           headline?: string | null;
-          quote: string;
+          quote?: string | null;
           avatar_url?: string | null;
           rating?: number | null;
           approved?: boolean;
@@ -291,7 +294,7 @@ export interface Database {
           author_role?: string | null;
           company_name?: string | null;
           headline?: string | null;
-          quote?: string;
+          quote?: string | null;
           avatar_url?: string | null;
           rating?: number | null;
           approved?: boolean;
@@ -361,33 +364,129 @@ export interface Database {
       analytics_events: {
         Row: {
           id: string;
-          event_name: string;
-          page: string | null;
-          section: string | null;
-          element: string | null;
+          created_at: string;
+          event_type: string;
+          entity_type: string;
+          entity_id: string;
+          session_id: string | null;
+          country: string | null;
+          city: string | null;
+          user_agent: string | null;
+          referrer: string | null;
           metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          event_type: string;
+          entity_type: string;
+          entity_id: string;
+          session_id?: string | null;
+          country?: string | null;
+          city?: string | null;
+          user_agent?: string | null;
+          referrer?: string | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          event_type?: string;
+          entity_type?: string;
+          entity_id?: string;
+          session_id?: string | null;
+          country?: string | null;
+          city?: string | null;
+          user_agent?: string | null;
+          referrer?: string | null;
+          metadata?: Json | null;
+        };
+      };
+      media: {
+        Row: {
+          id: string;
+          type: string;
+          source_type: string;
+          url: string;
+          embed_id: string | null;
+          name: string | null;
+          thumbnail_url: string | null;
+          duration: number | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          event_name: string;
-          page?: string | null;
-          section?: string | null;
-          element?: string | null;
-          metadata?: Json | null;
+          type: string;
+          source_type: string;
+          url: string;
+          embed_id?: string | null;
+          name?: string | null;
+          thumbnail_url?: string | null;
+          duration?: number | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          event_name?: string;
-          page?: string | null;
-          section?: string | null;
-          element?: string | null;
-          metadata?: Json | null;
+          type?: string;
+          source_type?: string;
+          url?: string;
+          embed_id?: string | null;
+          name?: string | null;
+          thumbnail_url?: string | null;
+          duration?: number | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      section_media: {
+        Row: {
+          id: string;
+          section_id: string;
+          media_id: string;
+          role: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          section_id: string;
+          media_id: string;
+          role?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          section_id?: string;
+          media_id?: string;
+          role?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
+      section_cta_buttons: {
+        Row: {
+          id: string;
+          section_id: string;
+          cta_button_id: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          section_id: string;
+          cta_button_id: string;
+          position?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          section_id?: string;
+          cta_button_id?: string;
+          position?: number;
+          created_at?: string;
         };
       };
     };

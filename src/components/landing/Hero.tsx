@@ -21,17 +21,22 @@
  * 
  * The color is automatically converted from HSL to hex and passed to Wistia.
  * Current setup uses Wistia Queue (_wq) to set playerColor before video loads.
- * 
- * Video ID: ow2y75tvjk
  */
 
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Script from 'next/script';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { hslToHex } from '@/lib/color-utils';
 import { RichText } from '@/components/ui/RichText';
+import { MediaRenderer } from '@/components/MediaRenderer';
+import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
+import type { MediaWithSection } from '@/features/media/types';
+import type { CTAButtonWithSection } from '@/features/cta/types';
 
 type Section = {
   id: string;
@@ -40,22 +45,64 @@ type Section = {
   subtitle: string | null;
   content: any | null;
   media_url: string | null;
+  media?: MediaWithSection[];
+  ctaButtons?: CTAButtonWithSection[];
 } | undefined;
 
 type HeroProps = {
   section?: Section;
+  ctaButtons?: CTAButtonWithSection[];
 };
 
-export const Hero = ({ section }: HeroProps) => {
+export const Hero = ({ section, ctaButtons }: HeroProps) => {
   const wistiaContainerRef = useRef<HTMLDivElement>(null);
   
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'Your Entire Outbound System\nFully Automated.';
   const subtitle = section?.subtitle || 'Built for B2B teams who want consistent meetings.';
   
-  // Extract Wistia video ID from media_url or use default
-  const getWistiaVideoId = (url: string | null | undefined): string => {
-    if (!url) return 'ow2y75tvjk'; // Default video ID
+  // Get CTA buttons from props or section
+  const buttons = ctaButtons || section?.ctaButtons || [];
+  
+  // Sort buttons by position
+  const sortedButtons = [...buttons].sort((a, b) => 
+    a.section_cta_button.position - b.section_cta_button.position
+  );
+  
+  // Get main media from media array, or fall back to media_url for backward compatibility
+  const mainMedia = section?.media?.find(m => m.section_media.role === 'main') || 
+                    (section?.media && section.media.length > 0 ? section.media[0] : null);
+
+  // Handle CTA button click tracking in hero section
+  const handleHeroCTAClick = (button: CTAButtonWithSection) => {
+    trackEvent({
+      event_type: "link_click",
+      entity_type: "cta_button",
+      entity_id: button.id,
+      metadata: {
+        location: "hero_section",
+        href: button.url,
+        label: button.label,
+      },
+    });
+  };
+
+  // Handle video play tracking
+  const handleVideoPlay = (mediaId: string) => {
+    trackEvent({
+      event_type: "link_click",
+      entity_type: "media",
+      entity_id: mediaId,
+      metadata: {
+        location: "hero_section",
+        action: "play",
+      },
+    });
+  };
+  
+  // Extract Wistia video ID from media_url
+  const getWistiaVideoId = (url: string | null | undefined): string | null => {
+    if (!url) return null;
     
     // Check if it's a direct Wistia video ID (alphanumeric string)
     if (/^[a-zA-Z0-9]{10}$/.test(url)) {
@@ -77,10 +124,14 @@ export const Hero = ({ section }: HeroProps) => {
       }
     }
     
-    return 'ow2y75tvjk'; // Fallback to default
+    return null;
   };
   
-  const videoId = getWistiaVideoId(section?.media_url);
+  // Use media from new system if available, otherwise fall back to media_url
+  const videoId = mainMedia?.embed_id || 
+                  (mainMedia?.source_type === 'wistia' && mainMedia.embed_id ? mainMedia.embed_id : null) ||
+                  getWistiaVideoId(section?.media_url) ||
+                  null;
 
   useEffect(() => {
     // Get primary color from CSS variable and convert to hex
@@ -121,7 +172,7 @@ export const Hero = ({ section }: HeroProps) => {
     };
 
     // Initialize Wistia Queue - MUST be set up BEFORE scripts load
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && videoId) {
       const primaryColor = getPrimaryColor();
       const hexWithoutHash = primaryColor.replace('#', '');
       
@@ -142,6 +193,12 @@ export const Hero = ({ section }: HeroProps) => {
         onReady: function(video: any) {
           // Backup: Also set it once video is ready
           console.log('Wistia video ready, setting color:', hexWithoutHash);
+          
+          // Track video play event
+          video.bind('play', function() {
+            const mediaId = mainMedia?.id || videoId || 'unknown';
+            handleVideoPlay(mediaId);
+          });
           
           // Remove border-radius from progress bar element
               const removeBorderRadius = () => {
@@ -472,115 +529,119 @@ export const Hero = ({ section }: HeroProps) => {
           />
         </motion.div>
 
-        {/* Initialize Wistia Queue BEFORE any scripts */}
-        <Script
-          key={`wistia-queue-${videoId}`}
-          id="wistia-queue-setup"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                window._wq = window._wq || [];
-                
-                var videoId = '${videoId}';
-                
-                // ============================================
-                // WISTIA PLAYER COLOR CONFIGURATION
-                // ============================================
-                // To use a CUSTOM color (different from primary):
-                // Change the hex value below (without the # symbol)
-                // Example: var customColor = 'ff5733'; // Red
-                // Then set: var useCustomColor = true;
-                // ============================================
-                var useCustomColor = false; // Set to true to use custom color below
-                var customColor = '0a7afa'; // Your custom hex color (without #)
-                
-                var color = '0a7afa'; // Default blue
-                
-                if (!useCustomColor) {
-                  // Auto-detect from primary brand color - read computed value
-                  try {
-                    var root = document.documentElement;
-                    var computedStyle = getComputedStyle(root);
+        {/* Initialize Wistia Queue BEFORE any scripts - only if videoId exists */}
+        {videoId && (
+          <>
+            <Script
+              key={`wistia-queue-${videoId}`}
+              id="wistia-queue-setup"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  (function() {
+                    window._wq = window._wq || [];
                     
-                    // First, try to read the computed --primary value directly
-                    // This will work if --primary is set directly or resolves from --brand variables
-                    var primaryValue = computedStyle.getPropertyValue('--primary').trim();
-                    var h, s, l;
+                    var videoId = '${videoId}';
                     
-                    if (primaryValue) {
-                      // Parse from --primary format: "H S% L%" (e.g., "108 65% 50%")
-                      var hslMatch = primaryValue.match(/(\\d+)\\s+(\\d+)%\\s+(\\d+)%/);
-                      if (hslMatch) {
-                        h = parseInt(hslMatch[1]);
-                        s = parseInt(hslMatch[2]);
-                        l = parseInt(hslMatch[3]);
-                      } else {
-                        // Fallback to brand variables if --primary format doesn't match
-                        h = parseInt(computedStyle.getPropertyValue('--brand-h') || '212');
-                        s = parseInt(computedStyle.getPropertyValue('--brand-s') || '96');
-                        l = parseInt(computedStyle.getPropertyValue('--brand-l') || '51');
+                    // ============================================
+                    // WISTIA PLAYER COLOR CONFIGURATION
+                    // ============================================
+                    // To use a CUSTOM color (different from primary):
+                    // Change the hex value below (without the # symbol)
+                    // Example: var customColor = 'ff5733'; // Red
+                    // Then set: var useCustomColor = true;
+                    // ============================================
+                    var useCustomColor = false; // Set to true to use custom color below
+                    var customColor = '0a7afa'; // Your custom hex color (without #)
+                    
+                    var color = '0a7afa'; // Default blue
+                    
+                    if (!useCustomColor) {
+                      // Auto-detect from primary brand color - read computed value
+                      try {
+                        var root = document.documentElement;
+                        var computedStyle = getComputedStyle(root);
+                        
+                        // First, try to read the computed --primary value directly
+                        // This will work if --primary is set directly or resolves from --brand variables
+                        var primaryValue = computedStyle.getPropertyValue('--primary').trim();
+                        var h, s, l;
+                        
+                        if (primaryValue) {
+                          // Parse from --primary format: "H S% L%" (e.g., "108 65% 50%")
+                          var hslMatch = primaryValue.match(/(\\d+)\\s+(\\d+)%\\s+(\\d+)%/);
+                          if (hslMatch) {
+                            h = parseInt(hslMatch[1]);
+                            s = parseInt(hslMatch[2]);
+                            l = parseInt(hslMatch[3]);
+                          } else {
+                            // Fallback to brand variables if --primary format doesn't match
+                            h = parseInt(computedStyle.getPropertyValue('--brand-h') || '212');
+                            s = parseInt(computedStyle.getPropertyValue('--brand-s') || '96');
+                            l = parseInt(computedStyle.getPropertyValue('--brand-l') || '51');
+                          }
+                        } else {
+                          // Fallback to brand variables if --primary is not set
+                          h = parseInt(computedStyle.getPropertyValue('--brand-h') || '212');
+                          s = parseInt(computedStyle.getPropertyValue('--brand-s') || '96');
+                          l = parseInt(computedStyle.getPropertyValue('--brand-l') || '51');
+                        }
+                        
+                        // Convert HSL to hex
+                        s = s / 100;
+                        l = l / 100;
+                        var c = (1 - Math.abs(2 * l - 1)) * s;
+                        var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+                        var m = l - c / 2;
+                        var r = 0, g = 0, b = 0;
+                        
+                        if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+                        else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+                        else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+                        else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+                        else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+                        else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
+                        
+                        r = Math.round((r + m) * 255);
+                        g = Math.round((g + m) * 255);
+                        b = Math.round((b + m) * 255);
+                        color = [r, g, b].map(function(x) {
+                          var hex = x.toString(16);
+                          return hex.length === 1 ? '0' + hex : hex;
+                        }).join('');
+                      } catch(e) {
+                        console.error('Error getting primary color:', e);
                       }
                     } else {
-                      // Fallback to brand variables if --primary is not set
-                      h = parseInt(computedStyle.getPropertyValue('--brand-h') || '212');
-                      s = parseInt(computedStyle.getPropertyValue('--brand-s') || '96');
-                      l = parseInt(computedStyle.getPropertyValue('--brand-l') || '51');
+                      // Use custom color
+                      color = customColor.replace('#', '');
                     }
                     
-                    // Convert HSL to hex
-                    s = s / 100;
-                    l = l / 100;
-                    var c = (1 - Math.abs(2 * l - 1)) * s;
-                    var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-                    var m = l - c / 2;
-                    var r = 0, g = 0, b = 0;
-                    
-                    if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
-                    else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
-                    else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
-                    else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
-                    else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
-                    else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
-                    
-                    r = Math.round((r + m) * 255);
-                    g = Math.round((g + m) * 255);
-                    b = Math.round((b + m) * 255);
-                    color = [r, g, b].map(function(x) {
-                      var hex = x.toString(16);
-                      return hex.length === 1 ? '0' + hex : hex;
-                    }).join('');
-                  } catch(e) {
-                    console.error('Error getting primary color:', e);
-                  }
-                } else {
-                  // Use custom color
-                  color = customColor.replace('#', '');
-                }
-                
-                // Set player color - this affects BOTH play button AND progress bar
-                window._wq.push({
-                  id: videoId,
-                  options: {
-                    playerColor: color
-                  }
-                });
-              })();
-            `
-          }}
-        />
-        
-        {/* Wistia Scripts - Load after queue is initialized */}
-        <Script
-          key={`wistia-media-${videoId}`}
-          src={`https://fast.wistia.com/embed/medias/${videoId}.jsonp`}
-          strategy="afterInteractive"
-        />
-        <Script
-          key="wistia-external"
-          src="https://fast.wistia.com/assets/external/E-v1.js"
-          strategy="afterInteractive"
-        />
+                    // Set player color - this affects BOTH play button AND progress bar
+                    window._wq.push({
+                      id: videoId,
+                      options: {
+                        playerColor: color
+                      }
+                    });
+                  })();
+                `
+              }}
+            />
+            
+            {/* Wistia Scripts - Load after queue is initialized */}
+            <Script
+              key={`wistia-media-${videoId}`}
+              src={`https://fast.wistia.com/embed/medias/${videoId}.jsonp`}
+              strategy="afterInteractive"
+            />
+            <Script
+              key="wistia-external"
+              src="https://fast.wistia.com/assets/external/E-v1.js"
+              strategy="afterInteractive"
+            />
+          </>
+        )}
 
         {/* Video Container */}
         <motion.div
@@ -601,7 +662,22 @@ export const Hero = ({ section }: HeroProps) => {
               {/* Glow Effect on Hover - Box Shadow Only (no border) */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none z-10" style={{ boxShadow: '0 0 60px hsl(var(--primary) / 0.3)' }} />
               
-              {/* Wistia Video Container */}
+              {/* Media Container */}
+              {mainMedia ? (
+                <div 
+                  className="w-full aspect-video rounded-lg overflow-hidden"
+                  onClick={() => handleVideoPlay(mainMedia.id)}
+                >
+                  <MediaRenderer
+                    media={mainMedia}
+                    className="w-full h-full"
+                    autoPlay={false}
+                    muted={false}
+                    loop={false}
+                    controls={true}
+                  />
+                </div>
+              ) : videoId ? (
               <div className="wistia_responsive_padding relative w-full overflow-hidden rounded-lg" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
                 <div className="wistia_responsive_wrapper" style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}>
                   <div 
@@ -616,23 +692,74 @@ export const Hero = ({ section }: HeroProps) => {
                   />
                 </div>
               </div>
+              ) : null}
             </div>
           </div>
         </motion.div>
 
-        {/* CTA Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto"
-        >
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-            <Button className="h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold whitespace-nowrap w-full sm:w-auto text-base">
-            Schedule a Call
-            </Button>
+        {/* CTA Buttons or Default Button */}
+        {sortedButtons.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="flex flex-wrap gap-4 justify-center items-center max-w-2xl mx-auto"
+          >
+            {sortedButtons.map((button, index) => (
+              <motion.div
+                key={button.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.4 + index * 0.1 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  asChild
+                  className={cn(
+                    "h-14 px-8 font-semibold whitespace-nowrap text-base",
+                    button.style === "primary" || !button.style
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      : button.style === "secondary"
+                      ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                      : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                  )}
+                >
+                  <Link 
+                    href={button.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleHeroCTAClick(button);
+                    }}
+                  >
+                    {button.icon && (
+                      <FontAwesomeIcon
+                        icon={button.icon as any}
+                        className="h-4 w-4 mr-2"
+                      />
+                    )}
+                    {button.label}
+                  </Link>
+                </Button>
+              </motion.div>
+            ))}
           </motion.div>
-        </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto"
+          >
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+              <Button className="h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold whitespace-nowrap w-full sm:w-auto text-base">
+                Schedule a Call
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
 
         {/* Trust Indicator */}
         <motion.p

@@ -28,13 +28,20 @@ function normalizeTestimonial(testimonial: Testimonial): Testimonial {
 }
 
 /**
- * Get all testimonials, ordered by position
+ * Get all testimonials (both approved and unapproved), ordered by position
+ * This is used in the admin panel to show all testimonials regardless of approval status
+ * RLS policies ensure authenticated users see all testimonials
+ * Note: Middleware protects admin routes, so users accessing this are authenticated
+ * 
+ * @deprecated Use the API route /api/admin/testimonials instead for better auth handling
  */
 export async function getAllTestimonials(): Promise<Testimonial[]> {
   const supabase = await createClient();
+  
   const { data, error } = await supabase
     .from("testimonials")
     .select("*")
+    .order("approved", { ascending: false })
     .order("position", { ascending: true });
 
   if (error) {

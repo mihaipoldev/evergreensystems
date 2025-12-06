@@ -1,10 +1,15 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { RichText } from '@/components/ui/RichText';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMousePointer } from '@fortawesome/free-solid-svg-icons';
 import { usePublicTeam } from '@/providers/PublicTeamProvider';
+import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics';
+import type { CTAButtonWithSection } from '@/features/cta/types';
 
 type Section = {
   id: string;
@@ -12,22 +17,46 @@ type Section = {
   title: string | null;
   subtitle: string | null;
   content: any | null;
+  ctaButtons?: CTAButtonWithSection[];
 } | undefined;
 
 type CTAProps = {
   section?: Section;
+  ctaButtons?: CTAButtonWithSection[];
 };
 
-export const CTA = ({ section }: CTAProps) => {
+export const CTA = ({ section, ctaButtons }: CTAProps) => {
   const { teamMembers, totalTeamCount, displayCount } = usePublicTeam();
   const remainingCount = totalTeamCount - displayCount;
   
   // Use section data if available, otherwise use defaults
   const title = section?.title || "Let's build your [[automation engine]]";
-  const subtitle = section?.subtitle || "Book a free 30-minute strategy session with our team. We'll analyze your current workflow and show you exactly how automation can transform your business.";
+  const subtitle = section?.subtitle?.trim() || "Book a free 30-minute strategy session with our team. We'll analyze your current workflow and show you exactly how automation can transform your business.";
+  
+  // Get CTA buttons from props or section
+  const buttons = ctaButtons || section?.ctaButtons || [];
+  
+  // Sort buttons by position
+  const sortedButtons = [...buttons].sort((a, b) => 
+    a.section_cta_button.position - b.section_cta_button.position
+  );
+
+  // Handle CTA button click tracking
+  const handleCTAClick = (button: CTAButtonWithSection) => {
+    trackEvent({
+      event_type: "link_click",
+      entity_type: "cta_button",
+      entity_id: button.id,
+      metadata: {
+        location: "cta_section",
+        href: button.url,
+        label: button.label,
+      },
+    });
+  };
 
   return (
-    <section className="py-24 relative">
+    <section id="cta" className="py-24 relative">
       {/* Background Effects */}
       <div 
         className="absolute inset-0 bg-dot-pattern opacity-30 dark:opacity-60"
@@ -86,29 +115,55 @@ export const CTA = ({ section }: CTAProps) => {
             className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto"
           />
 
-          {/* CTA Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto"
-          >
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              className="h-14 bg-secondary border-border text-foreground placeholder:text-muted-foreground flex-1 w-full text-base"
-            />
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-              <Button className="h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold whitespace-nowrap w-full sm:w-auto text-base">
-                Book Free Strategy Call
-              </Button>
+          {/* CTA Buttons */}
+          {sortedButtons.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="flex flex-wrap gap-4 justify-center items-center max-w-2xl mx-auto"
+            >
+              {sortedButtons.map((button, index) => (
+                <motion.div
+                  key={button.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + index * 0.1 }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    asChild
+                    className={cn(
+                      "h-14 px-8 font-semibold whitespace-nowrap text-base",
+                      button.style === "primary" || !button.style
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : button.style === "secondary"
+                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    )}
+                  >
+                    <Link 
+                      href={button.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={() => handleCTAClick(button)}
+                    >
+                      {button.icon && (
+                        <FontAwesomeIcon
+                          icon={button.icon as any}
+                          className="h-4 w-4 mr-2"
+                        />
+                      )}
+                      {button.label}
+                    </Link>
+                  </Button>
+                </motion.div>
+              ))}
             </motion.div>
-          </motion.div>
-
-          <p className="text-sm text-muted-foreground mt-6">
-            No commitment required • Response within 24 hours
-          </p>
+          )}
         </motion.div>
       </div>
     </section>

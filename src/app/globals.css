@@ -247,8 +247,8 @@
     /* --primary: 202 90% 50%;   */
     /* --primary: 202 90% 50%;   */
     /* --primary: 202 90% 50%;   */
-    --primary: 170 71% 49%;   
-    /* --primary: 193 57% 50%;   */
+    /* --primary: 170 71% 49%;    */
+     --primary: 193 57% 50%;   
 
     --primary-foreground: 0 0% 98%;
 
@@ -305,8 +305,91 @@
   * {
     @apply border-border;
   }
+  html {
+    @apply bg-background;
+    /* Fallback for browsers that don't support the JS variable */
+    --vh: 1vh;
+    height: 100%;
+    max-height: 100%;
+    overflow-x: hidden;
+    /* Prevent overlay issues on mobile */
+    position: relative;
+    /* Prevent overscroll bounce and momentum scrolling issues */
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    /* Prevent pinch zoom */
+    touch-action: pan-y;
+    /* Ensure html background matches body to prevent color bars */
+    background-color: hsl(var(--background));
+  }
   body {
     @apply bg-background text-foreground;
+    height: 100%;
+    max-height: 100%;
+    position: relative;
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    /* Ensure body doesn't create overlay */
+    margin: 0;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    /* Prevent overscroll bounce */
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    /* Prevent pinch zoom */
+    touch-action: pan-y;
+    /* Prevent extra scrollable space */
+    box-sizing: border-box;
+    /* Ensure body background matches to prevent color bars */
+    background-color: hsl(var(--background));
+    /* Prevent extra scrollable space at bottom */
+    min-height: 100%;
+  }
+  
+  /* Prevent double scroll on mobile devices */
+  @media (max-width: 768px) {
+    html, body {
+      overflow-x: hidden !important;
+      position: relative;
+      width: 100%;
+      max-width: 100vw;
+    }
+    
+    /* CRITICAL: Ensure main containers don't create scroll context */
+    /* Only body should scroll, not nested containers */
+    /* BUT: Don't affect fixed elements like navbar */
+    body > div:not([class*="fixed"]):not(nav) {
+      overflow: visible !important;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
+      width: 100%;
+      max-width: 100vw;
+      height: auto !important;
+      max-height: none !important;
+      position: relative;
+    }
+    
+    /* Prevent horizontal scroll on all elements */
+    * {
+      max-width: 100%;
+    }
+    
+    /* Ensure fixed elements stay fixed and don't cause scroll issues */
+    [class*="fixed"],
+    nav[class*="fixed"],
+    [style*="position: fixed"] {
+      max-width: 100vw;
+      position: fixed !important;
+    }
+    
+    /* Prevent any nested scroll containers (but not fixed elements) */
+    main:not([class*="fixed"]),
+    section:not([class*="fixed"]),
+    article:not([class*="fixed"]),
+    aside:not([class*="fixed"]) {
+      overflow: visible !important;
+      overflow-y: visible !important;
+    }
   }
   
   /* Admin-specific font families */

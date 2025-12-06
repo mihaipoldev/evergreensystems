@@ -1,15 +1,10 @@
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { getAllMedia } from "@/features/media/data";
+import { MediaLibrary } from "@/features/media/components/MediaLibrary";
 
-export default function MediaPage() {
-  return (
-    <>
-      <AdminPageTitle
-        title="Media Library"
-        description="Manage and organize your media files."
-      />
-      <p className="text-muted-foreground">
-        Media library content will be added here.
-      </p>
-    </>
-  );
+export const dynamic = "force-dynamic";
+
+export default async function MediaPage() {
+  const media = await getAllMedia();
+
+  return <MediaLibrary initialMedia={media} />;
 }

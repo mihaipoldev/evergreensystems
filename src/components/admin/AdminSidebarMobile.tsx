@@ -14,6 +14,7 @@ import {
   faGear,
   faLeaf,
   faFile,
+  faMousePointer,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   Sheet,
@@ -32,6 +33,11 @@ const navigationItems = [
   {
     title: "Dashboard",
     href: "/admin",
+    icon: faChartLine,
+  },
+  {
+    title: "Analytics",
+    href: "/admin/analytics",
     icon: faChartLine,
   },
   {
@@ -58,6 +64,11 @@ const navigationItems = [
     title: "FAQ",
     href: "/admin/faq",
     icon: faQuestionCircle,
+  },
+  {
+    title: "CTA",
+    href: "/admin/cta",
+    icon: faMousePointer,
   },
   {
     title: "Media Library",

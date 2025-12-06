@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { Database } from "@/lib/supabase/types";
+import { headers } from "next/headers";
 
 type AnalyticsEventInsert = Database["public"]["Tables"]["analytics_events"]["Insert"];
 
@@ -14,8 +15,10 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const eventName = searchParams.get("event_name");
-    const page = searchParams.get("page");
+    const eventType = searchParams.get("event_type");
+    const entityType = searchParams.get("entity_type");
+    const entityId = searchParams.get("entity_id");
+    const sessionId = searchParams.get("session_id");
     const startDate = searchParams.get("start_date");
     const endDate = searchParams.get("end_date");
 
@@ -23,12 +26,20 @@ export async function GET(request: Request) {
       .from("analytics_events")
       .select("*");
 
-    if (eventName) {
-      query = query.eq("event_name", eventName);
+    if (eventType) {
+      query = query.eq("event_type", eventType);
     }
 
-    if (page) {
-      query = query.eq("page", page);
+    if (entityType) {
+      query = query.eq("entity_type", entityType);
+    }
+
+    if (entityId) {
+      query = query.eq("entity_id", entityId);
+    }
+
+    if (sessionId) {
+      query = query.eq("session_id", sessionId);
     }
 
     if (startDate) {
@@ -58,21 +69,58 @@ export async function POST(request: Request) {
   try {
     // Public endpoint - no authentication required for tracking
     const supabase = await createClient();
+    const headersList = await headers();
     const body = await request.json();
-    const { event_name, page, section, element, metadata } = body;
+    
+    const { 
+      event_type, 
+      entity_type, 
+      entity_id, 
+      session_id, 
+      user_agent, 
+      referrer, 
+      metadata 
+    } = body;
 
-    if (!event_name) {
+    // Validate required fields
+    if (!event_type) {
       return NextResponse.json(
-        { error: "event_name is required" },
+        { error: "event_type is required" },
         { status: 400 }
       );
     }
 
+    if (!entity_type) {
+      return NextResponse.json(
+        { error: "entity_type is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!entity_id) {
+      return NextResponse.json(
+        { error: "entity_id is required" },
+        { status: 400 }
+      );
+    }
+
+    // Extract geolocation from Vercel headers
+    const country = headersList.get("x-vercel-ip-country") || null;
+    const city = headersList.get("x-vercel-ip-city") || null;
+
+    // Extract user agent and referrer from request if not provided in body
+    const finalUserAgent = user_agent || headersList.get("user-agent") || null;
+    const finalReferrer = referrer || headersList.get("referer") || null;
+
     const insertData: AnalyticsEventInsert = {
-        event_name,
-        page: page || null,
-        section: section || null,
-        element: element || null,
+      event_type,
+      entity_type,
+      entity_id,
+      session_id: session_id || null,
+      country,
+      city,
+      user_agent: finalUserAgent,
+      referrer: finalReferrer,
         metadata: metadata || null,
     };
 

@@ -51,7 +51,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { label, url, style, icon, position } = body;
+    const { label, url, style, icon, position, status } = body;
 
     const updateData: Record<string, unknown> = {};
     if (label !== undefined) updateData.label = label;
@@ -59,6 +59,7 @@ export async function PUT(
     if (style !== undefined) updateData.style = style;
     if (icon !== undefined) updateData.icon = icon;
     if (position !== undefined) updateData.position = position;
+    if (status !== undefined) updateData.status = status;
 
     const { data, error } = await (supabase
       .from("cta_buttons") as any)

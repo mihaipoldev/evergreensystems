@@ -6,15 +6,26 @@ type Page = Database["public"]["Tables"]["pages"]["Row"];
 
 /**
  * Get all sections with their associated pages via page_sections junction table
+ * Ordered by: home page sections (by position) first, then non-home sections (alphabetically)
  */
 export async function getAllSections(): Promise<SectionWithPages[]> {
   const supabase = await createClient();
   
-  // First get all sections
+  // Get the home page
+  const { data: homePage, error: homePageError } = await ((supabase
+    .from("pages") as any)
+    .select("id")
+    .eq("slug", "home")
+    .maybeSingle() as Promise<{ data: { id: string } | null; error: any }>);
+
+  if (homePageError) {
+    throw homePageError;
+  }
+
+  // Get all sections
   const { data: sections, error: sectionsError } = await supabase
     .from("sections")
-    .select("*")
-    .order("created_at", { ascending: false }) as { data: Database["public"]["Tables"]["sections"]["Row"][] | null; error: any };
+    .select("*") as { data: Database["public"]["Tables"]["sections"]["Row"][] | null; error: any };
 
   if (sectionsError) {
     throw sectionsError;
@@ -24,36 +35,48 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
     return [];
   }
 
-  // Then get all page_sections relationships for these sections
+  // Get all page_sections relationships for these sections
   const sectionIds = sections.map(s => s.id);
-  const { data: pageSections, error: pageSectionsError } = await supabase
-    .from("page_sections")
+  const queryResult = await ((supabase
+    .from("page_sections") as any)
     .select(`
       id,
       section_id,
       position,
       visible,
+      page_id,
       pages (
         id,
         slug,
         title
       )
     `)
-    .in("section_id", sectionIds) as { data: Array<{
+    .in("section_id", sectionIds) as Promise<{ data: Array<{
       id: string;
       section_id: string;
       position: number;
       visible: boolean;
+      page_id: string;
       pages: { id: string; slug: string; title: string } | null;
-    }> | null; error: any };
+    }> | null; error: any }>);
+  const { data: pageSections, error: pageSectionsError } = queryResult;
 
   if (pageSectionsError) {
     throw pageSectionsError;
   }
 
   // Combine sections with their pages
-  return sections.map(section => {
-    const associatedPages = (pageSections || [])
+  type PageSection = {
+    id: string;
+    section_id: string;
+    position: number;
+    visible: boolean;
+    page_id: string;
+    pages: { id: string; slug: string; title: string } | null;
+  };
+  const typedPageSections: PageSection[] = (pageSections || []) as PageSection[];
+  const sectionsWithPages: SectionWithPages[] = sections.map(section => {
+    const associatedPages = typedPageSections
       .filter(ps => ps.section_id === section.id)
       .map(ps => ({
         id: (ps.pages as any)?.id || "",
@@ -69,18 +92,54 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
       pages: associatedPages,
     };
   });
+
+  // Separate sections into home page sections and non-home sections
+  const homePageSectionIds = new Set(
+    typedPageSections
+      .filter(ps => homePage && ps.page_id === homePage.id)
+      .sort((a, b) => a.position - b.position)
+      .map(ps => ps.section_id)
+  );
+
+  const homePageSections: SectionWithPages[] = [];
+  const nonHomeSections: SectionWithPages[] = [];
+
+  sectionsWithPages.forEach(section => {
+    if (homePageSectionIds.has(section.id)) {
+      homePageSections.push(section);
+    } else {
+      nonHomeSections.push(section);
+    }
+  });
+
+  // Sort home page sections by their position on the home page
+  homePageSections.sort((a, b) => {
+    const aPosition = a.pages?.find(p => homePage && p.id === homePage.id)?.position ?? Infinity;
+    const bPosition = b.pages?.find(p => homePage && p.id === homePage.id)?.position ?? Infinity;
+    return aPosition - bPosition;
+  });
+
+  // Sort non-home sections alphabetically by admin_title (fallback to title, then type)
+  nonHomeSections.sort((a, b) => {
+    const aTitle = (a.admin_title || a.title || a.type || "").toLowerCase();
+    const bTitle = (b.admin_title || b.title || b.type || "").toLowerCase();
+    return aTitle.localeCompare(bTitle);
+  });
+
+  // Return home page sections first, then non-home sections
+  return [...homePageSections, ...nonHomeSections];
 }
 
 /**
- * Get a single section by id
+ * Get a single section by id with media
  */
 export async function getSectionById(id: string): Promise<Section | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("sections")
+  const { data, error } = await ((supabase
+    .from("sections") as any)
     .select("*")
     .eq("id", id)
-    .single();
+    .single() as Promise<{ data: Database["public"]["Tables"]["sections"]["Row"] | null; error: any }>);
 
   if (error) {
     if (error.code === "PGRST116") {
@@ -90,7 +149,75 @@ export async function getSectionById(id: string): Promise<Section | null> {
     throw error;
   }
 
-  return data;
+  if (!data) {
+    return null;
+  }
+
+  // Get media for this section
+  const { data: sectionMediaData, error: mediaError } = await supabase
+    .from("section_media")
+    .select(`
+      *,
+      media (*)
+    `)
+    .eq("section_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (mediaError) {
+    console.error("Error fetching section media:", mediaError);
+    // Return section without media if there's an error
+    return data as Section;
+  }
+
+  // Transform media data
+  const media = (sectionMediaData || []).map((item: any) => ({
+    ...item.media,
+    section_media: {
+      id: item.id,
+      section_id: item.section_id,
+      media_id: item.media_id,
+      role: item.role,
+      sort_order: item.sort_order,
+      created_at: item.created_at,
+    },
+  }));
+
+  // Get CTA buttons for this section
+  const { data: sectionCTAData, error: ctaError } = await supabase
+    .from("section_cta_buttons")
+    .select(`
+      *,
+      cta_buttons (*)
+    `)
+    .eq("section_id", id)
+    .order("position", { ascending: true });
+
+  if (ctaError) {
+    console.error("Error fetching section CTA buttons:", ctaError);
+    // Return section without CTAs if there's an error
+    return {
+      ...data,
+      media,
+    } as Section;
+  }
+
+  // Transform CTA button data
+  const ctaButtons = (sectionCTAData || [])
+    .filter((item: any) => item.cta_buttons && item.cta_buttons.status === "active")
+    .map((item: any) => ({
+      ...item.cta_buttons,
+      section_cta_button: {
+        id: item.id,
+        position: item.position,
+        created_at: item.created_at,
+      },
+    }));
+
+  return {
+    ...data,
+    media,
+    ctaButtons,
+  } as Section;
 }
 
 /**

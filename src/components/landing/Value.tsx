@@ -5,12 +5,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBullseye,
   faRobot,
+  faShield,
   faShieldAlt,
+  faShieldHalved,
   faBrain,
   faCogs,
   faChartLine,
+  IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from '@/components/ui/RichText';
+import type { Database } from '@/lib/supabase/types';
 
 type Section = {
   id: string;
@@ -20,53 +24,120 @@ type Section = {
   content: any | null;
 } | undefined;
 
+type OfferFeature = Database["public"]["Tables"]["offer_features"]["Row"];
+
 type ValueProps = {
   section?: Section;
+  offerFeatures?: OfferFeature[];
 };
 
-const valuePoints = [
+// Map icon names (strings) to FontAwesome icons
+// Handles both "fa-robot" and "robot" formats
+const iconMap: Record<string, IconDefinition> = {
+  'fa-bullseye': faBullseye,
+  'bullseye': faBullseye,
+  'fa-target': faBullseye,
+  'target': faBullseye,
+  'fa-robot': faRobot,
+  'robot': faRobot,
+  'fa-shield': faShield,
+  'fa-shield-alt': faShieldAlt,
+  'fa-shield-halved': faShieldHalved,
+  'fa-shield-check': faShieldAlt,
+  'fa-shield-virus': faShieldAlt,
+  'shield': faShield,
+  'shield-alt': faShieldAlt,
+  'shield-halved': faShieldHalved,
+  'shield-check': faShieldAlt,
+  'shield-virus': faShieldAlt,
+  'fa-brain': faBrain,
+  'brain': faBrain,
+  'fa-cogs': faCogs,
+  'fa-gears': faCogs,
+  'cogs': faCogs,
+  'gears': faCogs,
+  'fa-chart-line': faChartLine,
+  'fa-chart': faChartLine,
+  'fa-line-chart': faChartLine,
+  'chart-line': faChartLine,
+  'chart': faChartLine,
+  'line-chart': faChartLine,
+};
+
+// Default fallback features if database is empty
+const defaultFeatures = [
   {
     icon: faBullseye,
     title: 'Accurate targeting',
     description: 'Powered by real industry signals',
-    gradient: 'from-primary/20 to-blue-500/10',
   },
   {
     icon: faRobot,
     title: 'Automated lead sourcing',
     description: 'And enrichment',
-    gradient: 'from-cyan-500/20 to-primary/10',
   },
   {
     icon: faShieldAlt,
     title: 'Clean, validated data',
     description: 'With deliverability in mind',
-    gradient: 'from-green-500/20 to-emerald-500/10',
   },
   {
     icon: faBrain,
     title: 'AI-assisted personalization',
     description: 'That feels human',
-    gradient: 'from-purple-500/20 to-pink-500/10',
   },
   {
     icon: faCogs,
     title: 'Fully automated workflows',
     description: 'That run on their own',
-    gradient: 'from-orange-500/20 to-red-500/10',
   },
   {
     icon: faChartLine,
     title: 'Predictable sales conversations',
     description: 'Every week',
-    gradient: 'from-primary/20 to-indigo-500/10',
   },
 ];
 
-export const Value = ({ section }: ValueProps) => {
+export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'A reliable outbound system — built with [[automation]], clean data, and real personalization.';
   const subtitle = section?.subtitle || 'We build and maintain the automation layer behind your outbound: accurate targeting, automated lead acquisition, clean data pipelines, and consistent results.';
+
+  // Map database features to display format, or use defaults
+  const features = offerFeatures.length > 0
+    ? offerFeatures.map((feature) => {
+        // Get icon from iconMap, try both with and without "fa-" prefix
+        const iconName = feature.icon?.toLowerCase() || '';
+        
+        // Try exact match first
+        let icon = iconMap[iconName];
+        
+        // If not found, try with/without "fa-" prefix
+        if (!icon) {
+          if (iconName.startsWith('fa-')) {
+            icon = iconMap[iconName.substring(3)]; // Try without "fa-" prefix
+          } else {
+            icon = iconMap[`fa-${iconName}`]; // Try with "fa-" prefix
+          }
+        }
+        
+        // Special fallback for shield variations
+        if (!icon && iconName.includes('shield')) {
+          icon = faShieldAlt; // Default to shield-alt for any shield variant
+        }
+        
+        // Final fallback
+        if (!icon) {
+          icon = defaultFeatures[0].icon;
+        }
+        
+        return {
+          icon,
+          title: feature.title,
+          description: feature.description || feature.subtitle || '',
+        };
+      })
+    : defaultFeatures;
 
   return (
     <section id="services" className="py-32 relative">
@@ -114,9 +185,9 @@ export const Value = ({ section }: ValueProps) => {
 
         {/* Value Points Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {valuePoints.map((point, index) => (
+            {features.map((feature, index) => (
               <motion.div
-              key={point.title}
+              key={feature.title}
               initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -132,23 +203,23 @@ export const Value = ({ section }: ValueProps) => {
                     className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4"
                   >
                     <FontAwesomeIcon
-                      icon={point.icon}
+                      icon={feature.icon}
                       className="w-7 h-7 text-primary"
                     />
                   </motion.div>
 
                   {/* Content */}
                   <h3 className="text-foreground text-xl font-semibold mb-2">
-                    {point.title}
+                    {feature.title}
                   </h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    {point.description}
+                    {feature.description}
                   </p>
 
                   {/* Decorative Element */}
                   <div className="absolute bottom-0 right-0 w-20 h-20 opacity-5">
                     <FontAwesomeIcon
-                      icon={point.icon}
+                      icon={feature.icon}
                       className="w-full h-full text-primary"
                     />
                   </div>

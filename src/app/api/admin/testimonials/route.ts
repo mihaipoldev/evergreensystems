@@ -47,7 +47,9 @@ export async function GET(request: Request) {
       query = query.eq("approved", approved === "true");
     }
 
-    const { data, error } = await query.order("position", { ascending: true });
+    const { data, error } = await query
+      .order("approved", { ascending: false })
+      .order("position", { ascending: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -77,9 +79,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position } = body;
 
-    if (!author_name || !quote) {
+    if (!author_name) {
       return NextResponse.json(
-        { error: "author_name and quote are required" },
+        { error: "author_name is required" },
         { status: 400 }
       );
     }
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
         author_role: author_role || null,
         company_name: company_name || null,
         headline: headline || null,
-        quote,
+        quote: quote || null,
         avatar_url: avatar_url || null,
         rating: rating ?? null,
         approved: approved !== undefined ? approved : false,

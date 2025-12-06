@@ -28,7 +28,7 @@ const formSchema = z.object({
   author_role: z.string().optional(),
   company_name: z.string().optional(),
   headline: z.string().optional(),
-  quote: z.string().min(1, "Quote is required"),
+  quote: z.string().optional(),
   avatar_url: z.union([z.string().url("Must be a valid URL"), z.literal(""), z.null()]).optional(),
   rating: z.number().min(1).max(5).nullable().optional(),
   approved: z.boolean(),
@@ -141,6 +141,7 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
         author_role: values.author_role || null,
         company_name: values.company_name || null,
         headline: values.headline || null,
+        quote: values.quote || null,
         avatar_url: avatarUrl,
         rating: values.rating ?? null,
       };
@@ -318,9 +319,7 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
             name="quote"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  Body <span className="text-destructive">*</span>
-                </FormLabel>
+                <FormLabel>Body</FormLabel>
                 <FormControl>
                   <TextareaShadow
                     placeholder="Enter the testimonial quote"
