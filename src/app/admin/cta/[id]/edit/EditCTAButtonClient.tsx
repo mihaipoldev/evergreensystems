@@ -1,11 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { CTAButtonForm } from "@/features/cta/components/CTAButtonForm";
 import type { CTAButton } from "@/features/cta/types";
 
+const CTAButtonForm = dynamic(
+  () => import("@/features/cta/components/CTAButtonForm").then((mod) => mod.CTAButtonForm),
+  { ssr: false }
+);
+
 type EditCTAButtonClientProps = {
-  ctaButton: CTAButton;
+  ctaButton: CTAButton & { section_id?: string | null };
 };
 
 export function EditCTAButtonClient({ ctaButton }: EditCTAButtonClientProps) {

@@ -118,7 +118,7 @@ export const FAQ = memo(({ faqs = defaultFaqs, section }: FAQProps) => {
   };
 
   return (
-    <section id="faq" className="py-20 relative">
+    <section id="faq" className="py-12 md:py-20 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -129,7 +129,7 @@ export const FAQ = memo(({ faqs = defaultFaqs, section }: FAQProps) => {
           <RichText
             as="h2"
             text={title}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
+            className="text-2xl md:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 

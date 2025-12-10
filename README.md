@@ -109,3 +109,11 @@ BUNNY_PULL_ZONE_URL=https://yourdomain.b-cdn.net
 - Implement admin section features
 - Configure environment variables as needed
 - Set up deployment pipeline
+
+## Cache busting, CDN, and deploy checks
+
+- HTML/SSR responses are forced to revalidate (`Cache-Control: no-store, must-revalidate, max-age=0`) so content updates show immediately.
+- Built assets (`/_next/static/**`, images, fonts, CSS) are cacheable long-term (`Cache-Control: public, max-age=31536000, immutable`) and are content-hashed by Next.js. No action needed beyond normal builds.
+- CDN alignment: ensure Bunny respects origin cache headers. If Bunny overrides them, set an origin shield rule or disable custom TTLs for HTML/API; keep long TTL for hashed assets only.
+- On deploy: trigger a Bunny purge for the site (or at least HTML routes) so edge nodes drop any stale cached HTML/API. Hashed assets usually do not need purging.
+- Post-deploy mobile check: load the site, then hard-refresh/close-reopen to confirm fresh content; for stubborn mobile caches, clear site data in browser settings and retry.

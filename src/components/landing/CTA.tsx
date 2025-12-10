@@ -56,7 +56,7 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
   };
 
   return (
-    <section id="cta" className="py-20 pb-32 relative">
+    <section id="cta" className="py-12 md:py-20 pb-20 md:pb-32 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -77,7 +77,7 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
           <RichText
             as="h2"
             text={title}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight"
+            className="text-2xl md:text-5xl font-bold text-foreground mb-6 leading-tight"
           />
           <RichText
             as="p"

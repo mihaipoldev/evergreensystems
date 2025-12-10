@@ -348,7 +348,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           <RichText
             as="h1"
             text={title}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-5xl uppercase font-bold text-foreground leading-tight mb-4"
+            className="text-2xl md:text-5xl uppercase font-bold text-foreground leading-tight mb-4"
           />
         </motion.div>
 

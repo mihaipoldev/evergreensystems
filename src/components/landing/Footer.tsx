@@ -27,7 +27,7 @@ export const Footer = ({ section }: FooterProps) => {
       id={footerId}
       className="relative text-foreground border-t border-border"
     >
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
+      <div className="relative mx-auto max-w-6xl px-4 py-12 mdpy-20 sm:px-6 lg:px-8">
         {/* Main content */}
         <div className="flex flex-col items-center space-y-8 text-center mb-12">
           <motion.div

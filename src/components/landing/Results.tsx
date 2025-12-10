@@ -45,7 +45,7 @@ export const Results = memo(({ section }: ResultsProps) => {
   const title = section?.title || 'Numbers that [[speak for themselves]]';
 
   return (
-    <section id="results" className="py-20 relative">
+    <section id="results" className="py-12 md:py-20 relative">
       <div className="absolute inset-0 bg-gradient-radial opacity-30" />
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -61,7 +61,7 @@ export const Results = memo(({ section }: ResultsProps) => {
           <RichText
             as="h2"
             text={title}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
+            className="text-2xl md:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 

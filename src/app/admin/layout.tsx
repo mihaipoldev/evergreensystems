@@ -18,13 +18,14 @@ export default function AdminLayout({
       <AdminThemeProvider>
         <NavigationLoadingProvider>
           <AdminTeamProvider>
-          <div className="flex h-screen overflow-hidden bg-background">
+          {/* Body scroll (single scroll), sidebar fixed on desktop; prevent horizontal scroll */}
+          <div className="relative flex min-h-screen bg-background overflow-x-hidden">
             <AdminSidebar />
-            <div className="flex flex-1 flex-col overflow-hidden md:pl-64">
-              <main className="flex flex-1 flex-col min-h-0 overflow-y-auto relative">
-                <div className="mx-auto w-full max-w-[1400px] flex flex-col">
-                  <AdminHeader />
-                  <div className="flex flex-col py-6 pb-4 md:pb-8 px-4 md:px-10 lg:px-12 space-y-4 md:space-y-6">
+            <div className="flex flex-1 flex-col md:pl-64 min-w-0">
+              <AdminHeader />
+              <main className="flex flex-1 flex-col min-w-0">
+                <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[88px]">
+                  <div className="flex flex-col py-6 pb-4 md:pb-8 px-4 md:px-10 lg:px-12 space-y-4 md:space-y-6 min-w-0">
                     {children}
                   </div>
                 </div>

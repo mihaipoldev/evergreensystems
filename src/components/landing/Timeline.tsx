@@ -41,7 +41,7 @@ const titleText = 'Your path to [[automation success]]';
 
 export const Timeline = () => {
   return (
-    <section id="about" className="py-20 relative overflow-hidden">
+    <section id="about" className="py-12 md:py-20 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
       
@@ -58,7 +58,7 @@ export const Timeline = () => {
           <RichText
             as="h2"
             text={titleText}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
+            className="text-2xl sm:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 

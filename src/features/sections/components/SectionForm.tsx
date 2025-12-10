@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -47,6 +48,9 @@ import type { MediaWithSection } from "@/features/media/types";
 import type { Media } from "@/features/media/types";
 import type { CTAButtonWithSection } from "@/features/cta/types";
 import type { CTAButton } from "@/features/cta/types";
+
+// Lazy load lightweight code editor for JSON content (no SSR)
+const CodeEditor = dynamic(() => import("@uiw/react-textarea-code-editor"), { ssr: false });
 
 const formSchema = z.object({
   type: z.string().min(1, "Type is required"),
@@ -1167,12 +1171,18 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
               <FormItem>
                 <FormLabel>Content (JSON)</FormLabel>
                 <FormControl>
-                  <TextareaShadow
-                    placeholder='Enter JSON content, e.g., {"key": "value"}'
-                    className="font-mono text-sm resize-y"
-                    style={{ minHeight: '140px' }}
-                    {...field}
-                  />
+                  <div className="border border-input rounded-lg bg-input-background overflow-hidden">
+                    <CodeEditor
+                      value={field.value || ""}
+                      language="json"
+                      placeholder='Enter JSON content, e.g., {"key": "value"}'
+                      onChange={(value) => field.onChange(value)}
+                      padding={12}
+                      className="font-mono text-sm"
+                      style={{ minHeight: "160px", borderRadius: 0 }}
+                      data-color-mode="light"
+                    />
+                  </div>
                 </FormControl>
                 <FormDescription>
                   Optional JSON content for the section. Must be valid JSON format.

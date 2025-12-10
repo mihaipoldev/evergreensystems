@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { CTAButton } from "../types";
+type SectionOption = { id: string; label: string };
 
 const formSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -33,6 +34,7 @@ const formSchema = z.object({
   style: z.string().optional(),
   icon: z.string().optional(),
   status: z.enum(["active", "deactivated"]),
+  section_id: z.string().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,8 +59,45 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
       style: initialData?.style || "",
       icon: initialData?.icon || "",
       status: initialData?.status || "active",
+      section_id: (initialData as any)?.section_id || null,
     },
   });
+
+  const [sectionOptions, setSectionOptions] = useState<SectionOption[]>([]);
+  const [isLoadingSections, setIsLoadingSections] = useState(false);
+
+  // Load sections for selection
+  useEffect(() => {
+    const loadSections = async () => {
+      try {
+        setIsLoadingSections(true);
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        const response = await fetch("/api/admin/sections/select", {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const options: SectionOption[] = (data || []).map((section: any) => ({
+            id: section.id,
+            label: section.admin_title || section.title || section.type || "Untitled section",
+          }));
+          setSectionOptions(options);
+        }
+      } catch (error) {
+        console.error("Error loading sections for CTA form:", error);
+      } finally {
+        setIsLoadingSections(false);
+      }
+    };
+
+    loadSections();
+  }, []);
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -95,6 +134,21 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
       }
 
       const createdCTA = await response.json();
+
+      // Link to section (single) if provided
+      try {
+        const sectionId = values.section_id || null;
+        await fetch(`/api/admin/cta-buttons/${createdCTA.id || initialData?.id}/section`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({ section_id: sectionId }),
+        });
+      } catch (err) {
+        console.warn("CTA section link update failed:", err);
+      }
       toast.success(`CTA button ${isEdit ? "updated" : "created"} successfully`);
       
       if (onSuccess) {
@@ -190,29 +244,66 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Status <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Status <span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <SelectTrigger className="bg-input-background">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-input-background">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="deactivated">Deactivated</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="deactivated">Deactivated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Link to Section (single select) */}
+              <FormField
+                control={form.control}
+                name="section_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Section</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+                        value={field.value ?? "none"}
+                        disabled={isLoadingSections}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-input-background">
+                            <SelectValue placeholder="Select a section to link" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {sectionOptions.map((section) => (
+                            <SelectItem key={section.id} value={section.id}>
+                              {section.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
           <div className="flex items-center justify-end gap-4 mt-6">
             {onCancel ? (

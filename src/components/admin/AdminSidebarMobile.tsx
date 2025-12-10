@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartLine,
@@ -15,6 +15,10 @@ import {
   faLeaf,
   faFile,
   faMousePointer,
+  faHome,
+  faEllipsisVertical,
+  faUser,
+  faSignOutAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   Sheet,
@@ -26,18 +30,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { createClient } from "@/lib/supabase/client";
+import { CircleButton } from "@/components/admin/CircleButton";
 
 const navigationItems = [
   {
-    title: "Dashboard",
-    href: "/admin",
-    icon: faChartLine,
-  },
-  {
     title: "Analytics",
-    href: "/admin/analytics",
+    href: "/admin",
     icon: faChartLine,
   },
   {
@@ -76,11 +87,6 @@ const navigationItems = [
     icon: faImages,
   },
   {
-    title: "Site Preferences",
-    href: "/admin/site-preferences",
-    icon: faCog,
-  },
-  {
     title: "Settings",
     href: "/admin/settings",
     icon: faGear,
@@ -89,8 +95,50 @@ const navigationItems = [
 
 export function AdminSidebarMobile() {
   const pathname = usePathname();
+  const router = useRouter();
   const { startNavigation, pendingPath } = useNavigationLoading();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<{
+    email: string | null;
+    name: string | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      setUser({
+        email: authUser?.email || null,
+        name:
+          authUser?.user_metadata?.full_name ||
+          authUser?.email?.split("@")[0] ||
+          null,
+      });
+      setLoading(false);
+    };
+
+    getUser();
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  const getUserInitials = () => {
+    if (!user?.name && !user?.email) return "U";
+    const name = user.name || user.email || "";
+    const parts = name.split(" ");
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0]?.toUpperCase() || "U";
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -100,57 +148,141 @@ export function AdminSidebarMobile() {
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0">
-        <SheetHeader className="px-6 py-6">
-          <div className="flex items-center gap-3">
-            <FontAwesomeIcon
-              icon={faLeaf}
-              className="h-6 w-6 text-primary"
-            />
-            <div className="flex flex-col">
-              <SheetTitle className="text-base font-bold leading-tight">
-                EVERGREEN SYSTEMS
-              </SheetTitle>
-              <p className="text-xs text-muted-foreground leading-tight">
-                Admin Panel
-              </p>
-            </div>
-          </div>
-        </SheetHeader>
-        <nav className="p-4 space-y-1">
-          {navigationItems.map((item) => {
-            // Prioritize pendingPath over pathname for instant feedback
-            // If there's a pending navigation, only that item should be active
-            const isActive = pendingPath 
-              ? (item.href === "/admin" 
-                  ? pendingPath === item.href 
-                  : pendingPath.startsWith(item.href + "/") || pendingPath === item.href)
-              : (item.href === "/admin" 
-                  ? pathname === item.href 
-                  : pathname.startsWith(item.href + "/") || pathname === item.href);
-            
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => {
-                  startNavigation(item.href);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-                  "active:scale-95 active:bg-sidebar-accent/80",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <FontAwesomeIcon icon={item.icon} className="h-4 w-4" />
-                <span>{item.title}</span>
+      <SheetContent
+        side="left"
+        className="w-64 p-0 border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm"
+      >
+        <div className="flex flex-col h-full">
+          <style jsx global>{`
+            [data-radix-dialog-close] {
+              display: none !important;
+            }
+          `}</style>
+          <SheetHeader className="px-6 py-5 border-b border-border/50 bg-sidebar/95 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col flex-1 min-w-0">
+                <SheetTitle className="text-lg font-bold leading-tight text-sidebar-foreground tracking-tight">
+                  Evergreen Sys.
+                </SheetTitle>
+                <p className="text-xs text-muted-foreground leading-tight mt-0.5 font-medium">
+                  Admin Panel
+                </p>
+              </div>
+              <Link href="/" onClick={() => setOpen(false)}>
+                <CircleButton
+                  size="md"
+                  variant="ghost"
+                  className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                >
+                  <FontAwesomeIcon icon={faHome} className="h-4 w-4" />
+                </CircleButton>
               </Link>
-            );
-          })}
-        </nav>
+            </div>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <nav className="px-3 py-4 space-y-0.5">
+              {navigationItems.map((item) => {
+                const isActive = pendingPath
+                  ? item.href === "/admin"
+                    ? pendingPath === item.href ||
+                      pendingPath.startsWith("/admin/analytics")
+                    : pendingPath.startsWith(item.href + "/") ||
+                      pendingPath === item.href
+                  : item.href === "/admin"
+                  ? pathname === item.href ||
+                    pathname.startsWith("/admin/analytics")
+                  : pathname.startsWith(item.href + "/") ||
+                    pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => {
+                      startNavigation(item.href);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "relative overflow-hidden",
+                      "active:scale-[0.98]",
+                      isActive
+                        ? "bg-primary/10 text-sidebar-foreground shadow-sm"
+                        : "text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-primary/10"
+                    )}
+                  >
+                    <FontAwesomeIcon
+                      icon={item.icon}
+                      className={cn(
+                        "h-4 w-4 transition-colors shrink-0",
+                        isActive
+                          ? "text-primary"
+                          : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
+                      )}
+                    />
+                    <span className="relative">{item.title}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </ScrollArea>
+
+          {!loading && user && (
+            <div className="mt-auto p-3 border-t border-border/50 bg-sidebar/95 backdrop-blur-sm">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-sidebar-accent/60 transition-all duration-200 group">
+                    <Avatar className="h-9 w-9 rounded-lg ring-2 ring-border/50 group-hover:ring-primary/30 transition-all">
+                      <AvatarImage
+                        src=""
+                        alt={user.name || user.email || "User"}
+                      />
+                      <AvatarFallback className="text-xs rounded-lg bg-primary/10 text-primary font-semibold">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-sidebar-foreground truncate">
+                        {user.name || "User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {user.email}
+                      </p>
+                    </div>
+                    <FontAwesomeIcon
+                      icon={faEllipsisVertical}
+                      className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-sidebar-foreground transition-colors"
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <FontAwesomeIcon icon={faUser} className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <FontAwesomeIcon icon={faCog} className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-destructive"
+                  >
+                    <FontAwesomeIcon
+                      icon={faSignOutAlt}
+                      className="mr-2 h-4 w-4"
+                    />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );

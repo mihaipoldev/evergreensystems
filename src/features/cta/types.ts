@@ -23,3 +23,12 @@ export type CTAButtonWithSection = CTAButton & {
     created_at: string;
   };
 };
+
+export type CTAButtonWithSections = CTAButton & {
+  sections: Array<{
+    id: string;
+    title: string | null;
+    admin_title: string | null;
+    page_section_id?: string;
+  }>;
+};

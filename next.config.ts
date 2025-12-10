@@ -105,6 +105,26 @@ const nextConfig: NextConfig = {
     // Production: Normal caching for static assets
     return [
       ...baseHeaders,
+    {
+      // HTML/SSR routes: always revalidate to avoid stale pages
+      source: '/((?!_next/static|_next/image|.*\\.(?:js|css|jpg|jpeg|png|gif|ico|svg|webp|avif|woff|woff2|ttf|eot)).*)',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'no-store, must-revalidate, max-age=0',
+        },
+      ],
+    },
+    {
+      // API routes: no caching to ensure fresh data
+      source: '/api/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'no-store, must-revalidate, max-age=0',
+        },
+      ],
+    },
       {
         // Cache static assets (images, fonts)
         source: '/:path*\\.(jpg|jpeg|png|gif|ico|svg|webp|avif|woff|woff2|ttf|eot)',
@@ -115,6 +135,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+    {
+      // Cache built JS chunks served from _next/static
+      source: '/_next/static/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
       {
         // Cache CSS in production
         source: '/:path*\\.css',

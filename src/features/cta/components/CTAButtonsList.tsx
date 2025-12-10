@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CardList } from "@/components/admin/CardList";
 import { ActionMenu } from "@/components/admin/ActionMenu";
@@ -11,14 +11,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faLink, faToggleOn, faToggleOff } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import type { CTAButton } from "../types";
+import type { CTAButton, CTAButtonWithSections } from "../types";
 
 type CTAButtonsListProps = {
-  initialCTAButtons: CTAButton[];
+  initialCTAButtons: CTAButtonWithSections[];
 };
 
 export function CTAButtonsList({ initialCTAButtons }: CTAButtonsListProps) {
-  const [ctaButtons, setCTAButtons] = useState<CTAButton[]>(initialCTAButtons);
+  const [ctaButtons, setCTAButtons] = useState<CTAButtonWithSections[]>(initialCTAButtons);
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleDelete = async (id: string) => {
@@ -85,15 +85,24 @@ export function CTAButtonsList({ initialCTAButtons }: CTAButtonsListProps) {
     }
   };
 
-  const filteredCTAButtons = ctaButtons.filter((button) => {
+  const filteredCTAButtons = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    return (
-      button.label.toLowerCase().includes(query) ||
-      button.url.toLowerCase().includes(query) ||
-      button.style?.toLowerCase().includes(query) ||
-      button.icon?.toLowerCase().includes(query)
-    );
-  });
+    return ctaButtons.filter((button) => {
+      const matchesText =
+        button.label.toLowerCase().includes(query) ||
+        button.url.toLowerCase().includes(query) ||
+        button.style?.toLowerCase().includes(query) ||
+        button.icon?.toLowerCase().includes(query);
+
+      const matchesSection =
+        button.sections &&
+        button.sections.some((section) =>
+          (section.admin_title || section.title || "").toLowerCase().includes(query)
+        );
+
+      return matchesText || matchesSection;
+    });
+  }, [ctaButtons, searchQuery]);
 
   return (
     <div className="w-full">
@@ -178,6 +187,22 @@ export function CTAButtonsList({ initialCTAButtons }: CTAButtonsListProps) {
                   {button.style && (
                     <div className="text-xs text-muted-foreground">
                       Style: {button.style}
+                    </div>
+                  )}
+                  {button.sections && button.sections.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {button.sections.map((section) => (
+                        <Link
+                          key={section.id}
+                          href={`/admin/sections/${section.id}/edit`}
+                          className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/80 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="font-medium truncate max-w-[200px]">
+                            {section.admin_title || section.title || "Untitled section"}
+                          </span>
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
