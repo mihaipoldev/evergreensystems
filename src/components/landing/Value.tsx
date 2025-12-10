@@ -185,18 +185,18 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
             />
           </motion.div>
           {subtitle && subtitle.trim() && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <RichText
-                as="p"
-                text={subtitle}
-                className="text-muted-foreground text-lg mt-6 leading-relaxed max-w-[800px] mx-auto"
-              />
-            </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            <RichText
+              as="p"
+              text={subtitle}
+              className="text-muted-foreground text-lg mt-6 leading-relaxed max-w-[800px] mx-auto"
+            />
+          </motion.div>
           )}
         </motion.div>
 

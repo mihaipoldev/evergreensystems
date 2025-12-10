@@ -344,7 +344,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           >
             {/* Gradient Border Container */}
             <div
-              className="rounded-full p-[3px] sm:p-[2px]"
+              className="rounded-full p-[1px] sm:p-[2px]"
               style={{
                 backgroundImage: 'linear-gradient(84deg, #446F94, #D4932C 92%)',
               }}
@@ -559,7 +559,27 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                   />
                 </div>
               ) : videoId ? (
-              <div className="wistia_responsive_padding relative w-full overflow-hidden rounded-lg" style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+              <div className="wistia_responsive_padding relative w-full overflow-hidden rounded-lg" style={{ padding: '56.25% 0 0 0', position: 'relative', minHeight: '200px' }}>
+                {/* Fallback thumbnail - shows before Wistia loads, especially important on mobile */}
+                {!shouldLoadWistia && (
+                  <div 
+                    className="absolute inset-0 bg-muted flex items-center justify-center"
+                    style={{
+                      backgroundImage: `url(https://embed.wistia.com/deliveries/${videoId}.jpg)`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    {/* Play button overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-foreground ml-1" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="wistia_responsive_wrapper" style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}>
                   <div 
                     ref={wistiaContainerRef}
@@ -568,6 +588,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                       height: '100%',
                       position: 'relative',
                       width: '100%',
+                      minHeight: '200px',
                       '--wistia-player-color': '#0a7afa'
                     } as React.CSSProperties}
                   />

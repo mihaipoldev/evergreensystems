@@ -253,8 +253,11 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     };
   }, [navLinks]);
 
+  // Make navbar opaque when scrolled OR when mobile menu is open
+  const shouldBeOpaque = scrolled || (isMobile && isOpen);
+  
   const navClassName = `fixed top-0 left-0 right-0 z-50 transition-all duration-150 ${
-    scrolled
+    shouldBeOpaque
       ? 'bg-[#fefefecc] backdrop-blur-[5px] dark:bg-[#0a0a0acc] dark:backdrop-blur-[5px]'
       : 'bg-transparent backdrop-blur-0 dark:bg-transparent dark:backdrop-blur-0'
   }`;

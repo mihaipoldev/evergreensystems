@@ -316,7 +316,7 @@ export default async function LandingPage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(testimonialsSchema) }}
         />
       )}
-      <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden w-full">
+      <div className="relative bg-background text-foreground overflow-x-hidden overflow-y-visible w-full">
         {/* Dot pattern at the top - fading at bottom */}
         <div className="absolute top-0 left-0 right-0 h-[1000px] pointer-events-none z-0">
           {/* Subtle dot pattern with fade at bottom */}
@@ -330,7 +330,7 @@ export default async function LandingPage() {
         </div>
         
         {/* Unified background effects at the bottom - overlapping CTA and Footer */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1300px] pointer-events-none z-0">
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-0" style={{ height: '1300px' }}>
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/95 to-background" />
           
@@ -360,7 +360,7 @@ export default async function LandingPage() {
           </div>
         </div>
         
-        <div className="relative z-10">
+        <div className="relative z-10 w-full">
           {homePage && (
           <ErrorBoundary>
             <AnalyticsTracker 
