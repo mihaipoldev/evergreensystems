@@ -113,6 +113,7 @@ export function MediaRenderer({
     return (
       <video
         src={media.url}
+        poster={media.thumbnail_url || undefined}
         className={cn("w-full h-full object-cover", className)}
         autoPlay={autoPlay}
         muted={muted}
@@ -151,6 +152,7 @@ export function MediaRenderer({
       return (
         <video
           src={media.url}
+          poster={media.thumbnail_url || undefined}
           className={cn("w-full h-full object-cover", className)}
           autoPlay={autoPlay}
           muted={muted}

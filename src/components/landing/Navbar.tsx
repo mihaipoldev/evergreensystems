@@ -253,11 +253,13 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     };
   }, [navLinks]);
 
-  // Make navbar opaque when scrolled OR when mobile menu is open
-  const shouldBeOpaque = scrolled || (isMobile && isOpen);
+  // Determine if navbar should have blurred background
+  // - When scrolled: always blurred
+  // - When menu is open on mobile at top: blurred (even if not scrolled)
+  const shouldBlur = scrolled || (isMobile && isOpen && !scrolled);
   
   const navClassName = `fixed top-0 left-0 right-0 z-50 transition-all duration-150 ${
-    shouldBeOpaque
+    shouldBlur
       ? 'bg-[#fefefecc] backdrop-blur-[5px] dark:bg-[#0a0a0acc] dark:backdrop-blur-[5px]'
       : 'bg-transparent backdrop-blur-0 dark:bg-transparent dark:backdrop-blur-0'
   }`;
