@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 /**
  * Normalize avatar URL to ensure it has a protocol
@@ -172,6 +173,9 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Invalidate cache for testimonials
+    revalidateTag("testimonials", "max");
+
     // Normalize avatar URL before returning
     const result = data ? normalizeTestimonial(data) : data;
     return NextResponse.json(result, { status: 200 });
@@ -253,6 +257,9 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for testimonials
+    revalidateTag("testimonials", "max");
 
     return NextResponse.json({ message: "Testimonial deleted successfully" }, { status: 200 });
   } catch (error) {

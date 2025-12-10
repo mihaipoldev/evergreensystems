@@ -109,7 +109,7 @@ export function AdminSidebarMobile() {
             />
             <div className="flex flex-col">
               <SheetTitle className="text-base font-bold leading-tight">
-                EVERGREEN LABS
+                EVERGREEN SYSTEMS
               </SheetTitle>
               <p className="text-xs text-muted-foreground leading-tight">
                 Admin Panel

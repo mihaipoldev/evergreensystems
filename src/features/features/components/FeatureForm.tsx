@@ -9,11 +9,19 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,6 +34,7 @@ const formSchema = z.object({
   subtitle: z.string().optional(),
   description: z.string().optional(),
   icon: z.string().optional(),
+  status: z.enum(["active", "inactive"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,6 +55,7 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
       subtitle: initialData?.subtitle || "",
       description: initialData?.description || "",
       icon: initialData?.icon || "",
+      status: initialData?.status || "active",
     },
   });
 
@@ -138,7 +148,11 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
               <FormItem>
                 <FormLabel>Subtitle</FormLabel>
                 <FormControl>
-                  <InputShadow placeholder="Enter feature subtitle" {...field} />
+                  <TextareaShadow 
+                    placeholder="Enter feature subtitle" 
+                    style={{ minHeight: '120px' }}
+                    {...field} 
+                  />
                 </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,6 +172,33 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
                       {...field}
                     />
                   </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        className="w-full bg-card text-foreground border border-input !shadow-[0px_2px_2px_0px_rgba(16,17,26,0.05)] hover:!shadow-[0px_4px_4px_0px_rgba(16,17,26,0.05)] dark:!shadow-[0px_1px_1px_0px_rgba(255,255,255,0.05)] dark:hover:!shadow-[0px_2px_2px_0px_rgba(255,255,255,0.05)]"
+                      >
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    Control whether this feature is visible publicly.
+                  </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -157,19 +157,20 @@ export async function GET(request: Request) {
 
     const ctaCounts = new Map<
       string,
-      { clicks: number; location: string; label: string }
+      { clicks: number; location: string; label: string; entityId: string }
     >();
 
     ctaClicks.forEach((e) => {
       const metadata = e.metadata as any;
       const location = metadata?.location || "unknown";
-      const key = `${e.entity_id}-${location}`;
+      const key = `${e.entity_id}::${location}`; // Use :: as separator to avoid conflicts with UUIDs
 
       if (!ctaCounts.has(key)) {
         ctaCounts.set(key, {
           clicks: 0,
           location,
           label: ctaButtonMap.get(e.entity_id) || e.entity_id,
+          entityId: e.entity_id,
         });
       }
 
@@ -180,12 +181,9 @@ export async function GET(request: Request) {
     const topCTAs = Array.from(ctaCounts.values())
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 10)
-      .map((entry, index) => {
-        const ctaId = Array.from(ctaCounts.entries()).find(
-          ([_, v]) => v === entry
-        )?.[0]?.split("-")[0] || "";
+      .map((entry) => {
         return {
-          id: ctaId,
+          id: entry.entityId,
           label: entry.label,
           clicks: entry.clicks,
           location: entry.location,

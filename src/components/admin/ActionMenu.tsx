@@ -2,7 +2,7 @@
 
 import { MoreHorizontal, Pencil, Trash2, ExternalLink, BarChart3 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,12 @@ type ActionMenuProps = {
   openPageHref?: string;
   statsHref?: string;
   deleteLabel?: string;
+  customActions?: Array<{
+    label: string;
+    icon?: ReactNode;
+    onClick: (e?: React.MouseEvent) => void;
+    className?: string;
+  }>;
 };
 
 export function ActionMenu({
@@ -40,6 +46,7 @@ export function ActionMenu({
   openPageHref,
   statsHref,
   deleteLabel = "this item",
+  customActions,
 }: ActionMenuProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -110,6 +117,19 @@ export function ActionMenu({
                 </Link>
               </DropdownMenuItem>
             ) : null}
+            {customActions?.map((action) => (
+              <DropdownMenuItem
+                key={action.label}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  action.onClick(e);
+                }}
+                className={`cursor-pointer ${action.className ?? ""}`}
+              >
+                {action.icon ? <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">{action.icon}</span> : null}
+                {action.label}
+              </DropdownMenuItem>
+            ))}
             {openPageHref && (
               <>
                 <DropdownMenuItem onClick={handleOpenPage} className="cursor-pointer">

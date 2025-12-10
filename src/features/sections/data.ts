@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Section, SectionWithPages } from "./types";
 import type { Database } from "@/lib/supabase/types";
 
@@ -7,9 +7,10 @@ type Page = Database["public"]["Tables"]["pages"]["Row"];
 /**
  * Get all sections with their associated pages via page_sections junction table
  * Ordered by: home page sections (by position) first, then non-home sections (alphabetically)
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getAllSections(): Promise<SectionWithPages[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   
   // Get the home page
   const { data: homePage, error: homePageError } = await ((supabase
@@ -25,7 +26,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
   // Get all sections
   const { data: sections, error: sectionsError } = await supabase
     .from("sections")
-    .select("*") as { data: Database["public"]["Tables"]["sections"]["Row"][] | null; error: any };
+    .select("id, type, title, admin_title, subtitle, content, media_url, created_at, updated_at") as { data: Database["public"]["Tables"]["sections"]["Row"][] | null; error: any };
 
   if (sectionsError) {
     throw sectionsError;
@@ -132,12 +133,13 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
 
 /**
  * Get a single section by id with media
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getSectionById(id: string): Promise<Section | null> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await ((supabase
     .from("sections") as any)
-    .select("*")
+    .select("id, type, title, admin_title, subtitle, content, media_url, created_at, updated_at")
     .eq("id", id)
     .single() as Promise<{ data: Database["public"]["Tables"]["sections"]["Row"] | null; error: any }>);
 
@@ -222,9 +224,10 @@ export async function getSectionById(id: string): Promise<Section | null> {
 
 /**
  * Get all pages for dropdown selection
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getAllPages(): Promise<Page[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("pages")
     .select("*")

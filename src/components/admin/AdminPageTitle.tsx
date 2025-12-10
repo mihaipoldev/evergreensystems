@@ -1,12 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import type { ReactNode } from "react";
 
 type AdminPageTitleProps = {
   title: string;
   entityName?: string;
   description?: string;
   entityType?: "album" | "event" | "update";
-  rightSideContent?: React.ReactNode;
+  rightSideContent?: ReactNode;
+  icon?: IconDefinition | ReactNode;
 };
 
 const getEntityTypeBadge = (type?: "album" | "event" | "update") => {
@@ -32,6 +36,7 @@ export function AdminPageTitle({
   description,
   entityType,
   rightSideContent,
+  icon,
 }: AdminPageTitleProps) {
   if (entityName) {
     return (
@@ -50,9 +55,20 @@ export function AdminPageTitle({
   return (
     <div>
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-baseline">
-          <h1 className="text-4xl font-bold text-foreground">{title}</h1>
-          {getEntityTypeBadge(entityType)}
+        <div className="flex items-center gap-3">
+          {icon && (
+            <div className="text-primary">
+              {typeof icon === "object" && "iconName" in (icon as any) ? (
+                <FontAwesomeIcon icon={icon as IconDefinition} className="h-8 w-8" />
+              ) : (
+                <>{icon}</>
+              )}
+            </div>
+          )}
+          <div className="flex items-baseline">
+            <h1 className="text-4xl font-bold text-foreground">{title}</h1>
+            {getEntityTypeBadge(entityType)}
+          </div>
         </div>
         {rightSideContent && <div className="flex items-center">{rightSideContent}</div>}
       </div>

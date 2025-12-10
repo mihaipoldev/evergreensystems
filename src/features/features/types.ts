@@ -5,6 +5,7 @@ export type OfferFeature = {
   description: string | null;
   icon: string | null;
   position: number;
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
 };

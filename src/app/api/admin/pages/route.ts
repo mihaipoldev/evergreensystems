@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -10,16 +11,32 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search");
+
+    let query = supabase
       .from("pages")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("id, slug, title, description, created_at, updated_at");
+
+    // Server-side search filtering
+    if (search && search.trim() !== "") {
+      const searchPattern = `%${search.trim()}%`;
+      query = query.or(`title.ilike.${searchPattern},slug.ilike.${searchPattern},description.ilike.${searchPattern}`);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // No cache for admin routes - always fresh data
+    return NextResponse.json(data, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },
@@ -59,6 +76,12 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Invalidate cache for pages
+    revalidateTag("pages", "max");
+    if (data?.slug) {
+      revalidateTag(`page-${data.slug}`, "max");
     }
 
     return NextResponse.json(data, { status: 201 });

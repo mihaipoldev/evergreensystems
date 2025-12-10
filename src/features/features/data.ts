@@ -1,31 +1,44 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { OfferFeature } from "./types";
 import type { Database } from "@/lib/supabase/types";
+import { unstable_cache } from "next/cache";
 
 type Section = Database["public"]["Tables"]["sections"]["Row"];
 
 /**
  * Get all offer features, ordered by position
+ * Uses service role client to bypass RLS for admin operations
+ * Cached for 5 minutes to improve performance
  */
 export async function getAllOfferFeatures(): Promise<OfferFeature[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("offer_features")
-    .select("*")
-    .order("position", { ascending: true });
+  return unstable_cache(
+    async () => {
+      const supabase = createServiceRoleClient();
+      const { data, error } = await supabase
+        .from("offer_features")
+        .select("*")
+        .order("position", { ascending: true });
 
-  if (error) {
-    throw error;
-  }
+      if (error) {
+        throw error;
+      }
 
-  return data || [];
+      return data || [];
+    },
+    ['all-offer-features'],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['offer-features'],
+    }
+  )();
 }
 
 /**
  * Get a single offer feature by id
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getOfferFeatureById(id: string): Promise<OfferFeature | null> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("offer_features")
     .select("*")
@@ -45,9 +58,10 @@ export async function getOfferFeatureById(id: string): Promise<OfferFeature | nu
 
 /**
  * Get all sections for dropdown selection
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getAllSections(): Promise<Section[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("sections")
     .select("*")

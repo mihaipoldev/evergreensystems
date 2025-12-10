@@ -1,25 +1,16 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  AdminTable,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/admin/AdminTable";
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { SortableCardList } from "@/components/admin/SortableCardList";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faBullseye } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faBullseye, faToggleOn, faToggleOff } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
-import { cn } from "@/lib/utils";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import type { OfferFeature } from "../types";
 
@@ -30,9 +21,7 @@ type FeaturesListProps = {
 export function FeaturesList({ initialFeatures }: FeaturesListProps) {
   const [features, setFeatures] = useState<OfferFeature[]>(initialFeatures);
   const [searchQuery, setSearchQuery] = useState("");
-  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
-  const router = useRouter();
-  const { startNavigation } = useNavigationLoading();
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   const handleDelete = async (id: string) => {
     try {
@@ -61,6 +50,86 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
     }
   };
 
+  const handleToggleStatus = async (item: OfferFeature) => {
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const nextStatus = item.status === "active" ? "inactive" : "active";
+
+      const response = await fetch(`/api/admin/offer-features/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update status");
+      }
+
+      const updatedFeature = await response.json();
+
+      // Update state with the response data to ensure position is preserved
+      setFeatures((items) =>
+        items.map((feature) =>
+          feature.id === item.id ? { ...feature, ...updatedFeature } : feature
+        )
+      );
+      toast.success(`Feature ${nextStatus === "active" ? "activated" : "deactivated"}`);
+    } catch (error: any) {
+      console.error("Error toggling feature status:", error);
+      toast.error(error.message || "Failed to update status");
+    }
+  };
+
+  const handleReorder = async (orderedItems: OfferFeature[]) => {
+    if (searchQuery.trim()) {
+      toast.info("Clear the search to reorder features.");
+      return;
+    }
+
+    setIsSavingOrder(true);
+    const previousItems = features;
+    const newOrder = orderedItems.map((item, index) => ({ ...item, position: index }));
+
+    setFeatures(newOrder);
+
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch("/api/admin/offer-features/reorder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          items: newOrder.map(({ id, position }) => ({ id, position })),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reorder features");
+      }
+
+      toast.success("Feature order updated");
+    } catch (error: any) {
+      console.error("Error reordering features:", error);
+      toast.error(error.message || "Failed to reorder features");
+      setFeatures(previousItems);
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
   const filteredFeatures = features.filter((feature) => {
     const query = searchQuery.toLowerCase();
     return (
@@ -69,18 +138,6 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
       feature.description?.toLowerCase().includes(query)
     );
   });
-
-  const handleRowClick = (featureId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
-    // Don't navigate if clicking on action menu or its children
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-action-menu]')) {
-      return;
-    }
-    setClickedRowId(featureId);
-    const path = `/admin/features/${featureId}/edit`;
-    startNavigation(path);
-    router.push(path);
-  };
 
   return (
     <div className="w-full">
@@ -116,134 +173,82 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
           </Button>
         </AdminToolbar>
 
-        <AdminTable>
-          <TableHeader>
-            <TableRow className="bg-muted/50 border-b">
-              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
-              <TableHead className="font-bold">Title</TableHead>
-              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
             {filteredFeatures.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
                   {searchQuery
                     ? "No features found matching your search"
                     : "No features found"}
-                </TableCell>
-              </TableRow>
+          </div>
             ) : (
-              filteredFeatures.map((feature) => (
-                <Fragment key={feature.id}>
-                  {/* Mobile Layout */}
-                  <TableRow
-                    key={`${feature.id}-mobile`}
-                    className={cn(
-                      "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
-                      clickedRowId === feature.id && "bg-primary/5"
-                    )}
-                    onClick={(e) => handleRowClick(feature.id, e)}
-                  >
-                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
-                      <div className={cn(
-                        "flex items-start gap-3 md:gap-4 transition-transform duration-150",
-                        clickedRowId === feature.id && "scale-[0.99]"
-                      )}>
-                        <div className={cn(
-                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
-                          clickedRowId === feature.id ? "bg-primary/10" : "bg-muted"
-                        )}>
+          <div className="space-y-2">
+            <SortableCardList
+              items={filteredFeatures}
+              onReorder={handleReorder}
+              renderContent={(item) => (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start gap-3">
+                    <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
                           <FontAwesomeIconFromClass
-                            iconClass={feature.icon}
+                        iconClass={item.icon}
                             fallbackIcon={faBullseye}
-                            className={cn(
-                              "h-6 w-6 transition-colors duration-150",
-                              clickedRowId === feature.id ? "text-primary/70" : "text-muted-foreground"
-                            )}
+                        className="h-6 w-6 !text-primary"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-base mb-1.5 break-words">
-                            {feature.title}
-                          </div>
-                          {feature.subtitle && (
-                            <div className="text-sm text-muted-foreground mb-1">
-                              {feature.subtitle}
-                            </div>
-                          )}
-                          {feature.description && (
-                            <div className="text-xs text-muted-foreground line-clamp-2">
-                              {feature.description}
-                            </div>
-                          )}
-                        </div>
-                        <div 
-                          className="flex-shrink-0 ml-2" 
-                          data-action-menu
-                          onClick={(e) => e.stopPropagation()}
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <Link
+                          href={`/admin/features/${item.id}/edit`}
+                          className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
                         >
-                          <ActionMenu
-                            itemId={feature.id}
-                            editHref={`/admin/features/${feature.id}/edit`}
-                            onDelete={handleDelete}
-                            deleteLabel={`feature "${feature.title}"`}
-                          />
-                        </div>
+                          {item.title}
+                        </Link>
+                        <Badge
+                          variant={item.status === "active" ? "default" : "outline"}
+                          className="text-xs flex-shrink-0"
+                        >
+                          {item.status === "active" ? "Active" : "Inactive"}
+                        </Badge>
                       </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Desktop Layout */}
-                  <TableRow
-                    key={`${feature.id}-desktop`}
-                    className={cn(
-                      "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
-                      clickedRowId === feature.id && "bg-primary/5"
-                    )}
-                    onClick={(e) => handleRowClick(feature.id, e)}
-                  >
-                    <TableCell className="pl-4 w-20">
-                      <div className={cn(
-                        "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
-                        clickedRowId === feature.id ? "bg-primary/10 scale-[0.99]" : "bg-muted"
-                      )}>
-                        <FontAwesomeIconFromClass
-                          iconClass={feature.icon}
-                          fallbackIcon={faBullseye}
-                          className={cn(
-                            "h-5 w-5 transition-colors duration-150",
-                            clickedRowId === feature.id ? "text-primary/70" : "text-muted-foreground"
-                          )}
-                        />
+                      {item.subtitle && (
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {item.subtitle}
+                        </p>
+                      )}
+                      {item.description && (
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 md:line-clamp-3">
+                          {item.description}
+                        </p>
+                        )}
                       </div>
-                    </TableCell>
-                    <TableCell className="font-bold">
-                      <span className="truncate block" title={feature.title}>
-                        {feature.title}
-                      </span>
-                    </TableCell>
-                    <TableCell 
-                      className="text-right pr-4 w-24" 
-                      data-action-menu 
-                      style={{ textAlign: "right" }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="inline-flex ml-auto">
+                  </div>
+                </div>
+              )}
+              renderActions={(item) => (
                         <ActionMenu
-                          itemId={feature.id}
-                          editHref={`/admin/features/${feature.id}/edit`}
+                  itemId={item.id}
+                  editHref={`/admin/features/${item.id}/edit`}
                           onDelete={handleDelete}
-                          deleteLabel={`feature "${feature.title}"`}
+                  deleteLabel={`feature "${item.title}"`}
+                  customActions={[
+                    {
+                      label: item.status === "active" ? "Deactivate" : "Activate",
+                      icon: (
+                        <FontAwesomeIcon
+                          icon={item.status === "active" ? faToggleOff : faToggleOn}
+                          className="h-4 w-4"
                         />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </Fragment>
-              ))
+                      ),
+                      onClick: () => handleToggleStatus(item),
+                    },
+                  ]}
+                />
+              )}
+            />
+            {isSavingOrder && (
+              <p className="text-xs text-muted-foreground px-1">Saving order...</p>
             )}
-          </TableBody>
-        </AdminTable>
+          </div>
+        )}
       </div>
     </div>
   );

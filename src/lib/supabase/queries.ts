@@ -1,26 +1,37 @@
 import { createClient } from "./server";
 import type { Database } from "./types";
 import type { CTAButtonWithSection } from "@/features/cta/types";
+import { unstable_cache } from "next/cache";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 /**
  * Get a page by its slug
  * Returns null if page is not found (instead of throwing)
+ * Cached for 5 minutes to improve performance
  */
 export async function getPageBySlug(slug: string): Promise<Database["public"]["Tables"]["pages"]["Row"] | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("pages")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
+  return unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("pages")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
 
-  if (error) {
-    throw error;
-  }
+      if (error) {
+        throw error;
+      }
 
-  return data;
+      return data;
+    },
+    [`page-by-slug-${slug}`],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['pages', `page-${slug}`],
+    }
+  )();
 }
 
 /**
@@ -90,9 +101,12 @@ export async function reorderItems(
 
 /**
  * Get all visible sections for a page (public-facing) with media
+ * Cached for 5 minutes to improve performance
  */
 export async function getVisibleSectionsByPageId(pageId: string) {
-  const supabase = await createClient();
+  return unstable_cache(
+    async () => {
+      const supabase = await createClient();
   const { data, error } = await supabase
     .from("page_sections")
     .select(`
@@ -183,52 +197,114 @@ export async function getVisibleSectionsByPageId(pageId: string) {
     }
   });
 
-  // Transform data to return sections with page_sections metadata, media, and CTA buttons
-  return data
-    .filter(ps => ps.sections !== null)
-    .map(ps => ({
-      ...(ps.sections as Database["public"]["Tables"]["sections"]["Row"]),
-      page_section_id: ps.id,
-      position: ps.position,
-      visible: ps.visible,
-      media: mediaBySectionId.get(ps.section_id) || [],
-      ctaButtons: ctaButtonsBySectionId.get(ps.section_id) || [],
-    }));
+      // Transform data to return sections with page_sections metadata, media, and CTA buttons
+      return data
+        .filter(ps => ps.sections !== null)
+        .map(ps => ({
+          ...(ps.sections as Database["public"]["Tables"]["sections"]["Row"]),
+          page_section_id: ps.id,
+          position: ps.position,
+          visible: ps.visible,
+          media: mediaBySectionId.get(ps.section_id) || [],
+          ctaButtons: ctaButtonsBySectionId.get(ps.section_id) || [],
+        }));
+    },
+    [`visible-sections-${pageId}`],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['sections', `page-sections-${pageId}`],
+    }
+  )();
 }
 
 /**
  * Get all approved testimonials (public-facing)
+ * Cached for 5 minutes to improve performance
  */
 export async function getApprovedTestimonials() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("testimonials")
-    .select("*")
-    .eq("approved", true)
-    .order("position", { ascending: true });
+  return unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("testimonials")
+        .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at")
+        .eq("approved", true)
+        .order("position", { ascending: true });
 
-  if (error) {
-    throw error;
-  }
+      if (error) {
+        throw error;
+      }
 
-  return data;
+      return data;
+    },
+    ['approved-testimonials'],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['testimonials'],
+    }
+  )();
 }
 
 /**
- * Get all FAQ items (public-facing)
+ * Get all active FAQ items (public-facing)
+ * Uses anon key with RLS - only returns active items
+ * Cached for 5 minutes to improve performance
  */
 export async function getAllFAQItems() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("faq_items")
-    .select("*")
-    .order("position", { ascending: true });
+  return unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("faq_items")
+        .select("id, question, answer, position, status, created_at, updated_at")
+        .eq("status", "active")
+        .order("position", { ascending: true });
 
-  if (error) {
-    throw error;
-  }
+      if (error) {
+        throw error;
+      }
 
-  return data;
+      return data;
+    },
+    ['all-faq-items'],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['faq-items'],
+    }
+  )();
+}
+
+/**
+ * Get all active offer features (public-facing)
+ * Uses anon key with RLS - only returns active features
+ * RLS policy automatically filters to status = 'active'
+ * Cached for 5 minutes to improve performance
+ */
+export async function getActiveOfferFeatures() {
+  return unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      // RLS policy "Public can view active offer_features" automatically filters to status = 'active'
+      // No need for explicit .eq() filter - RLS handles it
+      const { data, error } = await supabase
+        .from("offer_features")
+        .select("id, title, subtitle, description, icon, position, status, created_at, updated_at")
+        .order("position", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      // Double-check: filter out any inactive items (defensive programming)
+      // RLS should handle this, but this ensures we never return inactive items
+      return ((data || []) as any[]).filter((feature: any) => feature.status === "active");
+    },
+    ['active-offer-features'],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['offer-features'],
+    }
+  )();
 }
 
 /**

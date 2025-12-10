@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUp, Users, DollarSign, Clock, BarChart3 } from 'lucide-react';
 import { RichText } from '@/components/ui/RichText';
@@ -39,12 +40,12 @@ const metrics = [
   { icon: ArrowUp, value: '95%', label: 'Client Retention' },
 ];
 
-export const Results = ({ section }: ResultsProps) => {
+export const Results = memo(({ section }: ResultsProps) => {
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'Numbers that [[speak for themselves]]';
 
   return (
-    <section id="results" className="py-24 relative">
+    <section id="results" className="py-20 relative">
       <div className="absolute inset-0 bg-gradient-radial opacity-30" />
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -60,7 +61,7 @@ export const Results = ({ section }: ResultsProps) => {
           <RichText
             as="h2"
             text={title}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 
@@ -119,5 +120,7 @@ export const Results = ({ section }: ResultsProps) => {
       </div>
     </section>
   );
-};
+});
+
+Results.displayName = 'Results';
 

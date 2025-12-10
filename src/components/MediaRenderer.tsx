@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { Media } from "@/features/media/types";
 
@@ -13,6 +14,7 @@ type MediaRendererProps = {
   loop?: boolean;
   controls?: boolean;
   playsInline?: boolean;
+  priority?: boolean; // For above-fold images
 };
 
 export function MediaRenderer({
@@ -23,23 +25,55 @@ export function MediaRenderer({
   loop = false,
   controls = true,
   playsInline = true,
+  priority = false,
 }: MediaRendererProps) {
   const wistiaContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldLoadWistia, setShouldLoadWistia] = useState(false);
+
+  // Intersection Observer to lazy load Wistia scripts only when in viewport
+  useEffect(() => {
+    if (media.source_type !== "wistia" || !media.embed_id || !wistiaContainerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadWistia(true);
+            observer.disconnect(); // Only load once
+          }
+        });
+      },
+      {
+        rootMargin: '100px', // Start loading 100px before entering viewport
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(wistiaContainerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [media.source_type, media.embed_id]);
 
   // Wistia rendering
   if (media.source_type === "wistia" && media.embed_id) {
     return (
       <>
-        <Script
-          id={`wistia-media-${media.embed_id}`}
-          src={`https://fast.wistia.com/embed/medias/${media.embed_id}.jsonp`}
-          strategy="afterInteractive"
-        />
-        <Script
-          id="wistia-external"
-          src="https://fast.wistia.com/assets/external/E-v1.js"
-          strategy="afterInteractive"
-        />
+        {shouldLoadWistia && (
+          <>
+            <Script
+              id={`wistia-media-${media.embed_id}`}
+              src={`https://fast.wistia.com/embed/medias/${media.embed_id}.jsonp`}
+              strategy="lazyOnload"
+            />
+            <Script
+              id="wistia-external"
+              src="https://fast.wistia.com/assets/external/E-v1.js"
+              strategy="lazyOnload"
+            />
+          </>
+        )}
         <div
           ref={wistiaContainerRef}
           className={cn(`wistia_embed wistia_async_${media.embed_id}`, className)}
@@ -92,11 +126,17 @@ export function MediaRenderer({
   // Upload rendering - image
   if (media.source_type === "upload" && media.type === "image" && media.url) {
     return (
-      <img
-        src={media.url}
-        alt={media.name || undefined}
-        className={cn("w-full h-full object-cover", className)}
-      />
+      <div className={cn("relative w-full h-full", className)}>
+        <Image
+          src={media.url}
+          alt={media.name || "Media"}
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
+        />
+      </div>
     );
   }
 
@@ -123,11 +163,17 @@ export function MediaRenderer({
 
     if (isImage) {
       return (
-        <img
-          src={media.url}
-          alt={media.name || undefined}
-          className={cn("w-full h-full object-cover", className)}
-        />
+        <div className={cn("relative w-full h-full", className)}>
+          <Image
+            src={media.url}
+            alt={media.name || "Media"}
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority={priority}
+            loading={priority ? undefined : "lazy"}
+          />
+        </div>
       );
     }
 

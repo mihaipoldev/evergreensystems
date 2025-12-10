@@ -115,8 +115,8 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
     <Form {...form}>
       <div className="w-full space-y-6">
         {rightSideHeaderContent}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
-          {!onSuccess && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
+          <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold mb-1">Details</h3>
@@ -125,9 +125,8 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
                 </p>
               </div>
             </div>
-          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="label"
@@ -214,7 +213,8 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
                 </FormItem>
               )}
             />
-          <div className="flex items-center justify-end gap-4">
+          </div>
+          <div className="flex items-center justify-end gap-4 mt-6">
             {onCancel ? (
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel

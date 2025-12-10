@@ -1,15 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Media, MediaInsert, MediaUpdate } from "./types";
 import type { Database } from "@/lib/supabase/types";
 
 /**
  * Get all media items, ordered by created_at descending
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getAllMedia(): Promise<Media[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("media")
-    .select("*")
+    .select("id, type, source_type, url, embed_id, name, thumbnail_url, duration, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -21,12 +22,13 @@ export async function getAllMedia(): Promise<Media[]> {
 
 /**
  * Get a single media item by id
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getMediaById(id: string): Promise<Media | null> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("media")
-    .select("*")
+    .select("id, type, source_type, url, embed_id, name, thumbnail_url, duration, created_at, updated_at")
     .eq("id", id)
     .single();
 
@@ -43,9 +45,10 @@ export async function getMediaById(id: string): Promise<Media | null> {
 
 /**
  * Create a new media record
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function createMedia(data: MediaInsert): Promise<Media> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data: media, error } = await ((supabase
     .from("media") as any)
     .insert(data)
@@ -65,9 +68,10 @@ export async function createMedia(data: MediaInsert): Promise<Media> {
 
 /**
  * Update a media record
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function updateMedia(id: string, data: MediaUpdate): Promise<Media> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data: media, error } = await ((supabase
     .from("media") as any)
     .update(data)
@@ -89,9 +93,10 @@ export async function updateMedia(id: string, data: MediaUpdate): Promise<Media>
 /**
  * Delete a media record
  * This will cascade delete all section_media relationships
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function deleteMedia(id: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { error } = await supabase
     .from("media")
     .delete()
@@ -104,9 +109,10 @@ export async function deleteMedia(id: string): Promise<void> {
 
 /**
  * Get all media for a specific section
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getMediaBySectionId(sectionId: string): Promise<Array<Media & { section_media: Database["public"]["Tables"]["section_media"]["Row"] }>> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("section_media")
     .select(`

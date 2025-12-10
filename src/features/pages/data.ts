@@ -1,14 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Page } from "./types";
 
 /**
  * Get all pages, ordered by creation date
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getAllPages(): Promise<Page[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("pages")
-    .select("*")
+    .select("id, slug, title, description, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -20,9 +21,10 @@ export async function getAllPages(): Promise<Page[]> {
 
 /**
  * Get a single page by id
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getPageById(id: string): Promise<Page | null> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("pages")
     .select("*")

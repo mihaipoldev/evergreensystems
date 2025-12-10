@@ -3,8 +3,6 @@ import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { SectionForm } from "@/features/sections/components/SectionForm";
 import { getSectionById } from "@/features/sections/data";
 
-export const dynamic = "force-dynamic";
-
 type EditSectionPageProps = {
   params: Promise<{ id: string }>;
 };

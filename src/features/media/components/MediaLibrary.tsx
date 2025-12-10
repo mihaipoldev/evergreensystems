@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { useMedia, useDeleteMedia } from "@/lib/react-query/hooks";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
@@ -38,6 +38,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { MediaForm } from "./MediaForm";
 import { MediaRenderer } from "@/components/MediaRenderer";
+import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import type { Media } from "../types";
 
@@ -46,15 +47,21 @@ type MediaLibraryProps = {
 };
 
 export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
-  const [media, setMedia] = useState<Media[]>(initialMedia);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMedia, setEditingMedia] = useState<Media | null>(null);
   const [previewMedia, setPreviewMedia] = useState<Media | null>(null);
   const [wistiaThumbnails, setWistiaThumbnails] = useState<Record<string, string>>({});
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+
+  // Use React Query hook with server-side search
+  const { data: media = initialMedia, isLoading, error } = useMedia(
+    debouncedSearch || undefined,
+    { initialData: initialMedia }
+  );
+  const deleteMedia = useDeleteMedia();
 
   const handleDeleteClick = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -64,81 +71,32 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
   const handleDelete = async () => {
     if (!deletingMediaId) return;
 
-    setIsDeleting(true);
     try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-
-      const response = await fetch(`/api/admin/media/${deletingMediaId}`, {
-        method: "DELETE",
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete media");
-      }
-
+      await deleteMedia.mutateAsync(deletingMediaId);
       toast.success("Media deleted successfully");
-      setMedia(media.filter((m) => m.id !== deletingMediaId));
       setDeletingMediaId(null);
-      router.refresh();
     } catch (error: any) {
       console.error("Error deleting media:", error);
       toast.error(error.message || "Failed to delete media");
-    } finally {
-      setIsDeleting(false);
     }
   };
+
+  const isDeleting = deleteMedia.isPending;
 
   const handleCopyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
     toast.success("URL copied to clipboard");
   };
 
-  const handleCreateSuccess = async () => {
+  const handleCreateSuccess = () => {
     setIsCreateDialogOpen(false);
-    router.refresh();
-    // Refetch media
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("media")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setMedia(data);
-    }
+    // React Query will automatically refetch on mutation success
   };
 
-  const handleEditSuccess = async () => {
+  const handleEditSuccess = () => {
     setEditingMedia(null);
-    router.refresh();
-    // Refetch media
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("media")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setMedia(data);
-    }
+    // React Query will automatically refetch on mutation success
   };
-
-  const filteredMedia = media.filter((item) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      (item.name || "").toLowerCase().includes(query) ||
-      item.url.toLowerCase().includes(query) ||
-      item.type.toLowerCase().includes(query) ||
-      item.source_type.toLowerCase().includes(query)
-    );
-  });
 
   // Fetch Wistia thumbnails via oEmbed API
   useEffect(() => {
@@ -306,7 +264,7 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
           <div className="flex items-baseline gap-3 mb-2">
             <h1 className="text-4xl font-bold text-foreground leading-none">Media Library</h1>
             <span className="inline-flex items-center justify-center h-5 px-2.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 leading-none">
-              ({filteredMedia.length} {filteredMedia.length === 1 ? "item" : "items"})
+              ({media.length} {media.length === 1 ? "item" : "items"})
             </span>
           </div>
           <p className="text-base text-muted-foreground">
@@ -331,7 +289,15 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
           </Button>
         </AdminToolbar>
 
-        {filteredMedia.length === 0 ? (
+        {isLoading && !media.length ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Loading media...
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Error loading media. Please try again.
+          </div>
+        ) : media.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {searchQuery
               ? "No media found matching your search"
@@ -339,7 +305,7 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredMedia.map((item) => (
+            {media.map((item) => (
               <div
                 key={item.id}
                 className="group relative bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
@@ -420,7 +386,10 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-h-[90vh] overflow-y-auto"
+          style={{ width: '90vw', maxWidth: '40rem' }}
+        >
           <DialogHeader>
             <DialogTitle>Add Media</DialogTitle>
             <DialogDescription>
@@ -436,7 +405,10 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingMedia} onOpenChange={(open) => !open && setEditingMedia(null)}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-h-[90vh] overflow-y-auto"
+          style={{ width: '90vw', maxWidth: '40rem' }}
+        >
           <DialogHeader>
             <DialogTitle>Edit Media</DialogTitle>
             <DialogDescription>

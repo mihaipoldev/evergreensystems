@@ -1,28 +1,35 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { AdminMetricTab } from "@/components/admin/AdminMetricTab";
 import { AnalyticsLineChart, type DailyPoint } from "@/components/admin/AnalyticsLineChart";
 import { CountryList } from "@/components/admin/CountryList";
-import { getCardGradient } from "@/lib/gradient-presets";
-import { cn } from "@/lib/utils";
+import { CityList } from "@/components/admin/CityList";
 
 type AnalyticsDashboardData = {
   totalPageViews: number;
   totalCTAClicks: number;
   totalVideoClicks: number;
+  totalFAQClicks: number;
   totalSessionStarts: number;
   uniqueSessions: number;
   pageViewsSeries: DailyPoint[];
   ctaClicksSeries: DailyPoint[];
   sessionStartsSeries: DailyPoint[];
   videoClicksSeries: DailyPoint[];
+  faqClicksSeries: DailyPoint[];
   topCTAs: Array<{
     id: string;
     label: string;
     clicks: number;
     location: string;
+  }>;
+  topFAQs: Array<{
+    id: string;
+    question: string;
+    clicks: number;
   }>;
   topLocations: Array<{
     location: string;
@@ -48,6 +55,30 @@ type AnalyticsDashboardData = {
     country: string;
     count: number;
   }>;
+  topCountriesByFAQClick: Array<{
+    country: string;
+    count: number;
+  }>;
+  topCities?: Array<{
+    city: string;
+    count: number;
+  }>;
+  topCitiesBySessionStart?: Array<{
+    city: string;
+    count: number;
+  }>;
+  topCitiesByPageView?: Array<{
+    city: string;
+    count: number;
+  }>;
+  topCitiesByCTAClick?: Array<{
+    city: string;
+    count: number;
+  }>;
+  topCitiesByVideoClick?: Array<{
+    city: string;
+    count: number;
+  }>;
 };
 
 type AnalyticsDashboardProps = {
@@ -62,35 +93,69 @@ const locationLabels: Record<string, string> = {
 };
 
 export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     totalPageViews,
     totalCTAClicks,
     totalSessionStarts,
     totalVideoClicks,
+    totalFAQClicks = 0,
     pageViewsSeries,
     ctaClicksSeries,
     sessionStartsSeries,
     videoClicksSeries,
+    faqClicksSeries = [],
     topCTAs,
+    topFAQs = [],
     topLocations,
     topCountries,
     topCountriesBySessionStart,
     topCountriesByPageView,
     topCountriesByCTAClick,
     topCountriesByVideoClick,
+    topCountriesByFAQClick = [],
+    topCities,
+    topCitiesBySessionStart,
+    topCitiesByPageView,
+    topCitiesByCTAClick,
+    topCitiesByVideoClick,
   } = data;
+
+  // Debug: Log FAQ analytics data
+  React.useEffect(() => {
+    console.log("FAQ Analytics Dashboard Data:", {
+      totalFAQClicks,
+      faqClicksSeriesLength: faqClicksSeries?.length || 0,
+      faqClicksSeries: faqClicksSeries,
+      topFAQsLength: topFAQs?.length || 0,
+      topFAQs: topFAQs,
+      topCountriesByFAQClickLength: topCountriesByFAQClick?.length || 0,
+      topCountriesByFAQClick: topCountriesByFAQClick,
+    });
+  }, [totalFAQClicks, faqClicksSeries, topFAQs, topCountriesByFAQClick]);
+
+  // Determine if we should show cities (country-specific view) or countries (global view)
+  const showCities = topCities !== undefined && topCities.length > 0;
+
+  const handleCTAClick = (ctaId: string) => {
+    const scope = searchParams.get("scope") || "30";
+    router.push(`/admin/analytics/cta/${ctaId}?scope=${scope}`);
+  };
+
+  const handleFAQClick = (faqId: string) => {
+    const scope = searchParams.get("scope") || "30";
+    router.push(`/admin/analytics/faq/${faqId}?scope=${scope}`);
+  };
 
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8">
       <div
-        className={cn(
-          "rounded-xl overflow-hidden bg-card/50 text-card-foreground dark:bg-card/30 shadow-lg transition-all duration-300 hover:shadow-xl",
-          getCardGradient()
-        )}
+        className="rounded-xl overflow-hidden text-card-foreground dark:bg-card bg-card shadow-lg transition-all duration-300 hover:shadow-xl"
       >
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="flex flex-row md:grid md:grid-cols-4 w-full bg-transparent p-0 gap-0 h-auto min-h-[88px] border-b border-border/30 rounded-none">
+          <TabsList className="flex flex-row md:grid md:grid-cols-5 w-full bg-transparent p-0 gap-0 h-auto min-h-[88px] rounded-none">
             <AdminMetricTab
               value="visits"
               label="Website Visits"
@@ -113,6 +178,12 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
               value="videos"
               label="Video Clicks"
               metric={totalVideoClicks}
+              className="border-r border-border/30 flex-1 md:flex-none min-w-0"
+            />
+            <AdminMetricTab
+              value="faq-clicks"
+              label="FAQ Clicks"
+              metric={totalFAQClicks}
               className="flex-1 md:flex-none min-w-0"
             />
           </TabsList>
@@ -120,9 +191,20 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
           <TabsContent value="visits" className="mt-0 dark:bg-transparent">
             <div className="w-full min-w-0 pr-2 md:pr-6 pl-2 pt-6 md:pt-10 pb-4 md:pb-6 overflow-hidden space-y-6">
               <AnalyticsLineChart data={sessionStartsSeries} />
-              <div className="pt-4 border-t">
-                <h3 className="text-sm font-semibold mb-4">Top Countries</h3>
-                <CountryList countries={topCountriesBySessionStart} />
+              <div className="pt-4">
+                <h3 className="text-sm font-semibold mb-4 px-3">{showCities ? "Top Cities" : "Top Countries"}</h3>
+                {showCities ? (
+                  <CityList cities={topCitiesBySessionStart || []} />
+                ) : (
+                  <CountryList 
+                    countries={topCountriesBySessionStart}
+                    onCountryClick={(country) => {
+                      const scope = searchParams.get("scope") || "30";
+                      const encodedCountry = encodeURIComponent(country);
+                      router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                    }}
+                  />
+                )}
               </div>
             </div>
           </TabsContent>
@@ -130,9 +212,20 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
           <TabsContent value="pageviews" className="mt-0 dark:bg-transparent">
             <div className="w-full min-w-0 pr-2 md:pr-6 pl-2 pt-6 md:pt-10 pb-4 md:pb-6 overflow-hidden space-y-6">
               <AnalyticsLineChart data={pageViewsSeries} />
-              <div className="pt-4 border-t">
-                <h3 className="text-sm font-semibold mb-4">Top Countries</h3>
-                <CountryList countries={topCountriesByPageView} />
+              <div className="pt-4">
+                <h3 className="text-sm font-semibold mb-4 px-3">{showCities ? "Top Cities" : "Top Countries"}</h3>
+                {showCities ? (
+                  <CityList cities={topCitiesByPageView || []} />
+                ) : (
+                  <CountryList 
+                    countries={topCountriesByPageView}
+                    onCountryClick={(country) => {
+                      const scope = searchParams.get("scope") || "30";
+                      const encodedCountry = encodeURIComponent(country);
+                      router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                    }}
+                  />
+                )}
               </div>
             </div>
           </TabsContent>
@@ -140,9 +233,63 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
           <TabsContent value="clicks" className="mt-0 dark:bg-transparent">
             <div className="w-full min-w-0 pr-2 md:pr-6 pl-2 pt-6 md:pt-10 pb-4 md:pb-6 overflow-hidden space-y-6">
               <AnalyticsLineChart data={ctaClicksSeries} />
-              <div className="pt-4 border-t">
-                <h3 className="text-sm font-semibold mb-4">Top Countries</h3>
-                <CountryList countries={topCountriesByCTAClick} />
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-sm font-semibold mb-4 px-3">{showCities ? "Top Cities" : "Top Countries"}</h3>
+                  {showCities ? (
+                    <CityList cities={topCitiesByCTAClick || []} />
+                  ) : (
+                    <CountryList 
+                      countries={topCountriesByCTAClick}
+                      onCountryClick={(country) => {
+                        const scope = searchParams.get("scope") || "30";
+                        const encodedCountry = encodeURIComponent(country);
+                        router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold mb-4 px-3">Top Performing CTAs</h3>
+                  <div className="overflow-x-auto px-4">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-muted-foreground border-b">
+                          <th className="py-3 pr-4">CTA Button</th>
+                          <th className="py-3 pr-4 w-32">Location</th>
+                          <th className="py-3 pr-4 w-24 text-right">Clicks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topCTAs.slice(0, 10).map((cta, index) => (
+                          <tr 
+                            key={`${cta.id}-${cta.location}-${index}`} 
+                            className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleCTAClick(cta.id)}
+                          >
+                            <td className="py-3 pr-4">
+                              <span className="font-medium">{cta.label}</span>
+                            </td>
+                            <td className="py-3 pr-4 w-32">
+                              <span className="text-muted-foreground text-xs">
+                                {locationLabels[cta.location] || cta.location}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4 w-24 text-right tabular-nums font-semibold">{cta.clicks}</td>
+                          </tr>
+                        ))}
+                        {topCTAs.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                              No data yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -150,113 +297,83 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
           <TabsContent value="videos" className="mt-0 dark:bg-transparent">
             <div className="w-full min-w-0 pr-2 md:pr-6 pl-2 pt-6 md:pt-10 pb-4 md:pb-6 overflow-hidden space-y-6">
               <AnalyticsLineChart data={videoClicksSeries} />
-              <div className="pt-4 border-t">
-                <h3 className="text-sm font-semibold mb-4">Top Countries</h3>
-                <CountryList countries={topCountriesByVideoClick} />
+              <div className="pt-4">
+                <h3 className="text-sm font-semibold mb-4 px-3">{showCities ? "Top Cities" : "Top Countries"}</h3>
+                {showCities ? (
+                  <CityList cities={topCitiesByVideoClick || []} />
+                ) : (
+                  <CountryList 
+                    countries={topCountriesByVideoClick}
+                    onCountryClick={(country) => {
+                      const scope = searchParams.get("scope") || "30";
+                      const encodedCountry = encodeURIComponent(country);
+                      router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="faq-clicks" className="mt-0 dark:bg-transparent">
+            <div className="w-full min-w-0 pr-2 md:pr-6 pl-2 pt-6 md:pt-10 pb-4 md:pb-6 overflow-hidden space-y-6">
+              <AnalyticsLineChart data={faqClicksSeries || []} />
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-sm font-semibold mb-4 px-3">{showCities ? "Top Cities" : "Top Countries"}</h3>
+                  {showCities ? (
+                    <CityList cities={[]} />
+                  ) : (
+                    <CountryList 
+                      countries={topCountriesByFAQClick || []}
+                      onCountryClick={(country) => {
+                        const scope = searchParams.get("scope") || "30";
+                        const encodedCountry = encodeURIComponent(country);
+                        router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold mb-4 px-3">Top Performing FAQs</h3>
+                  <div className="overflow-x-auto px-4">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-muted-foreground border-b">
+                          <th className="py-3 pr-4">FAQ Question</th>
+                          <th className="py-3 pr-4 w-24 text-right">Clicks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(topFAQs || []).slice(0, 10).map((faq, index) => (
+                          <tr 
+                            key={`${faq.id}-${index}`} 
+                            className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleFAQClick(faq.id)}
+                          >
+                            <td className="py-3 pr-4">
+                              <span className="font-medium">{faq.question}</span>
+                            </td>
+                            <td className="py-3 pr-4 w-24 text-right tabular-nums font-semibold">{faq.clicks}</td>
+                          </tr>
+                        ))}
+                        {(!topFAQs || topFAQs.length === 0) && (
+                          <tr>
+                            <td colSpan={2} className="py-6 text-center text-muted-foreground">
+                              No data yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Sections outside tabs */}
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Top Performing CTAs</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2 pr-4">CTA Button</th>
-                <th className="py-2 pr-4 w-44">Location</th>
-                <th className="py-2 pr-4 w-44">Clicks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topCTAs.map((cta, index) => (
-                <tr key={`${cta.id}-${cta.location}-${index}`} className="border-t">
-                  <td className="py-2 pr-4">
-                    <span className="font-medium">{cta.label}</span>
-                  </td>
-                  <td className="py-2 pr-4 w-44">
-                    <span className="text-muted-foreground">
-                      {locationLabels[cta.location] || cta.location}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-4 w-44 tabular-nums">{cta.clicks}</td>
-                </tr>
-              ))}
-              {topCTAs.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                    No data yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Top CTA Locations</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2 pr-4 w-4/5">Location</th>
-                <th className="py-2 pr-4 w-1/5">Clicks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topLocations.map((row) => (
-                <tr key={row.location} className="border-t">
-                  <td className="py-2 pr-4 w-4/5">
-                    {locationLabels[row.location] || row.location}
-                  </td>
-                  <td className="py-2 pr-4 w-1/5 tabular-nums">{row.clicks}</td>
-                </tr>
-              ))}
-              {topLocations.length === 0 && (
-                <tr>
-                  <td colSpan={2} className="py-6 text-center text-muted-foreground">
-                    No clicks yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Top Countries</h2>
-        <p className="text-sm text-muted-foreground">Based on all analytics events (page views, clicks, sessions)</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="py-2 pr-4 w-4/5">Country</th>
-                <th className="py-2 pr-4 w-1/5">Events</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topCountries.slice(0, 20).map((row) => (
-                <tr key={row.country} className="border-t">
-                  <td className="py-2 pr-4 w-4/5">{row.country}</td>
-                  <td className="py-2 pr-4 w-1/5 tabular-nums">{row.count}</td>
-                </tr>
-              ))}
-              {topCountries.length === 0 && (
-                <tr>
-                  <td colSpan={2} className="py-6 text-center text-muted-foreground">
-                    No data yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
   );
 }

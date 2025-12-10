@@ -98,3 +98,4 @@ export async function deleteTeamMember(id: string): Promise<void> {
   // Temporary: do nothing
   throw new Error('Team members table not yet created');
 }
+

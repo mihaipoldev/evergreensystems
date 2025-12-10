@@ -235,6 +235,7 @@ export interface Database {
           description: string | null;
           icon: string | null;
           position: number;
+          status: "active" | "inactive";
           created_at: string;
           updated_at: string;
         };
@@ -245,6 +246,7 @@ export interface Database {
           description?: string | null;
           icon?: string | null;
           position?: number;
+          status?: "active" | "inactive";
           created_at?: string;
           updated_at?: string;
         };
@@ -255,6 +257,7 @@ export interface Database {
           description?: string | null;
           icon?: string | null;
           position?: number;
+          status?: "active" | "inactive";
           created_at?: string;
           updated_at?: string;
         };
@@ -309,6 +312,7 @@ export interface Database {
           question: string;
           answer: string;
           position: number;
+          status: Database["public"]["Enums"]["faq_status"];
           created_at: string;
           updated_at: string;
         };
@@ -317,6 +321,7 @@ export interface Database {
           question: string;
           answer: string;
           position?: number;
+          status?: Database["public"]["Enums"]["faq_status"];
           created_at?: string;
           updated_at?: string;
         };
@@ -325,6 +330,7 @@ export interface Database {
           question?: string;
           answer?: string;
           position?: number;
+          status?: Database["public"]["Enums"]["faq_status"];
           created_at?: string;
           updated_at?: string;
         };
@@ -503,6 +509,7 @@ export interface Database {
     };
     Enums: {
       [key: string]: string;
+      faq_status: "active" | "inactive";
     };
   };
 }

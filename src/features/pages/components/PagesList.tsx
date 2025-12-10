@@ -1,25 +1,16 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  AdminTable,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/admin/AdminTable";
+import { CardList } from "@/components/admin/CardList";
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faFile } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
-import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
-import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
+import { usePages, useDeletePage } from "@/lib/react-query/hooks";
 import type { Page } from "../types";
 
 type PagesListProps = {
@@ -27,59 +18,25 @@ type PagesListProps = {
 };
 
 export function PagesList({ initialPages }: PagesListProps) {
-  const [pages, setPages] = useState<Page[]>(initialPages);
   const [searchQuery, setSearchQuery] = useState("");
-  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
-  const router = useRouter();
-  const { startNavigation } = useNavigationLoading();
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Use React Query hook with server-side search
+  const { data: pages = initialPages, isLoading, error } = usePages(
+    debouncedSearch || undefined,
+    { initialData: initialPages }
+  );
+  const deletePage = useDeletePage();
 
   const handleDelete = async (id: string) => {
     try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-
-      const response = await fetch(`/api/admin/pages/${id}`, {
-        method: "DELETE",
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete page");
-      }
-
+      await deletePage.mutateAsync(id);
       toast.success("Page deleted successfully");
-      setPages(pages.filter((p) => p.id !== id));
     } catch (error: any) {
       console.error("Error deleting page:", error);
       toast.error(error.message || "Failed to delete page");
       throw error;
     }
-  };
-
-  const filteredPages = pages.filter((page) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      page.title.toLowerCase().includes(query) ||
-      page.slug.toLowerCase().includes(query) ||
-      page.description?.toLowerCase().includes(query)
-    );
-  });
-
-  const handleRowClick = (pageId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
-    // Don't navigate if clicking on action menu or its children
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-action-menu]')) {
-      return;
-    }
-    setClickedRowId(pageId);
-    const path = `/admin/pages/${pageId}/edit`;
-    startNavigation(path);
-    router.push(path);
   };
 
   return (
@@ -90,7 +47,7 @@ export function PagesList({ initialPages }: PagesListProps) {
           <div className="flex items-baseline gap-3 mb-2">
             <h1 className="text-4xl font-bold text-foreground leading-none">Pages</h1>
             <span className="inline-flex items-center justify-center h-5 px-2.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 leading-none">
-              ({filteredPages.length} {filteredPages.length === 1 ? "page" : "pages"})
+              ({pages.length} {pages.length === 1 ? "page" : "pages"})
             </span>
           </div>
           <p className="text-base text-muted-foreground">
@@ -116,130 +73,54 @@ export function PagesList({ initialPages }: PagesListProps) {
           </Button>
         </AdminToolbar>
 
-        <AdminTable>
-          <TableHeader>
-            <TableRow className="border-b">
-              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
-              <TableHead className="font-bold">Title</TableHead>
-              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPages.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">
-                  {searchQuery
-                    ? "No pages found matching your search"
-                    : "No pages found"}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredPages.map((page) => (
-                <Fragment key={page.id}>
-                  {/* Mobile Layout */}
-                  <TableRow
-                    className={cn(
-                      "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
-                      clickedRowId === page.id && "bg-primary/5"
-                    )}
-                    onClick={(e) => handleRowClick(page.id, e)}
-                  >
-                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
-                      <div className={cn(
-                        "flex items-start gap-3 md:gap-4 transition-transform duration-150",
-                        clickedRowId === page.id && "scale-[0.99]"
-                      )}>
-                        <div className={cn(
-                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
-                          clickedRowId === page.id ? "bg-primary/10" : "bg-muted"
-                        )}>
-                          <FontAwesomeIcon
-                            icon={faFile}
-                            className={cn(
-                              "h-6 w-6 transition-colors duration-150",
-                              clickedRowId === page.id ? "text-primary/70" : "text-muted-foreground"
-                            )}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-base mb-1.5 break-words">
-                            {page.title}
-                          </div>
-                          <div className="text-sm text-muted-foreground mb-1">
-                            /{page.slug}
-                          </div>
-                          {page.description && (
-                            <div className="text-xs text-muted-foreground line-clamp-2">
-                              {page.description}
-                            </div>
-                          )}
-                        </div>
-                        <div 
-                          className="flex-shrink-0 ml-2" 
-                          data-action-menu
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ActionMenu
-                            itemId={page.id}
-                            editHref={`/admin/pages/${page.id}/edit`}
-                            openPageHref={`/${page.slug}`}
-                            onDelete={handleDelete}
-                            deleteLabel={`page "${page.title}"`}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Desktop Layout */}
-                  <TableRow
-                    className={cn(
-                      "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
-                      clickedRowId === page.id && "bg-primary/5"
-                    )}
-                    onClick={(e) => handleRowClick(page.id, e)}
-                  >
-                    <TableCell className="pl-4 w-20">
-                      <div className={cn(
-                        "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
-                        clickedRowId === page.id ? "bg-primary/10 scale-[0.99]" : "bg-muted"
-                      )}>
-                        <FontAwesomeIcon
-                          icon={faFile}
-                          className={cn(
-                            "h-5 w-5 transition-colors duration-150",
-                            clickedRowId === page.id ? "text-primary/70" : "text-muted-foreground"
-                          )}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-bold">
-                      <span className="truncate block" title={page.title}>
-                        {page.title}
-                      </span>
-                    </TableCell>
-                    <TableCell 
-                      className="text-right pr-4 w-24" 
-                      data-action-menu 
-                      style={{ textAlign: "right" }}
-                      onClick={(e) => e.stopPropagation()}
+        {isLoading && !pages.length ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+            Loading pages...
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+            Error loading pages. Please try again.
+          </div>
+        ) : pages.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+            {searchQuery
+              ? "No pages found matching your search"
+              : "No pages found"}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <CardList
+              items={pages}
+              renderContent={(page) => (
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
+                    <FontAwesomeIcon
+                      icon={faFile}
+                      className="h-6 w-6 text-primary"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/admin/pages/${page.id}/edit`}
+                      className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
                     >
-                      <div className="inline-flex ml-auto">
-                        <ActionMenu
-                          itemId={page.id}
-                          editHref={`/admin/pages/${page.id}/edit`}
-                          openPageHref={`/${page.slug}`}
-                          onDelete={handleDelete}
-                          deleteLabel={`page "${page.title}"`}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </Fragment>
-              ))
-            )}
-          </TableBody>
-        </AdminTable>
+                      {page.title}
+                    </Link>
+                  </div>
+                </div>
+              )}
+              renderActions={(page) => (
+                <ActionMenu
+                  itemId={page.id}
+                  editHref={`/admin/pages/${page.id}/edit`}
+                  openPageHref={`/${page.slug}`}
+                  onDelete={handleDelete}
+                  deleteLabel={`page "${page.title}"`}
+                />
+              )}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

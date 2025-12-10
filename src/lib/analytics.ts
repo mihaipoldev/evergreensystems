@@ -83,27 +83,35 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
+    const payload = {
+      event_type: params.event_type,
+      entity_type: params.entity_type,
+      entity_id: params.entity_id,
+      session_id: sessionId,
+      user_agent: userAgent,
+      referrer: referrer,
+      metadata: params.metadata || null,
+    };
+
+    console.log("Sending analytics event:", payload);
+
     const response = await fetch("/api/admin/analytics", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        event_type: params.event_type,
-        entity_type: params.entity_type,
-        entity_id: params.entity_id,
-        session_id: sessionId,
-        user_agent: userAgent,
-        referrer: referrer,
-        metadata: params.metadata || null,
-      }),
+      body: JSON.stringify(payload),
       signal: controller.signal, // Add abort signal
     });
 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error("Failed to track event:", await response.text());
+      const errorText = await response.text();
+      console.error("Failed to track event:", response.status, errorText);
+    } else {
+      const result = await response.json();
+      console.log("Event tracked successfully:", result);
     }
   } catch (error) {
     // Silently fail - don't interrupt user experience

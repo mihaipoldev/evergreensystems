@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { Testimonial } from "./types";
 
 /**
@@ -30,18 +30,24 @@ function normalizeTestimonial(testimonial: Testimonial): Testimonial {
 /**
  * Get all testimonials (both approved and unapproved), ordered by position
  * This is used in the admin panel to show all testimonials regardless of approval status
- * RLS policies ensure authenticated users see all testimonials
- * Note: Middleware protects admin routes, so users accessing this are authenticated
+ * 
+ * IMPORTANT: This function uses the service role client to bypass RLS policies
+ * and ensure admin users can see ALL testimonials (both approved and unapproved).
  * 
  * @deprecated Use the API route /api/admin/testimonials instead for better auth handling
  */
 export async function getAllTestimonials(): Promise<Testimonial[]> {
-  const supabase = await createClient();
+  // Use service role client to bypass RLS and ensure we get ALL testimonials
+  // This is necessary for admin operations where we need to see unapproved testimonials
+  const supabase = createServiceRoleClient();
   
+  // Explicitly fetch ALL testimonials without any approval filtering
+  // Admin users need to see both approved and unapproved testimonials
   const { data, error } = await supabase
     .from("testimonials")
-    .select("*")
-    .order("approved", { ascending: false })
+    .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at")
+    // No .eq("approved", ...) filter - we want ALL testimonials
+    .order("approved", { ascending: false }) // Approved first, then unapproved
     .order("position", { ascending: true });
 
   if (error) {
@@ -58,7 +64,7 @@ export async function getTestimonialById(id: string): Promise<Testimonial | null
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("testimonials")
-    .select("*")
+    .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at")
     .eq("id", id)
     .single();
 

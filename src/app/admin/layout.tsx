@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NavigationLoadingProvider } from "@/providers/NavigationLoadingProvider";
 import { AdminTeamProvider } from "@/providers/AdminTeamProvider";
 import { AdminThemeProvider } from "@/providers/AdminThemeProvider";
+import { QueryClientProvider } from "@/providers/QueryClientProvider";
 import { PageTransitionLoader } from "@/components/admin/PageTransitionLoader";
 
 export default function AdminLayout({
@@ -13,9 +14,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AdminThemeProvider>
-      <NavigationLoadingProvider>
-        <AdminTeamProvider>
+    <QueryClientProvider>
+      <AdminThemeProvider>
+        <NavigationLoadingProvider>
+          <AdminTeamProvider>
           <div className="flex h-screen overflow-hidden bg-background">
             <AdminSidebar />
             <div className="flex flex-1 flex-col overflow-hidden md:pl-64">
@@ -30,8 +32,9 @@ export default function AdminLayout({
               </main>
             </div>
           </div>
-        </AdminTeamProvider>
-      </NavigationLoadingProvider>
-    </AdminThemeProvider>
+          </AdminTeamProvider>
+        </NavigationLoadingProvider>
+      </AdminThemeProvider>
+    </QueryClientProvider>
   );
 }

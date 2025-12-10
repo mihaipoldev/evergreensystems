@@ -1,15 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { CTAButton, CTAButtonWithSection } from "./types";
 import type { Database } from "@/lib/supabase/types";
 
 /**
  * Get all CTA buttons, ordered by position
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getAllCTAButtons(): Promise<CTAButton[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cta_buttons")
-    .select("*")
+    .select("id, label, url, style, icon, position, status, created_at, updated_at")
     .order("position", { ascending: true });
 
   if (error) {
@@ -21,12 +22,13 @@ export async function getAllCTAButtons(): Promise<CTAButton[]> {
 
 /**
  * Get all active CTA buttons, ordered by position
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getActiveCTAButtons(): Promise<CTAButton[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cta_buttons")
-    .select("*")
+    .select("id, label, url, style, icon, position, status, created_at, updated_at")
     .eq("status", "active")
     .order("position", { ascending: true });
 
@@ -39,12 +41,13 @@ export async function getActiveCTAButtons(): Promise<CTAButton[]> {
 
 /**
  * Get a single CTA button by id
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getCTAButtonById(id: string): Promise<CTAButton | null> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cta_buttons")
-    .select("*")
+    .select("id, label, url, style, icon, position, status, created_at, updated_at")
     .eq("id", id)
     .single();
 
@@ -61,9 +64,10 @@ export async function getCTAButtonById(id: string): Promise<CTAButton | null> {
 
 /**
  * Get all CTA buttons for a specific section
+ * Uses service role client to bypass RLS for admin operations
  */
 export async function getCTAButtonsBySectionId(sectionId: string): Promise<CTAButtonWithSection[]> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("section_cta_buttons")
     .select(`

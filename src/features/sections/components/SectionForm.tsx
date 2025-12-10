@@ -67,6 +67,7 @@ type SectionFormProps = {
 // Common section types
 const SECTION_TYPES = [
   "hero",
+  "header",
   "logos",
   "features",
   "testimonials",
@@ -79,6 +80,7 @@ const SECTION_TYPES = [
   "pricing",
   "contact",
   "about",
+  "footer",
 ];
 
 export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
@@ -136,14 +138,14 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
 
   // Load section CTA buttons when editing
   useEffect(() => {
-    if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero")) {
+    if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
       loadSectionCTAs(initialData.id);
     }
   }, [isEdit, initialData?.id, sectionType]);
 
   // Load all CTA buttons for selection
   useEffect(() => {
-    if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero")) {
+    if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
       loadAllCTAButtons();
     }
   }, [isEdit, initialData?.id, sectionType]);
@@ -343,8 +345,8 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
         await saveSectionMedia(sectionId, sectionMedia, accessToken);
       }
 
-      // Save section CTA buttons if editing and section type is CTA or Hero
-      if (isEdit && sectionId && (sectionType === "cta" || sectionType === "hero")) {
+      // Save section CTA buttons if editing and section type is CTA, Hero, or Header
+      if (isEdit && sectionId && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
         await saveSectionCTAs(sectionId, sectionCTAButtons, accessToken);
       }
 
@@ -1013,8 +1015,8 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
             </div>
           )}
 
-          {/* Section CTA Buttons - Available for CTA and Hero sections */}
-          {isEdit && initialData?.id && (
+          {/* Section CTA Buttons - Available for CTA, Hero, and Header sections */}
+          {isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header") && (
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold mb-1">CTA Buttons</h3>

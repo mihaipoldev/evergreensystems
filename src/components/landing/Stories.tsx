@@ -75,8 +75,7 @@ export const Stories = ({ section }: StoriesProps) => {
   const title = section?.title || 'Stories of [[Success]]';
 
   return (
-    <section id="stories" className="py-24 relative overflow-hidden">
-      <div className="absolute inset-0 bg-dot-pattern opacity-20" />
+    <section id="stories" className="py-20 relative overflow-hidden">
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
@@ -88,7 +87,7 @@ export const Stories = ({ section }: StoriesProps) => {
           <RichText
             as="h2"
             text={title}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 

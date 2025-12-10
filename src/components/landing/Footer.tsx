@@ -1,139 +1,111 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Mail, MapPin, Phone, Linkedin, Twitter } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { faLinkedin, faTwitter } from '@fortawesome/free-brands-svg-icons';
 
-const productLinks = [
-  { name: 'AI Automation', href: '#' },
-  { name: 'Lead Generation', href: '#' },
-  { name: 'CRM Integration', href: '#' },
-  { name: 'Custom Workflows', href: '#' },
-];
+type FooterSection = {
+  id?: string;
+  title?: string | null;
+  subtitle?: string | null;
+};
 
-const companyLinks = [
-  { name: 'About Us', href: '#' },
-  { name: 'Case Studies', href: '#' },
-  { name: 'Blog', href: '#' },
-  { name: 'Careers', href: '#' },
-];
+type FooterProps = {
+  section?: FooterSection;
+};
 
-export const Footer = () => {
+export const Footer = ({ section }: FooterProps) => {
+  const heading = section?.title?.trim() || "Evergreen Systems";
+  const subtitle =
+    section?.subtitle?.trim() ||
+    "Building intelligent automation systems that transform how businesses operate. AI-powered solutions for modern teams.";
+  const footerId = section?.id ? `footer-${section.id}` : "footer";
+
   return (
-    <footer className="relative pt-24 pb-12 overflow-hidden bg-transparent">
-      {/* Background */}
-      <div className="absolute inset-0 bg-dot-pattern opacity-30 dark:opacity-60" />
-      
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          {/* Brand */}
+    <footer
+      id={footerId}
+      className="relative text-foreground border-t border-border"
+    >
+      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
+        {/* Main content */}
+        <div className="flex flex-col items-center space-y-8 text-center mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="lg:col-span-1"
+            transition={{ duration: 0.6 }}
+            className="flex flex-col items-center space-y-4"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-blue flex items-center justify-center">
-                <span className="text-white font-bold text-sm">EL</span>
-              </div>
-              <span className="text-foreground font-semibold text-lg">EvergreenLabs</span>
-            </div>
-            <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-              Building intelligent automation systems that transform how businesses operate. 
-              AI-powered solutions for modern teams.
-            </p>
-            <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                <Twitter className="w-5 h-5" />
+            <h3 className="text-2xl sm:text-3xl font-bold text-foreground">{heading}</h3>
+            {subtitle && (
+              <p className="max-w-2xl text-base sm:text-lg leading-relaxed text-muted-foreground">
+                {subtitle}
+              </p>
+            )}
+          </motion.div>
+
+          {/* Contact and Social Links */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="flex flex-col items-center space-y-6"
+          >
+            {/* Email */}
+            <a
+              href="mailto:hello@evergreensystems.ai"
+              className="inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-medium text-foreground bg-background/50 border border-border/50 hover:bg-background hover:border-border transition-all duration-150"
+            >
+              <FontAwesomeIcon 
+                icon={faEnvelope} 
+                className="h-4 w-4 text-primary" 
+              />
+              <span>hello@evergreensystems.ai</span>
+            </a>
+
+            {/* Social Links */}
+            <div className="flex items-center justify-center gap-4">
+              <a
+                href="#"
+                aria-label="Twitter"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-background/50 border border-border/50 text-muted-foreground transition-all duration-150 hover:bg-background hover:border-border hover:text-foreground"
+              >
+                <FontAwesomeIcon 
+                  icon={faTwitter} 
+                  className="h-4 w-4" 
+                />
               </a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                <Linkedin className="w-5 h-5" />
+              <a
+                href="#"
+                aria-label="LinkedIn"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-background/50 border border-border/50 text-muted-foreground transition-all duration-150 hover:bg-background hover:border-border hover:text-foreground"
+              >
+                <FontAwesomeIcon 
+                  icon={faLinkedin} 
+                  className="h-4 w-4" 
+                />
               </a>
             </div>
-          </motion.div>
-
-          {/* Products */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3 className="text-foreground font-semibold mb-4">Products</h3>
-            <ul className="space-y-3">
-              {productLinks.map((link) => (
-                <li key={link.name}>
-                  <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* Company */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3 className="text-foreground font-semibold mb-4">Company</h3>
-            <ul className="space-y-3">
-              {companyLinks.map((link) => (
-                <li key={link.name}>
-                  <a href={link.href} className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* Contact */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
-            <h3 className="text-foreground font-semibold mb-4">Contact</h3>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-3 text-muted-foreground text-sm">
-                <Mail className="w-4 h-4 text-primary" />
-                hello@evergreenlabs.io
-              </li>
-              <li className="flex items-center gap-3 text-muted-foreground text-sm">
-                <Phone className="w-4 h-4 text-primary" />
-                +1 (555) 123-4567
-              </li>
-              <li className="flex items-start gap-3 text-muted-foreground text-sm">
-                <MapPin className="w-4 h-4 text-primary mt-0.5" />
-                <span>
-                  123 Innovation Drive<br />
-                  San Francisco, CA 94105
-                </span>
-              </li>
-            </ul>
           </motion.div>
         </div>
 
-        {/* Bottom */}
-        <div className="border-t border-border pt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-muted-foreground text-sm">
-              © 2024 EvergreenLabs. All rights reserved.
-            </p>
-            <div className="flex gap-6">
-              <a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-                Terms of Service
-              </a>
-            </div>
-          </div>
+        {/* Divider */}
+        <div className="flex justify-center mb-8">
+          <div className="h-px w-full max-w-md bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
+
+        {/* Copyright */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="flex flex-col items-center space-y-2 text-center text-sm text-muted-foreground"
+        >
+          <p>© {new Date().getFullYear()} Evergreen Systems. All rights reserved.</p>
+        </motion.div>
       </div>
     </footer>
   );

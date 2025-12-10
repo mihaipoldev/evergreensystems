@@ -3,8 +3,6 @@ import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { PageForm } from "@/features/pages/components/PageForm";
 import { getPageById } from "@/features/pages/data";
 
-export const dynamic = "force-dynamic";
-
 type EditPagePageProps = {
   params: Promise<{ id: string }>;
 };

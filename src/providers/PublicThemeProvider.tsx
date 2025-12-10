@@ -16,3 +16,4 @@ export function PublicThemeProvider({ children }: { children: ReactNode }) {
     </ThemeProvider>
   );
 }
+

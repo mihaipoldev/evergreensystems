@@ -12,6 +12,7 @@ export async function middleware(request: NextRequest) {
     });
 
     // Set pathname in headers for layout to use
+    // Pathname is already valid, no encoding needed
     supabaseResponse.headers.set("x-pathname", pathname);
 
     // Only create Supabase client and check auth for admin routes or login
@@ -180,8 +181,15 @@ export async function middleware(request: NextRequest) {
               
               // Inject style tag AND blocking script as the ABSOLUTE FIRST thing in head
               // Set brand color variables and primary (which uses brand variables)
-              const blockingScript = `<script>!function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h','${color.hsl_h}','important');r.style.setProperty('--brand-s','${color.hsl_s}','important');r.style.setProperty('--brand-l','${color.hsl_l}','important');r.style.setProperty('--primary','${primaryValue}','important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=':root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl_h}!important;--brand-s:${color.hsl_s}!important;--brand-l:${color.hsl_l}!important;--primary:${primaryValue}!important;}';if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent('${primaryValue}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent('${color.hsl_h}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent('${color.hsl_s}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent('${color.hsl_l}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
-              const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl_h}!important;--brand-s:${color.hsl_s}!important;--brand-l:${color.hsl_l}!important;--primary:${primaryValue}!important;}</style>`;
+              // Use JSON.stringify to safely escape all values for JavaScript
+              const hslH = String(color.hsl_h);
+              const hslS = String(color.hsl_s);
+              const hslL = String(color.hsl_l);
+              
+              // Build CSS string safely
+              const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
+              const blockingScript = `<script>!function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
+              const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;
             }
           }
@@ -212,7 +220,8 @@ export async function middleware(request: NextRequest) {
               const fontCSS = `:root{--font-family-admin-heading:var(${adminHeadingVar});--font-family-admin-body:var(${adminBodyVar});}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(${adminBodyVar}),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(${adminHeadingVar}),system-ui,sans-serif!important;}`;
               
               // Inject blocking script for fonts
-              const fontBlockingScript = `<script>!function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--font-family-admin-heading','var(${adminHeadingVar})','important');r.style.setProperty('--font-family-admin-body','var(${adminBodyVar})','important');}var s=d.createElement('style');s.id='font-family-blocking';s.textContent='${fontCSS}';if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='font-family-json='+encodeURIComponent('${fontJson}')+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
+              // Use JSON.stringify to safely escape fontJson for JavaScript
+              const fontBlockingScript = `<script>!function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--font-family-admin-heading','var(${adminHeadingVar})','important');r.style.setProperty('--font-family-admin-body','var(${adminBodyVar})','important');}var s=d.createElement('style');s.id='font-family-blocking';s.textContent=${JSON.stringify(fontCSS)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='font-family-json='+encodeURIComponent(${JSON.stringify(fontJson)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
               const fontStyleTag = `<style id="font-family-inline">${fontCSS}</style>`;
               fontInjection = fontBlockingScript + fontStyleTag;
             } catch {

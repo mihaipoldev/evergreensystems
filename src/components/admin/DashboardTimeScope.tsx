@@ -83,7 +83,7 @@ export function DashboardTimeScope() {
 
   return (
     <Select value={currentScope} onValueChange={handleScopeChange}>
-      <SelectTrigger className="w-[140px] h-9">
+      <SelectTrigger className="w-[140px] h-9 bg-input-background dark:bg-input-background">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 /**
  * Normalize avatar URL to ensure it has a protocol
@@ -38,13 +39,20 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const approved = searchParams.get("approved");
+    const search = searchParams.get("search");
 
     let query = supabase
       .from("testimonials")
-      .select("*");
+      .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at");
 
     if (approved !== null) {
       query = query.eq("approved", approved === "true");
+    }
+
+    // Server-side search filtering
+    if (search && search.trim() !== "") {
+      const searchPattern = `%${search.trim()}%`;
+      query = query.or(`author_name.ilike.${searchPattern},quote.ilike.${searchPattern},company_name.ilike.${searchPattern},author_role.ilike.${searchPattern}`);
     }
 
     const { data, error } = await query
@@ -58,7 +66,13 @@ export async function GET(request: Request) {
     // Normalize avatar URLs before returning
     const normalizedData = (data || []).map(normalizeTestimonial);
 
-    return NextResponse.json(normalizedData, { status: 200 });
+    // No cache for admin routes - always fresh data
+    return NextResponse.json(normalizedData, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },
@@ -105,6 +119,9 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for testimonials
+    revalidateTag("testimonials", "max");
 
     // Normalize avatar URL before returning
     const normalizedData = data ? normalizeTestimonial(data) : data;

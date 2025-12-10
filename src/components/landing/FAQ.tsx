@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Accordion,
@@ -8,6 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { RichText } from '@/components/ui/RichText';
+import { trackEvent } from '@/lib/analytics';
 
 type FAQItem = {
   id: string;
@@ -45,7 +47,7 @@ const defaultFaqs = [
   },
   {
     id: '3',
-    question: 'Do I need technical expertise to work with EvergreenLabs?',
+    question: 'Do I need technical expertise to work with Evergreen Systems?',
     answer: 'Not at all. We handle all the technical implementation and provide comprehensive training. Our systems are designed to be user-friendly, and we offer ongoing support to ensure you get maximum value.',
     position: 2,
   },
@@ -69,12 +71,54 @@ const defaultFaqs = [
   },
 ];
 
-export const FAQ = ({ faqs = defaultFaqs, section }: FAQProps) => {
+export const FAQ = memo(({ faqs = defaultFaqs, section }: FAQProps) => {
   // Use section title if available, otherwise fallback to default
   const title = section?.title || 'Frequently asked [[questions]]';
 
+  // Handle FAQ click tracking
+  const handleFAQOpen = (value: string) => {
+    console.log("Accordion onValueChange called with value:", value);
+    
+    // Accordion with type="single" and collapsible will pass empty string when closing
+    // We only want to track when opening (value is not empty)
+    if (value && value.trim() !== '') {
+      // Extract FAQ ID from value (format: "item-{id}")
+      const faqId = value.replace('item-', '');
+      console.log("Extracted FAQ ID:", faqId, "from value:", value);
+      
+      const faq = faqs.find((f) => f.id === faqId);
+      
+      if (faq) {
+        console.log("Tracking FAQ click:", {
+          faqId: faq.id,
+          question: faq.question,
+          entity_type: "faq_item",
+          event_type: "link_click",
+        });
+        
+        trackEvent({
+          event_type: "link_click",
+          entity_type: "faq_item",
+          entity_id: faq.id,
+          metadata: {
+            question: faq.question,
+            position: faq.position,
+          },
+        }).then(() => {
+          console.log("FAQ click tracked successfully");
+        }).catch((error) => {
+          console.error("Error tracking FAQ click:", error);
+        });
+      } else {
+        console.warn("FAQ not found for ID:", faqId, "Available FAQs:", faqs.map(f => f.id));
+      }
+    } else {
+      console.log("Accordion closed or empty value, not tracking");
+    }
+  };
+
   return (
-    <section id="faq" className="py-24 relative">
+    <section id="faq" className="py-20 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -85,7 +129,7 @@ export const FAQ = ({ faqs = defaultFaqs, section }: FAQProps) => {
           <RichText
             as="h2"
             text={title}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 
@@ -95,7 +139,7 @@ export const FAQ = ({ faqs = defaultFaqs, section }: FAQProps) => {
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
         >
-          <Accordion type="single" collapsible className="space-y-4">
+          <Accordion type="single" collapsible className="space-y-4" onValueChange={handleFAQOpen}>
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={faq.id}
@@ -115,5 +159,7 @@ export const FAQ = ({ faqs = defaultFaqs, section }: FAQProps) => {
       </div>
     </section>
   );
-};
+});
+
+FAQ.displayName = 'FAQ';
 

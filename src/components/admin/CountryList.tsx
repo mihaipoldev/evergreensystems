@@ -11,6 +11,7 @@ type CountryData = {
 type CountryListProps = {
   countries: CountryData[];
   className?: string;
+  onCountryClick?: (country: string) => void;
 };
 
 // Get country code from country name (ISO 3166-1 alpha-2)
@@ -65,7 +66,7 @@ const getCountryCode = (countryName: string): string => {
   return countryMap[countryName] || countryName.substring(0, 2).toUpperCase();
 };
 
-export function CountryList({ countries, className }: CountryListProps) {
+export function CountryList({ countries, className, onCountryClick }: CountryListProps) {
   if (countries.length === 0) {
     return (
       <div className={cn("text-center text-muted-foreground py-8", className)}>
@@ -85,7 +86,11 @@ export function CountryList({ countries, className }: CountryListProps) {
         return (
           <div
             key={item.country}
-            className="flex items-center gap-3 p-3 rounded-lg border bg-card/50"
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-lg bg-card/50 transition-colors",
+              onCountryClick && "cursor-pointer hover:bg-card/80"
+            )}
+            onClick={() => onCountryClick?.(item.country)}
           >
             {/* Flag */}
             <div className="flex-shrink-0 w-8 h-8 rounded overflow-hidden bg-muted flex items-center justify-center text-xs font-bold">

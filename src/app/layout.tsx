@@ -6,12 +6,12 @@ import { AdminColorStyle } from "@/components/admin/AdminColorStyle";
 import { InstantColorApply } from "@/components/admin/InstantColorApply";
 import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
 import { InstantFontApply } from "@/components/admin/InstantFontApply";
-import { getAllFontVariables } from "@/lib/fonts";
+import { geistSans, geistMono } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Evergreen Labs",
-  description: "Evergreen Labs - Building the future, one project at a time.",
+  title: "Evergreen Systems",
+  description: "Evergreen Systems - Building the future, one project at a time.",
 };
 
 export const viewport: Viewport = {
@@ -40,8 +40,14 @@ export default async function RootLayout({
     console.warn('Failed to get headers in layout:', error);
   }
 
+  // For public pages, only load default fonts. For admin pages, load all fonts.
+  // This optimization reduces initial font bundle size for landing pages.
+  const fontClasses = isAdminPage 
+    ? `${geistSans.variable} ${geistMono.variable}` // Admin gets default fonts + all via getAllFontVariables in admin components
+    : `${geistSans.variable} ${geistMono.variable}`; // Public pages only need default fonts
+
   return (
-    <html lang="en" suppressHydrationWarning className={getAllFontVariables()}>
+    <html lang="en" suppressHydrationWarning className={fontClasses}>
       <body className="font-sans antialiased" suppressHydrationWarning>
         {/* CRITICAL: Server-side color injection - must be first in body */}
         {/* Next.js will move style tags to head automatically */}

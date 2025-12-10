@@ -8,6 +8,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useCreatePage, useUpdatePage } from "@/lib/react-query/hooks";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
@@ -169,7 +170,8 @@ function SectionCard({ section, onToggleVisible, onRemove }: SectionCardProps) {
 
 export function PageForm({ initialData, isEdit = false }: PageFormProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const createPage = useCreatePage();
+  const updatePage = useUpdatePage();
   const [pageSections, setPageSections] = useState<PageSectionItem[]>([]);
   const [availableSections, setAvailableSections] = useState<PageSectionItem[]>([]);
   const [isLoadingSections, setIsLoadingSections] = useState(false);
@@ -224,6 +226,13 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
       }
 
       const pageSectionsData = await pageSectionsResponse.json();
+      
+      // Debug: Log the API response to check visible values
+      console.log("Page sections data from API:", pageSectionsData.map((ps: any) => ({
+        id: ps.id,
+        visible: ps.visible,
+        visibleType: typeof ps.visible
+      })));
 
       // Fetch all sections
       const allSectionsResponse = await fetch("/api/admin/sections", {
@@ -239,16 +248,30 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
       const allSectionsData = await allSectionsResponse.json();
 
       // Transform page sections data
-      const transformedPageSections = pageSectionsData.map((ps: any, index: number) => ({
-        id: ps.id,
-        section_id: ps.id,
-        title: ps.title,
-        admin_title: ps.admin_title,
-        type: ps.type,
-        position: index,
-        visible: true,
-        page_section_id: ps.page_section_id,
-      }));
+      const transformedPageSections = pageSectionsData.map((ps: any) => {
+        // Ensure visible is a proper boolean
+        let visibleValue = true;
+        if (ps.visible !== undefined && ps.visible !== null) {
+          if (typeof ps.visible === 'boolean') {
+            visibleValue = ps.visible;
+          } else if (typeof ps.visible === 'string') {
+            visibleValue = ps.visible.toLowerCase() === 'true';
+          } else {
+            visibleValue = Boolean(ps.visible);
+          }
+        }
+        
+        return {
+          id: ps.id,
+          section_id: ps.id,
+          title: ps.title,
+          admin_title: ps.admin_title,
+          type: ps.type,
+          position: ps.position ?? 0,
+          visible: visibleValue,
+          page_section_id: ps.page_section_id,
+        };
+      });
 
       setPageSections(transformedPageSections);
       setAvailableSections(allSectionsData);
@@ -322,29 +345,19 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
   };
 
   const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
 
-      const url = isEdit && initialData
-        ? `/api/admin/pages/${initialData.id}`
-        : "/api/admin/pages";
-      const method = isEdit ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `Failed to ${isEdit ? "update" : "create"} page`);
+      // Use React Query mutation
+      if (isEdit && initialData) {
+        await updatePage.mutateAsync({
+          id: initialData.id,
+          data: values,
+        });
+      } else {
+        await createPage.mutateAsync(values);
       }
 
       // If in edit mode and sections were modified, update sections
@@ -379,10 +392,10 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
     } catch (error: any) {
       console.error("Error saving page:", error);
       toast.error(error.message || `Failed to ${isEdit ? "update" : "create"} page`);
-    } finally {
-      setIsSubmitting(false);
     }
   };
+
+  const isSubmitting = createPage.isPending || updatePage.isPending;
 
   return (
     <Form {...form}>

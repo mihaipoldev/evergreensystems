@@ -16,3 +16,4 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
     </ThemeProvider>
   );
 }
+

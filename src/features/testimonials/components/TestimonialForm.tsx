@@ -8,6 +8,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useCreateTestimonial, useUpdateTestimonial } from "@/lib/react-query/hooks";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
@@ -44,7 +45,8 @@ type TestimonialFormProps = {
 
 export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderContent }: TestimonialFormProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const createTestimonial = useCreateTestimonial();
+  const updateTestimonial = useUpdateTestimonial();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const form = useForm<FormValues>({
@@ -76,7 +78,6 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
   };
 
   const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -130,12 +131,7 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
         }
       }
 
-      // Save testimonial
-      const url = isEdit && initialData
-        ? `/api/admin/testimonials/${initialData.id}`
-        : "/api/admin/testimonials";
-      const method = isEdit ? "PUT" : "POST";
-
+      // Save testimonial using React Query mutation
       const payload = {
         ...values,
         author_role: values.author_role || null,
@@ -144,23 +140,28 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
         quote: values.quote || null,
         avatar_url: avatarUrl,
         rating: values.rating ?? null,
+        approved: values.approved ?? false,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `Failed to ${isEdit ? "update" : "create"} testimonial`);
+      let testimonialData;
+      if (isEdit && initialData) {
+        testimonialData = await updateTestimonial.mutateAsync({
+          id: initialData.id,
+          data: payload,
+        });
+      } else {
+        const createPayload = {
+          ...payload,
+          author_role: payload.author_role ?? undefined,
+          company_name: payload.company_name ?? undefined,
+          headline: payload.headline ?? undefined,
+          quote: payload.quote ?? undefined,
+          avatar_url: payload.avatar_url ?? undefined,
+          rating: payload.rating ?? undefined,
+        };
+        testimonialData = await createTestimonial.mutateAsync(createPayload);
       }
 
-      const testimonialData = await response.json();
       const testimonialId = testimonialData.id || initialData?.id;
 
       // Move file from temp to permanent folder if this was a new testimonial
@@ -191,15 +192,11 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
             avatarUrl = `https://${avatarUrl}`;
           }
 
-          // Update testimonial with new URL
+          // Update testimonial with new URL using React Query
           if (testimonialId) {
-            await fetch(`/api/admin/testimonials/${testimonialId}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-              },
-              body: JSON.stringify({ avatar_url: avatarUrl }),
+            await updateTestimonial.mutateAsync({
+              id: testimonialId,
+              data: { avatar_url: avatarUrl },
             });
           }
         }
@@ -214,10 +211,10 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
     } catch (error: any) {
       console.error("Error saving testimonial:", error);
       toast.error(error.message || `Failed to ${isEdit ? "update" : "create"} testimonial`);
-    } finally {
-      setIsSubmitting(false);
     }
   };
+
+  const isSubmitting = createTestimonial.isPending || updateTestimonial.isPending;
 
   return (
     <Form {...form}>

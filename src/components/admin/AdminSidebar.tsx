@@ -38,13 +38,8 @@ import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
 
 const navigationItems = [
   {
-    title: "Dashboard",
-    href: "/admin",
-    icon: faChartLine,
-  },
-  {
     title: "Analytics",
-    href: "/admin/analytics",
+    href: "/admin",
     icon: faChartLine,
   },
   {
@@ -81,11 +76,6 @@ const navigationItems = [
     title: "Media Library",
     href: "/admin/media",
     icon: faImages,
-  },
-  {
-    title: "Site Preferences",
-    href: "/admin/site-preferences",
-    icon: faCog,
   },
   {
     title: "Settings",
@@ -138,34 +128,41 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 border-r border-border bg-sidebar">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm">
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-3 px-6 py-4">
-          <div className="flex flex-col flex-1">
-            <h2 className="font-bold text-sidebar-foreground uppercase tracking-tight transition-colors group-hover:text-primary text-2xl">
-              EVERGREEN
+        {/* Header Section */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-border/50 bg-sidebar/95 backdrop-blur-sm">
+          <div className="flex flex-col flex-1 min-w-0">
+            <h2 className="font-bold text-sidebar-foreground tracking-tight text-lg leading-tight">
+              Evergreen Sys.
             </h2>
-            <p className="text-xs text-muted-foreground leading-tight -mt-0.5">
+            <p className="text-xs text-muted-foreground leading-tight mt-0.5 font-medium">
               Admin Panel
             </p>
           </div>
           <Link href="/">
-            <CircleButton size="md" variant="ghost" className="shrink-0">
+            <CircleButton 
+              size="md" 
+              variant="ghost" 
+              className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
+            >
               <FontAwesomeIcon icon={faHome} className="h-4 w-4" />
             </CircleButton>
           </Link>
         </div>
+
+        {/* Navigation Section */}
         <ScrollArea className="flex-1">
-          <nav className="p-4 space-y-1">
+          <nav className="px-3 py-4 space-y-0.5">
             {navigationItems.map((item) => {
               // Prioritize pendingPath over pathname for instant feedback
               // If there's a pending navigation, only that item should be active
               const isActive = pendingPath 
                 ? (item.href === "/admin" 
-                    ? pendingPath === item.href 
+                    ? pendingPath === item.href || pendingPath.startsWith("/admin/analytics")
                     : pendingPath.startsWith(item.href + "/") || pendingPath === item.href)
                 : (item.href === "/admin" 
-                    ? pathname === item.href 
+                    ? pathname === item.href || pathname.startsWith("/admin/analytics")
                     : pathname.startsWith(item.href + "/") || pathname === item.href);
               
               return (
@@ -174,42 +171,52 @@ export function AdminSidebar() {
                   href={item.href}
                   onClick={() => startNavigation(item.href)}
                   className={cn(
-                    "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-150",
-                    "active:scale-95 active:bg-sidebar-accent/80",
+                    "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    "relative overflow-hidden",
+                    "active:scale-[0.98]",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50"
+                      ? "bg-primary/10 text-sidebar-foreground shadow-sm"
+                      : "text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-primary/10"
                   )}
                 >
-                  <FontAwesomeIcon icon={item.icon} className="h-4 w-4" />
-                  <span>{item.title}</span>
+                  {/* Active indicator bar */}
+                  <FontAwesomeIcon 
+                    icon={item.icon} 
+                    className={cn(
+                      "h-4 w-4 transition-colors shrink-0",
+                      isActive ? "text-primary" : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
+                    )} 
+                  />
+                  <span className="relative">{item.title}</span>
                 </Link>
               );
             })}
           </nav>
         </ScrollArea>
+
+        {/* User Section */}
         {!loading && user && (
-          <div className="mt-auto p-2">
+          <div className="mt-auto p-3 border-t border-border/50 bg-sidebar/95 backdrop-blur-sm">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-accent transition-colors">
-                  <Avatar className="h-8 w-8 rounded-[14px]">
+                <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-sidebar-accent/60 transition-all duration-200 group">
+                  <Avatar className="h-9 w-9 rounded-lg ring-2 ring-border/50 group-hover:ring-primary/30 transition-all">
                     <AvatarImage src="" alt={user.name || user.email || "User"} />
-                    <AvatarFallback className="text-xs rounded-[14px]">
+                    <AvatarFallback className="text-xs rounded-lg bg-primary/10 text-primary font-semibold">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-card-foreground truncate">
+                    <p className="text-sm font-semibold text-sidebar-foreground truncate">
                       {user.name || "User"}
                     </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {user.email}
                     </p>
                   </div>
                   <FontAwesomeIcon
                     icon={faEllipsisVertical}
-                    className="h-4 w-4 text-muted-foreground shrink-0"
+                    className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-sidebar-foreground transition-colors"
                   />
                 </button>
               </DropdownMenuTrigger>

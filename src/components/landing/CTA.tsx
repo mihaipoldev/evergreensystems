@@ -56,73 +56,43 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
   };
 
   return (
-    <section id="cta" className="py-24 relative">
-      {/* Background Effects */}
-      <div 
-        className="absolute inset-0 bg-dot-pattern opacity-30 dark:opacity-60"
-        style={{
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 3%, rgba(0,0,0,0.15) 8%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.7) 35%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,1) 70%, rgba(0,0,0,1) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 3%, rgba(0,0,0,0.15) 8%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.7) 35%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,1) 70%, rgba(0,0,0,1) 100%)',
-        }}
-      />
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <section id="cta" className="py-20 pb-32 relative">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
           className="text-center"
         >
-          {/* Team Avatars */}
-          <div className="flex justify-center -space-x-3 mb-8">
-            {teamMembers.map((member, index) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className={`w-12 h-12 rounded-full ${member.color} border-4 border-background flex items-center justify-center text-white font-semibold text-sm`}
-                title={member.name}
-              >
-                {member.initial || member.name[0]}
-              </motion.div>
-            ))}
-            {remainingCount > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: displayCount * 0.1 }}
-                className="w-12 h-12 rounded-full bg-secondary border-4 border-background flex items-center justify-center text-muted-foreground font-semibold text-xs"
-                title={`${remainingCount} more team members`}
-              >
-                +{remainingCount}
-              </motion.div>
-            )}
-          </div>
-
-          <span className="text-primary text-sm font-medium uppercase tracking-wider">
-            Ready to Transform?
-          </span>
+          {/* Decorative accent line */}
+          <motion.div
+            initial={{ width: 0 }}
+            whileInView={{ width: "4rem" }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="h-1 bg-primary mx-auto mb-8 rounded-full"
+          />
+          
           <RichText
             as="h2"
             text={title}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight"
           />
           <RichText
             as="p"
             text={subtitle}
-            className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto"
+            className="text-muted-foreground text-lg sm:text-xl mb-12 max-w-2xl mx-auto leading-relaxed"
           />
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons with enhanced styling */}
           {sortedButtons.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-wrap gap-4 justify-center items-center max-w-2xl mx-auto"
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="flex flex-wrap gap-4 justify-center items-center max-w-3xl mx-auto"
             >
               {sortedButtons.map((button, index) => (
                 <motion.div
@@ -130,19 +100,25 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
-                  whileHover={{ scale: 1.03 }}
+                  transition={{ 
+                    opacity: { duration: 0.6, delay: 0.3 + index * 0.1 },
+                    y: { duration: 0.6, delay: 0.3 + index * 0.1 },
+                    scale: { type: "spring", stiffness: 400, damping: 25 }
+                  }}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  className="relative"
                 >
                   <Button
                     asChild
                     className={cn(
-                      "h-14 px-8 font-semibold whitespace-nowrap text-base",
+                      "relative h-14 px-8 font-semibold whitespace-nowrap text-base transition-all duration-150",
+                      "border-2",
                       button.style === "primary" || !button.style
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
                         : button.style === "secondary"
-                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground border-secondary/20 hover:border-secondary/40"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
                     )}
                   >
                     <Link 
@@ -150,11 +126,12 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
                       target="_blank" 
                       rel="noopener noreferrer"
                       onClick={() => handleCTAClick(button)}
+                      className="flex items-center justify-center gap-2"
                     >
                       {button.icon && (
                         <FontAwesomeIcon
                           icon={button.icon as any}
-                          className="h-4 w-4 mr-2"
+                          className="h-4 w-4"
                         />
                       )}
                       {button.label}
@@ -164,6 +141,17 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
               ))}
             </motion.div>
           )}
+          
+          {/* Subtle decorative element at bottom */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="mt-16 flex justify-center"
+          >
+            <div className="h-px w-32 bg-gradient-to-r from-transparent via-border to-transparent" />
+          </motion.div>
         </motion.div>
       </div>
     </section>

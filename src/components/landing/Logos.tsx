@@ -39,7 +39,7 @@ export const Logos = ({ section }: LogosProps) => {
   const title = section?.title || 'Built with industry-leading data & automation tools';
 
   return (
-    <section id="logos" className="py-16 pt-24 relative">
+    <section id="logos" className="py-16 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0 }}

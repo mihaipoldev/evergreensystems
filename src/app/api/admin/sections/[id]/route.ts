@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function GET(
   request: Request,
@@ -72,6 +73,19 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Invalidate cache for sections
+    revalidateTag("sections", "max");
+    // Invalidate page sections cache for all pages that use this section
+    const { data: pageSections } = await supabase
+      .from("page_sections")
+      .select("page_id")
+      .eq("section_id", id);
+    if (pageSections) {
+      pageSections.forEach((ps: any) => {
+        revalidateTag(`page-sections-${ps.page_id}`, "max");
+      });
+    }
+
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -94,6 +108,13 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    
+    // Get page IDs that use this section before deletion
+    const { data: pageSections } = await supabase
+      .from("page_sections")
+      .select("page_id")
+      .eq("section_id", id);
+
     const { error } = await supabase
       .from("sections")
       .delete()
@@ -101,6 +122,15 @@ export async function DELETE(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Invalidate cache for sections
+    revalidateTag("sections", "max");
+    // Invalidate page sections cache for all pages that used this section
+    if (pageSections) {
+      pageSections.forEach((ps: any) => {
+        revalidateTag(`page-sections-${ps.page_id}`, "max");
+      });
     }
 
     return NextResponse.json({ message: "Section deleted successfully" }, { status: 200 });

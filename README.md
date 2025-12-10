@@ -1,6 +1,6 @@
-# Evergreen Labs Website
+# Evergreen Systems Website
 
-A Next.js website for Evergreen Labs, built with TypeScript, Tailwind CSS, and shadcn/ui.
+A Next.js website for Evergreen Systems, built with TypeScript, Tailwind CSS, and shadcn/ui.
 
 ## Tech Stack
 

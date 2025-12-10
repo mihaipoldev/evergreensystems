@@ -7,6 +7,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { trackEvent } from '@/lib/analytics';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { cn } from '@/lib/utils';
+import type { CTAButtonWithSection } from '@/features/cta/types';
 
 type Section = {
   id: string;
@@ -19,10 +22,12 @@ type Section = {
   page_section_id: string;
   position: number;
   visible: boolean;
+  ctaButtons?: CTAButtonWithSection[];
 };
 
 type NavbarProps = {
   sections?: Section[];
+  headerSection?: Section;
 };
 
 // Helper function to format section type to display name
@@ -54,7 +59,7 @@ const getSectionHref = (type: string): string => {
   return `#${type}`;
 };
 
-export const Navbar = ({ sections = [] }: NavbarProps) => {
+export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -107,11 +112,32 @@ export const Navbar = ({ sections = [] }: NavbarProps) => {
     }
   };
 
-  // Generate navigation links from sections, excluding hero, cta, and logos
+  // Get header section CTA buttons
+  const headerButtons = useMemo(() => {
+    if (!headerSection?.ctaButtons || headerSection.ctaButtons.length === 0) {
+      return [];
+    }
+    return [...headerSection.ctaButtons].sort((a, b) => 
+      a.section_cta_button.position - b.section_cta_button.position
+    );
+  }, [headerSection]);
+
+  // Generate navigation links from sections, excluding hero, cta, logos, header, and footer
+  // Sections are already ordered by position from the database, but we sort again to ensure correct order
   const navLinks = useMemo(() => {
     return sections
-      .filter((section) => section.type !== 'hero' && section.type !== 'cta' && section.type !== 'logos' && section.visible)
-      .sort((a, b) => a.position - b.position)
+      .filter((section) => section.type !== 'hero' && section.type !== 'cta' && section.type !== 'logos' && section.type !== 'header' && section.type !== 'footer' && section.visible)
+      .sort((a, b) => {
+        // Handle null/undefined positions by putting them at the end
+        const aPos = a.position ?? Infinity;
+        const bPos = b.position ?? Infinity;
+        // Primary sort by position
+        if (aPos !== bPos) {
+          return aPos - bPos;
+        }
+        // Secondary sort by id for stability when positions are equal
+        return a.id.localeCompare(b.id);
+      })
       .map((section) => ({
         name: formatSectionName(section.type, section.title, section.admin_title),
         href: getSectionHref(section.type),
@@ -261,27 +287,6 @@ export const Navbar = ({ sections = [] }: NavbarProps) => {
                 </motion.a>
               );
             })}
-            {/* Contact Link */}
-            <motion.a
-              href="#cta"
-              onClick={(e) => handleSmoothScroll(e, '#cta')}
-              className={`relative text-md font-medium group transition-colors duration-200 ${
-                activeSection === 'cta'
-                  ? 'text-primary'
-                  : 'text-foreground hover:text-primary'
-              }`}
-              style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
-            >
-              Contact
-              {activeSection === 'cta' && (
-                <motion.span
-                  layoutId="activeSection"
-                  className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"
-                  initial={false}
-                  transition={{ type: 'spring', stiffness: 600, damping: 35 }}
-                />
-              )}
-            </motion.a>
             {/* Theme Toggle */}
             {mounted && (
               <motion.button
@@ -294,31 +299,82 @@ export const Navbar = ({ sections = [] }: NavbarProps) => {
                 {currentTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
               </motion.button>
             )}
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-              <Button 
-                asChild
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-5"
-              >
-                <Link 
-                  href="#cta" 
-                  onClick={(e) => {
-                    handleSmoothScroll(e, '#cta');
-                    trackEvent({
-                      event_type: "link_click",
-                      entity_type: "cta_button",
-                      entity_id: "navbar-get-in-touch",
-                      metadata: {
-                        location: "header",
-                        href: "#cta",
-                        label: "Get in Touch",
-                      },
-                    });
-                  }}
+            {/* Header Section CTA Buttons */}
+            {headerButtons.length > 0 ? (
+              headerButtons.map((button) => {
+                const isAnchorLink = button.url.startsWith('#');
+                return (
+                  <motion.div key={button.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+                    <Button 
+                      asChild
+                      className={cn(
+                        "px-5",
+                        button.style === "primary" || !button.style
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          : button.style === "secondary"
+                          ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                          : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      )}
+                    >
+                      <Link 
+                        href={button.url}
+                        {...(isAnchorLink ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                        onClick={(e) => {
+                          if (isAnchorLink) {
+                            handleSmoothScroll(e, button.url);
+                          }
+                          trackEvent({
+                            event_type: "link_click",
+                            entity_type: "cta_button",
+                            entity_id: button.id,
+                            metadata: {
+                              location: "navbar",
+                              href: button.url,
+                              label: button.label,
+                            },
+                          });
+                        }}
+                      >
+                        {button.icon && (
+                          <FontAwesomeIcon
+                            icon={button.icon as any}
+                            className="h-4 w-4 mr-2"
+                          />
+                        )}
+                        {button.label}
+                      </Link>
+                    </Button>
+                  </motion.div>
+                );
+              })
+            ) : (
+              // Fallback to default button if no header buttons
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+                <Button 
+                  asChild
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5"
                 >
-                Get in Touch
-                </Link>
-              </Button>
-            </motion.div>
+                  <Link 
+                    href="#cta" 
+                    onClick={(e) => {
+                      handleSmoothScroll(e, '#cta');
+                      trackEvent({
+                        event_type: "link_click",
+                        entity_type: "cta_button",
+                        entity_id: "navbar-get-in-touch",
+                        metadata: {
+                          location: "header",
+                          href: "#cta",
+                          label: "Get in Touch",
+                        },
+                      });
+                    }}
+                  >
+                  Get in Touch
+                  </Link>
+                </Button>
+              </motion.div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -372,45 +428,81 @@ export const Navbar = ({ sections = [] }: NavbarProps) => {
                   </a>
                 );
               })}
-              <a
-                href="#cta"
-                className={`text-sm font-medium transition-colors ${
-                  activeSection === 'cta'
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
-                onClick={(e) => {
-                  handleSmoothScroll(e, '#cta');
-                  setIsOpen(false);
-                }}
-              >
-                Contact
-              </a>
-              <Button 
-                asChild
-                className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
-              >
-                <Link 
-                  href="#cta" 
-                  onClick={(e) => {
-                    handleSmoothScroll(e, '#cta');
-                    setIsOpen(false);
-                    trackEvent({
-                      event_type: "link_click",
-                      entity_type: "cta_button",
-                      entity_id: "navbar-get-in-touch-mobile",
-                      metadata: {
-                        location: "header",
-                        href: "#cta",
-                        label: "Get in Touch",
-                      },
-                    });
-                  }}
+              {/* Header Section CTA Buttons - Mobile */}
+              {headerButtons.length > 0 ? (
+                headerButtons.map((button) => {
+                  const isAnchorLink = button.url.startsWith('#');
+                  return (
+                    <Button 
+                      key={button.id}
+                      asChild
+                      className={cn(
+                        "w-full",
+                        button.style === "primary" || !button.style
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          : button.style === "secondary"
+                          ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                          : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      )}
+                    >
+                      <Link 
+                        href={button.url}
+                        {...(isAnchorLink ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                        onClick={(e) => {
+                          if (isAnchorLink) {
+                            handleSmoothScroll(e, button.url);
+                          }
+                          setIsOpen(false);
+                          trackEvent({
+                            event_type: "link_click",
+                            entity_type: "cta_button",
+                            entity_id: button.id,
+                            metadata: {
+                              location: "navbar-mobile",
+                              href: button.url,
+                              label: button.label,
+                            },
+                          });
+                        }}
+                      >
+                        {button.icon && (
+                          <FontAwesomeIcon
+                            icon={button.icon as any}
+                            className="h-4 w-4 mr-2"
+                          />
+                        )}
+                        {button.label}
+                      </Link>
+                    </Button>
+                  );
+                })
+              ) : (
+                // Fallback to default button if no header buttons
+                <Button 
+                  asChild
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
                 >
-                Get in Touch
-                </Link>
-              </Button>
+                  <Link 
+                    href="#cta" 
+                    onClick={(e) => {
+                      handleSmoothScroll(e, '#cta');
+                      setIsOpen(false);
+                      trackEvent({
+                        event_type: "link_click",
+                        entity_type: "cta_button",
+                        entity_id: "navbar-get-in-touch-mobile",
+                        metadata: {
+                          location: "header",
+                          href: "#cta",
+                          label: "Get in Touch",
+                        },
+                      });
+                    }}
+                  >
+                  Get in Touch
+                  </Link>
+                </Button>
+              )}
             </div>
           </motion.div>
         )}

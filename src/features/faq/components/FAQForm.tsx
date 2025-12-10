@@ -9,6 +9,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import {
@@ -25,6 +32,7 @@ import type { FAQItem } from "../types";
 const formSchema = z.object({
   question: z.string().min(1, "Question is required"),
   answer: z.string().min(1, "Answer is required"),
+  status: z.enum(["active", "inactive"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,6 +51,7 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
     defaultValues: {
       question: initialData?.question || "",
       answer: initialData?.answer || "",
+      status: initialData?.status || "active",
     },
   });
 
@@ -132,6 +141,33 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
                 </FormControl>
                 <FormDescription>
                   The answer to the question
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      className="w-full bg-card text-foreground border border-input !shadow-[0px_2px_2px_0px_rgba(16,17,26,0.05)] hover:!shadow-[0px_4px_4px_0px_rgba(16,17,26,0.05)] dark:!shadow-[0px_1px_1px_0px_rgba(255,255,255,0.05)] dark:hover:!shadow-[0px_2px_2px_0px_rgba(255,255,255,0.05)]"
+                    >
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>
+                  Control whether this FAQ is visible publicly.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

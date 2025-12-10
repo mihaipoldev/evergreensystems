@@ -1,11 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication first using regular client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -13,10 +15,13 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("faq_items")
-      .select("*")
+      .select("id, question, answer, position, status, created_at, updated_at")
       .eq("id", id)
       .single();
 
@@ -42,6 +47,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication first using regular client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -49,16 +55,22 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
     const body = await request.json();
-    const { question, answer, position } = body;
+    const { question, answer, position, status } = body;
 
     const updateData: Record<string, unknown> = {};
     if (question !== undefined) updateData.question = question;
     if (answer !== undefined) updateData.answer = answer;
     if (position !== undefined) updateData.position = position;
+    if (status !== undefined && ["active", "inactive"].includes(status)) {
+      updateData.status = status;
+    }
 
-    const { data, error } = await (supabase
+    const { data, error } = await (adminSupabase
       .from("faq_items") as any)
       .update(updateData)
       .eq("id", id)
@@ -68,6 +80,9 @@ export async function PUT(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for FAQ items
+    revalidateTag("faq-items", "max");
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
@@ -83,6 +98,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication first using regular client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -90,8 +106,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
-    const { error } = await supabase
+    const { error } = await adminSupabase
       .from("faq_items")
       .delete()
       .eq("id", id);
@@ -99,6 +118,9 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for FAQ items
+    revalidateTag("faq-items", "max");
 
     return NextResponse.json({ message: "FAQ item deleted successfully" }, { status: 200 });
   } catch (error) {

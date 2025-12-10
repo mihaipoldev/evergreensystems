@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function GET(request: Request) {
   try {
@@ -10,16 +11,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search");
+
+    let query = supabase
       .from("cta_buttons")
-      .select("*")
-      .order("position", { ascending: true });
+      .select("id, label, url, style, icon, position, status, created_at, updated_at");
+
+    // Server-side search filtering
+    if (search && search.trim() !== "") {
+      const searchPattern = `%${search.trim()}%`;
+      query = query.or(`label.ilike.${searchPattern},url.ilike.${searchPattern}`);
+    }
+
+    const { data, error } = await query.order("position", { ascending: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // No cache for admin routes - always fresh data
+    return NextResponse.json(data, {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },
@@ -63,6 +80,9 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for CTA buttons
+    revalidateTag("cta-buttons", "max");
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

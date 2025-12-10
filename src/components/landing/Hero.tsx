@@ -23,7 +23,7 @@
  * Current setup uses Wistia Queue (_wq) to set playerColor before video loads.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Script from 'next/script';
 import Link from 'next/link';
@@ -37,6 +37,17 @@ import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
 import type { MediaWithSection } from '@/features/media/types';
 import type { CTAButtonWithSection } from '@/features/cta/types';
+
+type HeroContent = {
+  topBanner?: {
+    text?: string;
+    visible?: boolean;
+  };
+  bottomBar?: {
+    text?: string;
+    visible?: boolean;
+  };
+};
 
 type Section = {
   id: string;
@@ -56,10 +67,52 @@ type HeroProps = {
 
 export const Hero = ({ section, ctaButtons }: HeroProps) => {
   const wistiaContainerRef = useRef<HTMLDivElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldLoadWistia, setShouldLoadWistia] = useState(false);
   
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'Your Entire Outbound System\nFully Automated.';
   const subtitle = section?.subtitle || 'Built for B2B teams who want consistent meetings.';
+  
+  // Parse content JSON safely
+  const parseHeroContent = (content: any): HeroContent | null => {
+    if (!content) return null;
+    
+    try {
+      const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+      return {
+        topBanner: parsed?.topBanner,
+        bottomBar: parsed?.bottomBar,
+      };
+    } catch (error) {
+      console.warn('Failed to parse hero content JSON:', error);
+      return null;
+    }
+  };
+
+  const heroContent = parseHeroContent(section?.content);
+
+  // Debug: Log content for troubleshooting
+  if (process.env.NODE_ENV === 'development' && section?.content) {
+    console.log('Hero section content:', section.content);
+    console.log('Parsed hero content:', heroContent);
+  }
+
+  // Top banner configuration
+  // Show if: JSON is valid AND topBanner exists AND (visible is not false) AND text exists
+  const topBannerText = heroContent?.topBanner?.text || 'FOR B2B COMPANIES ABOVE $100K/MO IN REVENUE';
+  const topBannerVisible = heroContent !== null && 
+                           heroContent?.topBanner &&
+                           heroContent.topBanner.visible !== false &&
+                           !!heroContent.topBanner.text;
+
+  // Bottom bar configuration  
+  // Show if: JSON is valid AND bottomBar exists AND (visible is not false) AND text exists
+  const bottomBarText = heroContent?.bottomBar?.text || 'No pressure | Short call | See if it\'s a fit';
+  const bottomBarVisible = heroContent !== null && 
+                           heroContent?.bottomBar &&
+                           heroContent.bottomBar.visible !== false &&
+                           !!heroContent.bottomBar.text;
   
   // Get CTA buttons from props or section
   const buttons = ctaButtons || section?.ctaButtons || [];
@@ -222,17 +275,36 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
     // No cleanup needed - Wistia queue persists
   }, [videoId, mainMedia?.id]);
 
+  // Intersection Observer to lazy load Wistia scripts only when video is in viewport
+  useEffect(() => {
+    if (!videoContainerRef.current || !videoId) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadWistia(true);
+            observer.disconnect(); // Only load once
+          }
+        });
+      },
+      {
+        rootMargin: '100px', // Start loading 100px before entering viewport
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(videoContainerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [videoId]);
+
   return (
-    <section className="relative flex items-center justify-center pt-32 overflow-hidden">
+    <section className="relative flex items-center justify-center pt-[116px] overflow-hidden pb-4">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-radial" />
-      <div 
-        className="absolute inset-0 bg-dot-pattern opacity-30 dark:opacity-60"
-        style={{
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0.7) 65%, rgba(0,0,0,0.5) 75%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0.15) 92%, rgba(0,0,0,0.05) 97%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0.7) 65%, rgba(0,0,0,0.5) 75%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0.15) 92%, rgba(0,0,0,0.05) 97%, rgba(0,0,0,0) 100%)',
-        }}
-      />
       
       {/* Animated Glow Orbs */}
       <motion.div
@@ -254,16 +326,18 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
 
       <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-primary/40 bg-primary/5 text-xs font-regular mb-6"
-          style={{ maxWidth: '100%' }}
-        >
-          <span className="w-4 h-4 rounded-full bg-primary animate-pulse flex-shrink-0" />
-          <span className="uppercase text-foreground">FOR B2B COMPANIES ABOVE $100K/MO IN REVENUE</span>
-        </motion.div>
+        {topBannerVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-primary/40 bg-primary/5 text-xs font-regular mb-6"
+            style={{ maxWidth: '100%' }}
+          >
+            <span className="w-4 h-4 rounded-full bg-primary animate-pulse flex-shrink-0" />
+            <span className="uppercase text-foreground">{topBannerText}</span>
+          </motion.div>
+        )}
 
         {/* Headline */}
         <motion.div
@@ -287,7 +361,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           <RichText
             as="p"
             text={subtitle}
-            className="font-regular text-sm sm:text-lg text-foreground max-w-2xl mx-auto mb-4"
+            className="font-regular text-[14px] sm:text-[16px] text-foreground max-w-2xl mx-auto mb-4"
           />
         </motion.div>
 
@@ -391,30 +465,35 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
               }}
             />
             
-            {/* Wistia Scripts - Load lazily to avoid blocking mobile */}
-            <Script
-              key={`wistia-media-${videoId}`}
-              src={`https://fast.wistia.com/embed/medias/${videoId}.jsonp`}
-              strategy="lazyOnload"
-              onError={(e) => {
-                console.error('Wistia media script failed to load:', e);
-                // Don't crash the page if Wistia fails
-              }}
-            />
-            <Script
-              key="wistia-external"
-              src="https://fast.wistia.com/assets/external/E-v1.js"
-              strategy="lazyOnload"
-              onError={(e) => {
-                console.error('Wistia external script failed to load:', e);
-                // Don't crash the page if Wistia fails
-              }}
-            />
+            {/* Wistia Scripts - Load only when in viewport */}
+            {shouldLoadWistia && (
+              <>
+                <Script
+                  key={`wistia-media-${videoId}`}
+                  src={`https://fast.wistia.com/embed/medias/${videoId}.jsonp`}
+                  strategy="lazyOnload"
+                  onError={(e) => {
+                    console.error('Wistia media script failed to load:', e);
+                    // Don't crash the page if Wistia fails
+                  }}
+                />
+                <Script
+                  key="wistia-external"
+                  src="https://fast.wistia.com/assets/external/E-v1.js"
+                  strategy="lazyOnload"
+                  onError={(e) => {
+                    console.error('Wistia external script failed to load:', e);
+                    // Don't crash the page if Wistia fails
+                  }}
+                />
+              </>
+            )}
           </>
         )}
 
         {/* Video Container */}
         <motion.div
+          ref={videoContainerRef}
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
@@ -424,7 +503,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           <div
             className="w-full max-w-[780px] rounded-2xl p-0.5"
             style={{
-              backgroundImage: 'linear-gradient(84deg, #3495aa, #fababb 13%, #fbb 53%, #fa9292 84%, #f15050 92%)',
+              backgroundImage: 'linear-gradient(84deg, #0e87f2, #F2190F 92%)',
             }}
           >
             {/* Black Inner Container */}
@@ -445,6 +524,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                     muted={false}
                     loop={false}
                     controls={true}
+                    priority={true}
                   />
                 </div>
               ) : videoId ? (
@@ -480,14 +560,18 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                 key={button.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.4 + index * 0.1 }}
-                whileHover={{ scale: 1.03 }}
+                transition={{ 
+                  opacity: { duration: 0.7, delay: 0.4 + index * 0.1 },
+                  y: { duration: 0.7, delay: 0.4 + index * 0.1 },
+                  scale: { type: "spring", stiffness: 400, damping: 25 }
+                }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
                   asChild
                   className={cn(
-                    "h-14 px-8 font-semibold whitespace-nowrap text-base",
+                    "h-14 px-8 font-semibold whitespace-nowrap text-base transition-all duration-150",
                     button.style === "primary" || !button.style
                       ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                       : button.style === "secondary"
@@ -532,14 +616,16 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
         )}
 
         {/* Trust Indicator */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="text-sm text-muted-foreground mt-6"
-        >
-          ✔ No pressure  •  ✔ Short call  •  ✔ See if it’s a fit
-        </motion.p>
+        {bottomBarVisible && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="text-sm text-muted-foreground mt-6"
+          >
+            {bottomBarText}
+          </motion.p>
+        )}
       </div>
     </section>
   );

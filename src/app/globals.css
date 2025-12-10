@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -171,7 +172,7 @@
     --background: 0 0% 10%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 7%;
+    --card: 0 0% 8%;
     --card-foreground: 0 0% 95%;
 
     --popover: 0 0% 10%;
@@ -202,8 +203,8 @@
     --sidebar-accent: 0 0% 6%;
     --sidebar-accent-foreground: var(--primary);
 
-    --table-background: 0 0% 7%;
-    --table-head-background: 0 0% 7%;
+    --table-background: 0 0% 8%;
+    --table-head-background: 0 0% 8%;
     --table-head-foreground: 0 0% 95%;
     --table-accent-background: 0 0% 11%;
 
@@ -237,18 +238,18 @@
     --ring: 0 0% 3.9%;
     --radius: 0.75rem;
 
-    /* --primary: 212 96% 51%; */
-    /* --primary: 208 65% 50%; */
 
-    /* --primary: 182 64% 30%; */
-    /* --primary: 186 39% 49%; */
-    /* --primary: 170 60% 50%;  */
-    /* --primary: 160 90% 40%;  */
-    /* --primary: 202 90% 50%;   */
-    /* --primary: 202 90% 50%;   */
-    /* --primary: 202 90% 50%;   */
+
+    /* --primary: 206 85% 50%; */
+    /* --primary: 208 65% 50%; */
+    --primary: 208 90% 50%; 
+
+    /* --primary: 193 57% 50%; */
+    /* --primary: 202 51% 50%; */
+
     /* --primary: 170 71% 49%;    */
-     --primary: 193 57% 50%;   
+    /* --primary: 186 59% 49%; */
+    /* --primary: 160 90% 32%; */
 
     --primary-foreground: 0 0% 98%;
 
@@ -314,7 +315,10 @@
     width: 100%;
     overflow-x: hidden;
     position: relative;
+    isolation: isolate; /* allow pseudo-elements to layer above background */
+    z-index: 0;
   }
+
   
   /* Admin-specific font families */
   html.preset-admin body,

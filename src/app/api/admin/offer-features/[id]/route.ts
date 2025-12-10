@@ -1,11 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication first using regular client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -13,8 +15,11 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("offer_features")
       .select("*")
       .eq("id", id)
@@ -42,6 +47,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication first using regular client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -49,9 +55,12 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
     const body = await request.json();
-    const { title, subtitle, description, icon, position } = body;
+    const { title, subtitle, description, icon, position, status } = body;
 
     const updateData: Record<string, unknown> = {};
     if (title !== undefined) updateData.title = title;
@@ -59,8 +68,11 @@ export async function PUT(
     if (description !== undefined) updateData.description = description;
     if (icon !== undefined) updateData.icon = icon;
     if (position !== undefined) updateData.position = position;
+    if (status !== undefined && ["active", "inactive"].includes(status)) {
+      updateData.status = status;
+    }
 
-    const { data, error } = await (supabase
+    const { data, error } = await (adminSupabase
       .from("offer_features") as any)
       .update(updateData)
       .eq("id", id)
@@ -70,6 +82,9 @@ export async function PUT(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for offer features
+    revalidateTag("offer-features", "max");
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
@@ -85,6 +100,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication first using regular client
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -92,8 +108,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client for admin operations to bypass RLS
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
-    const { error } = await supabase
+    const { error } = await adminSupabase
       .from("offer_features")
       .delete()
       .eq("id", id);
@@ -101,6 +120,9 @@ export async function DELETE(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Invalidate cache for offer features
+    revalidateTag("offer-features", "max");
 
     return NextResponse.json({ message: "Offer feature deleted successfully" }, { status: 200 });
   } catch (error) {

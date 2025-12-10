@@ -1,26 +1,17 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  AdminTable,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/admin/AdminTable";
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { SortableCardList } from "@/components/admin/SortableCardList";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faQuoteLeft } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faStar, faStarHalfStroke, faCheck, faX, faQuoteLeft } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
-import { cn } from "@/lib/utils";
+import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import type { Testimonial } from "../types";
 
 type TestimonialsListProps = {
@@ -30,9 +21,7 @@ type TestimonialsListProps = {
 export function TestimonialsList({ initialTestimonials }: TestimonialsListProps) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>(initialTestimonials);
   const [searchQuery, setSearchQuery] = useState("");
-  const [clickedRowId, setClickedRowId] = useState<string | null>(null);
-  const router = useRouter();
-  const { startNavigation } = useNavigationLoading();
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   const handleDelete = async (id: string) => {
     try {
@@ -53,7 +42,7 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
       }
 
       toast.success("Testimonial deleted successfully");
-      setTestimonials(testimonials.filter((t) => t.id !== id));
+      setTestimonials(testimonials.filter((item) => item.id !== id));
     } catch (error: any) {
       console.error("Error deleting testimonial:", error);
       toast.error(error.message || "Failed to delete testimonial");
@@ -61,27 +50,95 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
     }
   };
 
-  const filteredTestimonials = testimonials.filter((testimonial) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      testimonial.author_name.toLowerCase().includes(query) ||
-      testimonial.quote?.toLowerCase().includes(query) ||
-      testimonial.company_name?.toLowerCase().includes(query) ||
-      testimonial.author_role?.toLowerCase().includes(query)
-    );
-  });
+  const handleToggleApproval = async (item: Testimonial) => {
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-  const handleRowClick = (testimonialId: string, e: React.MouseEvent<HTMLTableRowElement>) => {
-    // Don't navigate if clicking on action menu or its children
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-action-menu]')) {
+      const nextApproved = !item.approved;
+
+      const response = await fetch(`/api/admin/testimonials/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ approved: nextApproved }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update approval status");
+      }
+
+      const updatedTestimonial = await response.json();
+
+      // Update state with the response data to ensure position is preserved
+      setTestimonials((items) =>
+        items.map((testimonial) =>
+          testimonial.id === item.id ? { ...testimonial, ...updatedTestimonial } : testimonial
+        )
+      );
+      toast.success(`Testimonial ${nextApproved ? "approved" : "unapproved"}`);
+    } catch (error: any) {
+      console.error("Error toggling testimonial approval:", error);
+      toast.error(error.message || "Failed to update approval status");
+    }
+  };
+
+  const handleReorder = async (orderedItems: Testimonial[]) => {
+    if (searchQuery.trim()) {
+      toast.info("Clear the search to reorder testimonials.");
       return;
     }
-    setClickedRowId(testimonialId);
-    const path = `/admin/testimonials/${testimonialId}/edit`;
-    startNavigation(path);
-    router.push(path);
+
+    setIsSavingOrder(true);
+    const previousItems = testimonials;
+    const newOrder = orderedItems.map((item, index) => ({ ...item, position: index }));
+
+    setTestimonials(newOrder);
+
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch("/api/admin/testimonials/reorder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          items: newOrder.map(({ id, position }) => ({ id, position })),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reorder testimonials");
+      }
+
+      toast.success("Testimonial order updated");
+    } catch (error: any) {
+      console.error("Error reordering testimonials:", error);
+      toast.error(error.message || "Failed to reorder testimonials");
+      setTestimonials(previousItems);
+    } finally {
+      setIsSavingOrder(false);
+    }
   };
+
+  const filteredTestimonials = testimonials.filter((item) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.author_name.toLowerCase().includes(query) ||
+      (item.quote && item.quote.toLowerCase().includes(query)) ||
+      (item.company_name && item.company_name.toLowerCase().includes(query)) ||
+      (item.author_role && item.author_role.toLowerCase().includes(query))
+    );
+  });
 
   return (
     <div className="w-full">
@@ -117,175 +174,112 @@ export function TestimonialsList({ initialTestimonials }: TestimonialsListProps)
           </Button>
         </AdminToolbar>
 
-        <AdminTable>
-          <TableHeader>
-            <TableRow className="bg-muted/50 border-b">
-              <TableHead className="pl-4 w-20 font-bold">Icon</TableHead>
-              <TableHead className="font-bold">Author</TableHead>
-              <TableHead className="font-bold w-28">Status</TableHead>
-              <TableHead className="text-right pr-4 w-24 font-bold" style={{ textAlign: "right" }}>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTestimonials.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  {searchQuery
-                    ? "No testimonials found matching your search"
-                    : "No testimonials found"}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTestimonials.map((testimonial) => (
-                <Fragment key={testimonial.id}>
-                  {/* Mobile Layout */}
-                  <TableRow
-                    key={`${testimonial.id}-mobile`}
-                    className={cn(
-                      "md:hidden group cursor-pointer hover:bg-muted/50 border-b border-border/50 transition-all duration-150",
-                      clickedRowId === testimonial.id && "bg-primary/5"
-                    )}
-                    onClick={(e) => handleRowClick(testimonial.id, e)}
-                  >
-                    <TableCell className="px-3 md:pl-4 md:pr-4 py-4" colSpan={3}>
-                      <div className={cn(
-                        "flex items-start gap-3 md:gap-4 transition-transform duration-150",
-                        clickedRowId === testimonial.id && "scale-[0.99]"
-                      )}>
-                        <div className={cn(
-                          "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 transition-all duration-150",
-                          clickedRowId === testimonial.id ? "bg-primary/10 ring ring-primary/20" : "bg-muted"
-                        )}>
-                          {testimonial.avatar_url ? (
-                            <img
-                              src={testimonial.avatar_url}
-                              alt={testimonial.author_name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className={cn(
-                              "text-xs font-semibold transition-colors duration-150",
-                              clickedRowId === testimonial.id ? "text-primary/70" : "text-muted-foreground"
-                            )}>
-                              {testimonial.author_name
-                                .split(/\s+/)
-                                .map((w) => w[0])
-                                .join("")
-                                .substring(0, 2)
-                                .toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-base mb-1.5 break-words">
-                            {testimonial.author_name}
-                          </div>
-                          {(testimonial.author_role || testimonial.company_name) && (
-                            <div className="text-sm text-muted-foreground mb-1">
-                              {testimonial.author_role && testimonial.company_name
-                                ? `${testimonial.author_role} at ${testimonial.company_name}`
-                                : testimonial.author_role || testimonial.company_name}
-                            </div>
-                          )}
-                          {testimonial.quote && (
-                            <div className="text-xs text-muted-foreground line-clamp-2">
-                              {testimonial.quote}
-                            </div>
-                          )}
-                          <div className="mt-2">
-                            <Badge
-                              variant={testimonial.approved ? "default" : "outline"}
-                              className="text-xs font-semibold"
-                            >
-                              {testimonial.approved ? "Approved" : "Unapproved"}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div 
-                          className="flex-shrink-0 ml-2" 
-                          data-action-menu
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ActionMenu
-                            itemId={testimonial.id}
-                            editHref={`/admin/testimonials/${testimonial.id}/edit`}
-                            onDelete={handleDelete}
-                            deleteLabel={`testimonial from "${testimonial.author_name}"`}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Desktop Layout */}
-                  <TableRow
-                    key={`${testimonial.id}-desktop`}
-                    className={cn(
-                      "table-row-responsive group cursor-pointer hover:bg-muted/50 transition-all duration-150",
-                      clickedRowId === testimonial.id && "bg-primary/5"
-                    )}
-                    onClick={(e) => handleRowClick(testimonial.id, e)}
-                  >
-                    <TableCell className="pl-4 w-20">
-                      <div className={cn(
-                        "h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-all duration-150",
-                        clickedRowId === testimonial.id ? "bg-primary/10 ring ring-primary/20 scale-[0.99]" : "bg-muted"
-                      )}>
-                        {testimonial.avatar_url ? (
-                          <img
-                            src={testimonial.avatar_url}
-                            alt={testimonial.author_name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className={cn(
-                            "text-xs font-semibold transition-colors duration-150",
-                            clickedRowId === testimonial.id ? "text-primary/70" : "text-muted-foreground"
-                          )}>
-                            {testimonial.author_name
-                              .split(/\s+/)
-                              .map((w) => w[0])
-                              .join("")
-                              .substring(0, 2)
-                              .toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-bold">
-                      <span className="truncate block" title={testimonial.author_name}>
-                        {testimonial.author_name}
-                      </span>
-                    </TableCell>
-                    <TableCell className="w-28">
-                      <Badge
-                        variant={testimonial.approved ? "default" : "outline"}
-                        className="text-xs font-semibold"
+        {filteredTestimonials.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+            {searchQuery
+              ? "No testimonials found matching your search"
+              : "No testimonials found"}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <SortableCardList
+              items={filteredTestimonials}
+              onReorder={handleReorder}
+              renderContent={(item) => (
+                <div className="flex items-start gap-3">
+                  <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
+                    <FontAwesomeIconFromClass
+                      iconClass={(item as any).icon}
+                      fallbackIcon={faQuoteLeft}
+                      className="h-6 w-6 !text-primary"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3 mb-0.5">
+                      <Link
+                        href={`/admin/testimonials/${item.id}/edit`}
+                        className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
                       >
-                        {testimonial.approved ? "Approved" : "Unapproved"}
+                        {item.author_name}
+                      </Link>
+                      <Badge
+                        variant={item.approved ? "default" : "outline"}
+                        className="text-xs flex-shrink-0"
+                      >
+                        {item.approved ? "Approved" : "Unapproved"}
                       </Badge>
-                    </TableCell>
-                    <TableCell 
-                      className="text-right pr-4 w-24" 
-                      data-action-menu 
-                      style={{ textAlign: "right" }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="inline-flex ml-auto">
-                        <ActionMenu
-                          itemId={testimonial.id}
-                          editHref={`/admin/testimonials/${testimonial.id}/edit`}
-                          onDelete={handleDelete}
-                          deleteLabel={`testimonial from "${testimonial.author_name}"`}
-                        />
+                    </div>
+                    {(item.author_role || item.company_name) && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {item.author_role && item.company_name
+                          ? `${item.author_role} at ${item.company_name}`
+                          : item.author_role || item.company_name}
+                      </p>
+                    )}
+                    {item.headline && (
+                      <p className="text-sm font-semibold text-foreground">
+                        {item.headline}
+                      </p>
+                    )}
+                    {item.quote && (
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 md:line-clamp-3">
+                        {item.quote}
+                      </p>
+                    )}
+                    {item.rating && (
+                      <div className="flex gap-0.5 mt-2">
+                        {[...Array(Math.floor(item.rating))].map((_, i) => (
+                          <FontAwesomeIcon
+                            key={`full-${i}`}
+                            icon={faStar}
+                            className="w-3.5 h-3.5 text-yellow-400"
+                          />
+                        ))}
+                        {item.rating % 1 >= 0.5 && (
+                          <FontAwesomeIcon
+                            key="half"
+                            icon={faStarHalfStroke}
+                            className="w-3.5 h-3.5 text-yellow-400"
+                          />
+                        )}
+                        {[...Array(5 - Math.ceil(item.rating))].map((_, i) => (
+                          <FontAwesomeIcon
+                            key={`empty-${i}`}
+                            icon={faStar}
+                            className="w-3.5 h-3.5 text-yellow-400 opacity-30"
+                          />
+                        ))}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                </Fragment>
-              ))
+                    )}
+                  </div>
+                </div>
+              )}
+              renderActions={(item) => (
+                <ActionMenu
+                  itemId={item.id}
+                  editHref={`/admin/testimonials/${item.id}/edit`}
+                  onDelete={handleDelete}
+                  deleteLabel={`testimonial from "${item.author_name}"`}
+                  customActions={[
+                    {
+                      label: item.approved ? "Unapprove" : "Approve",
+                      icon: (
+                        <FontAwesomeIcon
+                          icon={item.approved ? faX : faCheck}
+                          className="h-4 w-4"
+                        />
+                      ),
+                      onClick: () => handleToggleApproval(item),
+                    },
+                  ]}
+                />
+              )}
+            />
+            {isSavingOrder && (
+              <p className="text-xs text-muted-foreground px-1">Saving order...</p>
             )}
-          </TableBody>
-        </AdminTable>
+          </div>
+        )}
       </div>
     </div>
   );

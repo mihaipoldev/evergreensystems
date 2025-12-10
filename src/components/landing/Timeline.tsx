@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import { RichText } from '@/components/ui/RichText';
 import { Search, Lightbulb, Rocket, TrendingUp, Award } from 'lucide-react';
 
 const steps = [
@@ -36,9 +37,11 @@ const steps = [
   },
 ];
 
+const titleText = 'Your path to [[automation success]]';
+
 export const Timeline = () => {
   return (
-    <section id="about" className="py-24 relative overflow-hidden">
+    <section id="about" className="py-20 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
       
@@ -52,9 +55,11 @@ export const Timeline = () => {
           <span className="text-primary text-sm font-medium uppercase tracking-wider">
             How It Works
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4">
-            Your path to <span className="text-gradient">automation success</span>
-          </h2>
+          <RichText
+            as="h2"
+            text={titleText}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
+          />
         </motion.div>
 
         <div className="relative">

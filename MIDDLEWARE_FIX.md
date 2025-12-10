@@ -90,3 +90,4 @@ Test on mobile Safari:
 ---
 
 **This was the root cause of the entire site being inaccessible on mobile.**
+

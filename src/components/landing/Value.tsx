@@ -11,6 +11,12 @@ import {
   faBrain,
   faCogs,
   faChartLine,
+  faComments,
+  faHandshake,
+  faGaugeHigh,
+  faSliders,
+  faWandMagicSparkles,
+  faCheckCircle,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from '@/components/ui/RichText';
@@ -43,12 +49,12 @@ const iconMap: Record<string, IconDefinition> = {
   'fa-shield': faShield,
   'fa-shield-alt': faShieldAlt,
   'fa-shield-halved': faShieldHalved,
-  'fa-shield-check': faShieldAlt,
+  'fa-shield-check': faShieldAlt, // Using faShieldAlt as alternative until faShieldCheck is available
   'fa-shield-virus': faShieldAlt,
   'shield': faShield,
   'shield-alt': faShieldAlt,
   'shield-halved': faShieldHalved,
-  'shield-check': faShieldAlt,
+  'shield-check': faShieldAlt, // Using faShieldAlt as alternative until faShieldCheck is available
   'shield-virus': faShieldAlt,
   'fa-brain': faBrain,
   'brain': faBrain,
@@ -62,6 +68,23 @@ const iconMap: Record<string, IconDefinition> = {
   'chart-line': faChartLine,
   'chart': faChartLine,
   'line-chart': faChartLine,
+  'fa-badge-check': faCheckCircle, // Pro icon - using faCheckCircle as free alternative
+  'badge-check': faCheckCircle, // Pro icon - using faCheckCircle as free alternative
+  'badge': faCheckCircle, // Pro icon - using faCheckCircle as free alternative
+  'fa-comments': faComments,
+  'comments': faComments,
+  'fa-handshake': faHandshake,
+  'handshake': faHandshake,
+  'fa-gauge-high': faGaugeHigh,
+  'gauge-high': faGaugeHigh,
+  'gauge': faGaugeHigh,
+  'fa-sliders': faSliders,
+  'sliders': faSliders,
+  'fa-wand-magic-sparkles': faWandMagicSparkles,
+  'wand-magic-sparkles': faWandMagicSparkles,
+  'wand-magic': faWandMagicSparkles,
+  'wand': faWandMagicSparkles,
+  'magic': faWandMagicSparkles,
 };
 
 // Default fallback features if database is empty
@@ -140,7 +163,7 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
     : defaultFeatures;
 
   return (
-    <section id="services" className="py-32 relative">
+    <section id="services" className="py-20 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -149,14 +172,6 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-block text-primary text-sm font-medium uppercase tracking-wider mb-4"
-          >
-            Why EvergreenLabs
-          </motion.span>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -212,9 +227,11 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
                   <h3 className="text-foreground text-xl font-semibold mb-2">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
+                  <RichText
+                    as="p"
+                    text={feature.description}
+                    className="text-muted-foreground text-sm leading-relaxed"
+                  />
 
                   {/* Decorative Element */}
                   <div className="absolute bottom-0 right-0 w-20 h-20 opacity-5">

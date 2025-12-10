@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { Database } from "@/lib/supabase/types";
+import { revalidateTag } from "next/cache";
 
 export async function PUT(
   request: Request,
@@ -51,6 +52,20 @@ export async function PUT(
       if (insertError) {
         return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
+    }
+
+    // Invalidate cache for pages, sections, and page sections
+    revalidateTag("pages", "max");
+    revalidateTag("sections", "max");
+    revalidateTag(`page-sections-${id}`, "max");
+    // Also invalidate page slug cache if we can get it
+    const { data: pageData } = await supabase
+      .from("pages")
+      .select("slug")
+      .eq("id", id)
+      .single();
+    if ((pageData as any)?.slug) {
+      revalidateTag(`page-${(pageData as any).slug}`, "max");
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

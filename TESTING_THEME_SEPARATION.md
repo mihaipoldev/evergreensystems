@@ -155,3 +155,4 @@ location.reload();
 ✅ Both themes persist across browser sessions
 ✅ Default theme is 'light' for both sections
 ✅ Theme toggles are visible and functional
+

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function GET(
   request: Request,
@@ -53,6 +54,17 @@ export async function PUT(
     const body = await request.json();
     const { slug, title, description } = body;
 
+    // Get old slug before update for cache invalidation
+    let oldSlug: string | null = null;
+    if (slug !== undefined) {
+      const { data: oldPage } = await supabase
+        .from("pages")
+        .select("slug")
+        .eq("id", id)
+        .single();
+      oldSlug = (oldPage as any)?.slug || null;
+    }
+
     const updateData: Record<string, unknown> = {};
     if (slug !== undefined) updateData.slug = slug;
     if (title !== undefined) updateData.title = title;
@@ -67,6 +79,16 @@ export async function PUT(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Invalidate cache for pages
+    revalidateTag("pages", "max");
+    if (data?.slug) {
+      revalidateTag(`page-${data.slug}`, "max");
+    }
+    // Also invalidate old slug if it changed
+    if (oldSlug && oldSlug !== data?.slug) {
+      revalidateTag(`page-${oldSlug}`, "max");
     }
 
     return NextResponse.json(data, { status: 200 });
@@ -91,6 +113,14 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    
+    // Get page slug before deletion for cache invalidation
+    const { data: pageData } = await supabase
+      .from("pages")
+      .select("slug")
+      .eq("id", id)
+      .single();
+
     const { error } = await supabase
       .from("pages")
       .delete()
@@ -98,6 +128,12 @@ export async function DELETE(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Invalidate cache for pages
+    revalidateTag("pages", "max");
+    if ((pageData as any)?.slug) {
+      revalidateTag(`page-${(pageData as any).slug}`, "max");
     }
 
     return NextResponse.json({ message: "Page deleted successfully" }, { status: 200 });

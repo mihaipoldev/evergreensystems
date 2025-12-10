@@ -1,6 +1,8 @@
 "use client";
 
+import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faStarHalfStroke } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from '@/components/ui/RichText';
@@ -132,25 +134,24 @@ const StarRating = ({ rating }: { rating?: number | null }) => {
   );
 };
 
-const Avatar = ({ initials, avatarUrl }: { initials: string; avatarUrl?: string | null }) => {
+const Avatar = memo(({ initials, avatarUrl }: { initials: string; avatarUrl?: string | null }) => {
   if (avatarUrl) {
     return (
-      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-border">
-        <img 
-          src={avatarUrl} 
+      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-border relative">
+        <Image
+          src={avatarUrl}
           alt={initials}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            // Fallback to initials if image fails to load
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const parent = target.parentElement;
-            if (parent) {
-              parent.className = 'w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0';
-              parent.innerHTML = `<span class="text-foreground font-semibold text-sm">${initials}</span>`;
-            }
+          fill
+          className="object-cover"
+          sizes="48px"
+          onError={() => {
+            // Fallback handled by showing initials div below
           }}
         />
+        {/* Fallback initials - hidden by default, shown if image fails */}
+        <div className="absolute inset-0 w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0 opacity-0 pointer-events-none">
+          <span className="text-foreground font-semibold text-sm">{initials}</span>
+        </div>
       </div>
     );
   }
@@ -160,17 +161,19 @@ const Avatar = ({ initials, avatarUrl }: { initials: string; avatarUrl?: string 
       <span className="text-foreground font-semibold text-sm">{initials}</span>
     </div>
   );
-};
+});
 
-export const Testimonials = ({ testimonials = [], section }: TestimonialsProps) => {
+Avatar.displayName = 'Avatar';
+
+export const Testimonials = memo(({ testimonials = [], section }: TestimonialsProps) => {
   // Use section title if available, otherwise fallback to default
   const title = section?.title || 'Hear what others are [[saying]]';
   
   // Use provided testimonials or fall back to hardcoded defaults
   const displayTestimonials = testimonials.length > 0 ? testimonials : defaultTestimonials;
   
-  // Map database testimonials to display format
-  const mappedTestimonials = displayTestimonials.map((t: any) => {
+  // Map database testimonials to display format - memoized to prevent recalculation
+  const mappedTestimonials = useMemo(() => displayTestimonials.map((t: any) => {
     // If it's from database (has quote or author_name field), map the fields
     if (t.quote || t.author_name) {
       // Use correct database field names: author_name and author_role
@@ -204,10 +207,10 @@ export const Testimonials = ({ testimonials = [], section }: TestimonialsProps) 
     }
     // Otherwise it's already in the right format (hardcoded)
     return t;
-  });
+  }), [displayTestimonials]);
 
   return (
-    <section id="testimonials" className="py-32 relative">
+    <section id="testimonials" className="py-20 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -219,7 +222,7 @@ export const Testimonials = ({ testimonials = [], section }: TestimonialsProps) 
           <RichText
             as="h2"
             text={title}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
 
@@ -285,5 +288,7 @@ export const Testimonials = ({ testimonials = [], section }: TestimonialsProps) 
       </div>
     </section>
   );
-};
+});
+
+Testimonials.displayName = 'Testimonials';
 
