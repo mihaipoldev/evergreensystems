@@ -187,7 +187,7 @@ export function FeaturesList({ initialFeatures }: FeaturesListProps) {
               renderContent={(item) => (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start gap-3">
-                    <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
+                    <div className="h-12 w-12 rounded-full overflow-hidden hidden md:flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
                           <FontAwesomeIconFromClass
                         iconClass={item.icon}
                             fallbackIcon={faBullseye}

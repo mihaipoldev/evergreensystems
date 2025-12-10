@@ -22,14 +22,14 @@ export default function AdminLayout({
           <div className="relative flex min-h-screen bg-background overflow-x-hidden">
             <AdminSidebar />
             <div className="flex flex-1 flex-col md:pl-64 min-w-0">
-              <AdminHeader />
+                  <AdminHeader />
               <main className="flex flex-1 flex-col min-w-0">
-                <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[88px]">
-                  <div className="flex flex-col py-6 pb-4 md:pb-8 px-4 md:px-10 lg:px-12 space-y-4 md:space-y-6 min-w-0">
+                <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[40px] md:pt-[84px] pb-12 md:pb-0">
+                  <div className="relative flex flex-col py-6 pb-4 md:pb-8 px-4 md:px-10 lg:px-12 space-y-4 md:space-y-6 min-w-0">
                     {children}
+                    <PageTransitionLoader />
                   </div>
                 </div>
-                <PageTransitionLoader />
               </main>
             </div>
           </div>

@@ -1,8 +1,7 @@
 import { MetadataRoute } from 'next';
+import { SEO_CONFIG } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://evergreenlabs.com';
-  
   return {
     rules: [
       {
@@ -10,7 +9,17 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: ['/admin/', '/api/'],
       },
+      {
+        userAgent: 'Googlebot',
+        allow: '/',
+        disallow: ['/admin/', '/api/'],
+      },
+      {
+        userAgent: 'Bingbot',
+        allow: '/',
+        disallow: ['/admin/', '/api/'],
+      },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: `${SEO_CONFIG.siteUrl}/sitemap.xml`,
   };
 }

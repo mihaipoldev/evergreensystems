@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -89,6 +90,8 @@ const SECTION_TYPES = [
 
 export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
   const router = useRouter();
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sectionMedia, setSectionMedia] = useState<MediaWithSection[]>(initialData?.media || []);
@@ -100,6 +103,11 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
   const [isAddCTADialogOpen, setIsAddCTADialogOpen] = useState(false);
   const [allCTAButtons, setAllCTAButtons] = useState<CTAButton[]>([]);
   const [showCTAButtonList, setShowCTAButtonList] = useState(false);
+
+  // Handle theme mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Parse content JSON if it exists
   const parseContent = (content: any): string => {
@@ -487,6 +495,12 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       return;
     }
 
+    // Check if media already exists (only one allowed)
+    if (sectionMedia.length >= 1) {
+      toast.error("This section can only have one media item. Please remove the existing one first.");
+      return;
+    }
+
     const media = allMedia.find((m) => m.id === mediaId);
     if (!media) return;
 
@@ -501,12 +515,12 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       section_media: {
         id: "",
         role: "main",
-        sort_order: sectionMedia.length + 1,
+        sort_order: 1,
         created_at: new Date().toISOString(),
       },
     };
 
-    setSectionMedia([...sectionMedia, newMediaItem]);
+    setSectionMedia([newMediaItem]);
     setShowMediaList(false);
   };
 
@@ -516,6 +530,12 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
     
     // Automatically add the newly created media to the section
     if (isEdit && initialData?.id) {
+      // Check if media already exists (only one allowed)
+      if (sectionMedia.length >= 1) {
+        toast.error("This section can only have one media item. Please remove the existing one first.");
+        return;
+      }
+
       try {
         const supabase = createClient();
         const { data: sessionData } = await supabase.auth.getSession();
@@ -531,7 +551,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
           body: JSON.stringify({
             media_id: newMedia.id,
             role: "main",
-            sort_order: sectionMedia.length + 1,
+            sort_order: 1,
           }),
         });
 
@@ -542,8 +562,8 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
 
         const mediaWithMetadata = await response.json();
         
-        // Update local state
-        setSectionMedia([...sectionMedia, mediaWithMetadata]);
+        // Update local state (replace existing if any, since only one is allowed)
+        setSectionMedia([mediaWithMetadata]);
         toast.success("Media created and added to section successfully.");
       } catch (error: any) {
         console.error("Error adding media to section:", error);
@@ -689,6 +709,12 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       return;
     }
 
+    // Check if CTA already exists (only one allowed)
+    if (sectionCTAButtons.length >= 1) {
+      toast.error("This section can only have one CTA button. Please remove the existing one first.");
+      return;
+    }
+
     const ctaButton = allCTAButtons.find((c) => c.id === ctaButtonId);
     if (!ctaButton) return;
 
@@ -702,12 +728,12 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       ...ctaButton,
       section_cta_button: {
         id: "",
-        position: sectionCTAButtons.length,
+        position: 0,
         created_at: new Date().toISOString(),
       },
     };
 
-    setSectionCTAButtons([...sectionCTAButtons, newCTAItem]);
+    setSectionCTAButtons([newCTAItem]);
   };
 
   const handleNewCTACreated = async (newCTA: CTAButton) => {
@@ -716,6 +742,12 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
     
     // Automatically add the newly created CTA to the section
     if (isEdit && initialData?.id) {
+      // Check if CTA already exists (only one allowed)
+      if (sectionCTAButtons.length >= 1) {
+        toast.error("This section can only have one CTA button. Please remove the existing one first.");
+        return;
+      }
+
       try {
         const supabase = createClient();
         const { data: sessionData } = await supabase.auth.getSession();
@@ -730,7 +762,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
           },
           body: JSON.stringify({
             cta_button_id: newCTA.id,
-            position: sectionCTAButtons.length,
+            position: 0,
           }),
         });
 
@@ -741,16 +773,16 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
 
         const ctaWithMetadata = await response.json();
         
-        // Update local state
+        // Update local state (replace existing if any, since only one is allowed)
         const newCTAItem: CTAButtonWithSection = {
           ...newCTA,
           section_cta_button: {
             id: ctaWithMetadata.section_cta_button?.id || "",
-            position: sectionCTAButtons.length,
+            position: 0,
             created_at: new Date().toISOString(),
           },
         };
-        setSectionCTAButtons([...sectionCTAButtons, newCTAItem]);
+        setSectionCTAButtons([newCTAItem]);
         toast.success("CTA button created and added to section successfully.");
       } catch (error: any) {
         console.error("Error adding CTA button to section:", error);
@@ -878,7 +910,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
               <div>
                 <h3 className="text-lg font-semibold mb-1">Media</h3>
                 <p className="text-sm text-muted-foreground">
-                  Add and manage media items for this section
+                  Add one media item for this section
                 </p>
               </div>
 
@@ -902,20 +934,6 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                           {item.type} • {item.source_type.replace("_", " ")}
                         </div>
                       </div>
-                      <Select
-                        value={item.section_media.role}
-                        onValueChange={(role) => handleRoleChange(item.id, role)}
-                      >
-                        <SelectTrigger className="w-32 h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="main">Main</SelectItem>
-                          <SelectItem value="story">Story</SelectItem>
-                          <SelectItem value="background">Background</SelectItem>
-                          <SelectItem value="gallery">Gallery</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <div className="flex items-center gap-1">
                         <Button
                           type="button"
@@ -926,26 +944,6 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                           title="Preview"
                         >
                           <FontAwesomeIcon icon={faPlay} className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleMoveMedia(index, "up")}
-                          disabled={index === 0}
-                        >
-                          <FontAwesomeIcon icon={faArrowUp} className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleMoveMedia(index, "down")}
-                          disabled={index === sectionMedia.length - 1}
-                        >
-                          <FontAwesomeIcon icon={faArrowDown} className="h-3 w-3" />
                         </Button>
                         <Button
                           type="button"
@@ -962,25 +960,35 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                 </div>
               )}
 
+              {sectionMedia.length === 0 && (
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsAddMediaDialogOpen(true)}
-                  className="flex-1"
+                    className="flex-1 h-9 text-sm md:h-10 md:text-base"
                 >
-                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2" />
-                  Add New Media
+                    <FontAwesomeIcon icon={faPlus} className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Add New Media</span>
+                    <span className="sm:hidden">Add Media</span>
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowMediaList(!showMediaList)}
-                  className="flex-1"
+                    className="flex-1 h-9 text-sm md:h-10 md:text-base"
                 >
-                  {showMediaList ? "Hide" : "Select"} Existing Media
+                    {showMediaList ? (
+                      "Hide"
+                    ) : (
+                      <>
+                        <span className="hidden sm:inline">Select Existing Media</span>
+                        <span className="sm:hidden">Select Media</span>
+                      </>
+                    )}
                 </Button>
               </div>
+              )}
 
               {/* Existing Media List */}
               {showMediaList && allMedia.length > 0 && (
@@ -991,14 +999,15 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                       <div
                         key={media.id}
                         className="flex items-center gap-3 p-2 hover:bg-muted rounded cursor-pointer"
-                        onClick={() => !isSelected && handleAddExistingMedia(media.id)}
+                        onClick={() => !isSelected && sectionMedia.length === 0 && handleAddExistingMedia(media.id)}
                       >
                         <Checkbox
                           checked={isSelected}
+                          disabled={isSelected ? false : sectionMedia.length >= 1}
                           onCheckedChange={() => {
                             if (isSelected) {
                               handleRemoveMedia(media.id);
-                            } else {
+                            } else if (sectionMedia.length === 0) {
                               handleAddExistingMedia(media.id);
                             }
                           }}
@@ -1025,7 +1034,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
               <div>
                 <h3 className="text-lg font-semibold mb-1">CTA Buttons</h3>
                 <p className="text-sm text-muted-foreground">
-                  Add and manage CTA buttons for this section
+                  Add one CTA button for this section
                 </p>
               </div>
 
@@ -1038,12 +1047,10 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                       className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50"
                     >
                       <div className="flex-shrink-0">
-                        <div className="h-10 w-10 rounded-full flex items-center justify-center bg-muted">
                           <FontAwesomeIcon
                             icon={item.icon ? (item.icon as any) : faMousePointer}
                             className="h-5 w-5 text-muted-foreground"
                           />
-                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{item.label}</div>
@@ -1065,26 +1072,6 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleMoveCTA(index, "up")}
-                          disabled={index === 0}
-                        >
-                          <FontAwesomeIcon icon={faArrowUp} className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleMoveCTA(index, "down")}
-                          disabled={index === sectionCTAButtons.length - 1}
-                        >
-                          <FontAwesomeIcon icon={faArrowDown} className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
                           className="h-8 w-8 text-destructive"
                           onClick={() => handleRemoveCTA(item.id)}
                         >
@@ -1096,25 +1083,35 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                 </div>
               )}
 
+              {sectionCTAButtons.length === 0 && (
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsAddCTADialogOpen(true)}
-                  className="flex-1"
+                    className="flex-1 h-9 text-sm md:h-10 md:text-base"
                 >
-                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2" />
-                  Add New CTA Button
+                    <FontAwesomeIcon icon={faPlus} className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Add New CTA Button</span>
+                    <span className="sm:hidden">Add CTA</span>
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowCTAButtonList(!showCTAButtonList)}
-                  className="flex-1"
+                    className="flex-1 h-9 text-sm md:h-10 md:text-base"
                 >
-                  {showCTAButtonList ? "Hide" : "Select"} Existing CTA Buttons
+                    {showCTAButtonList ? (
+                      "Hide"
+                    ) : (
+                      <>
+                        <span className="hidden sm:inline">Select Existing CTA Buttons</span>
+                        <span className="sm:hidden">Select CTA</span>
+                      </>
+                    )}
                 </Button>
               </div>
+              )}
 
               {/* Existing CTA Buttons List */}
               {showCTAButtonList && allCTAButtons.length > 0 && (
@@ -1125,14 +1122,15 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                       <div
                         key={ctaButton.id}
                         className="flex items-center gap-3 p-2 hover:bg-muted rounded cursor-pointer"
-                        onClick={() => !isSelected && handleAddExistingCTA(ctaButton.id)}
+                        onClick={() => !isSelected && sectionCTAButtons.length === 0 && handleAddExistingCTA(ctaButton.id)}
                       >
                         <Checkbox
                           checked={isSelected}
+                          disabled={isSelected ? false : sectionCTAButtons.length >= 1}
                           onCheckedChange={() => {
                             if (isSelected) {
                               handleRemoveCTA(ctaButton.id);
-                            } else {
+                            } else if (sectionCTAButtons.length === 0) {
                               handleAddExistingCTA(ctaButton.id);
                             }
                           }}
@@ -1171,7 +1169,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
               <FormItem>
                 <FormLabel>Content (JSON)</FormLabel>
                 <FormControl>
-                  <div className="border border-input rounded-lg bg-input-background overflow-hidden">
+                  <div className="border border-input rounded-lg bg-background overflow-hidden">
                     <CodeEditor
                       value={field.value || ""}
                       language="json"
@@ -1179,8 +1177,13 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                       onChange={(value) => field.onChange(value)}
                       padding={12}
                       className="font-mono text-sm"
-                      style={{ minHeight: "160px", borderRadius: 0 }}
-                      data-color-mode="light"
+                      style={{ 
+                        minHeight: "160px", 
+                        borderRadius: 0,
+                        backgroundColor: "transparent",
+                        fontSize: "14px",
+                      }}
+                      data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
                     />
                   </div>
                 </FormControl>
@@ -1233,13 +1236,13 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
           <Button
             type="button"
             variant="outline"
-            className="bg-card hover:bg-card/80"
+            className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
             asChild
             disabled={isSubmitting}
           >
             <Link href="/admin/sections">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Section" : "Create Section"}
           </Button>
         </div>

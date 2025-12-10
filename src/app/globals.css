@@ -50,6 +50,11 @@
     --font-family-admin-heading: var(--font-geist-sans);
     --font-family-admin-body: var(--font-geist-sans);
     
+    /* Font family variables - public/landing page */
+    /* Configure these in globals.css to change landing page fonts */
+    --font-family-public-heading: var(--font-gotham);
+    --font-family-public-body: var(--font-gotham);
+    
     /* Gotham font (custom, not from Google Fonts) */
     /* Note: Font files need to be provided and loaded separately */
     --font-gotham: "Gotham", "Gotham SSm A", "Gotham SSm B", system-ui, sans-serif;
@@ -66,6 +71,10 @@
     --brand-h: 212;
     --brand-s: 96;
     --brand-l: 51;
+
+    /* Font family variables - public/landing page (same as light mode) */
+    --font-family-public-heading: var(--font-lato);
+    --font-family-public-body: var(--font-lato);
 
     --background: 0 0% 7%;
     --foreground: 0 0% 98%;
@@ -239,10 +248,41 @@
     --radius: 0.75rem;
 
 
+    --primary: 0 80% 50%; /* red ! */
 
-    /* --primary: 206 85% 50%; */
-    /* --primary: 208 65% 50%; */
-    --primary: 208 90% 50%; 
+    --primary: 20 90% 45%; /* orange ! */ 
+    --primary: 40 90% 50%; /* orange 2 */
+
+
+    --primary: 140 80% 40%; /* green */
+    --primary: 150 80% 40%; /* green 2 */
+    --primary: 160 80% 40%; /* green 3 */
+    --primary: 165 100% 30%; /* green 4 */
+    --primary: 165 60% 40%; /* green 5 ! */
+
+
+    --primary: 170 80% 40%; /* green blue */
+
+    --primary: 195 80% 50%; /* blue ! */
+    --primary: 196 100% 40%; /* blue 4 */
+    --primary: 200 90% 45%; /* blue 3 ! */
+    --primary: 202 100% 40%; /* blue */
+    --primary: 208 65% 50%; /* blue 2 ! */
+    --primary: 206 85% 50%; /* blue 1 */
+
+  
+    --primary: 208 65% 50%; /* blue 2 ! */
+    --primary: 208 80% 50%; /* blue 2 ! */
+
+
+
+    
+    /* --primary: 20 90% 45%;  */
+    /* --primary: 20 90% 45%;  */
+    /* --primary: 20 90% 45%;  */
+    /* --primary: 20 90% 45%;  */
+    /* --primary: 20 90% 45%;  */
+    /* --primary: 20 90% 45%;  */
 
     /* --primary: 193 57% 50%; */
     /* --primary: 202 51% 50%; */
@@ -341,6 +381,26 @@
   .preset-admin h5,
   .preset-admin h6 {
     font-family: var(--font-family-admin-heading), system-ui, sans-serif !important;
+  }
+
+  /* Public/landing page font families - apply to body and headings */
+  /* Only apply to public pages (not admin pages) - override Tailwind font-sans */
+  body:not(.preset-admin).font-sans,
+  body:not(.preset-admin) {
+    font-family: var(--font-family-public-body), system-ui, sans-serif !important;
+  }
+  
+  body:not(.preset-admin) *:not(.preset-admin):not(button):not(input):not(textarea):not(select) {
+    font-family: var(--font-family-public-body), system-ui, sans-serif !important;
+  }
+  
+  body:not(.preset-admin) h1:not(.preset-admin),
+  body:not(.preset-admin) h2:not(.preset-admin),
+  body:not(.preset-admin) h3:not(.preset-admin),
+  body:not(.preset-admin) h4:not(.preset-admin),
+  body:not(.preset-admin) h5:not(.preset-admin),
+  body:not(.preset-admin) h6:not(.preset-admin) {
+    font-family: var(--font-family-public-heading), system-ui, sans-serif !important;
   }
 }
 

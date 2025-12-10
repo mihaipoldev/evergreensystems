@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,6 +47,7 @@ type FeatureFormProps = {
 
 export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -150,7 +152,7 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
                 <FormControl>
                   <TextareaShadow 
                     placeholder="Enter feature subtitle" 
-                    style={{ minHeight: '120px' }}
+                    style={{ minHeight: isMobile ? '200px' : '120px' }}
                     {...field} 
                   />
                 </FormControl>
@@ -168,7 +170,7 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
                   <FormControl>
                     <TextareaShadow
                       placeholder="Enter feature description"
-                      className="min-h-[100px]"
+                      style={{ minHeight: isMobile ? '200px' : '120px' }}
                       {...field}
                     />
                   </FormControl>
@@ -208,13 +210,13 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
           <Button
             type="button"
             variant="outline"
-            className="bg-card hover:bg-card/80"
+            className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
             asChild
             disabled={isSubmitting}
           >
             <Link href="/admin/features">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Feature" : "Create Feature"}
           </Button>
         </div>

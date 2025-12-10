@@ -6,12 +6,64 @@ import { AdminColorStyle } from "@/components/admin/AdminColorStyle";
 import { InstantColorApply } from "@/components/admin/InstantColorApply";
 import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
 import { InstantFontApply } from "@/components/admin/InstantFontApply";
-import { geistSans, geistMono } from "@/lib/fonts";
+import { geistSans, geistMono, lato, getAllFontVariables } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
+import { SEO_CONFIG, ALL_KEYWORDS } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Evergreen Systems",
-  description: "Evergreen Systems - Building the future, one project at a time.",
+  title: {
+    default: SEO_CONFIG.defaultTitle,
+    template: `%s | ${SEO_CONFIG.siteName}`,
+  },
+  description: SEO_CONFIG.defaultDescription,
+  keywords: ALL_KEYWORDS,
+  authors: [{ name: SEO_CONFIG.author }],
+  creator: SEO_CONFIG.author,
+  publisher: SEO_CONFIG.author,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: SEO_CONFIG.locale,
+    url: SEO_CONFIG.siteUrl,
+    siteName: SEO_CONFIG.siteName,
+    title: SEO_CONFIG.defaultTitle,
+    description: SEO_CONFIG.defaultDescription,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SEO_CONFIG.defaultTitle,
+    description: SEO_CONFIG.defaultDescription,
+  },
+  alternates: {
+    canonical: SEO_CONFIG.siteUrl,
+  },
+  metadataBase: new URL(SEO_CONFIG.siteUrl),
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+  },
+  other: {
+    'theme-color': '#000000', // Will be updated based on actual theme
+  },
 };
 
 export const viewport: Viewport = {
@@ -40,11 +92,9 @@ export default async function RootLayout({
     console.warn('Failed to get headers in layout:', error);
   }
 
-  // For public pages, only load default fonts. For admin pages, load all fonts.
-  // This optimization reduces initial font bundle size for landing pages.
-  const fontClasses = isAdminPage 
-    ? `${geistSans.variable} ${geistMono.variable}` // Admin gets default fonts + all via getAllFontVariables in admin components
-    : `${geistSans.variable} ${geistMono.variable}`; // Public pages only need default fonts
+  // Load all fonts for both admin and public pages so all font CSS variables are available
+  // This allows the landing page to use any font from the font registry
+  const fontClasses = getAllFontVariables();
 
   return (
     <html lang="en" suppressHydrationWarning className={fontClasses}>

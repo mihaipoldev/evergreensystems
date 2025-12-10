@@ -47,6 +47,7 @@ import type { CTAButtonWithSection } from '@/features/cta/types';
 import type { FAQItem } from '@/features/faq/types';
 import type { Testimonial } from '@/features/testimonials/types';
 import type { Metadata } from 'next';
+import { SEO_CONFIG, generatePageMetadata, generateOrganizationSchema, generateServiceSchema, generateWebSiteSchema } from '@/lib/seo';
 
 // Enable ISR - revalidate every 1 minute
 export const revalidate = 60;
@@ -69,48 +70,34 @@ type Section = {
 // Generate dynamic metadata for SEO
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const homePage = await getPageBySlug('home');
-    
-    if (!homePage) {
-      return {
-        title: 'Evergreen | AI Systems',
-        description: 'Evergreen Systems - Building the future, one project at a time.',
-        other: {
-          'dns-prefetch': 'https://fast.wistia.com, https://img.youtube.com, https://i.vimeocdn.com',
-        },
-      };
-    }
+    // Use homepage-specific title and description
+    const title = SEO_CONFIG.homepageTitle;
+    const description = SEO_CONFIG.homepageDescription;
 
-    // Always use "Evergreen | AI Systems" for the home page title
-    const title = 'Evergreen | AI Systems';
-    const description = homePage.description || 'Evergreen Systems - Building the future, one project at a time.';
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://evergreenlabs.com';
+    // Generate comprehensive metadata with skipTitleTemplate to use exact title
+    const metadata = generatePageMetadata({
+      title: title,
+      description: description,
+      url: SEO_CONFIG.siteUrl,
+      skipTitleTemplate: true, // Use exact title without appending site name
+    });
 
+    // Add DNS prefetch for external resources
     return {
-      title,
-      description,
-      openGraph: {
-        title,
-        description,
-        url: siteUrl,
-        siteName: 'Evergreen Systems',
-        type: 'website',
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title,
-        description,
-      },
-      alternates: {
-        canonical: siteUrl,
+      ...metadata,
+      other: {
+        ...metadata.other,
+        'dns-prefetch': 'https://fast.wistia.com, https://img.youtube.com, https://i.vimeocdn.com',
       },
     };
   } catch (error) {
     console.error('Error generating metadata:', error);
-    return {
-      title: 'Evergreen | AI Systems',
-      description: 'Evergreen Systems - Building the future, one project at a time.',
-    };
+    return generatePageMetadata({
+      title: SEO_CONFIG.homepageTitle,
+      description: SEO_CONFIG.homepageDescription,
+      url: SEO_CONFIG.siteUrl,
+      skipTitleTemplate: true,
+    });
   }
 }
 
@@ -253,16 +240,18 @@ export default async function LandingPage() {
   };
 
   // Generate structured data for SEO
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://evergreenlabs.com';
-  
   // Organization structured data
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": homePage?.title || "Evergreen Systems",
-    "description": homePage?.description || "Evergreen Systems - Building the future, one project at a time.",
-    "url": siteUrl,
-  };
+  const organizationSchema = generateOrganizationSchema({
+    name: homePage?.title || SEO_CONFIG.siteName,
+    description: homePage?.description || SEO_CONFIG.defaultDescription,
+    url: SEO_CONFIG.siteUrl,
+  });
+
+  // Service schema for business type
+  const serviceSchema = generateServiceSchema();
+
+  // WebSite schema
+  const websiteSchema = generateWebSiteSchema();
 
   // FAQ structured data
   const faqSchema = faqItems.length > 0 ? {
@@ -307,6 +296,14 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
       {faqSchema && (
         <script
           type="application/ld+json"
@@ -320,12 +317,12 @@ export default async function LandingPage() {
         />
       )}
       <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden w-full">
-        {/* Square grid pattern at the top - fading at bottom */}
+        {/* Dot pattern at the top - fading at bottom */}
         <div className="absolute top-0 left-0 right-0 h-[1000px] pointer-events-none z-0">
-          {/* Subtle grid pattern with fade at bottom */}
+          {/* Subtle dot pattern with fade at bottom */}
           <div className="absolute inset-0">
-            {/* Grid pattern */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
+            {/* Dot pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
             
             {/* Fade mask at bottom to blend into background */}
             <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/80 to-transparent" />
@@ -333,20 +330,30 @@ export default async function LandingPage() {
         </div>
         
         {/* Unified background effects at the bottom - overlapping CTA and Footer */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1400px] pointer-events-none z-0">
+        <div className="absolute bottom-0 left-0 right-0 h-[1300px] pointer-events-none z-0">
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/95 to-background" />
           
           {/* Glow effects */}
           <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary rounded-full blur-3xl" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary rounded-full blur-3xl" />
+            <div 
+              className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
+              style={{
+                backgroundColor: '#446F94',
+              }}
+            />
+            <div 
+              className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl"
+              style={{
+                backgroundColor: '#446F94',
+              }}
+            />
           </div>
           
-          {/* Subtle grid pattern with fade at top */}
+          {/* Subtle dot pattern with fade at top */}
           <div className="absolute inset-0">
-            {/* Grid pattern - original size */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
+            {/* Dot pattern - original size */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
             
             {/* Fade mask at top to blend into background */}
             <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-background via-background/80 to-transparent" />

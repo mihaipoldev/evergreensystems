@@ -1,3 +1,5 @@
+"use client";
+
 import { PublicTeamProvider } from "@/providers/PublicTeamProvider";
 import { PublicThemeProvider } from "@/providers/PublicThemeProvider";
 

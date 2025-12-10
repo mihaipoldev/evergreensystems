@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useTheme } from 'next-themes';
 import { trackEvent } from '@/lib/analytics';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { CTAButtonWithSection } from '@/features/cta/types';
 
 type Section = {
@@ -61,17 +61,11 @@ const getSectionHref = (type: string): string => {
 
 export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
-
-  // Safe theme value - default to 'light' if not ready
-  const currentTheme = theme || 'light';
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isMobile = useIsMobile();
+  const lastScrollYRef = useRef(0);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     // Safety check for client-side only
@@ -80,13 +74,35 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     }
 
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
+      const currentScrollY = window.scrollY;
+      const isScrolled = currentScrollY > 10;
       setScrolled(isScrolled);
+
+      // Hide/show header on mobile only
+      if (isMobile) {
+        // Show header when at top
+        if (currentScrollY < 10) {
+          setIsVisible(true);
+        } else {
+          // Hide when scrolling down, show when scrolling up
+          if (currentScrollY > lastScrollYRef.current && currentScrollY > 30) {
+            // Scrolling down and past 30px - hide
+            setIsVisible(false);
+          } else if (currentScrollY < lastScrollYRef.current) {
+            // Scrolling up - show
+            setIsVisible(true);
+          }
+        }
+        lastScrollYRef.current = currentScrollY;
+      } else {
+        // Always visible on desktop
+        setIsVisible(true);
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isMobile]);
 
   // Smooth scroll handler for navigation links
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -237,7 +253,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     };
   }, [navLinks]);
 
-  const navClassName = `fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+  const navClassName = `fixed top-0 left-0 right-0 z-50 transition-all duration-150 ${
     scrolled
       ? 'bg-[#fefefecc] backdrop-blur-[5px] dark:bg-[#0a0a0acc] dark:backdrop-blur-[5px]'
       : 'bg-transparent backdrop-blur-0 dark:bg-transparent dark:backdrop-blur-0'
@@ -246,7 +262,11 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   return (
     <motion.nav
       initial={false}
-      animate={{ y: 0, opacity: 1 }}
+      animate={{ 
+        y: isMobile && !isVisible ? -100 : 0, 
+        opacity: 1 
+      }}
+      transition={{ duration: 0.15, ease: 'easeInOut' }}
       className={navClassName}
     >
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -256,7 +276,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
             href="#"
             className="flex items-center gap-2"
           >
-            <span className="text-foreground font-semibold text-lg" style={{ fontFamily: 'var(--font-gotham)' }}>Evergreen Systems</span>
+            <span className="text-foreground font-semibold text-lg" style={{ fontFamily: 'var(--font-family-public-heading), var(--font-gotham), system-ui, sans-serif' }}>Evergreen Systems</span>
           </a>
 
           {/* Desktop Navigation */}
@@ -273,7 +293,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
                       ? 'text-primary'
                       : 'text-foreground hover:text-primary'
                   }`}
-                  style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+                  style={{ fontFamily: 'var(--font-family-public-body), var(--font-lato), system-ui, sans-serif' }}
                 >
                   {link.name}
                   {isActive && (
@@ -287,18 +307,6 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
                 </motion.a>
               );
             })}
-            {/* Theme Toggle */}
-            {mounted && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setTheme && setTheme(currentTheme === "dark" ? "light" : "dark")}
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-foreground hover:text-primary transition-colors duration-[1ms]"
-                aria-label="Toggle theme"
-              >
-                {currentTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-              </motion.button>
-            )}
             {/* Header Section CTA Buttons */}
             {headerButtons.length > 0 ? (
               headerButtons.map((button) => {
@@ -379,16 +387,6 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Theme Toggle Mobile */}
-            {mounted && (
-              <button
-                onClick={() => setTheme && setTheme(currentTheme === "dark" ? "light" : "dark")}
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-foreground hover:bg-secondary transition-colors"
-                aria-label="Toggle theme"
-              >
-                {currentTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-            )}
             <button
               className="text-foreground"
               onClick={() => setIsOpen(!isOpen)}
@@ -418,7 +416,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
                         ? 'text-primary'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
-                    style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}
+                    style={{ fontFamily: 'var(--font-family-public-body), var(--font-lato), system-ui, sans-serif' }}
                     onClick={(e) => {
                       handleSmoothScroll(e, link.href);
                       setIsOpen(false);

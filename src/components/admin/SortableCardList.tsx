@@ -4,6 +4,7 @@ import { PropsWithChildren, ReactNode, useEffect, useMemo, useState } from "reac
 import {
   DndContext,
   PointerSensor,
+  TouchSensor,
   KeyboardSensor,
   closestCenter,
   useSensor,
@@ -62,7 +63,8 @@ function SortableCard<T extends SortableItemBase>({ item, children, renderAction
     >
       <button
         type="button"
-        className="self-center my-auto h-10 w-10 flex-shrink-0 rounded-lg text-muted-foreground flex items-center justify-center cursor-grab active:cursor-grabbing transition-colors"
+        className="self-center my-auto h-10 w-10 flex-shrink-0 rounded-lg text-muted-foreground flex items-center justify-center cursor-grab active:cursor-grabbing transition-colors touch-none"
+        style={{ touchAction: "none" }}
         {...attributes}
         {...listeners}
       >
@@ -91,7 +93,16 @@ export function SortableCardList<T extends SortableItemBase>({
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        distance: 10,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -101,12 +112,21 @@ export function SortableCardList<T extends SortableItemBase>({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    // Prevent body scroll during drag on mobile
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    // Restore body scroll
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.body.style.width = "";
     setActiveId(null);
+    
+    if (!over || active.id === over.id) return;
 
     const oldIndex = items.findIndex((item) => item.id === active.id);
     const newIndex = items.findIndex((item) => item.id === over.id);
@@ -147,7 +167,12 @@ export function SortableCardList<T extends SortableItemBase>({
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onDragCancel={() => setActiveId(null)}
+      onDragCancel={() => {
+        document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.width = "";
+        setActiveId(null);
+      }}
     >
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         <div className={cn("space-y-3", className)}>

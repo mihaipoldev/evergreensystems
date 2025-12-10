@@ -543,13 +543,13 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
           <Button
             type="button"
             variant="outline"
-            className="bg-card hover:bg-card/80"
+            className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
             asChild
             disabled={isSubmitting}
           >
             <Link href="/admin/pages">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Page" : "Create Page"}
           </Button>
         </div>

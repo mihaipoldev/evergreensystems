@@ -450,11 +450,11 @@ export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: 
 
         <div className="flex items-center justify-end gap-4">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
               Cancel
             </Button>
           )}
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Media" : "Create Media"}
           </Button>
         </div>

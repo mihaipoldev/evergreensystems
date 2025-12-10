@@ -7,7 +7,7 @@ export function PublicThemeProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider 
       attribute="class" 
-      defaultTheme="light" 
+      forcedTheme="dark"
       enableSystem={false}
       storageKey="public-theme"
       disableTransitionOnChange={false}

@@ -245,26 +245,26 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Status <span className="text-destructive">*</span>
-                    </FormLabel>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Status <span className="text-destructive">*</span>
+                  </FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-input-background">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="deactivated">Deactivated</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-input-background">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="deactivated">Deactivated</SelectItem>
+                    </SelectContent>
+                  </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -299,29 +299,29 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
                         </SelectContent>
                       </Select>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             </div>
           </div>
           <div className="flex items-center justify-end gap-4 mt-6">
             {onCancel ? (
-              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
                 Cancel
               </Button>
             ) : (
               <Button
                 type="button"
                 variant="outline"
-                className="bg-card hover:bg-card/80"
+                className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
                 asChild
                 disabled={isSubmitting}
               >
                 <Link href="/admin/cta">Cancel</Link>
               </Button>
             )}
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
               {isSubmitting ? "Saving..." : isEdit ? "Update CTA Button" : "Create CTA Button"}
             </Button>
           </div>

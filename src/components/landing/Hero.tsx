@@ -302,21 +302,29 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
   }, [videoId]);
 
   return (
-    <section className="relative flex items-center justify-center pt-[116px] overflow-hidden pb-4">
+    <section className="relative flex items-center justify-center pt-[116px] overflow-x-hidden pb-4">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-radial" />
       
       {/* Animated Glow Orbs */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl"
+        className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
+        style={{
+          backgroundColor: '#446F94',
+          opacity: 0.2,
+        }}
         animate={{
           scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
+          opacity: [0.2, 0.4, 0.2],
         }}
         transition={{ duration: 8, repeat: Infinity }}
       />
       <motion.div
-        className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-accent/10 rounded-full blur-3xl"
+        className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl"
+        style={{
+          backgroundColor: '#D4932C',
+          opacity: 0.2,
+        }}
         animate={{
           scale: [1.2, 1, 1.2],
           opacity: [0.2, 0.4, 0.2],
@@ -331,11 +339,27 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-primary/40 bg-primary/5 text-xs font-regular mb-6"
+            className="inline-flex mb-6 w-full sm:w-auto justify-center"
             style={{ maxWidth: '100%' }}
           >
-            <span className="w-4 h-4 rounded-full bg-primary animate-pulse flex-shrink-0" />
-            <span className="uppercase text-foreground">{topBannerText}</span>
+            {/* Gradient Border Container */}
+            <div
+              className="rounded-full p-[3px] sm:p-[2px]"
+              style={{
+                backgroundImage: 'linear-gradient(84deg, #446F94, #D4932C 92%)',
+              }}
+            >
+              {/* Inner Content */}
+              <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 rounded-full bg-background text-xs font-regular min-w-0">
+                <span 
+                  className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0"
+                  style={{
+                    backgroundImage: 'linear-gradient(84deg, #D4932C, #446F94 92%)',
+                  }}
+                />
+                <span className="uppercase text-foreground">{topBannerText}</span>
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -501,16 +525,23 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
         >
           {/* Gradient Background Container */}
           <div
-            className="w-full max-w-[780px] rounded-2xl p-0.5"
+            className="w-full max-w-[800px] rounded-2xl p-0.5 relative group"
             style={{
-              backgroundImage: 'linear-gradient(84deg, #0e87f2, #F2190F 92%)',
+              backgroundImage: 'linear-gradient(84deg, #446F94, #D4932C 92%)',
             }}
           >
+            {/* Glow Effect on Hover - Gradient from left (blue) to right (orange) - Behind the video */}
+            <div 
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none -z-10 overflow-hidden" 
+              style={{ 
+                background: 'linear-gradient(84deg, rgba(68, 111, 148, 0.1), rgba(212, 147, 44, 0.1) 92%)',
+                filter: 'blur(30px)',
+                transform: 'scale(1.1)',
+              }} 
+            />
+            
             {/* Black Inner Container */}
-            <div className="bg-background rounded-2xl p-2 pb-4 relative group w-full">
-              {/* Glow Effect on Hover - Box Shadow Only (no border) */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none z-10" style={{ boxShadow: '0 0 60px hsl(var(--primary) / 0.3)' }} />
-              
+            <div className="bg-background rounded-2xl p-2 pb-4 relative w-full">
               {/* Media Container */}
               {mainMedia ? (
                 <div 

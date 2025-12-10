@@ -28,7 +28,8 @@ type AnalyticsData = {
   sessionStartsSeries: DailyPoint[];
   videoClicksSeries: DailyPoint[];
   faqClicksSeries: DailyPoint[];
-  topCTAs: Array<{ id: string; label: string; clicks: number; location: string }>;
+  topCTAsSplitted: Array<{ id: string; label: string; clicks: number; location: string }>;
+  topCTAsAggregated: Array<{ id: string; label: string; clicks: number }>;
   topFAQs: Array<{ id: string; question: string; clicks: number }>;
   topLocations: Array<{ location: string; clicks: number }>;
   topCountries: Array<{ country: string; count: number }>;
@@ -79,7 +80,8 @@ async function AnalyticsContent({ scope }: { scope: string }) {
       sessionStartsSeries: [],
       videoClicksSeries: [],
       faqClicksSeries: [],
-      topCTAs: [],
+      topCTAsSplitted: [],
+      topCTAsAggregated: [],
       topFAQs: [],
       topLocations: [],
       topCountries: [],
@@ -143,24 +145,24 @@ async function AnalyticsContent({ scope }: { scope: string }) {
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Top CTAs
-    const ctaCounts = new Map<string, { clicks: number; location: string; label: string; entityId: string }>();
+    // Top CTAs - Splitted (by entity_id + location)
+    const ctaCountsSplitted = new Map<string, { clicks: number; location: string; label: string; entityId: string }>();
     ctaClicks.forEach((e) => {
       const metadata = e.metadata as any;
       const location = metadata?.location || "unknown";
       const key = `${e.entity_id}::${location}`;
-      if (!ctaCounts.has(key)) {
-        ctaCounts.set(key, {
+      if (!ctaCountsSplitted.has(key)) {
+        ctaCountsSplitted.set(key, {
           clicks: 0,
           location,
           label: ctaButtonMap.get(e.entity_id) || e.entity_id,
           entityId: e.entity_id,
         });
       }
-      const entry = ctaCounts.get(key)!;
+      const entry = ctaCountsSplitted.get(key)!;
       entry.clicks += 1;
     });
-    const topCTAs = Array.from(ctaCounts.values())
+    const topCTAsSplitted = Array.from(ctaCountsSplitted.values())
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 10)
       .map((entry) => ({
@@ -168,6 +170,29 @@ async function AnalyticsContent({ scope }: { scope: string }) {
         label: entry.label,
         clicks: entry.clicks,
         location: entry.location,
+      }));
+
+    // Top CTAs - Aggregated (by entity_id only, summing clicks across all locations)
+    const ctaCountsAggregated = new Map<string, { clicks: number; label: string; entityId: string }>();
+    ctaClicks.forEach((e) => {
+      const entityId = e.entity_id;
+      if (!ctaCountsAggregated.has(entityId)) {
+        ctaCountsAggregated.set(entityId, {
+          clicks: 0,
+          label: ctaButtonMap.get(entityId) || entityId,
+          entityId: entityId,
+        });
+      }
+      const entry = ctaCountsAggregated.get(entityId)!;
+      entry.clicks += 1;
+    });
+    const topCTAsAggregated = Array.from(ctaCountsAggregated.values())
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 10)
+      .map((entry) => ({
+        id: entry.entityId,
+        label: entry.label,
+        clicks: entry.clicks,
       }));
 
     // Top locations
@@ -239,7 +264,8 @@ async function AnalyticsContent({ scope }: { scope: string }) {
       sessionStartsSeries,
       videoClicksSeries,
       faqClicksSeries: [],
-      topCTAs,
+      topCTAsSplitted,
+      topCTAsAggregated,
       topFAQs: [],
       topLocations,
       topCountries,

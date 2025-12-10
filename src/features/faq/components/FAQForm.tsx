@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -44,6 +45,7 @@ type FAQFormProps = {
 
 export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -114,7 +116,11 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
                   Question <span className="text-destructive">*</span>
                 </FormLabel>
                 <FormControl>
-                  <InputShadow placeholder="Enter the question" {...field} />
+                  <TextareaShadow
+                    placeholder="Enter the question"
+                    style={{ minHeight: isMobile ? '200px' : '120px' }}
+                    {...field}
+                  />
                 </FormControl>
                 <FormDescription>
                   The question being asked
@@ -135,7 +141,7 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
                 <FormControl>
                   <TextareaShadow
                     placeholder="Enter the answer"
-                    className="min-h-[120px]"
+                    style={{ minHeight: isMobile ? '200px' : '120px' }}
                     {...field}
                   />
                 </FormControl>
@@ -179,13 +185,13 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
           <Button
             type="button"
             variant="outline"
-            className="bg-card hover:bg-card/80"
+            className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
             asChild
             disabled={isSubmitting}
           >
             <Link href="/admin/faq">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update FAQ Item" : "Create FAQ Item"}
           </Button>
         </div>

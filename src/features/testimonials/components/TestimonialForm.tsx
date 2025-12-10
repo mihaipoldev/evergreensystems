@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -45,6 +46,7 @@ type TestimonialFormProps = {
 
 export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderContent }: TestimonialFormProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const createTestimonial = useCreateTestimonial();
   const updateTestimonial = useUpdateTestimonial();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -320,7 +322,7 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
                 <FormControl>
                   <TextareaShadow
                     placeholder="Enter the testimonial quote"
-                    style={{ minHeight: "120px" }}
+                    style={{ minHeight: isMobile ? '200px' : '120px' }}
                     {...field}
                   />
                 </FormControl>
@@ -355,13 +357,13 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
           <Button
             type="button"
             variant="outline"
-            className="bg-card hover:bg-card/80"
+            className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
             asChild
             disabled={isSubmitting}
           >
             <Link href="/admin/testimonials">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Testimonial" : "Create Testimonial"}
           </Button>
         </div>

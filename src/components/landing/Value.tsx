@@ -124,7 +124,7 @@ const defaultFeatures = [
 export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'A reliable outbound system — built with [[automation]], clean data, and real personalization.';
-  const subtitle = section?.subtitle || 'We build and maintain the automation layer behind your outbound: accurate targeting, automated lead acquisition, clean data pipelines, and consistent results.';
+  const subtitle = section?.subtitle || null; // Don't use fallback - allow it to be empty
 
   // Map database features to display format, or use defaults
   const features = offerFeatures.length > 0
@@ -184,18 +184,20 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
               className="text-2xl md:text-5xl font-bold text-foreground mt-4 leading-tight"
             />
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-          >
-            <RichText
-              as="p"
-              text={subtitle}
-              className="text-muted-foreground text-lg mt-6 leading-relaxed max-w-[800px] mx-auto"
-            />
-          </motion.div>
+          {subtitle && subtitle.trim() && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <RichText
+                as="p"
+                text={subtitle}
+                className="text-muted-foreground text-lg mt-6 leading-relaxed max-w-[800px] mx-auto"
+              />
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Value Points Grid */}

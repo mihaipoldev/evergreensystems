@@ -1,9 +1,8 @@
 import { MetadataRoute } from 'next';
 import { getPageBySlug } from '@/lib/supabase/queries';
+import { SEO_CONFIG } from '@/lib/seo';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://evergreenlabs.com';
-  
   // Get home page for last modified date
   let homePage = null;
   try {
@@ -18,10 +17,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: siteUrl,
+      url: SEO_CONFIG.siteUrl,
       lastModified,
       changeFrequency: 'daily',
       priority: 1,
     },
+    // Future: Add additional pages here as they are created
+    // {
+    //   url: `${SEO_CONFIG.siteUrl}/about`,
+    //   lastModified: new Date(),
+    //   changeFrequency: 'monthly',
+    //   priority: 0.8,
+    // },
   ];
 }

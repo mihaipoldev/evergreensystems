@@ -93,6 +93,10 @@ Create a `.env.local` file in the root directory with the following variables:
 - `BUNNY_PULL_ZONE_URL` - Your Bunny CDN pull zone URL (e.g., `https://yourdomain.b-cdn.net` or `yourdomain.b-cdn.net`)
 - `BUNNY_STORAGE_HOSTNAME` (optional) - Bunny storage hostname, defaults to `storage.bunnycdn.com`
 
+### SEO (Required for proper SEO configuration)
+
+- `NEXT_PUBLIC_SITE_URL` - Your website URL (e.g., `https://evergreensystems.ai`)
+
 Example `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
@@ -101,6 +105,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 BUNNY_STORAGE_ZONE=your-storage-zone
 BUNNY_STORAGE_PASSWORD=your-storage-password
 BUNNY_PULL_ZONE_URL=https://yourdomain.b-cdn.net
+NEXT_PUBLIC_SITE_URL=https://evergreensystems.ai
 ```
 
 ## Next Steps

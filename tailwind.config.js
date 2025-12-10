@@ -10,8 +10,11 @@ module.exports = {
   theme: {
   	extend: {
   		fontFamily: {
+  			sans: ['var(--font-family-public-body)', 'var(--font-lato)', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
   			'admin-heading': ['var(--font-family-admin-heading)', 'system-ui', 'sans-serif'],
   			'admin-body': ['var(--font-family-admin-body)', 'system-ui', 'sans-serif'],
+  			'public-heading': ['var(--font-family-public-heading)', 'system-ui', 'sans-serif'],
+  			'public-body': ['var(--font-family-public-body)', 'system-ui', 'sans-serif'],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

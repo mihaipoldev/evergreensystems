@@ -7,6 +7,8 @@ import { AdminMetricTab } from "@/components/admin/AdminMetricTab";
 import { AnalyticsLineChart, type DailyPoint } from "@/components/admin/AnalyticsLineChart";
 import { CountryList } from "@/components/admin/CountryList";
 import { CityList } from "@/components/admin/CityList";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type AnalyticsDashboardData = {
   totalPageViews: number;
@@ -20,11 +22,16 @@ type AnalyticsDashboardData = {
   sessionStartsSeries: DailyPoint[];
   videoClicksSeries: DailyPoint[];
   faqClicksSeries: DailyPoint[];
-  topCTAs: Array<{
+  topCTAsSplitted: Array<{
     id: string;
     label: string;
     clicks: number;
     location: string;
+  }>;
+  topCTAsAggregated: Array<{
+    id: string;
+    label: string;
+    clicks: number;
   }>;
   topFAQs: Array<{
     id: string;
@@ -106,7 +113,8 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
     sessionStartsSeries,
     videoClicksSeries,
     faqClicksSeries = [],
-    topCTAs,
+    topCTAsSplitted = [],
+    topCTAsAggregated = [],
     topFAQs = [],
     topLocations,
     topCountries,
@@ -137,6 +145,9 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
 
   // Determine if we should show cities (country-specific view) or countries (global view)
   const showCities = topCities !== undefined && topCities.length > 0;
+
+  // State for CTA view toggle (true = splitted view, false = database/aggregated view)
+  const [isSplittedView, setIsSplittedView] = React.useState(false);
 
   const handleCTAClick = (ctaId: string) => {
     const scope = searchParams.get("scope") || "30";
@@ -251,40 +262,96 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold mb-4 px-3">Top Performing CTAs</h3>
+                  <div className="flex items-center justify-between mb-4 px-3">
+                    <h3 className="text-sm font-semibold">Top Performing CTAs</h3>
+                    <div className="inline-flex items-center rounded-md border border-input bg-card p-0.5 shadow-sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsSplittedView(false)}
+                        className={cn(
+                          "h-7 px-2.5 text-xs font-normal rounded-sm transition-all",
+                          !isSplittedView
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground bg-transparent"
+                        )}
+                      >
+                        Database
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsSplittedView(true)}
+                        className={cn(
+                          "h-7 px-2.5 text-xs font-normal rounded-sm transition-all",
+                          isSplittedView
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground bg-transparent"
+                        )}
+                      >
+                        Splitted
+                      </Button>
+                    </div>
+                  </div>
                   <div className="overflow-x-auto px-4">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left text-muted-foreground border-b">
                           <th className="py-3 pr-4">CTA Button</th>
-                          <th className="py-3 pr-4 w-32">Location</th>
+                          {isSplittedView && <th className="py-3 pr-4 w-32">Location</th>}
                           <th className="py-3 pr-4 w-24 text-right">Clicks</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {topCTAs.slice(0, 10).map((cta, index) => (
-                          <tr 
-                            key={`${cta.id}-${cta.location}-${index}`} 
-                            className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => handleCTAClick(cta.id)}
-                          >
-                            <td className="py-3 pr-4">
-                              <span className="font-medium">{cta.label}</span>
-                            </td>
-                            <td className="py-3 pr-4 w-32">
-                              <span className="text-muted-foreground text-xs">
-                                {locationLabels[cta.location] || cta.location}
-                              </span>
-                            </td>
-                            <td className="py-3 pr-4 w-24 text-right tabular-nums font-semibold">{cta.clicks}</td>
-                          </tr>
-                        ))}
-                        {topCTAs.length === 0 && (
-                          <tr>
-                            <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                              No data yet.
-                            </td>
-                          </tr>
+                        {isSplittedView ? (
+                          <>
+                            {topCTAsSplitted.slice(0, 10).map((cta, index) => (
+                              <tr 
+                                key={`${cta.id}-${cta.location}-${index}`} 
+                                className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
+                                onClick={() => handleCTAClick(cta.id)}
+                              >
+                                <td className="py-3 pr-4">
+                                  <span className="font-medium">{cta.label}</span>
+                                </td>
+                                <td className="py-3 pr-4 w-32">
+                                  <span className="text-muted-foreground text-xs">
+                                    {locationLabels[cta.location] || cta.location}
+                                  </span>
+                                </td>
+                                <td className="py-3 pr-4 w-24 text-right tabular-nums font-semibold">{cta.clicks}</td>
+                              </tr>
+                            ))}
+                            {topCTAsSplitted.length === 0 && (
+                              <tr>
+                                <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                                  No data yet.
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {topCTAsAggregated.slice(0, 10).map((cta, index) => (
+                              <tr 
+                                key={`${cta.id}-${index}`} 
+                                className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
+                                onClick={() => handleCTAClick(cta.id)}
+                              >
+                                <td className="py-3 pr-4">
+                                  <span className="font-medium">{cta.label}</span>
+                                </td>
+                                <td className="py-3 pr-4 w-24 text-right tabular-nums font-semibold">{cta.clicks}</td>
+                              </tr>
+                            ))}
+                            {topCTAsAggregated.length === 0 && (
+                              <tr>
+                                <td colSpan={2} className="py-6 text-center text-muted-foreground">
+                                  No data yet.
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         )}
                       </tbody>
                     </table>
