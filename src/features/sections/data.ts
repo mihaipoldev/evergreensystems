@@ -26,7 +26,10 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
   // Get all sections
   const { data: sections, error: sectionsError } = await supabase
     .from("sections")
-    .select("id, type, title, admin_title, subtitle, content, media_url, created_at, updated_at") as { data: Database["public"]["Tables"]["sections"]["Row"][] | null; error: any };
+    .select("id, type, title, admin_title, subtitle, content, media_url, icon, created_at, updated_at") as { 
+      data: Array<Database["public"]["Tables"]["sections"]["Row"] & { icon: string | null }> | null; 
+      error: any 
+    };
 
   if (sectionsError) {
     throw sectionsError;
@@ -44,7 +47,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
       id,
       section_id,
       position,
-      visible,
+      status,
       page_id,
       pages (
         id,
@@ -56,7 +59,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
       id: string;
       section_id: string;
       position: number;
-      visible: boolean;
+      status: "published" | "draft" | "deactivated";
       page_id: string;
       pages: { id: string; slug: string; title: string } | null;
     }> | null; error: any }>);
@@ -71,7 +74,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
     id: string;
     section_id: string;
     position: number;
-    visible: boolean;
+    status: "published" | "draft" | "deactivated";
     page_id: string;
     pages: { id: string; slug: string; title: string } | null;
   };
@@ -85,13 +88,14 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
         title: (ps.pages as any)?.title || "",
         page_section_id: ps.id,
         position: ps.position,
-        visible: ps.visible,
+        status: ps.status,
       }));
 
     return {
       ...section,
+      icon: (section as any).icon ?? null,
       pages: associatedPages,
-    };
+    } as SectionWithPages;
   });
 
   // Separate sections into home page sections and non-home sections
@@ -139,7 +143,7 @@ export async function getSectionById(id: string): Promise<Section | null> {
   const supabase = createServiceRoleClient();
   const { data, error } = await ((supabase
     .from("sections") as any)
-    .select("id, type, title, admin_title, subtitle, content, media_url, created_at, updated_at")
+    .select("id, type, title, admin_title, subtitle, content, media_url, icon, created_at, updated_at")
     .eq("id", id)
     .single() as Promise<{ data: Database["public"]["Tables"]["sections"]["Row"] | null; error: any }>);
 
@@ -203,9 +207,15 @@ export async function getSectionById(id: string): Promise<Section | null> {
     } as Section;
   }
 
-  // Transform CTA button data
+  // Transform CTA button data (filter based on environment)
+  const isDevelopment = process.env.NODE_ENV === 'development';
   const ctaButtons = (sectionCTAData || [])
-    .filter((item: any) => item.cta_buttons && item.cta_buttons.status === "active")
+    .filter((item: any) => {
+      const ctaStatus = item.cta_buttons?.status;
+      return isDevelopment 
+        ? (ctaStatus === "published" || ctaStatus === "draft")
+        : ctaStatus === "published";
+    })
     .map((item: any) => ({
       ...item.cta_buttons,
       section_cta_button: {

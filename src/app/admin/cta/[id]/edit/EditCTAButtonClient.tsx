@@ -19,8 +19,7 @@ export function EditCTAButtonClient({ ctaButton }: EditCTAButtonClientProps) {
       initialData={ctaButton}
       isEdit={true}
       rightSideHeaderContent={
-        <div className="mb-6 md:mb-8 relative">
-          <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-full" />
+        <div className="mb-6 md:mb-8">
           <AdminPageTitle
             title="Edit CTA Button"
             entityName={ctaButton.label}

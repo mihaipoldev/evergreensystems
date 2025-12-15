@@ -46,7 +46,13 @@ export const Results = memo(({ section }: ResultsProps) => {
 
   return (
     <section id="results" className="py-12 md:py-20 relative">
-      <div className="absolute inset-0 bg-gradient-radial opacity-30" />
+      {/* Gradient positioned in the middle with smooth fade at top and bottom */}
+      <div 
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: 'radial-gradient(ellipse 100% 80% at 50% 50%, hsl(var(--primary) / 0.1), transparent 65%)',
+        }}
+      />
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div

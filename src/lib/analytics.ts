@@ -66,6 +66,7 @@ export function getOrCreateSessionId(): string {
  * Track an analytics event
  * Automatically includes session_id, user_agent, and referrer
  * Includes timeout to prevent hanging on mobile Safari
+ * Uses keepalive for link clicks to ensure tracking completes even if navigation occurs
  */
 export async function trackEvent(params: TrackEventParams): Promise<void> {
   if (typeof window === "undefined") {
@@ -78,40 +79,54 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
   const userAgent = navigator.userAgent || null;
   const referrer = document.referrer || null;
 
+  const payload = {
+    event_type: params.event_type,
+    entity_type: params.entity_type,
+    entity_id: params.entity_id,
+    session_id: sessionId,
+    user_agent: userAgent,
+    referrer: referrer,
+    metadata: params.metadata || null,
+  };
+
+  console.log("Sending analytics event:", payload);
+
+  // For link clicks, use keepalive to ensure the request completes even if navigation occurs
+  const isLinkClick = params.event_type === "link_click";
+
   try {
-    // Add timeout using AbortController to prevent hanging on mobile
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-    const payload = {
-      event_type: params.event_type,
-      entity_type: params.entity_type,
-      entity_id: params.entity_id,
-      session_id: sessionId,
-      user_agent: userAgent,
-      referrer: referrer,
-      metadata: params.metadata || null,
-    };
-
-    console.log("Sending analytics event:", payload);
-
-    const response = await fetch("/api/admin/analytics", {
+    const fetchOptions: RequestInit = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-      signal: controller.signal, // Add abort signal
-    });
+      keepalive: isLinkClick, // Keep request alive for link clicks even if page unloads
+    };
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Failed to track event:", response.status, errorText);
+    // For link clicks, fire and forget with keepalive to avoid blocking navigation
+    // For other events, await the response
+    if (isLinkClick) {
+      // Fire and forget for link clicks - keepalive ensures it completes
+      fetch("/api/admin/analytics", fetchOptions).catch((error) => {
+        console.error("Error tracking link click event:", error);
+      });
     } else {
-      const result = await response.json();
-      console.log("Event tracked successfully:", result);
+      // For non-link-click events, use timeout to prevent hanging on mobile Safari
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      fetchOptions.signal = controller.signal;
+      
+      const response = await fetch("/api/admin/analytics", fetchOptions);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to track event:", response.status, errorText);
+      } else {
+        const result = await response.json();
+        console.log("Event tracked successfully:", result);
+      }
     }
   } catch (error) {
     // Silently fail - don't interrupt user experience

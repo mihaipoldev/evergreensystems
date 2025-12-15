@@ -6,14 +6,30 @@ import { getFontVariable } from "@/lib/font-variables";
 
 export async function middleware(request: NextRequest) {
   try {
-    const pathname = request.nextUrl.pathname;
+    // Safely get pathname - handle any encoding issues
+    let pathname: string;
+    try {
+      pathname = request.nextUrl.pathname;
+    } catch (pathError) {
+      // If pathname parsing fails, use a safe default
+      console.error('Failed to parse pathname:', pathError);
+      return NextResponse.next({ request });
+    }
+
     let supabaseResponse = NextResponse.next({
       request,
     });
 
     // Set pathname in headers for layout to use
     // Pathname is already valid, no encoding needed
-    supabaseResponse.headers.set("x-pathname", pathname);
+    try {
+      supabaseResponse.headers.set("x-pathname", pathname);
+    } catch (headerError) {
+      // If header setting fails, continue without it
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to set x-pathname header:', headerError);
+      }
+    }
 
     // Only create Supabase client and check auth for admin routes or login
     // Skip database queries entirely for public pages to avoid blocking
@@ -30,18 +46,51 @@ export async function middleware(request: NextRequest) {
         {
           cookies: {
             getAll() {
-              return request.cookies.getAll();
+              try {
+                return request.cookies.getAll();
+              } catch (cookieError) {
+                // If cookie parsing fails, return empty array
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('Failed to get cookies:', cookieError);
+                }
+                return [];
+              }
             },
             setAll(cookiesToSet) {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                request.cookies.set(name, value)
-              );
-              supabaseResponse = NextResponse.next({
-                request,
-              });
-              cookiesToSet.forEach(({ name, value, options }) =>
-                supabaseResponse.cookies.set(name, value, options)
-              );
+              try {
+                cookiesToSet.forEach(({ name, value, options }) => {
+                  try {
+                    // Validate cookie value before setting
+                    if (value) {
+                      decodeURIComponent(value); // Test if value is valid
+                    }
+                    request.cookies.set(name, value);
+                  } catch {
+                    // Skip problematic cookies
+                    if (process.env.NODE_ENV === 'development') {
+                      console.warn(`Skipping problematic cookie: ${name}`);
+                    }
+                  }
+                });
+                supabaseResponse = NextResponse.next({
+                  request,
+                });
+                cookiesToSet.forEach(({ name, value, options }) => {
+                  try {
+                    if (value) {
+                      decodeURIComponent(value); // Test if value is valid
+                    }
+                    supabaseResponse.cookies.set(name, value, options);
+                  } catch {
+                    // Skip problematic cookies
+                  }
+                });
+              } catch (setCookieError) {
+                // If cookie setting fails, continue without setting cookies
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('Failed to set cookies:', setCookieError);
+                }
+              }
             },
           },
         }
@@ -58,7 +107,9 @@ export async function middleware(request: NextRequest) {
       }
     } catch (error) {
       // If Supabase client creation fails, continue without auth
-      console.warn('Failed to create Supabase client:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to create Supabase client:', error);
+      }
       user = null;
     }
   }
@@ -71,9 +122,18 @@ export async function middleware(request: NextRequest) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
+    
+    // Redirect /admin to /admin/analytics (exact match only)
+    if (pathname === "/admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/analytics";
+      // Preserve query parameters if any
+      return NextResponse.redirect(url);
+    }
 
     // For admin pages, inject color style tag into HTML response
-    if (pathname !== "/admin/login") {
+    // Skip for API routes and non-HTML responses
+    if (pathname !== "/admin/login" && !pathname.startsWith("/api")) {
       try {
         // Re-create supabase client for queries (it was scoped above)
         const supabase = createServerClient<Database>(
@@ -233,61 +293,125 @@ export async function middleware(request: NextRequest) {
           if (colorInjection || fontInjection) {
             const injection = colorInjection + fontInjection;
 
+            try {
+              // Check if response is HTML before attempting to inject
+              const contentType = supabaseResponse.headers.get('content-type') || '';
+              if (!contentType.includes('text/html')) {
+                // Not HTML, return original response
+                return supabaseResponse;
+              }
+
               let buffer = "";
               let headInjected = false;
 
               const stream = new TransformStream({
                 transform(chunk, controller) {
-                  const text = new TextDecoder().decode(chunk);
-                  buffer += text;
-                  
-                  if (!headInjected) {
-                    // CRITICAL: Inject as the ABSOLUTE FIRST thing after <head>
-                    const headMatch = buffer.match(/<head[^>]*>/i);
-                    if (headMatch) {
-                      const headIndex = buffer.indexOf(headMatch[0]);
-                      const afterHead = headIndex + headMatch[0].length;
-                      // Inject blocking script + style tag immediately after <head>
-                      buffer = buffer.slice(0, afterHead) + injection + buffer.slice(afterHead);
-                      headInjected = true;
-                    }
-                    // Fallback: inject before ANY other tag
-                    else {
-                      const anyTagMatch = buffer.match(/<[^/!][^>]*>/i);
-                      if (anyTagMatch && !anyTagMatch[0].match(/^<html|^<head|^<body/i)) {
-                        const matchIndex = buffer.indexOf(anyTagMatch[0]);
-                        buffer = buffer.slice(0, matchIndex) + injection + buffer.slice(matchIndex);
+                  try {
+                    const text = new TextDecoder().decode(chunk);
+                    buffer += text;
+                    
+                    if (!headInjected) {
+                      // CRITICAL: Inject as the ABSOLUTE FIRST thing after <head>
+                      const headMatch = buffer.match(/<head[^>]*>/i);
+                      if (headMatch) {
+                        const headIndex = buffer.indexOf(headMatch[0]);
+                        const afterHead = headIndex + headMatch[0].length;
+                        // Inject blocking script + style tag immediately after <head>
+                        buffer = buffer.slice(0, afterHead) + injection + buffer.slice(afterHead);
                         headInjected = true;
                       }
+                      // Fallback: inject before ANY other tag
+                      else {
+                        const anyTagMatch = buffer.match(/<[^/!][^>]*>/i);
+                        if (anyTagMatch && !anyTagMatch[0].match(/^<html|^<head|^<body/i)) {
+                          const matchIndex = buffer.indexOf(anyTagMatch[0]);
+                          buffer = buffer.slice(0, matchIndex) + injection + buffer.slice(matchIndex);
+                          headInjected = true;
+                        }
+                      }
                     }
-                  }
-                  
-                  // Flush buffer if we've injected or buffer is getting large
-                  if (headInjected || buffer.length > 8192) {
-                    controller.enqueue(new TextEncoder().encode(buffer));
-                    buffer = "";
+                    
+                    // Flush buffer if we've injected or buffer is getting large
+                    if (headInjected || buffer.length > 8192) {
+                      controller.enqueue(new TextEncoder().encode(buffer));
+                      buffer = "";
+                    }
+                  } catch (transformError) {
+                    // If transform fails, just pass through the chunk without modification
+                    controller.enqueue(chunk);
                   }
                 },
                 flush(controller) {
-                  if (buffer) {
-                    // Last chance: inject if we haven't yet
-                    if (!headInjected) {
-                      if (/<head[^>]*>/i.test(buffer)) {
-                        buffer = buffer.replace(/(<head[^>]*>)/i, `$1${injection}`);
-                      } else if (/<html[^>]*>/i.test(buffer)) {
-                        // If head doesn't exist, try to inject after html tag
-                        buffer = buffer.replace(/(<html[^>]*>)/i, `$1${injection}`);
+                  try {
+                    if (buffer) {
+                      // Last chance: inject if we haven't yet
+                      if (!headInjected) {
+                        if (/<head[^>]*>/i.test(buffer)) {
+                          buffer = buffer.replace(/(<head[^>]*>)/i, `$1${injection}`);
+                        } else if (/<html[^>]*>/i.test(buffer)) {
+                          // If head doesn't exist, try to inject after html tag
+                          buffer = buffer.replace(/(<html[^>]*>)/i, `$1${injection}`);
+                        }
                       }
+                      controller.enqueue(new TextEncoder().encode(buffer));
                     }
-                    controller.enqueue(new TextEncoder().encode(buffer));
+                  } catch (flushError) {
+                    // If flush fails, try to encode buffer as-is
+                    try {
+                      if (buffer) {
+                        controller.enqueue(new TextEncoder().encode(buffer));
+                      }
+                    } catch {
+                      // Silently ignore if encoding fails
+                    }
                   }
                 },
               });
 
+              // Safely copy headers to avoid any encoding issues
+              const safeHeaders = new Headers();
+              try {
+                supabaseResponse.headers.forEach((value, key) => {
+                  try {
+                    // Validate header value before setting
+                    if (value && typeof value === 'string') {
+                      // Skip Set-Cookie headers that might have encoding issues
+                      if (key.toLowerCase() === 'set-cookie') {
+                        try {
+                          safeHeaders.append(key, value);
+                        } catch {
+                          // Skip problematic cookies
+                        }
+                      } else {
+                        safeHeaders.set(key, value);
+                      }
+                    }
+                  } catch (headerError) {
+                    // Skip problematic headers
+                    if (process.env.NODE_ENV === 'development') {
+                      console.warn(`Skipping problematic header ${key}:`, headerError);
+                    }
+                  }
+                });
+              } catch (headersError) {
+                // If header copying fails, use empty headers
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('Failed to copy headers:', headersError);
+                }
+              }
+
               return new NextResponse(stream.readable, {
-                headers: supabaseResponse.headers,
+                headers: safeHeaders,
                 status: supabaseResponse.status,
               });
+            } catch (streamError) {
+              // If stream creation fails, return original response without injection
+              // This prevents blocking the page
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('Failed to create injection stream, returning original response:', streamError);
+              }
+              return supabaseResponse;
+            }
           }
         }
       } catch (error) {
@@ -303,9 +427,9 @@ export async function middleware(request: NextRequest) {
     // Redirect authenticated users away from login page
     if (isLoginRoute) {
       if (user) {
-        // Redirect to admin dashboard if already authenticated
+        // Redirect to admin analytics dashboard if already authenticated
         const url = request.nextUrl.clone();
-        url.pathname = "/admin";
+        url.pathname = "/admin/analytics";
         return NextResponse.redirect(url);
       }
     }

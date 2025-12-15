@@ -22,7 +22,7 @@ export function AdminMetricTab({
     <TabsTrigger
       value={value}
       className={cn(
-        "flex flex-col items-start justify-center p-2 md:p-4 h-auto rounded-none dark:bg-muted/15 bg-muted/70 data-[state=active]:bg-card dark:data-[state=active]:bg-card data-[state=active]:shadow-none",
+        "flex flex-col items-start justify-center p-2 md:p-4 h-auto rounded-none dark:bg-background/90 bg-muted/70 data-[state=active]:bg-card dark:data-[state=active]:bg-card data-[state=active]:shadow-none",
         className
       )}
     >

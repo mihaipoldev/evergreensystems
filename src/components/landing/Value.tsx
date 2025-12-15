@@ -2,25 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBullseye,
-  faRobot,
-  faShield,
-  faShieldAlt,
-  faShieldHalved,
-  faBrain,
-  faCogs,
-  faChartLine,
-  faComments,
-  faHandshake,
-  faGaugeHigh,
-  faSliders,
-  faWandMagicSparkles,
-  faCheckCircle,
-  IconDefinition,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBullseye } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from '@/components/ui/RichText';
 import type { Database } from '@/lib/supabase/types';
+import { resolveIconFromClass } from '@/lib/icon-utils';
 
 type Section = {
   id: string;
@@ -30,137 +15,59 @@ type Section = {
   content: any | null;
 } | undefined;
 
-type OfferFeature = Database["public"]["Tables"]["offer_features"]["Row"];
+type OfferFeatureBase = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  icon: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type OfferFeatureWithSection = OfferFeatureBase & {
+  section_feature?: {
+    id: string;
+    position: number;
+    status: "published" | "draft" | "deactivated";
+    created_at: string;
+  };
+};
 
 type ValueProps = {
   section?: Section;
-  offerFeatures?: OfferFeature[];
+  offerFeatures?: OfferFeatureWithSection[];
 };
 
-// Map icon names (strings) to FontAwesome icons
-// Handles both "fa-robot" and "robot" formats
-const iconMap: Record<string, IconDefinition> = {
-  'fa-bullseye': faBullseye,
-  'bullseye': faBullseye,
-  'fa-target': faBullseye,
-  'target': faBullseye,
-  'fa-robot': faRobot,
-  'robot': faRobot,
-  'fa-shield': faShield,
-  'fa-shield-alt': faShieldAlt,
-  'fa-shield-halved': faShieldHalved,
-  'fa-shield-check': faShieldAlt, // Using faShieldAlt as alternative until faShieldCheck is available
-  'fa-shield-virus': faShieldAlt,
-  'shield': faShield,
-  'shield-alt': faShieldAlt,
-  'shield-halved': faShieldHalved,
-  'shield-check': faShieldAlt, // Using faShieldAlt as alternative until faShieldCheck is available
-  'shield-virus': faShieldAlt,
-  'fa-brain': faBrain,
-  'brain': faBrain,
-  'fa-cogs': faCogs,
-  'fa-gears': faCogs,
-  'cogs': faCogs,
-  'gears': faCogs,
-  'fa-chart-line': faChartLine,
-  'fa-chart': faChartLine,
-  'fa-line-chart': faChartLine,
-  'chart-line': faChartLine,
-  'chart': faChartLine,
-  'line-chart': faChartLine,
-  'fa-badge-check': faCheckCircle, // Pro icon - using faCheckCircle as free alternative
-  'badge-check': faCheckCircle, // Pro icon - using faCheckCircle as free alternative
-  'badge': faCheckCircle, // Pro icon - using faCheckCircle as free alternative
-  'fa-comments': faComments,
-  'comments': faComments,
-  'fa-handshake': faHandshake,
-  'handshake': faHandshake,
-  'fa-gauge-high': faGaugeHigh,
-  'gauge-high': faGaugeHigh,
-  'gauge': faGaugeHigh,
-  'fa-sliders': faSliders,
-  'sliders': faSliders,
-  'fa-wand-magic-sparkles': faWandMagicSparkles,
-  'wand-magic-sparkles': faWandMagicSparkles,
-  'wand-magic': faWandMagicSparkles,
-  'wand': faWandMagicSparkles,
-  'magic': faWandMagicSparkles,
-};
-
-// Default fallback features if database is empty
-const defaultFeatures = [
-  {
-    icon: faBullseye,
-    title: 'Accurate targeting',
-    description: 'Powered by real industry signals',
-  },
-  {
-    icon: faRobot,
-    title: 'Automated lead sourcing',
-    description: 'And enrichment',
-  },
-  {
-    icon: faShieldAlt,
-    title: 'Clean, validated data',
-    description: 'With deliverability in mind',
-  },
-  {
-    icon: faBrain,
-    title: 'AI-assisted personalization',
-    description: 'That feels human',
-  },
-  {
-    icon: faCogs,
-    title: 'Fully automated workflows',
-    description: 'That run on their own',
-  },
-  {
-    icon: faChartLine,
-    title: 'Predictable sales conversations',
-    description: 'Every week',
-  },
-];
 
 export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
-  // Use section data if available, otherwise use defaults
-  const title = section?.title || 'A reliable outbound system — built with [[automation]], clean data, and real personalization.';
-  const subtitle = section?.subtitle || null; // Don't use fallback - allow it to be empty
+  // If no features, don't render the section
+  if (!offerFeatures || offerFeatures.length === 0) {
+    return null;
+  }
 
-  // Map database features to display format, or use defaults
-  const features = offerFeatures.length > 0
-    ? offerFeatures.map((feature) => {
-        // Get icon from iconMap, try both with and without "fa-" prefix
-        const iconName = feature.icon?.toLowerCase() || '';
-        
-        // Try exact match first
-        let icon = iconMap[iconName];
-        
-        // If not found, try with/without "fa-" prefix
-        if (!icon) {
-          if (iconName.startsWith('fa-')) {
-            icon = iconMap[iconName.substring(3)]; // Try without "fa-" prefix
-          } else {
-            icon = iconMap[`fa-${iconName}`]; // Try with "fa-" prefix
-          }
-        }
-        
-        // Special fallback for shield variations
-        if (!icon && iconName.includes('shield')) {
-          icon = faShieldAlt; // Default to shield-alt for any shield variant
-        }
-        
-        // Final fallback
-        if (!icon) {
-          icon = defaultFeatures[0].icon;
-        }
-        
-        return {
-          icon,
-          title: feature.title,
-          description: feature.description || feature.subtitle || '',
-        };
-      })
-    : defaultFeatures;
+  // Use section data if available
+  const title = section?.title || 'A reliable outbound system — built with [[automation]], clean data, and real personalization.';
+  const subtitle = section?.subtitle || null;
+
+  // Map database features to display format
+  const features = offerFeatures.map((feature) => {
+    // Resolve icon dynamically using the utility function
+    // This will handle all Font Awesome icons, not just a hardcoded list
+    let icon = resolveIconFromClass(feature.icon);
+    
+    // Fallback to a default icon if not found
+    if (!icon) {
+      icon = faBullseye;
+    }
+    
+    return {
+      icon,
+      title: feature.title,
+      description: feature.description || feature.subtitle || '',
+    };
+  });
 
   return (
     <section id="services" className="py-12 md:py-20 relative">

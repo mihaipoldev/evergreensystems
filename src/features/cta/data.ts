@@ -10,7 +10,7 @@ export async function getAllCTAButtons(): Promise<CTAButton[]> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cta_buttons")
-    .select("id, label, url, style, icon, position, status, created_at, updated_at")
+    .select("id, label, url, style, icon, position, created_at, updated_at")
     .order("position", { ascending: true });
 
   if (error) {
@@ -29,7 +29,7 @@ export async function getAllCTAButtonsWithSections(): Promise<CTAButtonWithSecti
   const { data, error } = await supabase
     .from("cta_buttons")
     .select(`
-      id, label, url, style, icon, position, status, created_at, updated_at,
+      id, label, url, style, icon, position, created_at, updated_at,
       section_cta_buttons(
         section_id,
         sections (
@@ -66,7 +66,6 @@ export async function getAllCTAButtonsWithSections(): Promise<CTAButtonWithSecti
       style: btn.style,
       icon: btn.icon,
       position: btn.position,
-      status: btn.status,
       created_at: btn.created_at,
       updated_at: btn.updated_at,
       sections,
@@ -102,7 +101,7 @@ export async function getCTAButtonById(id: string): Promise<(CTAButton & { secti
   const { data, error } = await supabase
     .from("cta_buttons")
     .select(`
-      id, label, url, style, icon, position, status, created_at, updated_at,
+      id, label, url, style, icon, position, created_at, updated_at,
       section_cta_buttons (
         section_id
       )
@@ -132,7 +131,6 @@ export async function getCTAButtonById(id: string): Promise<(CTAButton & { secti
     style: data.style,
     icon: data.icon,
     position: data.position,
-    status: data.status,
     created_at: data.created_at,
     updated_at: data.updated_at,
     section_id: sectionId,
@@ -167,6 +165,7 @@ export async function getCTAButtonsBySectionId(sectionId: string): Promise<CTABu
     section_cta_button: {
       id: item.id,
       position: item.position,
+      status: item.status || "draft",
       created_at: item.created_at,
     },
   }));

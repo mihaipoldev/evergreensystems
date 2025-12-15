@@ -30,7 +30,7 @@ export async function GET(
     }
 
     if (!data) {
-      return NextResponse.json({ error: "Offer feature not found" }, { status: 404 });
+      return NextResponse.json({ error: "Feature not found" }, { status: 404 });
     }
 
     return NextResponse.json(data, { status: 200 });
@@ -60,7 +60,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, subtitle, description, icon, position, status } = body;
+    const { title, subtitle, description, icon, position } = body;
 
     const updateData: Record<string, unknown> = {};
     if (title !== undefined) updateData.title = title;
@@ -68,9 +68,6 @@ export async function PUT(
     if (description !== undefined) updateData.description = description;
     if (icon !== undefined) updateData.icon = icon;
     if (position !== undefined) updateData.position = position;
-    if (status !== undefined && ["active", "inactive"].includes(status)) {
-      updateData.status = status;
-    }
 
     const { data, error } = await (adminSupabase
       .from("offer_features") as any)
@@ -124,7 +121,7 @@ export async function DELETE(
     // Invalidate cache for offer features
     revalidateTag("offer-features", "max");
 
-    return NextResponse.json({ message: "Offer feature deleted successfully" }, { status: 200 });
+    return NextResponse.json({ message: "Feature deleted successfully" }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

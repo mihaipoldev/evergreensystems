@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
+import { IconPickerField } from "@/components/admin/forms/IconPickerField";
 import {
   Form,
   FormControl,
@@ -60,6 +61,7 @@ const formSchema = z.object({
   subtitle: z.string().optional(),
   content: z.string().optional(),
   media_url: z.union([z.string().url("Must be a valid URL"), z.literal(""), z.null()]).optional(),
+  icon: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -67,6 +69,7 @@ type FormValues = z.infer<typeof formSchema>;
 type SectionFormProps = {
   initialData?: Section | null;
   isEdit?: boolean;
+  pageId?: string;
 };
 
 // Common section types
@@ -85,11 +88,14 @@ const SECTION_TYPES = [
   "pricing",
   "contact",
   "about",
+  "timeline",
   "footer",
 ];
 
-export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
+export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }: SectionFormProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,37 +135,42 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       subtitle: initialData?.subtitle || "",
       content: parseContent(initialData?.content),
       media_url: initialData?.media_url || "",
+      icon: initialData?.icon || "",
     },
   });
 
   const sectionType = form.watch("type");
 
-  // Load section media when editing
+  // Load section media when editing (disabled - media is managed via tabs or not used)
   useEffect(() => {
-    if (isEdit && initialData?.id) {
-      loadSectionMedia(initialData.id);
-    }
-  }, [isEdit, initialData?.id]);
-
-  // Load all media for selection
-  useEffect(() => {
-    if (isEdit && initialData?.id) {
-      loadAllMedia();
-    }
-  }, [isEdit, initialData?.id]);
-
-  // Load section CTA buttons when editing
-  useEffect(() => {
-    if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
-      loadSectionCTAs(initialData.id);
-    }
+    // Media section is hidden from form, so don't load here
+    // if (isEdit && initialData?.id) {
+    //   loadSectionMedia(initialData.id);
+    // }
   }, [isEdit, initialData?.id, sectionType]);
 
-  // Load all CTA buttons for selection
+  // Load all media for selection (disabled - media is managed via tabs or not used)
   useEffect(() => {
-    if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
-      loadAllCTAButtons();
-    }
+    // Media section is hidden from form, so don't load here
+    // if (isEdit && initialData?.id) {
+    //   loadAllMedia();
+    // }
+  }, [isEdit, initialData?.id, sectionType]);
+
+  // Load section CTA buttons when editing (disabled - CTA buttons are managed via tabs)
+  useEffect(() => {
+    // CTA buttons section is hidden from form, so don't load here
+    // if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
+    //   loadSectionCTAs(initialData.id);
+    // }
+  }, [isEdit, initialData?.id, sectionType]);
+
+  // Load all CTA buttons for selection (disabled - CTA buttons are managed via tabs)
+  useEffect(() => {
+    // CTA buttons section is hidden from form, so don't load here
+    // if (isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
+    //   loadAllCTAButtons();
+    // }
   }, [isEdit, initialData?.id, sectionType]);
 
   const loadAllMedia = async () => {
@@ -198,7 +209,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       if (response.ok) {
         const ctaButtons = await response.json();
         // Filter to only show active CTAs
-        setAllCTAButtons((ctaButtons || []).filter((btn: CTAButton) => btn.status === "active"));
+        setAllCTAButtons(ctaButtons || []);
       }
     } catch (error) {
       console.error("Error loading all CTA buttons:", error);
@@ -321,6 +332,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
         admin_title: values.admin_title || null,
         subtitle: values.subtitle || null,
         content: parsedContent,
+        icon: values.icon && values.icon.trim() ? values.icon.trim() : null,
       };
 
       if (values.type === "hero") {
@@ -352,13 +364,44 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       const sectionData = await response.json();
       const sectionId = sectionData.id || initialData?.id;
 
-      // Save section media relationships if in edit mode
-      if (isEdit && sectionId) {
-        await saveSectionMedia(sectionId, sectionMedia, accessToken);
+      // If this is a new section and page_id is provided in query params, auto-connect it to the page
+      if (!isEdit && sectionId) {
+        const pageIdToUse = pageIdProp || searchParams?.get("page_id");
+        if (pageIdToUse) {
+          try {
+            const connectResponse = await fetch(`/api/admin/pages/${pageIdToUse}/sections/connect`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
+              body: JSON.stringify({
+                section_id: sectionId,
+                // Position will be auto-calculated by the API if not provided
+              }),
+            });
+
+            if (!connectResponse.ok) {
+              const error = await connectResponse.json();
+              console.error("Failed to auto-connect section to page:", error);
+              // Don't throw - section was created successfully, just connection failed
+            }
+          } catch (error) {
+            console.error("Error auto-connecting section to page:", error);
+            // Don't throw - section was created successfully, just connection failed
+          }
+        }
       }
 
-      // Save section CTA buttons if editing and section type is CTA, Hero, or Header
-      if (isEdit && sectionId && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
+      // Save section media relationships (disabled - media is managed via tabs)
+      // Media section is hidden from form, so don't save here
+      // if (isEdit && sectionId) {
+      //   await saveSectionMedia(sectionId, sectionMedia, accessToken);
+      // }
+
+      // Save section CTA buttons (disabled for sections with CTA tabs - they use CTA tab)
+      // CTA, Hero, and Header sections use CTA tab, so don't save here
+      if (false && isEdit && sectionId && (sectionType === "cta" || sectionType === "hero" || sectionType === "header")) {
         await saveSectionCTAs(sectionId, sectionCTAButtons, accessToken);
       }
 
@@ -405,7 +448,34 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       }
 
       toast.success(`Section ${isEdit ? "updated" : "created"} successfully`);
-      router.push("/admin/sections");
+      
+      // Determine redirect URL based on context
+      let redirectUrl = "/admin/sections";
+      
+      // Check for page_id in prop, query params (for new sections) or pathname (for edit)
+      const pageIdFromQuery = searchParams?.get("page_id");
+      const pageMatch = pathname?.match(/\/admin\/pages\/([^/]+)/);
+      const pageId = pageIdProp || pageIdFromQuery || (pageMatch ? pageMatch[1] : null);
+      
+      if (pageId) {
+        redirectUrl = `/admin/pages/${pageId}/sections`;
+      } else if (isEdit && sectionId) {
+        // Try to get the page ID from the section
+        try {
+          const pageResponse = await fetch(`/api/admin/sections/${sectionId}/page`);
+          if (pageResponse.ok) {
+            const pageData = await pageResponse.json();
+            if (pageData.pageId) {
+              redirectUrl = `/admin/pages/${pageData.pageId}/sections`;
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching page for section:", error);
+          // Fall back to default redirect
+        }
+      }
+      
+      router.push(redirectUrl);
       router.refresh();
     } catch (error: any) {
       console.error("Error saving section:", error);
@@ -516,6 +586,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
         id: "",
         role: "main",
         sort_order: 1,
+        status: "published",
         created_at: new Date().toISOString(),
       },
     };
@@ -729,6 +800,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
       section_cta_button: {
         id: "",
         position: 0,
+        status: "published",
         created_at: new Date().toISOString(),
       },
     };
@@ -779,6 +851,7 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
           section_cta_button: {
             id: ctaWithMetadata.section_cta_button?.id || "",
             position: 0,
+            status: ctaWithMetadata.section_cta_button?.status || "published",
             created_at: new Date().toISOString(),
           },
         };
@@ -814,15 +887,6 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
         <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Details</h3>
-              <p className="text-sm text-muted-foreground">
-                Basic information about the section
-              </p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
@@ -867,6 +931,24 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
             />
           </div>
 
+          <FormField
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Icon</FormLabel>
+                <FormControl>
+                  <IconPickerField
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="Click to select an icon or enter icon class name"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
 
           <FormField
             control={form.control}
@@ -904,8 +986,8 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
             )}
           />
 
-          {/* Section Media */}
-          {isEdit && initialData?.id && (
+          {/* Section Media - Hidden (managed via tabs for sections that support it) */}
+          {false && isEdit && initialData?.id && (
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold mb-1">Media</h3>
@@ -1028,8 +1110,8 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
             </div>
           )}
 
-          {/* Section CTA Buttons - Available for CTA, Hero, and Header sections */}
-          {isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header") && (
+          {/* Section CTA Buttons - Hidden for CTA, Hero, and Header sections (they use CTA tab) */}
+          {false && isEdit && initialData?.id && (sectionType === "cta" || sectionType === "hero" || sectionType === "header") && (
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold mb-1">CTA Buttons</h3>
@@ -1059,12 +1141,6 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                           <span className="truncate">{item.url}</span>
                         </div>
                         <div className="mt-1">
-                          <Badge
-                            variant={item.status === "active" ? "default" : "outline"}
-                            className="text-xs"
-                          >
-                            {item.status === "active" ? "Active" : "Deactivated"}
-                          </Badge>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -1148,12 +1224,6 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
                             <span className="truncate">{ctaButton.url}</span>
                           </div>
                         </div>
-                        <Badge
-                          variant={ctaButton.status === "active" ? "default" : "outline"}
-                          className="text-xs"
-                        >
-                          {ctaButton.status === "active" ? "Active" : "Deactivated"}
-                        </Badge>
                       </div>
                     );
                   })}
@@ -1196,51 +1266,42 @@ export function SectionForm({ initialData, isEdit = false }: SectionFormProps) {
           />
 
           {/* Media URL field hidden - using media relationship instead */}
-          {/* <FormField
-            control={form.control}
-            name="media_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Media URL {sectionType !== "hero" && <span className="text-muted-foreground text-sm font-normal">(Hero sections only)</span>}</FormLabel>
-                <FormControl>
-                  <div className={sectionType !== "hero" ? "opacity-50 pointer-events-none" : ""}>
-                    <VideoUploadField
-                      value={sectionType === "hero" ? (field.value || null) : null}
-                      onChange={(url) => {
-                        if (sectionType === "hero") {
-                          field.onChange(url || "");
-                        }
-                      }}
-                      onFileChange={(file) => {
-                        if (sectionType === "hero") {
-                          setSelectedFile(file);
-                        }
-                      }}
-                      folderPath={isEdit && initialData ? `sections/${initialData.id}` : "sections/temp"}
-                      error={form.formState.errors.media_url?.message}
-                      placeholder="https://example.com/video.mp4"
-                    />
-                  </div>
-                </FormControl>
-                <FormDescription>
-                  {sectionType === "hero" 
-                    ? "Upload or enter a URL for video media (Hero sections only)"
-                    : "Media URL is only available for Hero sections"}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          /> */}
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button
             type="button"
             variant="outline"
             className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
-            asChild
+            onClick={async () => {
+              // Check if we have pageId from prop or pathname
+              const pageMatch = pathname?.match(/\/admin\/pages\/([^/]+)/);
+              const pageIdToUse = pageIdProp || (pageMatch ? pageMatch[1] : null);
+              
+              if (pageIdToUse) {
+                router.push(`/admin/pages/${pageIdToUse}/sections`);
+              } else if (initialData?.id) {
+                // Try to get the page that contains this section
+                try {
+                  const pageResponse = await fetch(`/api/admin/sections/${initialData.id}/page`);
+                  if (pageResponse.ok) {
+                    const pageData = await pageResponse.json();
+                    if (pageData.pageId) {
+                      router.push(`/admin/pages/${pageData.pageId}/sections`);
+                      return;
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error fetching page for section:", error);
+                }
+                // Fall back to old section route (will redirect)
+                router.push(`/admin/sections/${initialData.id}`);
+              } else {
+                router.push("/admin/sections");
+              }
+            }}
             disabled={isSubmitting}
           >
-            <Link href="/admin/sections">Cancel</Link>
+            Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Section" : "Create Section"}

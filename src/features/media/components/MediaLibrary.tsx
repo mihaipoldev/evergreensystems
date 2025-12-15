@@ -38,6 +38,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { MediaForm } from "./MediaForm";
 import { MediaRenderer } from "@/components/MediaRenderer";
+import { MediaCard } from "@/components/admin/MediaCard";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import type { Media } from "../types";
@@ -258,9 +259,8 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
 
   return (
     <div className="w-full">
-      <div className="mb-6 md:mb-8 relative">
-        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-full" />
-        <div className="flex-1 min-w-0">
+        <div className="mb-6 md:mb-8">
+          <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-3 mb-2">
             <h1 className="text-4xl font-bold text-foreground leading-none">Media Library</h1>
             <span className="inline-flex items-center justify-center h-5 px-2.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 leading-none">
@@ -306,79 +306,20 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {media.map((item) => (
-              <div
+              <MediaCard
                 key={item.id}
-                className="group relative bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                {/* Preview */}
-                <div className="aspect-video bg-muted relative overflow-hidden cursor-pointer" onClick={() => setPreviewMedia(item)}>
-                  {getMediaPreview(item)}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="bg-black/60 rounded-full w-12 h-12 flex items-center justify-center">
-                        <FontAwesomeIcon icon={faPlay} className="h-5 w-5 text-white ml-0.5" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-4 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-sm line-clamp-2 flex-1">{item.name || "Untitled Media"}</h3>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <FontAwesomeIcon
-                        icon={getMediaIcon(item.type, item.source_type)}
-                        className="h-4 w-4 text-muted-foreground"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="capitalize">{item.type}</span>
-                    <span>•</span>
-                    <span className="capitalize">{item.source_type.replace("_", " ")}</span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 pt-2 border-t">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="flex-1 h-8 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyUrl(item.url);
-                      }}
-                      title="Copy URL"
-                    >
-                      <FontAwesomeIcon icon={faCopy} className="h-3 w-3 mr-1" />
-                      Copy URL
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingMedia(item);
-                      }}
-                      title="Edit"
-                    >
-                      <FontAwesomeIcon icon={faEdit} className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      onClick={(e) => handleDeleteClick(item.id, e)}
-                      title="Delete"
-                    >
-                      <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                item={item}
+                wistiaThumbnails={wistiaThumbnails}
+                onPreview={setPreviewMedia}
+                onEdit={setEditingMedia}
+                onDelete={async () => {
+                  await deleteMedia.mutateAsync(item.id);
+                  toast.success("Media deleted successfully");
+                }}
+                onCopyUrl={handleCopyUrl}
+                showDelete={true}
+                showCopyUrl={true}
+              />
             ))}
           </div>
         )}

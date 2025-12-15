@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 type AdminPageTitleProps = {
   title: string;
   entityName?: string;
-  description?: string;
+  description?: string | ReactNode;
   entityType?: "album" | "event" | "update";
   rightSideContent?: ReactNode;
   icon?: IconDefinition | ReactNode;
@@ -41,7 +41,7 @@ export function AdminPageTitle({
   if (entityName) {
     return (
       <div>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-end justify-between gap-4">
           <h1 className="text-4xl font-bold text-foreground">
             {entityName} <span className="text-muted-foreground text-base font-normal">EDIT</span>
           </h1>
@@ -54,7 +54,7 @@ export function AdminPageTitle({
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           {icon && (
             <div className="text-primary">

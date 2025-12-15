@@ -52,15 +52,19 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { type, title, admin_title, subtitle, content, media_url } = body;
+    const { type, title, admin_title, subtitle, content, media_url, icon } = body;
 
     const updateData: Record<string, unknown> = {};
     if (type !== undefined) updateData.type = type;
-    if (title !== undefined) updateData.title = title;
-    if (admin_title !== undefined) updateData.admin_title = admin_title;
-    if (subtitle !== undefined) updateData.subtitle = subtitle;
+    if (title !== undefined) updateData.title = title || null;
+    if (admin_title !== undefined) updateData.admin_title = admin_title || null;
+    if (subtitle !== undefined) updateData.subtitle = subtitle || null;
     if (content !== undefined) updateData.content = content;
-    if (media_url !== undefined) updateData.media_url = media_url;
+    if (media_url !== undefined) updateData.media_url = media_url || null;
+    if (icon !== undefined) {
+      // Normalize empty string to null
+      updateData.icon = icon && icon.trim() ? icon.trim() : null;
+    }
 
     const { data, error } = await (supabase
       .from("sections") as any)

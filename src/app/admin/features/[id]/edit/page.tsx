@@ -7,10 +7,14 @@ export const dynamic = "force-dynamic";
 
 type EditFeaturePageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 };
 
-export default async function EditFeaturePage({ params }: EditFeaturePageProps) {
+export default async function EditFeaturePage({ params, searchParams }: EditFeaturePageProps) {
   const { id } = await params;
+  const params_searchParams = await searchParams;
+  const returnTo = params_searchParams.returnTo;
+
   const feature = await getOfferFeatureById(id);
 
   if (!feature) {
@@ -19,15 +23,14 @@ export default async function EditFeaturePage({ params }: EditFeaturePageProps) 
 
   return (
     <div className="w-full space-y-6">
-      <div className="mb-6 md:mb-8 relative">
-        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-full" />
+      <div className="mb-6 md:mb-8">
         <AdminPageTitle
           title="Edit Feature"
           entityName={feature.title}
           description="Update the feature details"
         />
       </div>
-      <FeatureForm initialData={feature} isEdit={true} />
+      <FeatureForm initialData={feature} isEdit={true} returnTo={returnTo} />
     </div>
   );
 }

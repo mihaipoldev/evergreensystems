@@ -38,16 +38,11 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const approved = searchParams.get("approved");
     const search = searchParams.get("search");
 
     let query = supabase
       .from("testimonials")
-      .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at");
-
-    if (approved !== null) {
-      query = query.eq("approved", approved === "true");
-    }
+      .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, position, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {
@@ -56,7 +51,7 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await query
-      .order("approved", { ascending: false })
+      .order("position", { ascending: true })
       .order("position", { ascending: true });
 
     if (error) {
@@ -91,7 +86,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position } = body;
+    const { author_name, author_role, company_name, headline, quote, avatar_url, rating, position } = body;
 
     if (!author_name) {
       return NextResponse.json(
@@ -110,7 +105,6 @@ export async function POST(request: Request) {
         quote: quote || null,
         avatar_url: avatar_url || null,
         rating: rating ?? null,
-        approved: approved !== undefined ? approved : false,
         position: position ?? 0,
       })
       .select()

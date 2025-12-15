@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
+import { IconPickerField } from "@/components/admin/forms/IconPickerField";
 import {
   Form,
   FormControl,
@@ -35,7 +36,6 @@ const formSchema = z.object({
   subtitle: z.string().optional(),
   description: z.string().optional(),
   icon: z.string().optional(),
-  status: z.enum(["active", "inactive"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -43,9 +43,10 @@ type FormValues = z.infer<typeof formSchema>;
 type FeatureFormProps = {
   initialData?: OfferFeature | null;
   isEdit?: boolean;
+  returnTo?: string;
 };
 
-export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
+export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,7 +58,6 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
       subtitle: initialData?.subtitle || "",
       description: initialData?.description || "",
       icon: initialData?.icon || "",
-      status: initialData?.status || "active",
     },
   });
 
@@ -88,7 +88,8 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
       }
 
       toast.success(`Feature ${isEdit ? "updated" : "created"} successfully`);
-      router.push("/admin/features");
+      const redirectUrl = returnTo || (isEdit && initialData ? `/admin/features/${initialData.id}/edit` : "/admin/features");
+      router.push(redirectUrl);
       router.refresh();
     } catch (error: any) {
       console.error("Error saving feature:", error);
@@ -102,15 +103,6 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
         <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Details</h3>
-              <p className="text-sm text-muted-foreground">
-                Basic information about the feature
-              </p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
@@ -135,7 +127,11 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
                 <FormItem>
                   <FormLabel>Icon</FormLabel>
                   <FormControl>
-                    <InputShadow placeholder="Icon name or emoji" {...field} />
+                    <IconPickerField
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Icon name or click to browse"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,32 +175,6 @@ export function FeatureForm({ initialData, isEdit = false }: FeatureFormProps) {
                 )}
               />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className="w-full bg-card text-foreground border border-input !shadow-[0px_2px_2px_0px_rgba(16,17,26,0.05)] hover:!shadow-[0px_4px_4px_0px_rgba(16,17,26,0.05)] dark:!shadow-[0px_1px_1px_0px_rgba(255,255,255,0.05)] dark:hover:!shadow-[0px_2px_2px_0px_rgba(255,255,255,0.05)]"
-                      >
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormDescription>
-                    Control whether this feature is visible publicly.
-                  </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button

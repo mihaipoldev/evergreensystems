@@ -5,18 +5,12 @@ import type { FAQItem } from "./types";
  * Get all FAQ items, ordered by position
  * Uses service role client to bypass RLS for admin operations
  */
-export async function getAllFAQItems(options?: { status?: "active" | "inactive" }): Promise<FAQItem[]> {
+export async function getAllFAQItems(): Promise<FAQItem[]> {
   const supabase = createServiceRoleClient();
-  let query = supabase
+  const { data, error } = await supabase
     .from("faq_items")
     .select("*")
     .order("position", { ascending: true });
-
-  if (options?.status) {
-    query = query.eq("status", options.status);
-  }
-
-  const { data, error } = await query;
 
   if (error) {
     throw error;

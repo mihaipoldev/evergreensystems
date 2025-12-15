@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { unstable_noStore as noStore } from "next/cache";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { DashboardTimeScope } from "@/components/admin/DashboardTimeScope";
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 type CountryAnalyticsPageProps = {
   params: Promise<{ country: string }>;
-  searchParams: Promise<{ scope?: string }>;
+  searchParams: Promise<{ scope?: string; tab?: string }>;
 };
 
 type DailyPoint = { date: string; count: number };
@@ -118,12 +119,20 @@ const getFlagEmoji = (countryName: string) => {
 };
 
 async function CountryAnalyticsContent({ country, scope }: { country: string; scope: string }) {
+  // Prevent Next.js from caching this route - always fetch fresh data
+  noStore();
+  
   // Use service role client for admin analytics to bypass RLS issues
   // This is safe because middleware already protects the route
   const supabase = createServiceRoleClient();
   
-  // Decode country name from URL
+  // Decode country name/code from URL
   const decodedCountry = decodeURIComponent(country);
+  
+  // Normalize country: Vercel provides uppercase country codes (e.g., "ES")
+  // But we need to handle both country codes and full names
+  // Convert country name to code if needed, or use as-is if it's already a code
+  const countryCode = countryNameToCode[decodedCountry] || decodedCountry.toUpperCase();
   
   // Calculate date range based on scope
   let lookbackDays: number;
@@ -135,16 +144,26 @@ async function CountryAnalyticsContent({ country, scope }: { country: string; sc
 
   const now = new Date();
   const lookbackDate = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
-  const lookbackISO = lookbackDate.toISOString();
+  // Add 1 day buffer to account for timezone differences (events might be stored in UTC)
+  const bufferDate = new Date(lookbackDate.getTime() - 24 * 60 * 60 * 1000);
+  const lookbackISO = bufferDate.toISOString();
 
-  // Get analytics events filtered by country
-  let eventsQuery = supabase
+  // Get analytics events with SQL date filter (more efficient) plus buffer for timezone safety
+  // Then filter precisely in JavaScript to ensure accuracy
+  // Vercel stores country as uppercase code (e.g., "ES"), so use countryCode
+  const { data: allEventsRaw, error: eventsError } = await supabase
     .from("analytics_events")
     .select("*")
-    .eq("country", decodedCountry)
-    .gte("created_at", lookbackISO);
-
-  const { data: events, error: eventsError } = await eventsQuery as { data: AnalyticsEvent[] | null; error: any };
+    .eq("country", countryCode)
+    .gte("created_at", lookbackISO)
+    .order("created_at", { ascending: false }) as { data: AnalyticsEvent[] | null; error: any };
+  
+  // Filter events by date in JavaScript for precise date comparison
+  // This ensures we get exactly the events within our date range
+  const events = (allEventsRaw || []).filter((e) => {
+    const eventDate = new Date(e.created_at);
+    return eventDate >= lookbackDate;
+  });
 
   let data: AnalyticsData;
 
@@ -308,28 +327,29 @@ async function CountryAnalyticsContent({ country, scope }: { country: string; sc
       .sort((a, b) => b.clicks - a.clicks);
 
     // For country-specific page, topCountries will just show the selected country
-    // We can still calculate it for consistency, but it will only have one entry
-    const topCountries = [{ country: decodedCountry, count: events.length }];
+    // Use countryCode for consistency (this is what's stored in DB)
+    const displayCountry = getCountryDisplayName(countryCode);
+    const topCountries = [{ country: countryCode, count: events.length }];
 
     // Country-specific breakdowns (all will be the same country, but we calculate for consistency)
     const topCountriesBySessionStart = sessionStarts.length > 0 
-      ? [{ country: decodedCountry, count: sessionStarts.length }]
+      ? [{ country: countryCode, count: sessionStarts.length }]
       : [];
     
     const topCountriesByPageView = pageViews.length > 0
-      ? [{ country: decodedCountry, count: pageViews.length }]
+      ? [{ country: countryCode, count: pageViews.length }]
       : [];
     
     const topCountriesByCTAClick = ctaClicks.length > 0
-      ? [{ country: decodedCountry, count: ctaClicks.length }]
+      ? [{ country: countryCode, count: ctaClicks.length }]
       : [];
     
     const topCountriesByVideoClick = videoClicks.length > 0
-      ? [{ country: decodedCountry, count: videoClicks.length }]
+      ? [{ country: countryCode, count: videoClicks.length }]
       : [];
     
     const topCountriesByFAQClick = faqClicks.length > 0
-      ? [{ country: decodedCountry, count: faqClicks.length }]
+      ? [{ country: countryCode, count: faqClicks.length }]
       : [];
 
     // Top FAQs
@@ -438,10 +458,10 @@ async function CountryAnalyticsContent({ country, scope }: { country: string; sc
         while keeping the raw code for filtering.
       */}
       <AdminPageTitle
-        title={getCountryDisplayName(decodedCountry)}
-        description={`View analytics and performance metrics for ${getCountryDisplayName(decodedCountry)}.`}
+        title={getCountryDisplayName(countryCode)}
+        description={`View analytics and performance metrics for ${getCountryDisplayName(countryCode)}.`}
         rightSideContent={<DashboardTimeScope />}
-        icon={<span className="text-3xl leading-none">{getFlagEmoji(decodedCountry)}</span>}
+        icon={<span className="text-3xl leading-none">{getFlagEmoji(getCountryDisplayName(countryCode))}</span>}
       />
       <AnalyticsDashboard data={data} />
     </>

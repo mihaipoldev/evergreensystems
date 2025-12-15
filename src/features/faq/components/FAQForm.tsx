@@ -22,7 +22,6 @@ import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,7 +32,6 @@ import type { FAQItem } from "../types";
 const formSchema = z.object({
   question: z.string().min(1, "Question is required"),
   answer: z.string().min(1, "Answer is required"),
-  status: z.enum(["active", "inactive"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,9 +39,10 @@ type FormValues = z.infer<typeof formSchema>;
 type FAQFormProps = {
   initialData?: FAQItem | null;
   isEdit?: boolean;
+  returnTo?: string;
 };
 
-export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
+export function FAQForm({ initialData, isEdit = false, returnTo }: FAQFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +52,6 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
     defaultValues: {
       question: initialData?.question || "",
       answer: initialData?.answer || "",
-      status: initialData?.status || "active",
     },
   });
 
@@ -84,7 +82,8 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
       }
 
       toast.success(`FAQ item ${isEdit ? "updated" : "created"} successfully`);
-      router.push("/admin/faq");
+      const redirectUrl = returnTo || "/admin/faq";
+      router.push(redirectUrl);
       router.refresh();
     } catch (error: any) {
       console.error("Error saving FAQ item:", error);
@@ -98,15 +97,6 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
         <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Details</h3>
-              <p className="text-sm text-muted-foreground">
-                Basic information about the FAQ item
-              </p>
-            </div>
-          </div>
-
           <FormField
             control={form.control}
             name="question"
@@ -122,9 +112,6 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
                     {...field}
                   />
                 </FormControl>
-                <FormDescription>
-                  The question being asked
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -145,40 +132,11 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
                     {...field}
                   />
                 </FormControl>
-                <FormDescription>
-                  The answer to the question
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <FormControl>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      className="w-full bg-card text-foreground border border-input !shadow-[0px_2px_2px_0px_rgba(16,17,26,0.05)] hover:!shadow-[0px_4px_4px_0px_rgba(16,17,26,0.05)] dark:!shadow-[0px_1px_1px_0px_rgba(255,255,255,0.05)] dark:hover:!shadow-[0px_2px_2px_0px_rgba(255,255,255,0.05)]"
-                    >
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormDescription>
-                  Control whether this FAQ is visible publicly.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
@@ -189,7 +147,7 @@ export function FAQForm({ initialData, isEdit = false }: FAQFormProps) {
             asChild
             disabled={isSubmitting}
           >
-            <Link href="/admin/faq">Cancel</Link>
+            <Link href={returnTo || "/admin/faq"}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update FAQ Item" : "Create FAQ Item"}

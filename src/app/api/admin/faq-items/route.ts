@@ -17,20 +17,15 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
-    const status = searchParams.get("status");
 
     let query = adminSupabase
       .from("faq_items")
-      .select("id, question, answer, position, status, created_at, updated_at");
+      .select("id, question, answer, position, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {
       const searchPattern = `%${search.trim()}%`;
       query = query.or(`question.ilike.${searchPattern},answer.ilike.${searchPattern}`);
-    }
-
-    if (status && ["active", "inactive"].includes(status)) {
-      query = query.eq("status", status);
     }
 
     const { data, error } = await query.order("position", { ascending: true });
@@ -68,7 +63,7 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { question, answer, position, status } = body;
+    const { question, answer, position } = body;
 
     if (!question || !answer) {
       return NextResponse.json(
@@ -82,7 +77,6 @@ export async function POST(request: Request) {
         question,
         answer,
         position: position ?? 0,
-        status: status && ["active", "inactive"].includes(status) ? status : "active",
       })
       .select()
       .single();

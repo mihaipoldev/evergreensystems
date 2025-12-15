@@ -1,9 +1,16 @@
 "use client";
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Masonry from 'react-masonry-css';
 import { RichText } from '@/components/ui/RichText';
-
+import { MediaRenderer } from '@/components/MediaRenderer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 type Section = {
   id: string;
   type: string;
@@ -12,161 +19,150 @@ type Section = {
   content: any | null;
 } | undefined;
 
-type StoriesProps = {
-  section?: Section;
+type StoryMedia = {
+  id: string;
+  type: string;
+  source_type: string;
+  url: string;
+  embed_id?: string | null;
+  name?: string | null;
+  thumbnail_url?: string | null;
+  duration?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  section_media: {
+    id: string;
+    role: string;
+    sort_order: number;
+    created_at: string;
+  };
 };
 
-const stories = [
-  {
-    name: 'Austin Evans',
-    subtitle: 'from the',
-    gradient: 'from-primary/20 to-muted',
-    overlayText: '',
-    overlayTextLarge: '',
-  },
-  {
-    name: '',
-    subtitle: 'not only just,',
-    gradient: 'from-primary/20 to-muted',
-    overlayText: '',
-    overlayTextLarge: '',
-  },
-  {
-    name: '',
-    subtitle: 'manually, one by one.',
-    gradient: 'from-primary/20 to-muted',
-    overlayText: 'Prior to working with',
-    overlayTextLarge: 'ColdIQ',
-    overlayText2: 'We were sending',
-    overlayText3: 'all of our messages',
-    overlayTextLarge2: 'manually',
-  },
-  {
-    name: '',
-    subtitle: 'you guys.',
-    gradient: 'from-primary/20 to-muted',
-    overlayText: "It's",
-    overlayTextLarge: 'GREAT.',
-  },
-  {
-    name: '',
-    subtitle: '',
-    gradient: 'from-primary/20 to-muted',
-    overlayText: '',
-    overlayTextLarge: '',
-  },
-  {
-    name: '',
-    subtitle: '',
-    gradient: 'from-primary/20 to-muted',
-    overlayText: 'We could really get',
-    overlayText2: 'more qualified',
-    overlayTextLarge: 'list of people',
-  },
-];
+type StoriesProps = {
+  section?: Section;
+  media?: StoryMedia[];
+};
 
 const breakpointColumnsObj = {
   default: 2,
   640: 1,
 };
 
-export const Stories = ({ section }: StoriesProps) => {
+export const Stories = ({ section, media = [] }: StoriesProps) => {
+  const [selectedMedia, setSelectedMedia] = useState<StoryMedia | null>(null);
+  
   // Use section title if available, otherwise use default
   const title = section?.title || 'Stories of [[Success]]';
 
-  return (
-    <section id="stories" className="py-12 md:py-20 relative overflow-hidden">
-      
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <RichText
-            as="h2"
-            text={title}
-            className="text-2xl md:text-5xl font-bold text-foreground mt-4 leading-tight"
-          />
-        </motion.div>
+  // Sort media by sort_order
+  const sortedMedia = [...media].sort((a, b) => 
+    a.section_media.sort_order - b.section_media.sort_order
+  );
 
-        <Masonry
-          breakpointCols={breakpointColumnsObj}
-          className="masonry-grid"
-          columnClassName="masonry-grid_column"
-        >
-          {stories.map((story, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.01 }}
-              className="group cursor-pointer"
-              style={index === 1 ? { marginTop: '70px' } : {}}
-            >
-              <div className={`relative rounded-md overflow-hidden aspect-video bg-gradient-to-br ${story.gradient} border border-muted-foreground`}>
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-card/60" />
-                
-                {/* Text Overlays */}
-                {story.overlayText && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-10">
-                    <div className="text-center space-y-2">
-                      {story.overlayText && (
-                        <p className="text-primary text-sm font-medium drop-shadow-lg" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.5)' }}>
-                          {story.overlayText}
-                        </p>
-                      )}
-                      {story.overlayTextLarge && (
-                        <p className="text-primary text-2xl sm:text-3xl font-bold drop-shadow-lg" style={{ textShadow: '0 0 30px hsl(var(--primary) / 0.6)' }}>
-                          {story.overlayTextLarge}
-                        </p>
-                      )}
-                      {story.overlayText2 && (
-                        <p className="text-primary text-sm font-medium drop-shadow-lg mt-2" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.5)' }}>
-                          {story.overlayText2}
-                        </p>
-                      )}
-                      {story.overlayText3 && (
-                        <p className="text-primary text-sm font-medium drop-shadow-lg" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.5)' }}>
-                          {story.overlayText3}
-                        </p>
-                      )}
-                      {story.overlayTextLarge2 && (
-                        <p className="text-primary text-2xl sm:text-3xl font-bold drop-shadow-lg mt-2" style={{ textShadow: '0 0 30px hsl(var(--primary) / 0.6)' }}>
-                          {story.overlayTextLarge2}
-                        </p>
-                      )}
-                    </div>
+  // If no media, don't render the section
+  if (sortedMedia.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <section id="stories" className="py-12 md:py-20 relative overflow-hidden">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <RichText
+              as="h2"
+              text={title}
+              className="text-2xl md:text-5xl font-bold text-foreground mt-4 leading-tight"
+            />
+          </motion.div>
+
+          <Masonry
+            breakpointCols={breakpointColumnsObj}
+            className="masonry-grid"
+            columnClassName="masonry-grid_column"
+          >
+            {sortedMedia.map((mediaItem, index) => (
+              <motion.div
+                key={mediaItem.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.01 }}
+                className="group cursor-pointer"
+                style={index === 1 ? { marginTop: '70px' } : {}}
+                onClick={() => setSelectedMedia(mediaItem)}
+              >
+                <div className="relative rounded-md overflow-hidden aspect-video bg-gradient-to-br from-primary/20 to-muted border border-muted-foreground">
+                  {/* Media Renderer - Thumbnail/Preview */}
+                  <div className="absolute inset-0">
+                    <MediaRenderer
+                      media={mediaItem as any}
+                      className="w-full h-full"
+                      autoPlay={false}
+                      muted={true}
+                      loop={false}
+                      controls={false}
+                      playsInline={true}
+                    />
                   </div>
-                )}
-                
-                {/* Play Button - YouTube Style */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-                  <motion.div
-                    className="w-32 h-20 rounded-[4px] flex items-center justify-center shadow-lg transition-all duration-100 bg-primary/30 group-hover:bg-primary/30"
-                  >
-                    <svg
-                      className="w-20 h-20 ml-1 transition-colors duration-300 text-primary-foreground fill-primary-foreground"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-card/60 group-hover:bg-card/40 transition-colors" />
+                  
+                  {/* Play Button - YouTube Style */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
+                    <motion.div
+                      className="w-32 h-20 rounded-[4px] flex items-center justify-center shadow-lg transition-all duration-100 bg-primary/30 group-hover:bg-primary/50"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <path 
-                        d="M9 7 L9 17 L16.5 12 Z" 
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </motion.div>
+                      <svg
+                        className="w-20 h-20 ml-1 transition-colors duration-300 text-primary-foreground fill-primary-foreground"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path 
+                          d="M9 7 L9 17 L16.5 12 Z" 
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </motion.div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </Masonry>
-      </div>
-    </section>
+              </motion.div>
+            ))}
+          </Masonry>
+        </div>
+      </section>
+
+      {/* Video Modal */}
+      {selectedMedia && (
+        <Dialog open={!!selectedMedia} onOpenChange={() => setSelectedMedia(null)}>
+          <DialogContent className="max-w-4xl w-full p-0">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle>{selectedMedia.name || "Video"}</DialogTitle>
+            </DialogHeader>
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden p-6 pt-0">
+              <MediaRenderer
+                media={selectedMedia as any}
+                className="w-full h-full"
+                autoPlay={true}
+                muted={false}
+                loop={false}
+                controls={true}
+                playsInline={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 

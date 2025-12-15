@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { VideoUploadField } from "@/components/admin/forms/VideoUploadField";
+import { ImageUploadField } from "@/components/admin/forms/ImageUploadField";
 import type { Media } from "../types";
 
 const formSchema = z.object({
@@ -110,6 +111,7 @@ function extractVimeoId(url: string): string | null {
 export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: MediaFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
   const [wistiaUrl, setWistiaUrl] = useState(initialData?.source_type === "wistia" ? (initialData?.embed_id || "") : "");
 
   const form = useForm<FormValues>({
@@ -213,6 +215,34 @@ export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: 
         }
       }
 
+      // Handle thumbnail file upload
+      let thumbnailUrl = values.thumbnail_url || "";
+      if (selectedThumbnailFile && values.source_type === "upload") {
+        const folderPath = isEdit && initialData
+          ? `media/${initialData.id}`
+          : "media/temp";
+
+        const formData = new FormData();
+        formData.append("file", selectedThumbnailFile);
+        formData.append("folderPath", folderPath);
+
+        const uploadResponse = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.error || "Failed to upload thumbnail");
+        }
+
+        const uploadData = await uploadResponse.json();
+        thumbnailUrl = uploadData.url;
+        if (thumbnailUrl && !thumbnailUrl.startsWith("http://") && !thumbnailUrl.startsWith("https://")) {
+          thumbnailUrl = `https://${thumbnailUrl}`;
+        }
+      }
+
       const payload: any = {
         source_type: values.source_type,
         name: values.name || null,
@@ -222,7 +252,7 @@ export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: 
       // For Wistia, don't set url or thumbnail_url
       if (values.source_type !== "wistia") {
         payload.url = mediaUrl;
-        payload.thumbnail_url = values.thumbnail_url || null;
+        payload.thumbnail_url = thumbnailUrl || null;
       } else {
         // For Wistia, set a placeholder URL (required by DB) but we only use embed_id
         if (!finalEmbedId) {
@@ -412,7 +442,7 @@ export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: 
           />
         )}
 
-        {sourceType !== "wistia" && (
+        {sourceType !== "wistia" && sourceType !== "upload" && (
           <FormField
             control={form.control}
             name="embed_id"
@@ -431,7 +461,30 @@ export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: 
           />
         )}
 
-        {sourceType !== "wistia" && (
+        {sourceType !== "wistia" && sourceType === "upload" && (
+          <FormField
+            control={form.control}
+            name="thumbnail_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Thumbnail URL (optional)</FormLabel>
+                <FormControl>
+                  <ImageUploadField
+                    value={field.value || null}
+                    onChange={(url) => field.onChange(url || "")}
+                    onFileChange={setSelectedThumbnailFile}
+                    folderPath={isEdit && initialData ? `media/${initialData.id}` : "media/temp"}
+                    error={form.formState.errors.thumbnail_url?.message}
+                    placeholder="https://example.com/thumbnail.jpg"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {sourceType !== "wistia" && sourceType !== "upload" && (
           <FormField
             control={form.control}
             name="thumbnail_url"

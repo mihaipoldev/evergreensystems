@@ -68,8 +68,8 @@ export function CTAButtonSelector({
       }
 
       const data = await response.json();
-      // Filter to only show active CTAs
-      setCTAButtons((data || []).filter((btn: CTAButton) => btn.status === "active"));
+      // Show all CTA buttons (status is now managed per-section)
+      setCTAButtons(data || []);
     } catch (error) {
       console.error("Error fetching CTA buttons:", error);
     } finally {
@@ -187,19 +187,13 @@ export function CTAButtonSelector({
                             <FontAwesomeIcon icon={faLink} className="h-3 w-3" />
                             <span className="truncate">{item.url}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={item.status === "active" ? "default" : "outline"}
-                              className="text-xs"
-                            >
-                              {item.status === "active" ? "Active" : "Deactivated"}
-                            </Badge>
-                            {item.style && (
+                          {item.style && (
+                            <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
                                 Style: {item.style}
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

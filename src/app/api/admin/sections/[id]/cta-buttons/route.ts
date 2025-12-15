@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -13,10 +13,13 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
 
     // Get all section_cta_buttons for this section with joined cta_buttons data
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("section_cta_buttons")
       .select(`
         *,
@@ -30,16 +33,20 @@ export async function GET(
     }
 
     // Transform the data to include cta_buttons with section_cta_buttons metadata
-    const ctaButtonsWithMetadata = (data || []).map((item: any) => ({
-      ...item.cta_buttons,
-      section_cta_button: {
-        id: item.id,
-        section_id: item.section_id,
-        cta_button_id: item.cta_button_id,
-        position: item.position,
-        created_at: item.created_at,
-      },
-    }));
+    // Filter out items where cta_buttons is null or missing id
+    const ctaButtonsWithMetadata = (data || [])
+      .filter((item: any) => item.cta_buttons !== null && item.cta_buttons?.id)
+      .map((item: any) => ({
+        ...item.cta_buttons,
+        section_cta_button: {
+          id: item.id,
+          section_id: item.section_id,
+          cta_button_id: item.cta_button_id,
+          position: item.position,
+          status: item.status || "draft",
+          created_at: item.created_at,
+        },
+      }));
 
     return NextResponse.json(ctaButtonsWithMetadata, { status: 200 });
   } catch (error) {
@@ -62,9 +69,12 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
     const body = await request.json();
-    const { cta_button_id, position } = body;
+    const { cta_button_id, position, status } = body;
 
     if (!cta_button_id) {
       return NextResponse.json(
@@ -76,7 +86,7 @@ export async function POST(
     // Get current max position for this section
     let newPosition = position;
     if (newPosition === undefined || newPosition === null) {
-      const { data: existing } = await ((supabase
+      const { data: existing } = await ((adminSupabase
         .from("section_cta_buttons") as any)
         .select("position")
         .eq("section_id", id)
@@ -88,7 +98,7 @@ export async function POST(
     }
 
     // Check if relationship already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await adminSupabase
       .from("section_cta_buttons")
       .select("id")
       .eq("section_id", id)
@@ -102,12 +112,13 @@ export async function POST(
       );
     }
 
-    const { data: sectionCTA, error: sectionCTAError } = await ((supabase
+    const { data: sectionCTA, error: sectionCTAError } = await ((adminSupabase
       .from("section_cta_buttons") as any)
       .insert({
         section_id: id,
         cta_button_id,
         position: newPosition,
+        status: status || "draft",
       })
       .select(`
         *,
@@ -127,6 +138,7 @@ export async function POST(
         section_id: sectionCTA.section_id,
         cta_button_id: sectionCTA.cta_button_id,
         position: sectionCTA.position,
+        status: sectionCTA.status || "draft",
         created_at: sectionCTA.created_at,
       },
     };
@@ -152,9 +164,12 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
     const body = await request.json();
-    const { section_cta_button_id, position } = body;
+    const { section_cta_button_id, position, status } = body;
 
     if (!section_cta_button_id) {
       return NextResponse.json(
@@ -165,8 +180,11 @@ export async function PUT(
 
     const updateData: Record<string, unknown> = {};
     if (position !== undefined) updateData.position = position;
+    if (status !== undefined && ["published", "draft", "deactivated"].includes(status)) {
+      updateData.status = status;
+    }
 
-    const { data: sectionCTA, error: sectionCTAError } = await ((supabase
+    const { data: sectionCTA, error: sectionCTAError } = await ((adminSupabase
       .from("section_cta_buttons") as any)
       .update(updateData)
       .eq("id", section_cta_button_id)
@@ -189,6 +207,7 @@ export async function PUT(
         section_id: sectionCTA.section_id,
         cta_button_id: sectionCTA.cta_button_id,
         position: sectionCTA.position,
+        status: sectionCTA.status || "draft",
         created_at: sectionCTA.created_at,
       },
     };
@@ -214,6 +233,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const sectionCTAButtonId = searchParams.get("section_cta_button_id");
@@ -226,7 +248,7 @@ export async function DELETE(
       );
     }
 
-    let query = supabase.from("section_cta_buttons").delete().eq("section_id", id);
+    let query = adminSupabase.from("section_cta_buttons").delete().eq("section_id", id);
 
     if (sectionCTAButtonId) {
       query = query.eq("id", sectionCTAButtonId);

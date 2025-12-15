@@ -52,7 +52,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { slug, title, description } = body;
+    const { slug, title, description, status } = body;
 
     // Get old slug before update for cache invalidation
     let oldSlug: string | null = null;
@@ -69,6 +69,15 @@ export async function PUT(
     if (slug !== undefined) updateData.slug = slug;
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
+    if (status !== undefined) {
+      if (!["published", "draft", "deactivated"].includes(status)) {
+        return NextResponse.json(
+          { error: "status must be one of: published, draft, deactivated" },
+          { status: 400 }
+        );
+      }
+      updateData.status = status;
+    }
 
     const { data, error } = await (supabase
       .from("pages") as any)

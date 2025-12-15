@@ -1,13 +1,19 @@
 import { Suspense } from "react";
+import { unstable_noStore as noStore } from "next/cache";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { AnalyticsDebugInfo } from "@/components/admin/AnalyticsDebugInfo";
 import { DashboardTimeScope } from "@/components/admin/DashboardTimeScope";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
-// Force dynamic rendering to ensure fresh data
+// Force dynamic rendering to ensure fresh data - prevent ALL caching
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Never cache
+export const fetchCache = 'force-no-store'; // Disable fetch caching
+export const runtime = 'nodejs'; // Ensure server-side rendering
+export const dynamicParams = true; // Allow dynamic params
 
 type AnalyticsPageProps = {
   searchParams: Promise<{ scope?: string }>;
@@ -41,60 +47,266 @@ type AnalyticsData = {
 };
 
 async function AnalyticsContent({ scope }: { scope: string }) {
+  // Prevent Next.js from caching this route - always fetch fresh data
+  // Call noStore() multiple times to ensure it's not optimized away
+  noStore();
+  noStore();
+  
   // Use service role client for admin analytics to bypass RLS issues
   // This is safe because middleware already protects the route
   const supabase = createServiceRoleClient();
   
   // Calculate date range based on scope
+  // Validate and parse scope properly
   let lookbackDays: number;
   if (scope === "all") {
-    lookbackDays = 365;
+    lookbackDays = 0; // 0 means fetch all
   } else {
-    lookbackDays = parseInt(scope, 10);
+    const parsed = parseInt(scope, 10);
+    // Validate parsed value - if invalid, default to 30
+    lookbackDays = isNaN(parsed) || parsed <= 0 ? 30 : parsed;
   }
 
+  // Use current time to ensure we always get the latest data
   const now = new Date();
-  const lookbackDate = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
-  const lookbackISO = lookbackDate.toISOString();
-
-  // Get all analytics events in one query - filter by tabs client-side
-  // Use service role client to bypass RLS (middleware already protects the route)
-  const { data: events, error: eventsError } = await supabase
-    .from("analytics_events")
-    .select("*")
-    .gte("created_at", lookbackISO)
-    .order("created_at", { ascending: false }) as { data: AnalyticsEvent[] | null; error: any };
-
-  // Also get ALL FAQ events directly (no time filter) to ensure we have them
-  // Then filter by time in code to catch any timezone/date comparison issues
-  const { data: allFaqEvents } = await supabase
-    .from("analytics_events")
-    .select("*")
-    .eq("entity_type", "faq_item")
-    .eq("event_type", "link_click")
-    .order("created_at", { ascending: false })
-    .limit(1000) as { data: AnalyticsEvent[] | null };
+  const lookbackDate = scope === "all" || lookbackDays === 0 
+    ? null 
+    : new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
   
-  // Filter FAQ events by time in code (more reliable than SQL date comparison)
-  const faqEventsInRange = (allFaqEvents || []).filter((e) => {
-    const eventDate = new Date(e.created_at);
-    return eventDate >= lookbackDate;
+  // Log scope calculation for debugging
+  console.log('[AnalyticsContent] Scope calculation:', {
+    inputScope: scope,
+    lookbackDays,
+    lookbackDate: lookbackDate?.toISOString(),
+    now: now.toISOString(),
+    daysAgo: lookbackDays,
   });
   
-  // Merge FAQ events into main events array if they're missing (deduplicate by id)
-  let allEvents: AnalyticsEvent[] = events || [];
-  if (faqEventsInRange.length > 0) {
-    const eventIds = new Set(allEvents.map(e => e.id));
-    const missingFaqEvents = faqEventsInRange.filter(e => !eventIds.has(e.id));
-    if (missingFaqEvents.length > 0) {
-      allEvents = [...allEvents, ...missingFaqEvents];
+  // Force fresh query by adding a small random factor to prevent any caching
+  // This ensures the query is always unique
+  const cacheBuster = Date.now();
+
+  // For "all" scope, fetch ALL events without any date filter
+  // For other scopes, fetch with a safety buffer to ensure we don't miss events due to timezone issues
+  // CRITICAL: Supabase has a default limit of 1000 rows - we MUST set a higher limit!
+  let query = supabase
+    .from("analytics_events")
+    .select("*", { count: 'exact' }) // Get count for debugging
+    .order("created_at", { ascending: false });
+  
+  // Only add date filter if NOT "all" scope
+  if (scope !== "all" && lookbackDays > 0) {
+    // Add safety buffer (extra 2 days) to ensure we don't miss events due to timezone issues
+    // But don't make it too large or we'll fetch unnecessary data
+    const safetyDays = lookbackDays + 2;
+    const safetyDate = new Date(now.getTime() - safetyDays * 24 * 60 * 60 * 1000);
+    const safetyISO = safetyDate.toISOString();
+    query = query.gte("created_at", safetyISO);
+  }
+  
+  // CRITICAL FIX: Supabase defaults to 1000 row limit
+  // We need to fetch ALL events, so we'll use pagination to ensure we get everything
+  // Use 1000 as batch size since that's Supabase's default limit - this ensures we can fetch all data
+  const BATCH_SIZE = 1000;
+  let allEventsRaw: AnalyticsEvent[] = [];
+  let hasMore = true;
+  let offset = 0;
+  let totalFetched = 0;
+  let eventsError: any = null;
+  let count: number | null = null;
+  
+  // Fetch events in batches to ensure we get ALL events
+  // CRITICAL: Supabase has a default limit of 1000 rows, so we MUST paginate
+  let batchNumber = 0;
+  while (hasMore) {
+    batchNumber++;
+    // Rebuild the query for each batch
+    let batchQuery = supabase
+      .from("analytics_events")
+      .select("*", { count: offset === 0 ? 'exact' : 'estimated' }) // Only count on first batch
+      .order("created_at", { ascending: false });
+    
+    // Apply the same date filter if needed
+    if (scope !== "all" && lookbackDays > 0) {
+      const safetyDays = lookbackDays + 2;
+      const safetyDate = new Date(now.getTime() - safetyDays * 24 * 60 * 60 * 1000);
+      const safetyISO = safetyDate.toISOString();
+      batchQuery = batchQuery.gte("created_at", safetyISO);
+    }
+    
+    // CRITICAL: Use range() to paginate - this should override Supabase's default 1000 limit
+    // Note: range() is inclusive on both ends, so range(0, 9999) fetches 10000 rows
+    batchQuery = batchQuery.range(offset, offset + BATCH_SIZE - 1);
+    
+    console.log(`[Analytics] Fetching batch ${batchNumber}: offset=${offset}, limit=${BATCH_SIZE}`);
+    
+    const { data: batchData, error: batchError, count: batchCount } = await batchQuery as { 
+      data: AnalyticsEvent[] | null; 
+      error: any;
+      count: number | null;
+    };
+    
+    if (batchError) {
+      console.error(`[Analytics] Error fetching batch ${batchNumber}:`, batchError);
+      eventsError = batchError;
+      break;
+    }
+    
+    // Get count from first batch
+    if (offset === 0 && batchCount !== null) {
+      count = batchCount;
+      console.log(`[Analytics] Total events in database (estimated): ${batchCount}`);
+    }
+    
+    const batchLength = batchData?.length || 0;
+    console.log(`[Analytics] Batch ${batchNumber}: fetched ${batchLength} events (total so far: ${totalFetched + batchLength})`);
+    
+    if (batchData && batchLength > 0) {
+      allEventsRaw = [...allEventsRaw, ...batchData];
+      totalFetched += batchLength;
+      
+      // If we got a full batch (BATCH_SIZE events), there might be more data
+      // Only stop if we got fewer than BATCH_SIZE events (meaning we've reached the actual end)
+      if (batchLength === BATCH_SIZE) {
+        // Got full batch - there might be more
+        hasMore = true;
+        offset += BATCH_SIZE;
+        console.log(`[Analytics] Batch ${batchNumber} complete (${batchLength} events). Fetching next batch...`);
+      } else {
+        // Got fewer than requested - we've reached the end
+        hasMore = false;
+        console.log(`[Analytics] Reached end of data. Batch ${batchNumber} returned ${batchLength} events (less than ${BATCH_SIZE})`);
+      }
+    } else {
+      hasMore = false;
+      console.log(`[Analytics] No more events. Batch ${batchNumber} returned 0 events`);
+    }
+    
+    // Safety check: if we've fetched a lot, log it
+    if (totalFetched >= 10000 && totalFetched % 10000 === 0) {
+      console.log(`[Analytics] Progress: Fetched ${totalFetched} events so far...`);
+    }
+    
+    // Safety limit to prevent infinite loops
+    if (batchNumber > 100) {
+      console.warn(`[Analytics] WARNING: Stopped after ${batchNumber} batches to prevent infinite loop`);
+      break;
     }
   }
   
-  // Use merged events array
-  const finalEvents = allEvents;
+  console.log(`[Analytics] Total events fetched: ${totalFetched} (in ${Math.ceil(totalFetched / BATCH_SIZE) || 1} batches)`);
+  
+  // Log if we might have hit a practical limit
+  if (totalFetched >= 50000) {
+    console.warn('[Analytics] WARNING: Fetched 50k+ events. Consider optimizing query or adding date filters.');
+  }
+  
+  // Also get direct counts from database for comparison
+  let directPageViewCount: number | null = null;
+  let directTotalCount: number | null = null;
+  try {
+    // Get total page views count directly from DB
+    let pageViewCountQuery = supabase
+      .from("analytics_events")
+      .select("*", { count: 'exact', head: true })
+      .eq("event_type", "page_view");
+    
+    if (scope !== "all" && lookbackDays > 0) {
+      const safetyDays = lookbackDays + 2;
+      const safetyDate = new Date(now.getTime() - safetyDays * 24 * 60 * 60 * 1000);
+      const safetyISO = safetyDate.toISOString();
+      pageViewCountQuery = pageViewCountQuery.gte("created_at", safetyISO);
+    }
+    
+    const { count: pvCount } = await pageViewCountQuery as { count: number | null };
+    directPageViewCount = pvCount;
+    
+    // Get total events count
+    let totalCountQuery = supabase
+      .from("analytics_events")
+      .select("*", { count: 'exact', head: true });
+    
+    if (scope !== "all" && lookbackDays > 0) {
+      const safetyDays = lookbackDays + 2;
+      const safetyDate = new Date(now.getTime() - safetyDays * 24 * 60 * 60 * 1000);
+      const safetyISO = safetyDate.toISOString();
+      totalCountQuery = totalCountQuery.gte("created_at", safetyISO);
+    }
+    
+    const { count: totalCount } = await totalCountQuery as { count: number | null };
+    directTotalCount = totalCount;
+  } catch (e) {
+    console.warn('[Analytics] Failed to get direct counts:', e);
+  }
+  
+  // Filter events by date in JavaScript for precise date comparison
+  // If scope is "all", don't filter - use all events
+  const finalEvents = scope === "all" || lookbackDays === 0
+    ? allEventsRaw
+    : allEventsRaw.filter((e) => {
+        const eventDate = new Date(e.created_at);
+        const isInRange = eventDate >= lookbackDate!;
+        return isInRange;
+      });
+  
+  // Debug: Log total events fetched vs expected (after finalEvents is defined)
+  const pageViewsInRaw = allEventsRaw.filter((e) => e.event_type === "page_view").length;
+  console.log('[Analytics] Query results:', {
+    scope,
+    lookbackDays,
+    totalEventsFetched: allEventsRaw.length,
+    databaseTotalCount: directTotalCount,
+    databasePageViewCount: directPageViewCount,
+    queryCount: count,
+    pageViewsInRaw,
+    pageViewsAfterFilter: finalEvents.filter((e) => e.event_type === "page_view").length,
+    ctaClicksInRaw: allEventsRaw.filter((e) => e.event_type === "link_click" && e.entity_type === "cta_button").length,
+    queryHadDateFilter: scope !== "all" && lookbackDays > 0,
+    mightBeMissingPageViews: directPageViewCount !== null && pageViewsInRaw < directPageViewCount,
+    missingPageViews: directPageViewCount !== null ? directPageViewCount - pageViewsInRaw : null,
+  });
+  
+  // Debug: Check date filtering
+  if (scope !== "all" && lookbackDays > 0 && allEventsRaw.length > 0) {
+    const sampleEvents = allEventsRaw.slice(0, 10);
+    const filteredSample = finalEvents.slice(0, 10);
+    console.log('[Analytics] Date filtering check:', {
+      lookbackDate: lookbackDate?.toISOString(),
+      lookbackDays,
+      totalFetched: allEventsRaw.length,
+      totalFiltered: finalEvents.length,
+      sampleFetchedDates: sampleEvents.map(e => e.created_at),
+      sampleFilteredDates: filteredSample.map(e => e.created_at),
+      oldestFetched: allEventsRaw[allEventsRaw.length - 1]?.created_at,
+      oldestFiltered: finalEvents.length > 0 ? finalEvents[finalEvents.length - 1]?.created_at : 'none',
+    });
+  }
+
+  // Debug logging - always log to help diagnose caching issues
+  console.log('[Analytics] Main page query:', {
+    timestamp: new Date().toISOString(),
+    cacheBuster,
+    scope,
+    lookbackDays: scope === "all" ? "all" : lookbackDays,
+    lookbackDate: scope === "all" ? "all events" : lookbackDate?.toISOString(),
+    lookbackDateJS: scope === "all" ? "all events" : lookbackDate?.toISOString(),
+    now: now.toISOString(),
+    totalEventsFetched: allEventsRaw.length,
+    eventsAfterDateFilter: finalEvents.length,
+    pageViews: finalEvents.filter((e) => e.event_type === "page_view").length,
+    ctaClicks: finalEvents.filter((e) => e.event_type === "link_click" && e.entity_type === "cta_button").length,
+    newestEvent: allEventsRaw[0]?.created_at,
+    oldestEventInRange: finalEvents.length > 0 ? finalEvents[finalEvents.length - 1]?.created_at : "none",
+    sampleEventDates: finalEvents.slice(0, 5).map(e => ({ date: e.created_at, type: e.event_type })),
+    queryTime: now.toISOString(),
+  });
 
   let data: AnalyticsData;
+
+  // Log errors for debugging
+  if (eventsError) {
+    console.error('[Analytics] Error fetching events:', eventsError);
+  }
 
   if (eventsError || !finalEvents || finalEvents.length === 0) {
     data = {
@@ -357,21 +569,56 @@ async function AnalyticsContent({ scope }: { scope: string }) {
     };
   }
 
+  // Prepare debug info for client component
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    totalEventsFetched: allEventsRaw.length,
+    eventsAfterDateFilter: finalEvents.length,
+    pageViews: finalEvents.filter((e) => e.event_type === "page_view").length,
+    ctaClicks: finalEvents.filter((e) => e.event_type === "link_click" && e.entity_type === "cta_button").length,
+  };
+
+  // Generate a unique timestamp for this render to verify page updates
+  const renderTimestamp = new Date().toISOString();
+  const renderTime = new Date().toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit',
+    fractionalSecondDigits: 3 
+  });
+
   return (
     <>
       <AdminPageTitle
         title="Analytics"
-        description="View your site analytics and performance metrics."
+        description={
+          <span>
+            View your site analytics and performance metrics.
+            <span className="ml-2 text-xs text-muted-foreground font-mono">
+              (Last updated: {renderTime})
+            </span>
+          </span>
+        }
         rightSideContent={<DashboardTimeScope />}
       />
       <AnalyticsDashboard data={data} />
+      <AnalyticsDebugInfo data={data} queryInfo={debugInfo} />
     </>
   );
 }
 
 export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
   const params = await searchParams;
+  // Get scope from URL - default to "30" if not provided
   const scope = params.scope || "30";
+  
+  // Debug: Log the scope being used
+  console.log('[Analytics Page] Scope from URL:', {
+    rawScope: params.scope,
+    finalScope: scope,
+    allParams: Object.fromEntries(new URLSearchParams(params as any).entries()),
+  });
 
   return (
     <Suspense

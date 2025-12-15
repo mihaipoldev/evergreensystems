@@ -169,7 +169,7 @@ export interface Database {
           page_id: string;
           section_id: string;
           position: number;
-          visible: boolean;
+          status: "published" | "draft" | "deactivated";
           created_at: string;
           updated_at: string;
         };
@@ -178,7 +178,7 @@ export interface Database {
           page_id: string;
           section_id: string;
           position?: number;
-          visible?: boolean;
+          status?: "published" | "draft" | "deactivated";
           created_at?: string;
           updated_at?: string;
         };
@@ -187,7 +187,7 @@ export interface Database {
           page_id?: string;
           section_id?: string;
           position?: number;
-          visible?: boolean;
+          status?: "published" | "draft" | "deactivated";
           created_at?: string;
           updated_at?: string;
         };

@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
 import type { MediaWithSection } from '@/features/media/types';
 import type { CTAButtonWithSection } from '@/features/cta/types';
+import type { Media } from '@/features/media/types';
 
 type HeroContent = {
   topBanner?: {
@@ -65,10 +66,135 @@ type HeroProps = {
   ctaButtons?: CTAButtonWithSection[];
 };
 
+// Component to wrap MediaRenderer and track first play event for non-Wistia videos
+function VideoPlayerWithTracking({ 
+  media, 
+  onFirstPlay 
+}: { 
+  media: Media; 
+  onFirstPlay: (mediaId: string) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Only track play events for non-Wistia videos (Wistia tracking is handled separately)
+    if (media.source_type === 'wistia') {
+      return;
+    }
+
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    // Use sessionStorage to persist tracking state
+    const trackingKey = `video_play_tracked_${media.id}`;
+    
+    const handlePlay = () => {
+      // Check if we've already tracked this video in this session
+      let hasTracked = false;
+      try {
+        hasTracked = !!sessionStorage.getItem(trackingKey);
+      } catch (e) {
+        // sessionStorage might not be available
+        return;
+      }
+      
+      // Only track if we haven't already tracked a play for this video
+      if (!hasTracked) {
+        try {
+          sessionStorage.setItem(trackingKey, 'true');
+        } catch (e) {
+          // If sessionStorage fails, skip tracking
+          return;
+        }
+        onFirstPlay(media.id);
+      }
+    };
+
+    videoElement.addEventListener('play', handlePlay);
+
+    return () => {
+      videoElement.removeEventListener('play', handlePlay);
+    };
+  }, [media.id, media.source_type, onFirstPlay]);
+
+  // For Wistia videos, MediaRenderer handles rendering
+  // Tracking is handled separately in the parent Hero component via Wistia queue
+  // So we don't set up tracking here for Wistia videos to avoid duplicates
+  if (media.source_type === 'wistia') {
+    return (
+      <MediaRenderer
+        media={media}
+        className="w-full h-full"
+        autoPlay={false}
+        muted={false}
+        loop={false}
+        controls={true}
+        priority={true}
+      />
+    );
+  }
+
+  // For uploaded videos, we need to render with a ref
+  if (media.source_type === 'upload' && media.type === 'video' && media.url) {
+    return (
+      <video
+        ref={videoRef}
+        src={media.url}
+        poster={media.thumbnail_url || undefined}
+        className="w-full h-full object-cover"
+        autoPlay={false}
+        muted={false}
+        loop={false}
+        controls={true}
+        playsInline={true}
+      />
+    );
+  }
+
+  // For external URL videos
+  if (media.source_type === 'external_url' && media.url) {
+    const urlLower = media.url.toLowerCase();
+    const isVideo = /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(urlLower);
+    
+    if (isVideo) {
+      return (
+        <video
+          ref={videoRef}
+          src={media.url}
+          poster={media.thumbnail_url || undefined}
+          className="w-full h-full object-cover"
+          autoPlay={false}
+          muted={false}
+          loop={false}
+          controls={true}
+          playsInline={true}
+        />
+      );
+    }
+  }
+
+  // For YouTube/Vimeo, we can't easily track play events via iframe
+  // These will rely on their own analytics or we'd need to use their APIs
+  return (
+    <MediaRenderer
+      media={media}
+      className="w-full h-full"
+      autoPlay={false}
+      muted={false}
+      loop={false}
+      controls={true}
+      priority={true}
+    />
+  );
+}
+
 export const Hero = ({ section, ctaButtons }: HeroProps) => {
   const wistiaContainerRef = useRef<HTMLDivElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const [shouldLoadWistia, setShouldLoadWistia] = useState(false);
+  const hasTrackedPlayRef = useRef<boolean>(false); // Track if we've already recorded the first play
+  const wistiaHandlerBoundRef = useRef<boolean>(false); // Track if we've already bound the Wistia handler
+  const isTrackingRef = useRef<boolean>(false); // Prevent concurrent tracking calls
   
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'Your Entire Outbound System\nFully Automated.';
@@ -140,8 +266,45 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
     });
   };
 
-  // Handle video play tracking
+  // Handle video play tracking - only track the FIRST play event
+  // Use sessionStorage to persist tracking state across re-renders and video re-initializations
   const handleVideoPlay = (mediaId: string) => {
+    // Prevent concurrent calls (race condition protection)
+    if (isTrackingRef.current) {
+      return;
+    }
+    
+    // Create a unique key for this video in this session
+    const trackingKey = `video_play_tracked_${mediaId}`;
+    
+    // Check if we've already tracked this video in this session
+    // Use a synchronous check to prevent race conditions
+    let hasTracked = false;
+    try {
+      hasTracked = !!sessionStorage.getItem(trackingKey);
+    } catch (e) {
+      // sessionStorage might not be available (private browsing, etc.)
+      // Fall back to ref-based tracking
+      hasTracked = hasTrackedPlayRef.current;
+    }
+    
+    // Double-check: if already tracked, immediately return
+    if (hasTracked) {
+      return;
+    }
+    
+    // Mark as tracking to prevent concurrent calls
+    isTrackingRef.current = true;
+    
+    // Mark as tracked IMMEDIATELY to prevent duplicate events
+    try {
+      sessionStorage.setItem(trackingKey, 'true');
+    } catch (e) {
+      // If sessionStorage fails, use ref only
+    }
+    hasTrackedPlayRef.current = true;
+    
+    // Now track the event
     trackEvent({
       event_type: "link_click",
       entity_type: "media",
@@ -150,6 +313,9 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
         location: "hero_section",
         action: "play",
       },
+    }).finally(() => {
+      // Reset tracking flag after event is sent
+      isTrackingRef.current = false;
     });
   };
   
@@ -234,12 +400,17 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
     if (typeof window !== 'undefined' && videoId) {
       const primaryColor = getPrimaryColor();
       const hexWithoutHash = primaryColor.replace('#', '');
+      const mediaId = mainMedia?.id || videoId || 'unknown';
       
       // Initialize Wistia Queue if not already initialized
       (window as any)._wq = (window as any)._wq || [];
       
-      // Remove any existing queue item for this video
+      // Remove any existing queue item for this video to prevent duplicate bindings
       (window as any)._wq = (window as any)._wq.filter((item: any) => item.id !== videoId);
+      
+      // Note: We don't reset the handler bound flag here because we want to ensure
+      // the handler is only bound once per video, even across re-renders
+      // The sessionStorage check in onReady will handle this
       
       // Push player options to queue BEFORE embed - simplified
       (window as any)._wq.push({
@@ -259,18 +430,61 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
             console.warn('Could not set Wistia color:', e);
           }
           
-          // Track video play event
+          // Track video play event - only the FIRST play (not pauses/resumes)
+          // Check sessionStorage BEFORE binding to prevent duplicate handlers
           try {
-            video.bind('play', function() {
-              const mediaId = mainMedia?.id || videoId || 'unknown';
-              handleVideoPlay(mediaId);
-            });
+            const trackingKey = `video_play_tracked_${mediaId}`;
+            const handlerKey = `wistia_handler_bound_${videoId}`;
+            
+            // Check if we've already tracked this video in this session
+            let hasTracked = false;
+            try {
+              hasTracked = !!sessionStorage.getItem(trackingKey);
+            } catch (e) {
+              // sessionStorage might not be available
+              hasTracked = hasTrackedPlayRef.current;
+            }
+            
+            // Check if handler has already been bound (using sessionStorage for persistence)
+            let handlerBound = false;
+            try {
+              handlerBound = !!sessionStorage.getItem(handlerKey);
+            } catch (e) {
+              handlerBound = wistiaHandlerBoundRef.current;
+            }
+            
+            // Only bind handler once per video instance, and only if not already tracked
+            if (!hasTracked && !handlerBound) {
+              // Mark handler as bound immediately
+              try {
+                sessionStorage.setItem(handlerKey, 'true');
+              } catch (e) {
+                // If sessionStorage fails, use ref
+              }
+              wistiaHandlerBoundRef.current = true;
+              
+              // Unbind any existing handlers first (safety check)
+              try {
+                video.unbind('play');
+              } catch (e) {
+                // Ignore errors from unbind
+              }
+              
+              // Bind the play event handler
+              video.bind('play', function() {
+                handleVideoPlay(mediaId);
+              });
+            }
           } catch (e) {
             console.warn('Could not bind Wistia play event:', e);
           }
         }
       });
     }
+    
+    // Note: We don't reset the tracking flag here because we want to persist
+    // the "already tracked" state across re-renders. sessionStorage handles this.
+    // The tracking will only reset when the user starts a new browser session.
     
     // No cleanup needed - Wistia queue persists
   }, [videoId, mainMedia?.id]);
@@ -546,16 +760,10 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
               {mainMedia ? (
                 <div 
                   className="w-full aspect-video rounded-lg overflow-hidden"
-                  onClick={() => handleVideoPlay(mainMedia.id)}
                 >
-                  <MediaRenderer
+                  <VideoPlayerWithTracking
                     media={mainMedia}
-                    className="w-full h-full"
-                    autoPlay={false}
-                    muted={false}
-                    loop={false}
-                    controls={true}
-                    priority={true}
+                    onFirstPlay={handleVideoPlay}
                   />
                 </div>
               ) : videoId ? (
@@ -578,8 +786,8 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           </div>
         </motion.div>
 
-        {/* CTA Buttons or Default Button */}
-        {sortedButtons.length > 0 ? (
+        {/* CTA Buttons */}
+        {sortedButtons.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -630,19 +838,6 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                 </Button>
               </motion.div>
             ))}
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto"
-          >
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-              <Button className="h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold whitespace-nowrap w-full sm:w-auto text-base">
-                Schedule a Call
-              </Button>
-            </motion.div>
           </motion.div>
         )}
 

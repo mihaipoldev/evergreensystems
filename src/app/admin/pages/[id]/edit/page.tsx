@@ -1,31 +1,58 @@
-import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { PageForm } from "@/features/pages/components/PageForm";
 import { getPageById } from "@/features/pages/data";
+import { getSectionsByPageId } from "@/lib/supabase/queries";
+import { PageContentTabs } from "@/components/admin/PageContentTabs";
+import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { PageStatusHeader } from "@/components/admin/PageStatusHeader";
+import { notFound } from "next/navigation";
+import type { Section } from "@/features/sections/types";
 
-type EditPagePageProps = {
-  params: Promise<{ id: string }>;
+type PageSection = Section & {
+  page_section_id: string;
+  position: number;
+  status: "published" | "draft" | "deactivated";
 };
 
-export default async function EditPagePage({ params }: EditPagePageProps) {
+export default async function PageEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
+  
   const page = await getPageById(id);
-
   if (!page) {
     notFound();
   }
 
+  const sections = await getSectionsByPageId(id);
+  
+  // Transform sections to include page_section metadata
+  const pageSections: PageSection[] = sections.map((section: any) => ({
+    ...section,
+    page_section_id: section.page_section_id || "",
+    position: section.position ?? 0,
+    status: section.status || "draft",
+  }));
+
+  const pageStatus = (page.status || "draft") as "published" | "draft" | "deactivated";
+
   return (
     <div className="w-full space-y-6">
-      <div className="mb-6 md:mb-8 relative">
-        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-full" />
+      <div className="mb-6 md:mb-8">
         <AdminPageTitle
-          title="Edit Page"
-          entityName={page.title}
-          description="Update the page details"
+          title={page.title}
+          rightSideContent={
+            <PageStatusHeader
+              pageId={page.id}
+              initialStatus={pageStatus}
+            />
+          }
         />
       </div>
-      <PageForm initialData={page} isEdit={true} />
+      <PageContentTabs
+        page={page}
+        initialSections={pageSections}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("pages")
-      .select("id, slug, title, description, created_at, updated_at");
+      .select("id, slug, title, description, status, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {

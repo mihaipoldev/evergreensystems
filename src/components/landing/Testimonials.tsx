@@ -21,82 +21,6 @@ type TestimonialsProps = {
   section?: Section;
 };
 
-const defaultTestimonials = [
-  {
-    name: 'Ehab Darwish',
-    role: 'Founder @ iSkala',
-    headline: '2x MRR for outbound Agency',
-    body: 'Scaling from $8K to $18K MRR in 2.5 months, refining offer structure, positioning, and adopting a new internal "Legen" approach.',
-    date: 'Aug 21, 2025',
-    avatar: 'ED',
-    hasIcon: true,
-  },
-  {
-    name: 'David Lichtenstein',
-    role: 'CEO & Co-Founder',
-    headline: 'Great value from arguably the top prospecting business on the planet',
-    body: '',
-    date: 'Jun 4, 2025',
-    avatar: 'DL',
-  },
-  {
-    name: 'Tash Muraldo',
-    role: 'Founder - GTM Engineer',
-    headline: 'This program helped me hone in on the challenges',
-    body: 'That are happening with AI and outbound and how all these tools work in harmony with each other.',
-    date: 'Jun 4, 2025',
-    avatar: 'TM',
-  },
-  {
-    name: 'Deisy Perez',
-    role: 'Chief Strategy Officer at WarmUp',
-    headline: 'Added 10 new clients over 3 months',
-    body: 'And significantly improved service delivery quality. Comprehensive training on tools like Clay helped gain clients and deliver great results.',
-    date: 'Aug 19, 2025',
-    avatar: 'DP',
-  },
-  {
-    name: 'Joel Kuusamo',
-    role: 'Founder',
-    headline: 'Great way to stay up to date on new trends',
-    body: 'This has been a great way to stay up to date on new trends and innovations + the community is great for solving all kinds of problems from list building to agency management.',
-    date: 'Jun 4, 2025',
-    avatar: 'JK',
-  },
-  {
-    name: 'Deisy Lewis',
-    role: 'Chief Strategy Officer',
-    headline: 'Comprehensive training on using tools like Clay',
-    body: 'The comprehensive training on using tools like Clay has helped us gain 10 clients, and we\'ve been able to deliver great results for each of them.',
-    date: 'Jun 4, 2025',
-    avatar: 'DL',
-  },
-  {
-    name: 'Justin Morgan',
-    role: 'Founder & Head of Growth',
-    headline: '4x return on investment within 3 months',
-    body: 'Quadrupling investment and building infrastructure to scale my business and support others.',
-    date: 'Aug 19, 2025',
-    avatar: 'JM',
-  },
-  {
-    name: 'Lazar Radivojevic',
-    role: 'Founder',
-    headline: '3x increase in MRR and scalable internal operations',
-    body: 'Ready for growth. Highlights insights into agency management as useful and unexpected benefits.',
-    date: 'Jun 4, 2025',
-    avatar: 'LR',
-  },
-  {
-    name: 'Rafael von Corvin',
-    role: 'Outbound Sales Beratung & operativ...',
-    headline: 'The biggest value in the program',
-    body: 'Is that any bottleneck you encounter gets solved immediately.',
-    date: 'Jun 4, 2025',
-    avatar: 'RC',
-  },
-];
-
 const StarRating = ({ rating }: { rating?: number | null }) => {
   // Default to 5 stars if no rating provided (for backwards compatibility)
   const displayRating = rating ?? 5;
@@ -166,11 +90,16 @@ const Avatar = memo(({ initials, avatarUrl }: { initials: string; avatarUrl?: st
 Avatar.displayName = 'Avatar';
 
 export const Testimonials = memo(({ testimonials = [], section }: TestimonialsProps) => {
-  // Use section title if available, otherwise fallback to default
+  // If no testimonials, don't render the section
+  if (!testimonials || testimonials.length === 0) {
+    return null;
+  }
+
+  // Use section title if available
   const title = section?.title || 'Hear what others are [[saying]]';
   
-  // Use provided testimonials or fall back to hardcoded defaults
-  const displayTestimonials = testimonials.length > 0 ? testimonials : defaultTestimonials;
+  // Use provided testimonials
+  const displayTestimonials = testimonials;
   
   // Map database testimonials to display format - memoized to prevent recalculation
   const mappedTestimonials = useMemo(() => displayTestimonials.map((t: any) => {

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -45,6 +48,7 @@ export function DashboardTimeScope() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Get scope from URL param, or localStorage, or default to "30"
   const urlScope = searchParams.get("scope") as TimeScope | null;
@@ -69,31 +73,58 @@ export function DashboardTimeScope() {
     // Save to localStorage and cookie
     setStoredScope(value);
 
-    // Update URL
+    // Update URL - preserve existing tab parameter if present
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "30") {
-      // Default value, remove from URL
-      params.delete("scope");
-    } else {
-      params.set("scope", value);
+    params.set("scope", value);
+    // Preserve tab parameter if it exists
+    const existingTab = searchParams.get("tab");
+    if (existingTab) {
+      params.set("tab", existingTab);
     }
     const queryString = params.toString();
-    router.push(`${pathname}${queryString ? `?${queryString}` : ""}`);
+    
+    // Use router.push to trigger a full navigation and re-fetch
+    // This ensures the server component re-renders with new scope
+    router.push(`${pathname}?${queryString}`);
+    router.refresh(); // Force server component to re-fetch
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // Force a router refresh to fetch fresh data
+    router.refresh();
+    // Reset refreshing state after a short delay
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   return (
-    <Select value={currentScope} onValueChange={handleScopeChange}>
-      <SelectTrigger className="w-[140px] h-9 bg-input-background dark:bg-input-background">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {timeScopeOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        className="h-9 px-3"
+        title="Refresh data"
+      >
+        <FontAwesomeIcon 
+          icon={faSync} 
+          className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} 
+        />
+      </Button>
+      <Select value={currentScope} onValueChange={handleScopeChange}>
+        <SelectTrigger className="w-[140px] h-9 bg-input-background dark:bg-input-background">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {timeScopeOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 

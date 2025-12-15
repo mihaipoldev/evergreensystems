@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstac
 import { queryKeys } from "../queries";
 import type { Testimonial } from "@/features/testimonials/types";
 
-async function fetchTestimonials(filters?: { approved?: boolean; search?: string }): Promise<Testimonial[]> {
+async function fetchTestimonials(filters?: { status?: string; search?: string }): Promise<Testimonial[]> {
   const params = new URLSearchParams();
-  if (filters?.approved !== undefined) params.append("approved", String(filters.approved));
+  if (filters?.status) params.append("status", filters.status);
   if (filters?.search) params.append("search", filters.search);
   
   const url = `/api/admin/testimonials${params.toString() ? `?${params.toString()}` : ""}`;
@@ -16,7 +16,7 @@ async function fetchTestimonials(filters?: { approved?: boolean; search?: string
 }
 
 export function useTestimonials(
-  filters?: { approved?: boolean; search?: string },
+  filters?: { status?: string; search?: string },
   options?: Omit<UseQueryOptions<Testimonial[], Error>, "queryKey" | "queryFn">
 ) {
   return useQuery({
@@ -38,7 +38,7 @@ export function useCreateTestimonial() {
       quote?: string;
       avatar_url?: string;
       rating?: number;
-      approved?: boolean;
+      status?: string;
       position?: number;
     }) => {
       const response = await fetch("/api/admin/testimonials", {

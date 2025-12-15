@@ -33,7 +33,6 @@ const formSchema = z.object({
   url: z.string().min(1, "URL is required").url("Must be a valid URL"),
   style: z.string().optional(),
   icon: z.string().optional(),
-  status: z.enum(["active", "deactivated"]),
   section_id: z.string().optional().nullable(),
 });
 
@@ -45,9 +44,10 @@ type CTAButtonFormProps = {
   rightSideHeaderContent?: React.ReactNode;
   onSuccess?: (ctaButton: CTAButton) => void;
   onCancel?: () => void;
+  returnTo?: string;
 };
 
-export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderContent, onSuccess, onCancel }: CTAButtonFormProps) {
+export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderContent, onSuccess, onCancel, returnTo }: CTAButtonFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -58,7 +58,6 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
       url: initialData?.url || "",
       style: initialData?.style || "",
       icon: initialData?.icon || "",
-      status: initialData?.status || "active",
       section_id: (initialData as any)?.section_id || null,
     },
   });
@@ -111,7 +110,6 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
         url: values.url,
         style: values.style || null,
         icon: values.icon || null,
-        status: values.status,
       };
 
       const url = isEdit && initialData
@@ -154,7 +152,8 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
       if (onSuccess) {
         onSuccess(createdCTA);
       } else {
-        router.push("/admin/cta");
+        const redirectUrl = returnTo || (isEdit && initialData ? `/admin/cta/${initialData.id}/edit` : "/admin/cta");
+        router.push(redirectUrl);
         router.refresh();
       }
     } catch (error: any) {
@@ -168,18 +167,8 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
   return (
     <Form {...form}>
       <div className="w-full space-y-6">
-        {rightSideHeaderContent}
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
           <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Details</h3>
-                <p className="text-sm text-muted-foreground">
-                  Basic information about the CTA button
-                </p>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -245,32 +234,6 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Status <span className="text-destructive">*</span>
-                  </FormLabel>
-                    <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="bg-input-background">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="deactivated">Deactivated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Link to Section (single select) */}
               <FormField
                 control={form.control}

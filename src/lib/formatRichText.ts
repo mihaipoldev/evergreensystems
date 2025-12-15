@@ -1,6 +1,10 @@
 /**
  * Format rich text by converting markers to HTML
  * Supports: [[primary]], {{secondary}}, **bold**, *italic*, newlines
+ * 
+ * Note: We convert newlines to <br /> tags. For line-clamp compatibility,
+ * the RichText component should use white-space: pre-line CSS when line-clamp
+ * is not used, or wrap lines in block elements when line-clamp is needed.
  */
 export function formatRichText(text: string): string {
   let html = text

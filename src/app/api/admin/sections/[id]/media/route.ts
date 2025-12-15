@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -14,9 +14,10 @@ export async function GET(
     }
 
     const { id } = await params;
+    const adminSupabase = createServiceRoleClient();
 
     // Get all section_media for this section with joined media data
-    const { data, error } = await ((supabase
+    const { data, error } = await ((adminSupabase
       .from("section_media") as any)
       .select(`
         *,
@@ -38,6 +39,7 @@ export async function GET(
         media_id: item.media_id,
         role: item.role,
         sort_order: item.sort_order,
+        status: item.status,
         created_at: item.created_at,
       },
     }));
@@ -66,6 +68,7 @@ export async function POST(
     const { id } = await params;
     const body = await request.json();
     const { media_id, role = "main", sort_order } = body;
+    const adminSupabase = createServiceRoleClient();
 
     if (!media_id) {
       return NextResponse.json(
@@ -77,7 +80,7 @@ export async function POST(
     // Get current max sort_order for this section
     let newSortOrder = sort_order;
     if (!newSortOrder) {
-      const { data: existing } = await ((supabase
+      const { data: existing } = await ((adminSupabase
         .from("section_media") as any)
         .select("sort_order")
         .eq("section_id", id)
@@ -89,7 +92,7 @@ export async function POST(
     }
 
     // Check if relationship already exists
-    const { data: existingRelationship } = await ((supabase
+    const { data: existingRelationship } = await ((adminSupabase
       .from("section_media") as any)
       .select("id")
       .eq("section_id", id)
@@ -103,13 +106,14 @@ export async function POST(
       );
     }
 
-    const { data: sectionMedia, error: sectionMediaError } = await ((supabase
+    const { data: sectionMedia, error: sectionMediaError } = await ((adminSupabase
       .from("section_media") as any)
       .insert({
         section_id: id,
         media_id,
         role,
         sort_order: newSortOrder,
+        status: "draft",
       })
       .select(`
         *,
@@ -130,6 +134,7 @@ export async function POST(
         media_id: sectionMedia.media_id,
         role: sectionMedia.role,
         sort_order: sectionMedia.sort_order,
+        status: sectionMedia.status,
         created_at: sectionMedia.created_at,
       },
     };
@@ -158,6 +163,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     const { section_media_id, role, sort_order } = body;
+    const adminSupabase = createServiceRoleClient();
 
     if (!section_media_id) {
       return NextResponse.json(
@@ -170,7 +176,7 @@ export async function PUT(
     if (role !== undefined) updateData.role = role;
     if (sort_order !== undefined) updateData.sort_order = sort_order;
 
-    const { data: sectionMedia, error: sectionMediaError } = await ((supabase
+    const { data: sectionMedia, error: sectionMediaError } = await ((adminSupabase
       .from("section_media") as any)
       .update(updateData)
       .eq("id", section_media_id)
@@ -194,6 +200,7 @@ export async function PUT(
         media_id: sectionMedia.media_id,
         role: sectionMedia.role,
         sort_order: sectionMedia.sort_order,
+        status: sectionMedia.status,
         created_at: sectionMedia.created_at,
       },
     };
@@ -223,6 +230,7 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const sectionMediaId = searchParams.get("section_media_id");
     const mediaId = searchParams.get("media_id");
+    const adminSupabase = createServiceRoleClient();
 
     if (!sectionMediaId && !mediaId) {
       return NextResponse.json(
@@ -231,7 +239,7 @@ export async function DELETE(
       );
     }
 
-    let query = (supabase.from("section_media") as any).delete().eq("section_id", id);
+    let query = (adminSupabase.from("section_media") as any).delete().eq("section_id", id);
 
     if (sectionMediaId) {
       query = query.eq("id", sectionMediaId);

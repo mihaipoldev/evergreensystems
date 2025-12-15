@@ -7,7 +7,6 @@ export type CTAButton = {
   style: string | null;
   icon: string | null;
   position: number;
-  status: "active" | "deactivated";
   created_at: string;
   updated_at: string;
 };
@@ -20,6 +19,7 @@ export type CTAButtonWithSection = CTAButton & {
   section_cta_button: {
     id: string;
     position: number;
+    status: "published" | "draft" | "deactivated";
     created_at: string;
   };
 };

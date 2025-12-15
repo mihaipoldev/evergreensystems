@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { title, subtitle, description, icon, position, status } = body;
+    const { title, subtitle, description, icon, position } = body;
 
     if (!title) {
       return NextResponse.json(
@@ -64,7 +64,6 @@ export async function POST(request: Request) {
         description: description || null,
         icon: icon || null,
         position: position ?? 0,
-        status: status || "active",
       })
       .select()
       .single();
@@ -73,7 +72,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Invalidate cache for offer features
+    // Invalidate cache for features
     revalidateTag("offer-features", "max");
 
     return NextResponse.json(data, { status: 201 });

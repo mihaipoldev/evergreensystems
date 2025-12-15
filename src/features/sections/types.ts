@@ -9,6 +9,7 @@ export type Section = {
   subtitle: string | null;
   content: any | null;
   media_url: string | null;
+  icon: string | null;
   created_at: string;
   updated_at: string;
   media?: MediaWithSection[];
@@ -22,6 +23,6 @@ export type SectionWithPages = Section & {
     title: string;
     page_section_id: string;
     position: number;
-    visible: boolean;
+    status: "published" | "draft" | "deactivated";
   }>;
 };

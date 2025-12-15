@@ -81,7 +81,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position } = body;
+    const { author_name, author_role, company_name, headline, quote, avatar_url, rating, position } = body;
 
     // Get the current testimonial to check for avatar_url changes
     const { data: currentTestimonial } = await supabase
@@ -135,7 +135,6 @@ export async function PUT(
     if (quote !== undefined) updateData.quote = quote || null;
     if (avatar_url !== undefined) updateData.avatar_url = newAvatarUrl;
     if (rating !== undefined) updateData.rating = rating ?? null;
-    if (approved !== undefined) updateData.approved = approved;
     if (position !== undefined) updateData.position = position;
     
     // Try to include headline, but handle case where column might not exist

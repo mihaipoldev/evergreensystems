@@ -40,12 +40,15 @@ const Header = dynamic(() => import('@/components/landing/Header').then(mod => (
 const Footer = dynamic(() => import('@/components/landing/Footer').then(mod => ({ default: mod.Footer })), {
   loading: () => <div className="h-64" />,
 });
-import { getPageBySlug, getVisibleSectionsByPageId, getAllFAQItems, getApprovedTestimonials, getActiveOfferFeatures } from '@/lib/supabase/queries';
+
+const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod => ({ default: mod.Timeline })), {
+  loading: () => <div className="h-96" />,
+});
+import { getPageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/types';
 import type { CTAButtonWithSection } from '@/features/cta/types';
-import type { FAQItem } from '@/features/faq/types';
-import type { Testimonial } from '@/features/testimonials/types';
+import type { MediaWithSection } from '@/features/media/types';
 import type { Metadata } from 'next';
 import { SEO_CONFIG, generatePageMetadata, generateOrganizationSchema, generateServiceSchema, generateWebSiteSchema } from '@/lib/seo';
 
@@ -63,8 +66,88 @@ type Section = {
   media_url: string | null;
   page_section_id: string;
   position: number;
-  visible: boolean;
+  status: "published" | "draft" | "deactivated";
+  media?: MediaWithSection[];
   ctaButtons?: CTAButtonWithSection[];
+  features?: Array<{
+    id: string;
+    title: string;
+    subtitle: string | null;
+    description: string | null;
+    icon: string | null;
+    position: number;
+    created_at: string;
+    updated_at: string;
+    section_feature: {
+      id: string;
+      position: number;
+      status: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
+  faqItems?: Array<{
+    id: string;
+    question: string;
+    answer: string;
+    position: number;
+    created_at: string;
+    updated_at: string;
+    section_faq_item: {
+      id: string;
+      position: number;
+      status: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
+  timelineItems?: Array<{
+    id: string;
+    step: number;
+    title: string;
+    subtitle: string | null;
+    badge: string | null;
+    icon: string | null;
+    position: number;
+    created_at: string;
+    updated_at: string;
+    section_timeline: {
+      id: string;
+      position: number;
+      status?: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
+  testimonials?: Array<{
+    id: string;
+    author_name: string;
+    author_role: string | null;
+    company_name: string | null;
+    headline: string | null;
+    quote: string | null;
+    avatar_url: string | null;
+    rating: number | null;
+    position: number;
+    created_at: string;
+    updated_at: string;
+    section_testimonial: {
+      id: string;
+      position: number;
+      status?: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
+  results?: Array<{
+    id: string;
+    content: any;
+    position: number;
+    created_at: string;
+    updated_at: string;
+    section_result: {
+      id: string;
+      position: number;
+      status?: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
 };
 
 // Generate dynamic metadata for SEO
@@ -103,18 +186,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LandingPage() {
   // Parallelize all database queries for better performance
-  const [homePageResult, faqItemsResult, testimonialsResult, offerFeaturesResult] = await Promise.allSettled([
+  // Note: Features, FAQ items, testimonials, timeline items, and results are now fetched per-section via getVisibleSectionsByPageId
+  const homePageResult = await Promise.allSettled([
     getPageBySlug('home'),
-    getAllFAQItems(),
-    getApprovedTestimonials(),
-    getActiveOfferFeatures(),
   ]);
 
   // Extract results with error handling
-  const homePage = homePageResult.status === 'fulfilled' ? homePageResult.value : null;
-  const faqItems: FAQItem[] = faqItemsResult.status === 'fulfilled' ? (faqItemsResult.value as FAQItem[]) : [];
-  const testimonials: Testimonial[] = testimonialsResult.status === 'fulfilled' ? (testimonialsResult.value as Testimonial[]) : [];
-  const offerFeatures = offerFeaturesResult.status === 'fulfilled' ? offerFeaturesResult.value : [];
+  const homePage = homePageResult[0].status === 'fulfilled' ? homePageResult[0].value : null;
 
   // Fetch sections if home page exists
   let sections: Section[] = [];
@@ -129,8 +207,10 @@ export default async function LandingPage() {
       headerSection = sections.find(section => section.type === 'header');
       
       // If not found, fetch header section separately (even if not visible)
+      // But still apply status filtering to ensure consistency
       if (!headerSection) {
         const supabase = await createClient();
+        const isDevelopment = process.env.NODE_ENV === 'development';
         
         // Get all page_sections for this page
         const { data: allPageSections } = await supabase
@@ -141,8 +221,14 @@ export default async function LandingPage() {
           `)
           .eq("page_id", homePage.id);
         
-        // Find header section
-        const headerPageSection = allPageSections?.find(
+        // Filter page_sections based on status and environment (same as getVisibleSectionsByPageId)
+        const filteredPageSections = (allPageSections || []).filter((ps: any) => {
+          if (!ps.sections) return false; // Exclude if section is null
+          return shouldIncludeItemByStatus(ps.status, isDevelopment);
+        });
+        
+        // Find header section from filtered sections
+        const headerPageSection = filteredPageSections.find(
           (ps: any) => ps.sections && ps.sections.type === "header"
         ) as any;
         
@@ -159,24 +245,48 @@ export default async function LandingPage() {
             .eq("section_id", sectionId)
             .order("position", { ascending: true });
           
-          // Transform CTA buttons
+          // Get CTA button IDs from junction table
+          const ctaButtonIds = sectionCTAData?.map((item: any) => item.cta_button_id).filter(Boolean) || [];
+          
+          // Query CTA buttons separately
+          const { data: ctaButtonsData } = await supabase
+            .from("cta_buttons")
+            .select("*")
+            .in("id", ctaButtonIds);
+          
+          // Create a map for quick lookup
+          const ctaButtonsMap = new Map((ctaButtonsData || []).map((c: any) => [c.id, c]));
+          
+          // Transform CTA buttons with status filtering
           const ctaButtons: CTAButtonWithSection[] = (sectionCTAData || [])
-            .filter((item: any) => item.cta_buttons && item.cta_buttons.status === "active")
-            .map((item: any) => ({
-              ...item.cta_buttons,
-              status: item.cta_buttons.status as "active" | "deactivated",
-              section_cta_button: {
-                id: item.id,
-                position: item.position,
-                created_at: item.created_at,
-              },
-            }));
+            .filter((item: any) => {
+              const ctaButton = ctaButtonsMap.get(item.cta_button_id);
+              if (!ctaButton) return false;
+              
+              // Use helper function for consistent filtering
+              return shouldIncludeItemByStatus(item.status, isDevelopment);
+            })
+            .map((item: any) => {
+              const ctaButton = ctaButtonsMap.get(item.cta_button_id);
+              if (!ctaButton) return null;
+              
+              return {
+                ...ctaButton,
+                section_cta_button: {
+                  id: item.id,
+                  position: item.position,
+                  status: (item.status || "published") as "published" | "draft" | "deactivated",
+                  created_at: item.created_at,
+                },
+              };
+            })
+            .filter((btn): btn is CTAButtonWithSection => btn !== null);
           
           headerSection = {
             ...(headerPageSection.sections as any),
             page_section_id: headerPageSection.id,
             position: headerPageSection.position,
-            visible: headerPageSection.visible,
+            status: headerPageSection.status,
             ctaButtons: ctaButtons,
           };
         }
@@ -202,16 +312,16 @@ export default async function LandingPage() {
         return <Logos key={section.id} section={section} />;
       
       case 'stories':
-        return <Stories key={section.id} section={section} />;
+        return <Stories key={section.id} section={section} media={section.media as any || []} />;
       
       case 'features':
-        return <Value key={section.id} section={section} offerFeatures={offerFeatures} />;
+        return <Value key={section.id} section={section} offerFeatures={(section.features || []) as any} />;
       
       case 'testimonials':
         return (
           <Testimonials 
             key={section.id}
-            testimonials={testimonials} 
+            testimonials={(section.testimonials || []) as any} 
             section={section} 
           />
         );
@@ -221,15 +331,18 @@ export default async function LandingPage() {
       
       case 'faq':
         return (
-          <FAQ 
+          <FAQ
             key={section.id}
-            faqs={faqItems} 
-            section={section} 
+            faqs={section.faqItems || []}
+            section={section}
           />
         );
       
       case 'cta':
         return <CTA key={section.id} section={section} ctaButtons={section.ctaButtons} />;
+      
+      case 'timeline':
+        return <Timeline key={section.id} section={section} {...({ timelineItems: section.timelineItems || [] } as any)} />;
       
       case 'footer':
         return <Footer key={section.id} section={section} />;
@@ -253,25 +366,32 @@ export default async function LandingPage() {
   // WebSite schema
   const websiteSchema = generateWebSiteSchema();
 
-  // FAQ structured data
-  const faqSchema = faqItems.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqItems.map((faq) => ({
+  // FAQ structured data - collect all FAQ items from all sections
+  const allFAQItems = sections
+    .flatMap(section => section.faqItems || [])
+    .map(faq => ({
       "@type": "Question",
       "name": faq.question,
       "acceptedAnswer": {
         "@type": "Answer",
         "text": typeof faq.answer === 'string' ? faq.answer : JSON.stringify(faq.answer),
       },
-    })),
+    }));
+  
+  const faqSchema = allFAQItems.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": allFAQItems,
   } : null;
 
-  // Testimonials structured data
-  const testimonialsSchema = testimonials.length > 0 ? {
+  // Testimonials structured data - collect all testimonials from all sections
+  const allTestimonials = sections
+    .flatMap(section => section.testimonials || []);
+  
+  const testimonialsSchema = allTestimonials.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "itemListElement": testimonials.map((testimonial, index) => ({
+    "itemListElement": allTestimonials.map((testimonial: any, index: number) => ({
       "@type": "ListItem",
       "position": index + 1,
       "item": {
@@ -334,21 +454,6 @@ export default async function LandingPage() {
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/95 to-background" />
           
-          {/* Glow effects */}
-          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]">
-            <div 
-              className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
-              style={{
-                backgroundColor: '#446F94',
-              }}
-            />
-            <div 
-              className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl"
-              style={{
-                backgroundColor: '#446F94',
-              }}
-            />
-          </div>
           
           {/* Subtle dot pattern with fade at top */}
           <div className="absolute inset-0">
@@ -376,7 +481,7 @@ export default async function LandingPage() {
           {/* Render sections dynamically in order from database */}
           {sections.length > 0 ? (
             sections
-              .filter((section) => section.type !== 'header' && section.type !== 'footer') // Exclude header/footer from main render
+              .filter((section) => section.type !== 'header' && section.type !== 'footer')
               .map((section) => (
                 <ErrorBoundary key={section.id}>
                   {renderSection(section)}

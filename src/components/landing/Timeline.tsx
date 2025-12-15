@@ -3,45 +3,118 @@
 import { motion } from 'framer-motion';
 import { RichText } from '@/components/ui/RichText';
 import { Search, Lightbulb, Rocket, TrendingUp, Award } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { resolveIconFromClass } from '@/lib/icon-utils';
 
-const steps = [
-  {
-    icon: Search,
-    title: 'Discovery Call',
-    description: 'We dive deep into your business to understand pain points, goals, and opportunities.',
-    goal: 'Map your automation potential',
-  },
-  {
-    icon: Lightbulb,
-    title: 'Strategy Design',
-    description: 'Our team crafts a custom automation blueprint tailored to your specific needs.',
-    goal: 'Blueprint for transformation',
-  },
-  {
-    icon: Rocket,
-    title: 'Build & Deploy',
-    description: 'We build and implement your AI systems with precision and speed.',
-    goal: 'Launch in 2-4 weeks',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Optimize & Scale',
-    description: 'Continuous monitoring and optimization to maximize your ROI.',
-    goal: '10x efficiency gains',
-  },
-  {
-    icon: Award,
-    title: 'Ongoing Support',
-    description: 'Dedicated support and regular updates to keep your systems running perfectly.',
-    goal: 'Long-term partnership',
-  },
-];
+type Section = {
+  id: string;
+  type: string;
+  title: string | null;
+  subtitle: string | null;
+  content: any | null;
+} | undefined;
 
-const titleText = 'Your path to [[automation success]]';
+type TimelineItem = {
+  id: string;
+  step: number;
+  title: string;
+  subtitle: string | null;
+  badge: string | null;
+  icon: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+  section_timeline: {
+    id: string;
+    position: number;
+    created_at: string;
+  };
+};
 
-export const Timeline = () => {
+type TimelineProps = {
+  section?: Section;
+  timelineItems?: TimelineItem[];
+};
+
+type TimelineStep = {
+  icon: typeof Search | IconDefinition | null;
+  iconType: 'lucide' | 'fontawesome';
+  title: string;
+  description: string;
+  goal: string;
+  stepNumber: number;
+};
+
+const defaultTitleText = 'Your path to [[automation success]]';
+const defaultSubtitle = 'How It Works';
+
+// Map icon strings to Lucide icons
+const lucideIconMap: Record<string, typeof Search> = {
+  'search': Search,
+  'lightbulb': Lightbulb,
+  'rocket': Rocket,
+  'trending-up': TrendingUp,
+  'award': Award,
+};
+
+export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
+  // Use section data if available, otherwise use defaults
+  const titleText = section?.title || defaultTitleText;
+  const subtitle = section?.subtitle || defaultSubtitle;
+  
+  // Convert timeline items to steps
+  let steps: TimelineStep[] = [];
+  
+  if (timelineItems.length > 0) {
+    // Sort by section_timeline position
+    const sortedItems = [...timelineItems].sort((a, b) => 
+      a.section_timeline.position - b.section_timeline.position
+    );
+    
+    steps = sortedItems.map((item) => {
+      let icon: typeof Search | IconDefinition | null = null;
+      let iconType: 'lucide' | 'fontawesome' = 'lucide';
+      
+      if (item.icon) {
+        // Try to resolve as FontAwesome icon first
+        const fontAwesomeIcon = resolveIconFromClass(item.icon);
+        if (fontAwesomeIcon) {
+          icon = fontAwesomeIcon;
+          iconType = 'fontawesome';
+        } else {
+          // Try to map to Lucide icon
+          const lucideIcon = lucideIconMap[item.icon.toLowerCase()];
+          if (lucideIcon) {
+            icon = lucideIcon;
+            iconType = 'lucide';
+          }
+        }
+      }
+      
+      // Fallback to Search icon if no icon found
+      if (!icon) {
+        icon = Search;
+        iconType = 'lucide';
+      }
+      
+      return {
+        icon,
+        iconType,
+        title: item.title,
+        description: item.subtitle || '',
+        goal: item.badge || '',
+        stepNumber: item.step || item.section_timeline.position + 1,
+      };
+    });
+  }
+  
+  // If no timeline items, don't render the section
+  if (steps.length === 0) {
+    return null;
+  }
   return (
-    <section id="about" className="py-12 md:py-20 relative overflow-hidden">
+    <section id="timeline" className="py-12 md:py-20 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
       
@@ -52,9 +125,11 @@ export const Timeline = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="text-primary text-sm font-medium uppercase tracking-wider">
-            How It Works
-          </span>
+          {subtitle && (
+            <span className="text-primary text-sm font-medium uppercase tracking-wider">
+              {subtitle}
+            </span>
+          )}
           <RichText
             as="h2"
             text={titleText}
@@ -85,20 +160,33 @@ export const Timeline = () => {
                   } max-w-md`}>
                     <div className={`flex items-center gap-3 mb-4 ${index % 2 === 0 ? 'lg:flex-row-reverse' : ''}`}>
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <step.icon className="w-6 h-6 text-primary" />
+                        {step.iconType === 'fontawesome' && step.icon ? (
+                          <FontAwesomeIcon icon={step.icon as IconDefinition} className="w-6 h-6 text-primary" />
+                        ) : step.iconType === 'lucide' && step.icon ? (
+                          (() => {
+                            const IconComponent = step.icon as typeof Search;
+                            return <IconComponent className="w-6 h-6 text-primary" />;
+                          })()
+                        ) : (
+                          <Search className="w-6 h-6 text-primary" />
+                        )}
                       </div>
                       <div>
                         <span className="text-primary text-xs font-medium uppercase tracking-wider">
-                          Step {index + 1}
+                          Step {step.stepNumber}
                         </span>
                         <h3 className="text-foreground text-lg font-semibold">{step.title}</h3>
                       </div>
                     </div>
-                    <p className="text-muted-foreground text-sm mb-4">{step.description}</p>
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      <span className="text-primary text-xs font-medium">{step.goal}</span>
-                    </div>
+                    {step.description && (
+                      <p className="text-muted-foreground text-sm mb-4">{step.description}</p>
+                    )}
+                    {step.goal && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <span className="text-primary text-xs font-medium">{step.goal}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

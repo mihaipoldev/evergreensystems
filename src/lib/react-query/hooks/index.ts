@@ -4,3 +4,5 @@ export * from "./useMedia";
 export * from "./useTestimonials";
 export * from "./useFAQItems";
 export * from "./useCTAButtons";
+export * from "./useTimeline";
+export * from "./useResults";

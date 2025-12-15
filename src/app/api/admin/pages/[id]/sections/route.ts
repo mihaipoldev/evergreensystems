@@ -42,7 +42,7 @@ export async function PUT(
         page_id: id,
         section_id: section.section_id,
         position: section.position,
-        visible: section.visible,
+        status: section.status || "draft",
       }));
 
       const { error: insertError } = await supabase

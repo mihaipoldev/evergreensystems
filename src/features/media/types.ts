@@ -13,6 +13,7 @@ export type MediaWithSection = Media & {
     id: string;
     role: string;
     sort_order: number;
+    status: "published" | "draft" | "deactivated";
     created_at: string;
   };
 };

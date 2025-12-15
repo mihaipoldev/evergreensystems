@@ -41,13 +41,11 @@ export async function getAllTestimonials(): Promise<Testimonial[]> {
   // This is necessary for admin operations where we need to see unapproved testimonials
   const supabase = createServiceRoleClient();
   
-  // Explicitly fetch ALL testimonials without any approval filtering
-  // Admin users need to see both approved and unapproved testimonials
+  // Explicitly fetch ALL testimonials
+  // Admin users need to see all testimonials
   const { data, error } = await supabase
     .from("testimonials")
-    .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at")
-    // No .eq("approved", ...) filter - we want ALL testimonials
-    .order("approved", { ascending: false }) // Approved first, then unapproved
+    .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, position, created_at, updated_at")
     .order("position", { ascending: true });
 
   if (error) {
@@ -59,12 +57,13 @@ export async function getAllTestimonials(): Promise<Testimonial[]> {
 
 /**
  * Get a single testimonial by id
+ * Uses service role client to bypass RLS and ensure admin users can access all testimonials
  */
 export async function getTestimonialById(id: string): Promise<Testimonial | null> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("testimonials")
-    .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at")
+    .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, position, created_at, updated_at")
     .eq("id", id)
     .single();
 

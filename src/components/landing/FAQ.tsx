@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from 'react';
+import * as React from 'react';
 import { motion } from 'framer-motion';
 import {
   Accordion,
@@ -31,90 +32,63 @@ type FAQProps = {
   section?: Section;
 };
 
-// Default hardcoded FAQs as fallback
-const defaultFaqs = [
-  {
-    id: '1',
-    question: 'How long does it take to implement an automation system?',
-    answer: 'Most projects are completed within 2-4 weeks, depending on complexity. Simple automations can be live in as little as 5 days, while more complex AI systems may take 4-6 weeks for full deployment.',
-    position: 0,
-  },
-  {
-    id: '2',
-    question: 'What kind of ROI can I expect?',
-    answer: 'Our clients typically see 3-5x ROI within the first 90 days. This comes from time savings, increased lead quality, and improved conversion rates. We track and report on all key metrics throughout our engagement.',
-    position: 1,
-  },
-  {
-    id: '3',
-    question: 'Do I need technical expertise to work with Evergreen Systems?',
-    answer: 'Not at all. We handle all the technical implementation and provide comprehensive training. Our systems are designed to be user-friendly, and we offer ongoing support to ensure you get maximum value.',
-    position: 2,
-  },
-  {
-    id: '4',
-    question: 'What tools and platforms do you integrate with?',
-    answer: 'We integrate with 200+ tools including Salesforce, HubSpot, Slack, Notion, Google Workspace, Microsoft 365, and most major CRM, marketing, and productivity platforms.',
-    position: 3,
-  },
-  {
-    id: '5',
-    question: 'What happens after the initial implementation?',
-    answer: 'We provide ongoing optimization and support. This includes regular performance reviews, system updates, and strategic recommendations to help you scale. Many clients choose to expand their automation stack over time.',
-    position: 4,
-  },
-  {
-    id: '6',
-    question: 'Is my data secure with your systems?',
-    answer: 'Absolutely. We use enterprise-grade encryption, SOC 2 compliant processes, and follow strict data handling protocols. Your data never leaves your authorized systems without explicit permission.',
-    position: 5,
-  },
-];
+export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
+  // If no FAQs, don't render the section
+  if (!faqs || faqs.length === 0) {
+    return null;
+  }
 
-export const FAQ = memo(({ faqs = defaultFaqs, section }: FAQProps) => {
-  // Use section title if available, otherwise fallback to default
+  // Use section title if available
   const title = section?.title || 'Frequently asked [[questions]]';
 
+  // Track which FAQs were previously open to detect newly opened ones
+  const prevOpenRef = React.useRef<Set<string>>(new Set());
+
   // Handle FAQ click tracking
-  const handleFAQOpen = (value: string) => {
-    console.log("Accordion onValueChange called with value:", value);
+  const handleFAQOpen = (values: string[]) => {
+    console.log("Accordion onValueChange called with values:", values);
     
-    // Accordion with type="single" and collapsible will pass empty string when closing
-    // We only want to track when opening (value is not empty)
-    if (value && value.trim() !== '') {
-      // Extract FAQ ID from value (format: "item-{id}")
-      const faqId = value.replace('item-', '');
-      console.log("Extracted FAQ ID:", faqId, "from value:", value);
-      
-      const faq = faqs.find((f) => f.id === faqId);
-      
-      if (faq) {
-        console.log("Tracking FAQ click:", {
-          faqId: faq.id,
-          question: faq.question,
-          entity_type: "faq_item",
-          event_type: "link_click",
-        });
+    // Convert current open values to a Set for easier comparison
+    const currentOpen = new Set(values);
+    
+    // Find newly opened FAQs (ones that are in currentOpen but not in prevOpenRef)
+    values.forEach((value) => {
+      if (!prevOpenRef.current.has(value) && value && value.trim() !== '') {
+        // Extract FAQ ID from value (format: "item-{id}")
+        const faqId = value.replace('item-', '');
+        console.log("Extracted FAQ ID:", faqId, "from value:", value);
         
-        trackEvent({
-          event_type: "link_click",
-          entity_type: "faq_item",
-          entity_id: faq.id,
-          metadata: {
+        const faq = faqs.find((f) => f.id === faqId);
+        
+        if (faq) {
+          console.log("Tracking FAQ click:", {
+            faqId: faq.id,
             question: faq.question,
-            position: faq.position,
-          },
-        }).then(() => {
-          console.log("FAQ click tracked successfully");
-        }).catch((error) => {
-          console.error("Error tracking FAQ click:", error);
-        });
-      } else {
-        console.warn("FAQ not found for ID:", faqId, "Available FAQs:", faqs.map(f => f.id));
+            entity_type: "faq_item",
+            event_type: "link_click",
+          });
+          
+          trackEvent({
+            event_type: "link_click",
+            entity_type: "faq_item",
+            entity_id: faq.id,
+            metadata: {
+              question: faq.question,
+              position: faq.position,
+            },
+          }).then(() => {
+            console.log("FAQ click tracked successfully");
+          }).catch((error) => {
+            console.error("Error tracking FAQ click:", error);
+          });
+        } else {
+          console.warn("FAQ not found for ID:", faqId, "Available FAQs:", faqs.map(f => f.id));
+        }
       }
-    } else {
-      console.log("Accordion closed or empty value, not tracking");
-    }
+    });
+    
+    // Update the previous open ref
+    prevOpenRef.current = currentOpen;
   };
 
   return (
@@ -139,7 +113,11 @@ export const FAQ = memo(({ faqs = defaultFaqs, section }: FAQProps) => {
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
         >
-          <Accordion type="single" collapsible className="space-y-4" onValueChange={handleFAQOpen}>
+          <Accordion 
+            type="multiple" 
+            className="space-y-4" 
+            onValueChange={handleFAQOpen as (value: string[]) => void}
+          >
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={faq.id}
@@ -149,8 +127,12 @@ export const FAQ = memo(({ faqs = defaultFaqs, section }: FAQProps) => {
                 <AccordionTrigger className="text-left text-foreground py-5 [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:underline transition-all">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5">
-                  {faq.answer}
+                <AccordionContent className="pb-5">
+                  <RichText
+                    text={faq.answer}
+                    as="div"
+                    className="text-muted-foreground leading-relaxed"
+                  />
                 </AccordionContent>
               </AccordionItem>
             ))}

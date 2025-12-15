@@ -6,6 +6,33 @@ import { unstable_cache } from "next/cache";
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 /**
+ * Helper function to determine if an item should be included based on status and environment
+ * - Development: shows "published" and "draft" items
+ * - Production: shows only "published" items
+ * - "deactivated": never shown in any environment
+ * - null/undefined: included for backward compatibility
+ */
+export function shouldIncludeItemByStatus(
+  status: string | null | undefined,
+  isDevelopment: boolean
+): boolean {
+  if (!status) return true; // Backward compatibility - treat null/undefined as published
+  
+  const normalizedStatus = String(status).trim().toLowerCase();
+  
+  // Always exclude deactivated
+  if (normalizedStatus === "deactivated") return false;
+  
+  // In development: show published and draft
+  if (isDevelopment) {
+    return normalizedStatus === "published" || normalizedStatus === "draft";
+  }
+  
+  // In production: only show published
+  return normalizedStatus === "published";
+}
+
+/**
  * Get a page by its slug
  * Returns null if page is not found (instead of throwing)
  * Cached for 5 minutes to improve performance
@@ -51,7 +78,7 @@ export async function getSectionsByPageId(pageId: string) {
       page_id: string;
       section_id: string;
       position: number;
-      visible: boolean;
+      status: "published" | "draft" | "deactivated";
       sections: Database["public"]["Tables"]["sections"]["Row"] | null;
     }> | null; error: any };
 
@@ -66,8 +93,58 @@ export async function getSectionsByPageId(pageId: string) {
       ...(ps.sections as Database["public"]["Tables"]["sections"]["Row"]),
       page_section_id: ps.id,
       position: ps.position,
-      visible: ps.visible,
+      status: ps.status,
     })) || [];
+}
+
+/**
+ * Get the first page ID that contains a section
+ * Returns null if section is not found in any page
+ */
+export async function getFirstPageIdBySectionId(sectionId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("page_sections")
+    .select("page_id")
+    .eq("section_id", sectionId)
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  return data && data.length > 0 ? (data[0] as { page_id: string }).page_id : null;
+}
+
+/**
+ * Get page_section status and id for a specific page and section
+ * Returns null if the relationship doesn't exist
+ */
+export async function getPageSectionStatus(
+  pageId: string,
+  sectionId: string
+): Promise<{ id: string; status: "published" | "draft" | "deactivated" } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("page_sections")
+    .select("id, status")
+    .eq("page_id", pageId)
+    .eq("section_id", sectionId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const typedData = data as { id: string; status: "published" | "draft" | "deactivated" };
+  return {
+    id: typedData.id,
+    status: (typedData.status || "draft") as "published" | "draft" | "deactivated",
+  };
 }
 
 /**
@@ -76,7 +153,7 @@ export async function getSectionsByPageId(pageId: string) {
  * @param items - Array of { id, position } objects
  */
 export async function reorderItems(
-  table: "page_sections" | "cta_buttons" | "offer_features" | "testimonials" | "faq_items",
+  table: "page_sections" | "cta_buttons" | "offer_features" | "testimonials" | "faq_items" | "timeline" | "results",
   items: Array<{ id: string; position: number }>
 ) {
   const supabase = await createClient();
@@ -101,28 +178,35 @@ export async function reorderItems(
 
 /**
  * Get all visible sections for a page (public-facing) with media
+ * In production: only published sections
+ * In development: published and draft sections
  * Cached for 5 minutes to improve performance
  */
 export async function getVisibleSectionsByPageId(pageId: string) {
   return unstable_cache(
     async () => {
       const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("page_sections")
-    .select(`
-      *,
-      sections (*)
-    `)
-    .eq("page_id", pageId)
-    .eq("visible", true)
-    .order("position", { ascending: true }) as { data: Array<{
-      id: string;
-      page_id: string;
-      section_id: string;
-      position: number;
-      visible: boolean;
-      sections: Database["public"]["Tables"]["sections"]["Row"] | null;
-    }> | null; error: any };
+      
+      // In development mode, show both published and draft sections
+      // In production, only show published sections
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      // Fetch all page_sections - filtering will be done at application level
+      const { data, error } = await supabase
+        .from("page_sections")
+        .select(`
+          *,
+          sections (*)
+        `)
+        .eq("page_id", pageId)
+        .order("position", { ascending: true }) as { data: Array<{
+          id: string;
+          page_id: string;
+          section_id: string;
+          position: number;
+          status: "published" | "draft" | "deactivated";
+          sections: Database["public"]["Tables"]["sections"]["Row"] | null;
+        }> | null; error: any };
 
   if (error) {
     throw error;
@@ -132,9 +216,14 @@ export async function getVisibleSectionsByPageId(pageId: string) {
     return [];
   }
 
-  // Get all section IDs
-  const sectionIds = data
-    .filter(ps => ps.sections !== null)
+  // Filter page_sections based on status and environment (using helper function)
+  const filteredPageSections = data.filter((ps) => {
+    if (!ps.sections) return false; // Exclude if section is null
+    return shouldIncludeItemByStatus(ps.status, isDevelopment);
+  });
+
+  // Get all section IDs from filtered page sections
+  const sectionIds = filteredPageSections
     .map(ps => ps.section_id);
 
   // Get media for all sections
@@ -147,69 +236,429 @@ export async function getVisibleSectionsByPageId(pageId: string) {
     .in("section_id", sectionIds)
     .order("sort_order", { ascending: true });
 
-  // Group media by section_id
+  // Group media by section_id (filter based on environment)
   const mediaBySectionId = new Map<string, any[]>();
   (sectionMediaData || []).forEach((item: any) => {
-    if (!mediaBySectionId.has(item.section_id)) {
-      mediaBySectionId.set(item.section_id, []);
+    // Filter media based on status from junction table and environment
+    if (item.media && shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!mediaBySectionId.has(item.section_id)) {
+        mediaBySectionId.set(item.section_id, []);
+      }
+      mediaBySectionId.get(item.section_id)!.push({
+        ...item.media,
+        section_media: {
+          id: item.id,
+          section_id: item.section_id,
+          media_id: item.media_id,
+          role: item.role,
+          sort_order: item.sort_order,
+          status: item.status as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      });
     }
-    mediaBySectionId.get(item.section_id)!.push({
-      ...item.media,
-      section_media: {
-        id: item.id,
-        section_id: item.section_id,
-        media_id: item.media_id,
-        role: item.role,
-        sort_order: item.sort_order,
-        created_at: item.created_at,
-      },
-    });
   });
 
   // Get CTA buttons for all sections
+  // Query junction table first, then join with base table separately to avoid RLS join issues
   const { data: sectionCTAData } = await supabase
     .from("section_cta_buttons")
+    .select("*")
+    .in("section_id", sectionIds)
+    .order("position", { ascending: true });
+
+  console.log('[DEBUG] CTA Junction Query:', {
+    sectionIds,
+    sectionIdsCount: sectionIds.length,
+    sectionCTADataCount: sectionCTAData?.length || 0,
+    sampleJunctionItem: sectionCTAData?.[0] ? {
+      id: (sectionCTAData[0] as any).id,
+      section_id: (sectionCTAData[0] as any).section_id,
+      cta_button_id: (sectionCTAData[0] as any).cta_button_id,
+      status: (sectionCTAData[0] as any).status,
+    } : null,
+  });
+
+  // Get all CTA button IDs from junction table
+  const ctaButtonIds = sectionCTAData?.map((item: any) => item.cta_button_id).filter(Boolean) || [];
+  
+  // Query CTA buttons separately
+  // Use regular client - RLS policies should allow public access
+  const { data: ctaButtonsData } = await supabase
+    .from("cta_buttons")
+    .select("*")
+    .in("id", ctaButtonIds);
+
+  console.log('[DEBUG] CTA Base Query:', {
+    ctaButtonIds,
+    ctaButtonIdsCount: ctaButtonIds.length,
+    ctaButtonsDataCount: ctaButtonsData?.length || 0,
+    sampleCTAButton: ctaButtonsData?.[0] ? {
+      id: (ctaButtonsData[0] as any).id,
+      label: (ctaButtonsData[0] as any).label,
+      url: (ctaButtonsData[0] as any).url,
+    } : null,
+  });
+
+  // Create a map of cta_button_id -> cta_button for quick lookup
+  const ctaButtonsMap = new Map((ctaButtonsData || []).map((c: any) => [c.id, c]));
+
+  // Group CTA buttons by section_id (filter based on environment)
+  const ctaButtonsBySectionId = new Map<string, CTAButtonWithSection[]>();
+  let ctaIncludedCount = 0;
+  let ctaExcludedCount = 0;
+  
+  (sectionCTAData || []).forEach((item: any) => {
+    const ctaButton = ctaButtonsMap.get(item.cta_button_id);
+    
+    if (!ctaButton) {
+      console.log('[DEBUG] CTA excluded - not found in ctaButtonsMap:', {
+        junctionId: item.id,
+        cta_button_id: item.cta_button_id,
+        availableCTAButtonIds: Array.from(ctaButtonsMap.keys()),
+      });
+      ctaExcludedCount++;
+      return;
+    }
+    
+    // Filter CTAs based on status from junction table and environment
+    const shouldInclude = shouldIncludeItemByStatus(item.status, isDevelopment);
+    
+    console.log('[DEBUG] CTA filtering decision:', {
+      junctionId: item.id,
+      section_id: item.section_id,
+      cta_button_id: item.cta_button_id,
+      ctaLabel: ctaButton.label,
+      status: item.status,
+      shouldInclude,
+      isDevelopment,
+    });
+    
+    if (shouldInclude) {
+      ctaIncludedCount++;
+      if (!ctaButtonsBySectionId.has(item.section_id)) {
+        ctaButtonsBySectionId.set(item.section_id, []);
+      }
+      const ctaButtonWithSection: CTAButtonWithSection = {
+        ...ctaButton,
+        section_cta_button: {
+          id: item.id,
+          position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      ctaButtonsBySectionId.get(item.section_id)!.push(ctaButtonWithSection);
+    } else {
+      ctaExcludedCount++;
+    }
+  });
+
+  console.log('[DEBUG] CTA Summary:', {
+    totalItems: sectionCTAData?.length || 0,
+    includedCount: ctaIncludedCount,
+    excludedCount: ctaExcludedCount,
+    ctaButtonsBySectionIdSize: ctaButtonsBySectionId.size,
+    ctaButtonsBySectionIdKeys: Array.from(ctaButtonsBySectionId.keys()),
+    ctaCounts: Array.from(ctaButtonsBySectionId.entries()).map(([sectionId, ctas]) => ({
+      sectionId,
+      count: ctas.length,
+    })),
+  });
+
+  // Get features for all sections
+  // Query junction table first, then join with base table separately to avoid RLS join issues
+  const { data: sectionFeaturesData } = await supabase
+    .from("section_features")
+    .select("*")
+    .in("section_id", sectionIds)
+    .order("position", { ascending: true });
+
+  // Get all feature IDs from junction table
+  const featureIds = sectionFeaturesData?.map((item: any) => item.feature_id).filter(Boolean) || [];
+  
+  // Query features separately
+  // Use regular client - RLS policies should allow public access
+  const { data: featuresData } = await supabase
+    .from("offer_features")
+    .select("*")
+    .in("id", featureIds);
+
+  // Create a map of feature_id -> feature for quick lookup
+  const featuresMap = new Map((featuresData || []).map((f: any) => [f.id, f]));
+
+  // Group features by section_id (filter based on environment)
+  const featuresBySectionId = new Map<string, any[]>();
+  
+  (sectionFeaturesData || []).forEach((item: any) => {
+    const feature = featuresMap.get(item.feature_id);
+    
+    if (!feature) {
+      return;
+    }
+    
+    // Filter features based on status from junction table and environment
+    if (shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!featuresBySectionId.has(item.section_id)) {
+        featuresBySectionId.set(item.section_id, []);
+      }
+      const featureWithSection = {
+        ...feature,
+        section_feature: {
+          id: item.id,
+          position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      featuresBySectionId.get(item.section_id)!.push(featureWithSection);
+    }
+  });
+
+  // Get FAQ items for all sections
+  // Query junction table first, then join with base table separately to avoid RLS join issues
+  const { data: sectionFAQData } = await supabase
+    .from("section_faq_items")
+    .select("*")
+    .in("section_id", sectionIds)
+    .order("position", { ascending: true });
+
+  // Get all FAQ item IDs from junction table
+  const faqItemIds = sectionFAQData?.map((item: any) => item.faq_item_id).filter(Boolean) || [];
+  
+  // Query FAQ items separately
+  // Use regular client - RLS policies should allow public access
+  const { data: faqItemsData } = await supabase
+    .from("faq_items")
+    .select("*")
+    .in("id", faqItemIds);
+
+  // Create a map of faq_item_id -> faq_item for quick lookup
+  const faqItemsMap = new Map((faqItemsData || []).map((f: any) => [f.id, f]));
+
+  // Group FAQ items by section_id (filter based on environment)
+  const faqItemsBySectionId = new Map<string, any[]>();
+  
+  (sectionFAQData || []).forEach((item: any) => {
+    const faqItem = faqItemsMap.get(item.faq_item_id);
+    
+    if (!faqItem) {
+      return;
+    }
+    
+    // Filter FAQ items based on status from junction table and environment
+    if (shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!faqItemsBySectionId.has(item.section_id)) {
+        faqItemsBySectionId.set(item.section_id, []);
+      }
+      const faqItemWithSection = {
+        ...faqItem,
+        section_faq_item: {
+          id: item.id,
+          position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      faqItemsBySectionId.get(item.section_id)!.push(faqItemWithSection);
+    }
+  });
+
+  // Get Timeline items for all sections
+  const { data: sectionTimelineData } = await supabase
+    .from("section_timeline")
     .select(`
       *,
-      cta_buttons (*)
+      timeline (*)
     `)
     .in("section_id", sectionIds)
     .order("position", { ascending: true });
 
-  // Group CTA buttons by section_id (filter to only active ones)
-  const ctaButtonsBySectionId = new Map<string, CTAButtonWithSection[]>();
-  (sectionCTAData || []).forEach((item: any) => {
-    // Filter out deactivated CTAs
-    if (item.cta_buttons && item.cta_buttons.status === "active") {
-      if (!ctaButtonsBySectionId.has(item.section_id)) {
-        ctaButtonsBySectionId.set(item.section_id, []);
+  // Group Timeline items by section_id (filter based on environment)
+  const timelineItemsBySectionId = new Map<string, any[]>();
+  (sectionTimelineData || []).forEach((item: any) => {
+    // Filter timeline items based on status from junction table and environment
+    if (item.timeline && shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!timelineItemsBySectionId.has(item.section_id)) {
+        timelineItemsBySectionId.set(item.section_id, []);
       }
-      const ctaButton: CTAButtonWithSection = {
-        ...item.cta_buttons,
-        status: item.cta_buttons.status as "active" | "deactivated",
-        section_cta_button: {
+      const timelineItem = {
+        ...item.timeline,
+        section_timeline: {
           id: item.id,
           position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
           created_at: item.created_at,
         },
       };
-      ctaButtonsBySectionId.get(item.section_id)!.push(ctaButton);
+      timelineItemsBySectionId.get(item.section_id)!.push(timelineItem);
     }
   });
 
-      // Transform data to return sections with page_sections metadata, media, and CTA buttons
-      return data
-        .filter(ps => ps.sections !== null)
-        .map(ps => ({
-          ...(ps.sections as Database["public"]["Tables"]["sections"]["Row"]),
-          page_section_id: ps.id,
-          position: ps.position,
-          visible: ps.visible,
-          media: mediaBySectionId.get(ps.section_id) || [],
-          ctaButtons: ctaButtonsBySectionId.get(ps.section_id) || [],
-        }));
+  // Get Testimonials for all sections
+  // Query junction table first, then join with base table separately to avoid RLS join issues
+  const { data: sectionTestimonialsData } = await supabase
+    .from("section_testimonials")
+    .select("*")
+    .in("section_id", sectionIds)
+    .order("position", { ascending: true });
+
+  console.log('[DEBUG] Testimonials Junction Query:', {
+    sectionIds,
+    sectionIdsCount: sectionIds.length,
+    sectionTestimonialsDataCount: sectionTestimonialsData?.length || 0,
+    sampleJunctionItem: sectionTestimonialsData?.[0] ? {
+      id: (sectionTestimonialsData[0] as any).id,
+      section_id: (sectionTestimonialsData[0] as any).section_id,
+      testimonial_id: (sectionTestimonialsData[0] as any).testimonial_id,
+      status: (sectionTestimonialsData[0] as any).status,
+    } : null,
+  });
+
+  // Get all testimonial IDs from junction table
+  const testimonialIds = sectionTestimonialsData?.map((item: any) => item.testimonial_id).filter(Boolean) || [];
+  
+  // Query testimonials separately
+  // Use regular client - RLS policies should allow public access
+  const { data: testimonialsData } = await supabase
+    .from("testimonials")
+    .select("*")
+    .in("id", testimonialIds);
+
+  console.log('[DEBUG] Testimonials Base Query:', {
+    testimonialIds,
+    testimonialIdsCount: testimonialIds.length,
+    testimonialsDataCount: testimonialsData?.length || 0,
+    sampleTestimonial: testimonialsData?.[0] ? {
+      id: (testimonialsData[0] as any).id,
+      author_name: (testimonialsData[0] as any).author_name,
+      quote: (testimonialsData[0] as any).quote?.substring(0, 50),
+    } : null,
+  });
+
+  // Create a map of testimonial_id -> testimonial for quick lookup
+  const testimonialsMap = new Map((testimonialsData || []).map((t: any) => [t.id, t]));
+
+  // Group Testimonials by section_id (filter based on environment)
+  const testimonialsBySectionId = new Map<string, any[]>();
+  let testimonialsIncludedCount = 0;
+  let testimonialsExcludedCount = 0;
+  
+  (sectionTestimonialsData || []).forEach((item: any) => {
+    const testimonial = testimonialsMap.get(item.testimonial_id);
+    
+    if (!testimonial) {
+      console.log('[DEBUG] Testimonial excluded - not found in testimonialsMap:', {
+        junctionId: item.id,
+        testimonial_id: item.testimonial_id,
+        availableTestimonialIds: Array.from(testimonialsMap.keys()),
+      });
+      testimonialsExcludedCount++;
+      return;
+    }
+    
+    // Filter testimonials based on status from junction table and environment
+    const shouldInclude = shouldIncludeItemByStatus(item.status, isDevelopment);
+    
+    console.log('[DEBUG] Testimonial filtering decision:', {
+      junctionId: item.id,
+      section_id: item.section_id,
+      testimonial_id: item.testimonial_id,
+      testimonialAuthor: testimonial.author_name,
+      status: item.status,
+      shouldInclude,
+      isDevelopment,
+    });
+    
+    if (shouldInclude) {
+      testimonialsIncludedCount++;
+      if (!testimonialsBySectionId.has(item.section_id)) {
+        testimonialsBySectionId.set(item.section_id, []);
+      }
+      const testimonialWithSection = {
+        ...testimonial,
+        section_testimonial: {
+          id: item.id,
+          position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      testimonialsBySectionId.get(item.section_id)!.push(testimonialWithSection);
+    } else {
+      testimonialsExcludedCount++;
+    }
+  });
+
+  console.log('[DEBUG] Testimonials Summary:', {
+    totalItems: sectionTestimonialsData?.length || 0,
+    includedCount: testimonialsIncludedCount,
+    excludedCount: testimonialsExcludedCount,
+    testimonialsBySectionIdSize: testimonialsBySectionId.size,
+    testimonialsBySectionIdKeys: Array.from(testimonialsBySectionId.keys()),
+    testimonialCounts: Array.from(testimonialsBySectionId.entries()).map(([sectionId, testimonials]) => ({
+      sectionId,
+      count: testimonials.length,
+    })),
+  });
+
+  // Get Results for all sections
+  const { data: sectionResultsData } = await supabase
+    .from("section_results")
+    .select(`
+      *,
+      results (*)
+    `)
+    .in("section_id", sectionIds)
+    .order("position", { ascending: true });
+
+  // Group Results by section_id (filter based on environment)
+  const resultsBySectionId = new Map<string, any[]>();
+  (sectionResultsData || []).forEach((item: any) => {
+    // Filter results based on status from junction table and environment
+    if (item.results && shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!resultsBySectionId.has(item.section_id)) {
+        resultsBySectionId.set(item.section_id, []);
+      }
+      const result = {
+        ...item.results,
+        section_result: {
+          id: item.id,
+          position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      resultsBySectionId.get(item.section_id)!.push(result);
+    }
+  });
+
+      // Transform data to return sections with page_sections metadata, media, CTA buttons, features, FAQ items, timeline items, testimonials, and results
+      // Use filteredPageSections instead of data to ensure status filtering is applied
+      const transformedSections = filteredPageSections
+        .map(ps => {
+          const sectionId = ps.section_id;
+          const features = featuresBySectionId.get(sectionId) || [];
+          const faqItems = faqItemsBySectionId.get(sectionId) || [];
+          
+          return {
+            ...(ps.sections as Database["public"]["Tables"]["sections"]["Row"]),
+            page_section_id: ps.id,
+            position: ps.position,
+            status: ps.status,
+            media: mediaBySectionId.get(sectionId) || [],
+            ctaButtons: ctaButtonsBySectionId.get(sectionId) || [],
+            features,
+            faqItems,
+            timelineItems: timelineItemsBySectionId.get(sectionId) || [],
+            testimonials: testimonialsBySectionId.get(sectionId) || [],
+            results: resultsBySectionId.get(sectionId) || [],
+          };
+        });
+
+      return transformedSections;
     },
-    [`visible-sections-${pageId}`],
+    [`published-sections-${pageId}`],
     {
       revalidate: 60, // 1 minute
       tags: ['sections', `page-sections-${pageId}`],
@@ -218,18 +667,28 @@ export async function getVisibleSectionsByPageId(pageId: string) {
 }
 
 /**
- * Get all approved testimonials (public-facing)
+ * Get all published testimonials (public-facing)
+ * In production: only published testimonials
+ * In development: published and draft testimonials
  * Cached for 5 minutes to improve performance
  */
 export async function getApprovedTestimonials() {
   return unstable_cache(
     async () => {
       const supabase = await createClient();
-      const { data, error } = await supabase
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      let query = supabase
         .from("testimonials")
-        .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, approved, position, created_at, updated_at")
-        .eq("approved", true)
-        .order("position", { ascending: true });
+        .select("id, author_name, author_role, company_name, headline, quote, avatar_url, rating, status, position, created_at, updated_at");
+      
+      if (isDevelopment) {
+        query = query.in("status", ["published", "draft"]);
+      } else {
+        query = query.eq("status", "published");
+      }
+      
+      const { data, error } = await query.order("position", { ascending: true });
 
       if (error) {
         throw error;
@@ -246,18 +705,18 @@ export async function getApprovedTestimonials() {
 }
 
 /**
- * Get all active FAQ items (public-facing)
- * Uses anon key with RLS - only returns active items
+ * Get all FAQ items (public-facing)
+ * Status is now managed at the junction table level, so we return all items
  * Cached for 5 minutes to improve performance
  */
 export async function getAllFAQItems() {
   return unstable_cache(
     async () => {
       const supabase = await createClient();
+      
       const { data, error } = await supabase
         .from("faq_items")
-        .select("id, question, answer, position, status, created_at, updated_at")
-        .eq("status", "active")
+        .select("id, question, answer, position, created_at, updated_at")
         .order("position", { ascending: true });
 
       if (error) {
@@ -275,29 +734,25 @@ export async function getAllFAQItems() {
 }
 
 /**
- * Get all active offer features (public-facing)
- * Uses anon key with RLS - only returns active features
- * RLS policy automatically filters to status = 'active'
+ * Get all features (public-facing)
+ * Status is now managed at the junction table level, so we return all features
  * Cached for 5 minutes to improve performance
  */
 export async function getActiveOfferFeatures() {
   return unstable_cache(
     async () => {
       const supabase = await createClient();
-      // RLS policy "Public can view active offer_features" automatically filters to status = 'active'
-      // No need for explicit .eq() filter - RLS handles it
+      
       const { data, error } = await supabase
         .from("offer_features")
-        .select("id, title, subtitle, description, icon, position, status, created_at, updated_at")
+        .select("id, title, subtitle, description, icon, position, created_at, updated_at")
         .order("position", { ascending: true });
 
       if (error) {
         throw error;
       }
 
-      // Double-check: filter out any inactive items (defensive programming)
-      // RLS should handle this, but this ensures we never return inactive items
-      return ((data || []) as any[]).filter((feature: any) => feature.status === "active");
+      return data || [];
     },
     ['active-offer-features'],
     {
@@ -314,7 +769,7 @@ export async function addSectionToPage(
   pageId: string,
   sectionId: string,
   position: number = 0,
-  visible: boolean = true
+  status: "published" | "draft" | "deactivated" = "draft"
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -323,7 +778,7 @@ export async function addSectionToPage(
       page_id: pageId,
       section_id: sectionId,
       position,
-      visible,
+      status,
     } as any)
     .select()
     .single();
@@ -356,7 +811,7 @@ export async function removeSectionFromPage(pageId: string, sectionId: string) {
  */
 export async function updatePageSection(
   pageSectionId: string,
-  updates: { position?: number; visible?: boolean }
+  updates: { position?: number; status?: "published" | "draft" | "deactivated" }
 ) {
   const supabase = await createClient();
   const { data, error } = await ((supabase
@@ -389,4 +844,322 @@ export async function getSectionByType(type: string) {
   }
 
   return data;
+}
+
+/**
+ * Get all features for a specific section via section_features junction table
+ */
+export async function getFeaturesBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  const { data, error } = await supabase
+    .from("section_features")
+    .select(`
+      *,
+      offer_features (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.offer_features) return false;
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.offer_features,
+      section_feature: {
+        id: item.id,
+        position: item.position,
+        status: (item.status || "published") as "published" | "draft" | "deactivated",
+        created_at: item.created_at,
+      },
+    }));
+}
+
+/**
+ * Get all testimonials for a specific section via section_testimonials junction table
+ */
+export async function getTestimonialsBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  // Query junction table first
+  const { data: sectionTestimonialsData, error: junctionError } = await supabase
+    .from("section_testimonials")
+    .select("*")
+    .eq("section_id", sectionId)
+    .order("position", { ascending: true });
+
+  if (junctionError) {
+    throw junctionError;
+  }
+
+  // Get all testimonial IDs from junction table
+  const testimonialIds = sectionTestimonialsData?.map((item: any) => item.testimonial_id).filter(Boolean) || [];
+  
+  // Query testimonials separately
+  const { data: testimonialsData, error: testimonialsError } = await supabase
+    .from("testimonials")
+    .select("*")
+    .in("id", testimonialIds);
+
+  if (testimonialsError) {
+    throw testimonialsError;
+  }
+
+  // Create a map for quick lookup
+  const testimonialsMap = new Map((testimonialsData || []).map((t: any) => [t.id, t]));
+
+  return (sectionTestimonialsData || [])
+    .filter((item: any) => {
+      const testimonial = testimonialsMap.get(item.testimonial_id);
+      if (!testimonial) return false;
+
+      // Filter based on status from junction table
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => {
+      const testimonial = testimonialsMap.get(item.testimonial_id);
+      if (!testimonial) return null;
+      
+      return {
+        ...testimonial,
+        section_testimonial: {
+          id: item.id,
+          position: item.position,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+    })
+    .filter((t): t is any => t !== null);
+}
+
+/**
+ * Get all FAQ items for a specific section via section_faq_items junction table
+ */
+export async function getFAQItemsBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  const { data, error } = await supabase
+    .from("section_faq_items")
+    .select(`
+      *,
+      faq_items (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.faq_items) return false;
+      
+      // Filter based on status from junction table
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.faq_items,
+      section_faq_item: {
+        id: item.id,
+        position: item.position,
+        status: item.status || "draft",
+        created_at: item.created_at,
+      },
+    }));
+}
+
+/**
+ * Get all timeline items for a specific section via section_timeline junction table
+ */
+export async function getTimelineBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  const { data, error } = await supabase
+    .from("section_timeline")
+    .select(`
+      *,
+      timeline (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.timeline) return false;
+      
+      // Filter based on status from junction table
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.timeline,
+      section_timeline: {
+        id: item.id,
+        position: item.position,
+        status: item.status || "published",
+        created_at: item.created_at,
+      },
+    }));
+}
+
+/**
+ * Get all results for a specific section via section_results junction table
+ */
+export async function getResultsBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  const { data, error } = await supabase
+    .from("section_results")
+    .select(`
+      *,
+      results (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.results) return false;
+      
+      // Filter based on status from junction table
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.results,
+      section_result: {
+        id: item.id,
+        position: item.position,
+        status: item.status || "published",
+        created_at: item.created_at,
+      },
+    }));
+}
+
+/**
+ * Get all CTA buttons for a specific section via section_cta_buttons junction table
+ */
+export async function getCTAButtonsBySectionId(sectionId: string): Promise<CTAButtonWithSection[]> {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  const { data, error } = await supabase
+    .from("section_cta_buttons")
+    .select(`
+      *,
+      cta_buttons (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.cta_buttons || !item.cta_buttons.id) return false;
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.cta_buttons,
+      section_cta_button: {
+        id: item.id,
+        position: item.position,
+        status: (item.status || "published") as "published" | "draft" | "deactivated",
+        created_at: item.created_at,
+      },
+    }));
+}
+
+/**
+ * Get all softwares for a specific section via section_softwares junction table
+ */
+export async function getSoftwaresBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  const { data, error } = await supabase
+    .from("section_softwares")
+    .select(`
+      *,
+      softwares (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("order", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.softwares) return false;
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.softwares,
+      section_software: {
+        id: item.id,
+        order: item.order,
+        icon_override: item.icon_override,
+        status: (item.status || "published") as "published" | "draft" | "deactivated",
+        created_at: item.created_at,
+      },
+    }));
+}
+
+/**
+ * Get all social platforms for a specific section via section_socials junction table
+ */
+export async function getSocialPlatformsBySectionId(sectionId: string) {
+  const supabase = await createClient();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  const { data, error } = await supabase
+    .from("section_socials")
+    .select(`
+      *,
+      social_platforms (*)
+    `)
+    .eq("section_id", sectionId)
+    .order("order", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || [])
+    .filter((item: any) => {
+      if (!item.social_platforms) return false;
+      return shouldIncludeItemByStatus(item.status, isDevelopment);
+    })
+    .map((item: any) => ({
+      ...item.social_platforms,
+      section_social: {
+        id: item.id,
+        order: item.order,
+        status: (item.status || "published") as "published" | "draft" | "deactivated",
+        created_at: item.created_at,
+      },
+    }));
 }

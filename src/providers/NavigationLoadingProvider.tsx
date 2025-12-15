@@ -22,12 +22,23 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   }, []);
 
   // Clear navigation state when pathname changes
+  // Compare pathname without query params to handle query param updates
   useEffect(() => {
-    if (pendingPath && pathname === pendingPath) {
-      setIsNavigating(false);
-      setPendingPath(null);
+    if (pendingPath) {
+      // Remove query params from both for comparison
+      const pathnameWithoutQuery = pathname.split('?')[0];
+      const pendingPathWithoutQuery = pendingPath.split('?')[0];
+      
+      if (pathnameWithoutQuery === pendingPathWithoutQuery) {
+        setIsNavigating(false);
+        setPendingPath(null);
+      }
     }
-  }, [pathname, pendingPath]);
+    // Also clear if pathname changes but no pending path (handles query param-only updates)
+    else if (isNavigating) {
+      setIsNavigating(false);
+    }
+  }, [pathname, pendingPath, isNavigating]);
 
   return (
     <NavigationLoadingContext.Provider value={{ isNavigating, pendingPath, startNavigation }}>

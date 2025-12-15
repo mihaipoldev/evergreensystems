@@ -1,18 +1,42 @@
 import { notFound } from "next/navigation";
-import { EditTestimonialClient } from "./EditTestimonialClient";
+import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { ApprovedSwitchForm } from "@/components/admin/ApprovedSwitchForm";
+import { TestimonialForm } from "@/features/testimonials/components/TestimonialForm";
 import { getTestimonialById } from "@/features/testimonials/data";
 
 type EditTestimonialPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 };
 
-export default async function EditTestimonialPage({ params }: EditTestimonialPageProps) {
+export default async function EditTestimonialPage({ params, searchParams }: EditTestimonialPageProps) {
   const { id } = await params;
+  const params_searchParams = await searchParams;
+  const returnTo = params_searchParams.returnTo;
+
   const testimonial = await getTestimonialById(id);
 
   if (!testimonial) {
     notFound();
   }
 
-  return <EditTestimonialClient testimonial={testimonial} />;
+  return (
+    <div className="w-full space-y-6">
+      <TestimonialForm
+        initialData={testimonial}
+        isEdit={true}
+        returnTo={returnTo}
+        rightSideHeaderContent={
+          <div className="mb-6 md:mb-8">
+            <AdminPageTitle
+              title="Edit Testimonial"
+              entityName={testimonial.author_name}
+              description="Update the testimonial details"
+              rightSideContent={<ApprovedSwitchForm />}
+            />
+          </div>
+        }
+      />
+    </div>
+  );
 }

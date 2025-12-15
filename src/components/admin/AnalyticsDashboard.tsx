@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { startTransition } from "react";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { AdminMetricTab } from "@/components/admin/AdminMetricTab";
 import { AnalyticsLineChart, type DailyPoint } from "@/components/admin/AnalyticsLineChart";
@@ -9,6 +10,27 @@ import { CountryList } from "@/components/admin/CountryList";
 import { CityList } from "@/components/admin/CityList";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+type TabValue = "visits" | "pageviews" | "clicks" | "videos" | "faq-clicks";
+
+const TAB_STORAGE_KEY = "admin-analytics-tab";
+const TAB_COOKIE_NAME = "admin-analytics-tab";
+
+function getStoredTab(): TabValue {
+  if (typeof window === "undefined") return "visits";
+  const stored = localStorage.getItem(TAB_STORAGE_KEY);
+  if (stored && ["visits", "pageviews", "clicks", "videos", "faq-clicks"].includes(stored)) {
+    return stored as TabValue;
+  }
+  return "visits";
+}
+
+function setStoredTab(tab: TabValue) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TAB_STORAGE_KEY, tab);
+  // Also set cookie for server-side access
+  document.cookie = `${TAB_COOKIE_NAME}=${tab}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
+}
 
 type AnalyticsDashboardData = {
   totalPageViews: number;
@@ -101,7 +123,91 @@ const locationLabels: Record<string, string> = {
 
 export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [mounted, setMounted] = React.useState(false);
+  
+  // Get tab from URL param, or localStorage, or default to "visits"
+  const urlTab = searchParams.get("tab") as TabValue | null;
+  const storedTab = getStoredTab();
+  
+  // Use local state for instant tab switching (no delay)
+  // Initialize from URL or stored value
+  const [localTab, setLocalTab] = React.useState<TabValue>(() => {
+    return urlTab || storedTab || "visits";
+  });
+  
+  // Track if we're updating from user action (to prevent sync loop)
+  const isUserActionRef = React.useRef(false);
+  
+  // Sync local state with URL when URL changes externally (e.g., browser back/forward, initial load)
+  React.useEffect(() => {
+    // Only sync if it's not a user action
+    if (!isUserActionRef.current && urlTab && urlTab !== localTab) {
+      setLocalTab(urlTab);
+    }
+    // Reset the flag after sync check
+    isUserActionRef.current = false;
+  }, [urlTab, localTab]);
+  
+  // On mount, sync URL with localStorage if needed
+  React.useEffect(() => {
+    setMounted(true);
+    if (!urlTab && storedTab !== "visits") {
+      // If no URL param but we have a stored tab (not default), update URL
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", storedTab);
+      setLocalTab(storedTab);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    } else if (urlTab) {
+      setLocalTab(urlTab);
+      if (urlTab !== storedTab) {
+        // If URL param differs from stored, update localStorage and cookie
+        setStoredTab(urlTab);
+      }
+    }
+  }, []); // Only run on mount
+  
+  // Handle tab change - instant update using local state
+  const handleTabChange = (value: string) => {
+    const tabValue = value as TabValue;
+    
+    // Mark as user action to prevent sync effect from overriding
+    isUserActionRef.current = true;
+    
+    // Update local state immediately for instant UI feedback
+    setLocalTab(tabValue);
+    
+    // Save to localStorage and cookie immediately
+    setStoredTab(tabValue);
+    
+    // Update URL using router.replace with scroll: false (shallow update, no full reload)
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tabValue);
+    const newUrl = `${pathname}?${params.toString()}`;
+    
+    // Use router.replace with scroll: false for shallow navigation (no page refresh)
+    router.replace(newUrl, { scroll: false });
+  };
+  
+  // Use localTab for the controlled tab value (instant updates)
+  const currentTab = localTab;
+  
+  // Debug logging - show in browser console
+  React.useEffect(() => {
+    console.log('[Analytics Dashboard] Received data:', {
+      timestamp: new Date().toISOString(),
+      totalPageViews: data.totalPageViews,
+      totalCTAClicks: data.totalCTAClicks,
+      totalVideoClicks: data.totalVideoClicks,
+      totalFAQClicks: data.totalFAQClicks,
+      totalSessionStarts: data.totalSessionStarts,
+      pageViewsSeriesLength: data.pageViewsSeries?.length || 0,
+      ctaClicksSeriesLength: data.ctaClicksSeries?.length || 0,
+      topCTAsAggregated: data.topCTAsAggregated?.length || 0,
+      topCountriesByCTAClick: data.topCountriesByCTAClick?.length || 0,
+    });
+  }, [data]);
   const {
     totalPageViews,
     totalCTAClicks,
@@ -151,12 +257,22 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
 
   const handleCTAClick = (ctaId: string) => {
     const scope = searchParams.get("scope") || "30";
-    router.push(`/admin/analytics/cta/${ctaId}?scope=${scope}`);
+    const tab = searchParams.get("tab") || storedTab;
+    router.push(`/admin/analytics/cta/${ctaId}?scope=${scope}&tab=${tab}`);
   };
 
   const handleFAQClick = (faqId: string) => {
     const scope = searchParams.get("scope") || "30";
-    router.push(`/admin/analytics/faq/${faqId}?scope=${scope}`);
+    const tab = searchParams.get("tab") || storedTab;
+    router.push(`/admin/analytics/faq/${faqId}?scope=${scope}&tab=${tab}`);
+  };
+  
+  // Helper function to create country navigation URL with scope and tab
+  const createCountryUrl = (country: string) => {
+    const scope = searchParams.get("scope") || "30";
+    const tab = searchParams.get("tab") || storedTab;
+    const encodedCountry = encodeURIComponent(country);
+    return `/admin/analytics/country/${encodedCountry}?scope=${scope}&tab=${tab}`;
   };
 
 
@@ -165,7 +281,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
       <div
         className="rounded-xl overflow-hidden text-card-foreground dark:bg-card bg-card shadow-lg transition-all duration-300 hover:shadow-xl"
       >
-        <Tabs defaultValue="visits" className="w-full">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="flex flex-row md:grid md:grid-cols-5 w-full bg-transparent p-0 gap-0 h-auto min-h-[88px] rounded-none">
             <AdminMetricTab
               value="visits"
@@ -210,9 +326,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
                   <CountryList 
                     countries={topCountriesBySessionStart}
                     onCountryClick={(country) => {
-                      const scope = searchParams.get("scope") || "30";
-                      const encodedCountry = encodeURIComponent(country);
-                      router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                      router.push(createCountryUrl(country));
                     }}
                   />
                 )}
@@ -231,9 +345,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
                   <CountryList 
                     countries={topCountriesByPageView}
                     onCountryClick={(country) => {
-                      const scope = searchParams.get("scope") || "30";
-                      const encodedCountry = encodeURIComponent(country);
-                      router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                      router.push(createCountryUrl(country));
                     }}
                   />
                 )}
@@ -253,9 +365,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
                     <CountryList 
                       countries={topCountriesByCTAClick}
                       onCountryClick={(country) => {
-                        const scope = searchParams.get("scope") || "30";
-                        const encodedCountry = encodeURIComponent(country);
-                        router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                        router.push(createCountryUrl(country));
                       }}
                     />
                   )}
@@ -372,9 +482,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
                   <CountryList 
                     countries={topCountriesByVideoClick}
                     onCountryClick={(country) => {
-                      const scope = searchParams.get("scope") || "30";
-                      const encodedCountry = encodeURIComponent(country);
-                      router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                      router.push(createCountryUrl(country));
                     }}
                   />
                 )}
@@ -394,9 +502,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
                     <CountryList 
                       countries={topCountriesByFAQClick || []}
                       onCountryClick={(country) => {
-                        const scope = searchParams.get("scope") || "30";
-                        const encodedCountry = encodeURIComponent(country);
-                        router.push(`/admin/analytics/country/${encodedCountry}?scope=${scope}`);
+                        router.push(createCountryUrl(country));
                       }}
                     />
                   )}

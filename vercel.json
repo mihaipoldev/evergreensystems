@@ -2,6 +2,15 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "routes": [
+    {
+      "src": "/admin/analytics(.*)",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "X-Vercel-Cache-Control": "no-store"
+      }
+    }
+  ]
 }
 

@@ -21,7 +21,7 @@ export async function GET(
     const { id } = await params;
     const { data, error } = await adminSupabase
       .from("faq_items")
-      .select("id, question, answer, position, status, created_at, updated_at")
+      .select("id, question, answer, position, created_at, updated_at")
       .eq("id", id)
       .single();
 
@@ -60,15 +60,12 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { question, answer, position, status } = body;
+    const { question, answer, position } = body;
 
     const updateData: Record<string, unknown> = {};
     if (question !== undefined) updateData.question = question;
     if (answer !== undefined) updateData.answer = answer;
     if (position !== undefined) updateData.position = position;
-    if (status !== undefined && ["active", "inactive"].includes(status)) {
-      updateData.status = status;
-    }
 
     const { data, error } = await (adminSupabase
       .from("faq_items") as any)

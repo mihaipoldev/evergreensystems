@@ -21,7 +21,7 @@ type Section = {
   media_url: string | null;
   page_section_id: string;
   position: number;
-  visible: boolean;
+  status: "published" | "draft" | "deactivated";
   ctaButtons?: CTAButtonWithSection[];
 };
 
@@ -139,10 +139,26 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   }, [headerSection]);
 
   // Generate navigation links from sections, excluding hero, cta, logos, header, and footer
+  // In production: only show published sections
+  // In development: show both published and draft sections
   // Sections are already ordered by position from the database, but we sort again to ensure correct order
   const navLinks = useMemo(() => {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
     return sections
-      .filter((section) => section.type !== 'hero' && section.type !== 'cta' && section.type !== 'logos' && section.type !== 'header' && section.type !== 'footer' && section.visible)
+      .filter((section) => {
+        // Exclude special section types
+        if (['hero', 'cta', 'logos', 'header', 'footer'].includes(section.type)) {
+          return false;
+        }
+        
+        // Filter by status based on environment
+        if (isDevelopment) {
+          return section.status === 'published' || section.status === 'draft';
+        } else {
+          return section.status === 'published';
+        }
+      })
       .sort((a, b) => {
         // Handle null/undefined positions by putting them at the end
         const aPos = a.position ?? Infinity;
@@ -360,34 +376,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
                   </motion.div>
                 );
               })
-            ) : (
-              // Fallback to default button if no header buttons
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  asChild
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-5"
-                >
-                  <Link 
-                    href="#cta" 
-                    onClick={(e) => {
-                      handleSmoothScroll(e, '#cta');
-                      trackEvent({
-                        event_type: "link_click",
-                        entity_type: "cta_button",
-                        entity_id: "navbar-get-in-touch",
-                        metadata: {
-                          location: "header",
-                          href: "#cta",
-                          label: "Get in Touch",
-                        },
-                      });
-                    }}
-                  >
-                  Get in Touch
-                  </Link>
-                </Button>
-              </motion.div>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile Menu Button */}
@@ -479,33 +468,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
                     </Button>
                   );
                 })
-              ) : (
-                // Fallback to default button if no header buttons
-                <Button 
-                  asChild
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground w-full"
-                >
-                  <Link 
-                    href="#cta" 
-                    onClick={(e) => {
-                      handleSmoothScroll(e, '#cta');
-                      setIsOpen(false);
-                      trackEvent({
-                        event_type: "link_click",
-                        entity_type: "cta_button",
-                        entity_id: "navbar-get-in-touch-mobile",
-                        metadata: {
-                          location: "header",
-                          href: "#cta",
-                          label: "Get in Touch",
-                        },
-                      });
-                    }}
-                  >
-                  Get in Touch
-                  </Link>
-                </Button>
-              )}
+              ) : null}
             </div>
           </motion.div>
         )}

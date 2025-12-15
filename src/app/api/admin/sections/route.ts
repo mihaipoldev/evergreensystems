@@ -24,8 +24,8 @@ export async function GET(request: Request) {
           id,
           section_id,
           position,
-          visible,
-          sections (id, type, title, admin_title, subtitle, content, media_url, created_at, updated_at)
+          status,
+          sections (id, type, title, admin_title, subtitle, content, media_url, icon, created_at, updated_at)
         `)
         .eq("page_id", pageId)
         .order("position", { ascending: true });
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
           ...ps.sections,
           page_section_id: ps.id,
           position: ps.position ?? 0,
-          visible: ps.visible !== undefined && ps.visible !== null ? Boolean(ps.visible) : true,
+          status: ps.status || "draft",
         }));
 
       // No cache for admin routes - always fresh data
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { type, title, admin_title, subtitle, content, media_url } = body;
+    const { type, title, admin_title, subtitle, content, media_url, icon } = body;
 
     if (!type) {
       return NextResponse.json(
@@ -113,6 +113,7 @@ export async function POST(request: Request) {
         subtitle: subtitle || null,
         content: content || null,
         media_url: media_url || null,
+        icon: icon && icon.trim() ? icon.trim() : null,
       })
       .select()
       .single();

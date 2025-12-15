@@ -33,7 +33,6 @@ const formSchema = z.object({
   quote: z.string().optional(),
   avatar_url: z.union([z.string().url("Must be a valid URL"), z.literal(""), z.null()]).optional(),
   rating: z.number().min(1).max(5).nullable().optional(),
-  approved: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,9 +41,10 @@ type TestimonialFormProps = {
   initialData?: Testimonial | null;
   isEdit?: boolean;
   rightSideHeaderContent?: React.ReactNode;
+  returnTo?: string;
 };
 
-export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderContent }: TestimonialFormProps) {
+export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderContent, returnTo }: TestimonialFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const createTestimonial = useCreateTestimonial();
@@ -61,7 +61,6 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
       quote: initialData?.quote || "",
       avatar_url: initialData?.avatar_url || "",
       rating: initialData?.rating ?? null,
-      approved: initialData?.approved ?? false,
     },
   });
 
@@ -142,7 +141,6 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
         quote: values.quote || null,
         avatar_url: avatarUrl,
         rating: values.rating ?? null,
-        approved: values.approved ?? false,
       };
 
       let testimonialData;
@@ -208,7 +206,8 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
       // No need to do it here to avoid duplicate operations
 
       toast.success(`Testimonial ${isEdit ? "updated" : "created"} successfully`);
-      router.push("/admin/testimonials");
+      const redirectUrl = returnTo || (isEdit && initialData ? `/admin/testimonials/${initialData.id}/edit` : "/admin/testimonials");
+      router.push(redirectUrl);
       router.refresh();
     } catch (error: any) {
       console.error("Error saving testimonial:", error);
@@ -224,15 +223,6 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
         {rightSideHeaderContent}
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
         <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Details</h3>
-              <p className="text-sm text-muted-foreground">
-                Basic information about the testimonial
-              </p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}

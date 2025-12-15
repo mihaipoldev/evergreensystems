@@ -8,7 +8,11 @@ import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
 import { InstantFontApply } from "@/components/admin/InstantFontApply";
 import { geistSans, geistMono, lato, getAllFontVariables } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { SEO_CONFIG, ALL_KEYWORDS } from "@/lib/seo";
+
+// Force dynamic rendering since we use headers() to detect admin pages
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: {
@@ -49,18 +53,19 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(SEO_CONFIG.siteUrl),
   manifest: '/manifest.json',
-  icons: {
-    icon: [
-      { url: '/icon-16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-    shortcut: '/favicon.ico',
-  },
+  // Icons commented out until icon files are created
+  // icons: {
+  //   icon: [
+  //     { url: '/icon-16.png', sizes: '16x16', type: 'image/png' },
+  //     { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
+  //     { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+  //     { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+  //   ],
+  //   apple: [
+  //     { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+  //   ],
+  //   shortcut: '/favicon.ico',
+  // },
   other: {
     'theme-color': '#000000', // Will be updated based on actual theme
   },
@@ -109,6 +114,7 @@ export default async function RootLayout({
         {isAdminPage && <InstantFontApply />}
         <StylePresetProvider />
         <Toaster />
+        <SonnerToaster />
         {children}
       </body>
     </html>

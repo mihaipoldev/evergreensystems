@@ -1,7 +1,5 @@
-import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { SectionForm } from "@/features/sections/components/SectionForm";
-import { getSectionById } from "@/features/sections/data";
+import { notFound, redirect } from "next/navigation";
+import { getFirstPageIdBySectionId } from "@/lib/supabase/queries";
 
 type EditSectionPageProps = {
   params: Promise<{ id: string }>;
@@ -9,23 +7,14 @@ type EditSectionPageProps = {
 
 export default async function EditSectionPage({ params }: EditSectionPageProps) {
   const { id } = await params;
-  const section = await getSectionById(id);
-
-  if (!section) {
+  
+  // Get the first page ID that contains this section
+  const pageId = await getFirstPageIdBySectionId(id);
+  
+  if (!pageId) {
     notFound();
   }
 
-  return (
-    <div className="w-full space-y-6">
-      <div className="mb-6 md:mb-8 relative">
-        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-full" />
-        <AdminPageTitle
-          title="Edit Section"
-          entityName={section.admin_title || section.title || section.type}
-          description="Update the section details"
-        />
-      </div>
-      <SectionForm initialData={section} isEdit={true} />
-    </div>
-  );
+  // Redirect to new URL structure with query param
+  redirect(`/admin/pages/${pageId}/sections/${id}?tab=edit`);
 }

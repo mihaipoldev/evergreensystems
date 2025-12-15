@@ -106,6 +106,28 @@ const nextConfig: NextConfig = {
     return [
       ...baseHeaders,
     {
+      // Admin routes: NEVER cache - always fetch fresh data
+      source: '/admin/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+        {
+          key: 'Pragma',
+          value: 'no-cache',
+        },
+        {
+          key: 'Expires',
+          value: '0',
+        },
+        {
+          key: 'X-Vercel-Cache-Control',
+          value: 'no-store',
+        },
+      ],
+    },
+    {
       // HTML/SSR routes: always revalidate to avoid stale pages
       source: '/((?!_next/static|_next/image|.*\\.(?:js|css|jpg|jpeg|png|gif|ico|svg|webp|avif|woff|woff2|ttf|eot)).*)',
       headers: [

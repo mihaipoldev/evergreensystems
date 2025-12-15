@@ -6,7 +6,7 @@ import { unstable_cache } from "next/cache";
 type Section = Database["public"]["Tables"]["sections"]["Row"];
 
 /**
- * Get all offer features, ordered by position
+ * Get all features, ordered by position
  * Uses service role client to bypass RLS for admin operations
  * Cached for 5 minutes to improve performance
  */
@@ -34,7 +34,7 @@ export async function getAllOfferFeatures(): Promise<OfferFeature[]> {
 }
 
 /**
- * Get a single offer feature by id
+ * Get a single feature by id
  * Uses service role client to bypass RLS for admin operations
  */
 export async function getOfferFeatureById(id: string): Promise<OfferFeature | null> {

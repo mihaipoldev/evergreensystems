@@ -44,7 +44,9 @@ type SortableCardProps<T extends SortableItemBase> = PropsWithChildren<{
 }>;
 
 function SortableCard<T extends SortableItemBase>({ item, children, renderActions }: SortableCardProps<T>) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  // Ensure we have a valid ID - use position as fallback if id is missing
+  const itemId = item.id || `fallback-${item.position ?? 0}`;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: itemId });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -143,9 +145,9 @@ export function SortableCardList<T extends SortableItemBase>({
   if (!mounted) {
     return (
       <div className={cn("space-y-3", className)}>
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
-            key={item.id}
+            key={item.id || `item-${index}`}
             className="relative flex items-stretch gap-4 rounded-xl border border-border/60 bg-card p-4"
           >
             <div className="self-center my-auto h-10 w-10 flex-shrink-0 rounded-lg text-muted-foreground flex items-center justify-center">
@@ -174,10 +176,10 @@ export function SortableCardList<T extends SortableItemBase>({
         setActiveId(null);
       }}
     >
-      <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={items.map((item, index) => item.id || `item-${index}`)} strategy={verticalListSortingStrategy}>
         <div className={cn("space-y-3", className)}>
-          {items.map((item) => (
-            <SortableCard key={item.id} item={item} renderActions={renderActions}>
+          {items.map((item, index) => (
+            <SortableCard key={item.id || `item-${index}`} item={item} renderActions={renderActions}>
               {renderContent(item)}
             </SortableCard>
           ))}

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
@@ -11,12 +11,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    let query = supabase
+    let query = adminSupabase
       .from("cta_buttons")
-      .select("id, label, url, style, icon, position, status, created_at, updated_at");
+      .select("id, label, url, style, icon, position, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {
@@ -54,8 +57,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+
     const body = await request.json();
-    const { label, url, style, icon, position, status } = body;
+    const { label, url, style, icon, position } = body;
 
     if (!label || !url) {
       return NextResponse.json(
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await (supabase
+    const { data, error } = await (adminSupabase
       .from("cta_buttons") as any)
       .insert({
         label,
@@ -72,7 +78,6 @@ export async function POST(request: Request) {
         style: style || null,
         icon: icon || null,
         position: position ?? 0,
-        status: status || "active",
       })
       .select()
       .single();

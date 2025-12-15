@@ -1,5 +1,7 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 
+export const dynamic = 'force-dynamic';
+
 export default function SitePreferencesPage() {
   return (
     <>
