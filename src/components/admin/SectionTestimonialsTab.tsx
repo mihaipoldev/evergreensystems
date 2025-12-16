@@ -12,7 +12,16 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { RichText } from "@/components/ui/RichText";
+import { useDuplicateTestimonial, useDeleteTestimonial } from "@/lib/react-query/hooks/useTestimonials";
 import type { Testimonial, TestimonialWithSection } from "@/features/testimonials/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionTestimonialsTabProps = {
   sectionId: string;
@@ -23,13 +32,10 @@ type SectionTestimonialsTabProps = {
 export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials }: SectionTestimonialsTabProps) {
   const [sectionTestimonials, setSectionTestimonials] = useState<TestimonialWithSection[]>(initialTestimonials);
   const [allTestimonials, setAllTestimonials] = useState<Testimonial[]>([]);
+  const duplicateTestimonial = useDuplicateTestimonial();
+  const deleteTestimonial = useDeleteTestimonial();
 
-  useEffect(() => {
-    loadSectionTestimonials();
-    loadAllTestimonials();
-  }, [sectionId]);
-
-  const loadSectionTestimonials = async () => {
+  const loadSectionTestimonials = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -48,9 +54,9 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
     } catch (error) {
       console.error("Error loading section testimonials:", error);
     }
-  };
+  }, [sectionId]);
 
-  const loadAllTestimonials = async () => {
+  const loadAllTestimonials = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -69,7 +75,12 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
     } catch (error) {
       console.error("Error loading all testimonials:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSectionTestimonials();
+    loadAllTestimonials();
+  }, [loadSectionTestimonials, loadAllTestimonials]);
 
   const handleAddTestimonial = async (testimonialId: string) => {
     try {
@@ -138,6 +149,36 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
       throw error;
     }
   };
+
+  const handleDuplicate = useCallback(async (testimonialId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateTestimonial.mutateAsync({ 
+        id: testimonialId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("Testimonial duplicated successfully");
+      await loadSectionTestimonials();
+      await loadAllTestimonials();
+    } catch (error: any) {
+      console.error("Error duplicating testimonial:", error);
+      toast.error(error.message || "Failed to duplicate testimonial");
+      throw error;
+    }
+  }, [sectionId, duplicateTestimonial, loadSectionTestimonials, loadAllTestimonials]);
+
+  const handleDeleteTestimonial = useCallback(async (testimonialId: string) => {
+    try {
+      await deleteTestimonial.mutateAsync(testimonialId);
+      toast.success("Testimonial deleted successfully");
+      await loadSectionTestimonials();
+      await loadAllTestimonials();
+    } catch (error: any) {
+      console.error("Error deleting testimonial:", error);
+      toast.error(error.message || "Failed to delete testimonial");
+      throw error;
+    }
+  }, [deleteTestimonial, loadSectionTestimonials, loadAllTestimonials]);
 
   const handleReorder = useCallback(async (orderedItems: TestimonialWithSection[]) => {
     const newOrder = orderedItems.map((item, index) => ({ ...item, section_testimonial: { ...item.section_testimonial, position: index } }));
@@ -261,16 +302,19 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
         </div>
       </div>
     );
-  }, [sectionId, loadSectionTestimonials]);
+  }, [sectionId]);
 
   const renderActions = useCallback((testimonial: TestimonialWithSection) => (
     <ActionMenu
       itemId={testimonial.id}
       editHref={`/admin/testimonials/${testimonial.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`}
       onDelete={async () => {
-        await handleRemoveTestimonial(testimonial.id);
+        await handleDeleteTestimonial(testimonial.id);
       }}
-      deleteLabel="this testimonial from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(testimonial.id, true); // true = is connected
+      }}
+      deleteLabel="this testimonial"
       customActions={[
         {
           label: "Deselect",
@@ -281,10 +325,12 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
         },
       ]}
     />
-  ), []);
+  ), [pageId, sectionId, handleRemoveTestimonial, handleDuplicate, handleDeleteTestimonial]);
 
   const selectedTestimonialIds = sectionTestimonials.map((t) => t.id);
-  const unselectedTestimonials = allTestimonials.filter((t) => !selectedTestimonialIds.includes(t.id));
+  const unselectedTestimonials = allTestimonials
+    .filter((t) => !selectedTestimonialIds.includes(t.id))
+    .sort((a, b) => (a.author_name || "").localeCompare(b.author_name || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -357,6 +403,13 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
                       <ActionMenu
                         itemId={testimonial.id}
                         editHref={`/admin/testimonials/${testimonial.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`}
+                        onDelete={async () => {
+                          await handleDeleteTestimonial(testimonial.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(testimonial.id, false); // false = not connected
+                        }}
+                        deleteLabel="this testimonial"
                         customActions={[
                           {
                             label: "Select",
@@ -369,7 +422,7 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
                       />
                     </div>
                     {(testimonial.headline || testimonial.quote) && (
-                      <div>
+                      <div className="mb-1">
                         {testimonial.headline && (
                           <p className="text-xs font-bold text-foreground mb-1">
                             {testimonial.headline}
@@ -382,6 +435,11 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
                             className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
                           />
                         )}
+                      </div>
+                    )}
+                    {testimonial.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(testimonial.created_at)}
                       </div>
                     )}
                   </div>

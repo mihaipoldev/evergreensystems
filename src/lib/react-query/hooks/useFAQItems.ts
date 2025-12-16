@@ -91,3 +91,26 @@ export function useDeleteFAQItem() {
     },
   });
 }
+
+export function useDuplicateFAQItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, sectionId }: { id: string; sectionId?: string }) => {
+      const url = sectionId
+        ? `/api/admin/faq-items/${id}/duplicate?section_id=${sectionId}`
+        : `/api/admin/faq-items/${id}/duplicate`;
+      const response = await fetch(url, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate FAQ item");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.faqItems.all });
+    },
+  });
+}

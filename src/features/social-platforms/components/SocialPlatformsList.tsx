@@ -11,6 +11,7 @@ import { faPlus, faShareAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useDuplicateSocialPlatform } from "@/lib/react-query/hooks/useSocialPlatforms";
 import type { SocialPlatform } from "../types";
 
 type SocialPlatformsListProps = {
@@ -20,6 +21,33 @@ type SocialPlatformsListProps = {
 export function SocialPlatformsList({ initialSocialPlatforms }: SocialPlatformsListProps) {
   const [socialPlatforms, setSocialPlatforms] = useState<SocialPlatform[]>(initialSocialPlatforms);
   const [searchQuery, setSearchQuery] = useState("");
+  const duplicateSocialPlatform = useDuplicateSocialPlatform();
+
+  const handleDuplicate = useCallback(async (id: string) => {
+    try {
+      await duplicateSocialPlatform.mutateAsync({ id });
+      toast.success("Social platform duplicated successfully");
+      // Refresh the list
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/social-platforms`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setSocialPlatforms(updated);
+      }
+    } catch (error: any) {
+      console.error("Error duplicating social platform:", error);
+      toast.error(error.message || "Failed to duplicate social platform");
+      throw error;
+    }
+  }, [duplicateSocialPlatform]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -108,10 +136,11 @@ export function SocialPlatformsList({ initialSocialPlatforms }: SocialPlatformsL
         itemId={platform.id}
         editHref={`/admin/social-platforms/${platform.id}/edit`}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         deleteLabel={`Social platform "${platform.name}"`}
       />
     );
-  }, [handleDelete]);
+  }, [handleDelete, handleDuplicate]);
 
   return (
     <div className="w-full">

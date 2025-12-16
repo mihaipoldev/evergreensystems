@@ -12,6 +12,7 @@ import { faPlus, faLink } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
+import { useDuplicateCTAButton } from "@/lib/react-query/hooks/useCTAButtons";
 import type { CTAButton, CTAButtonWithSections } from "../types";
 
 type CTAButtonsListProps = {
@@ -24,6 +25,33 @@ type CTAButtonsListProps = {
 export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionId, pageId }: CTAButtonsListProps) {
   const [ctaButtons, setCTAButtons] = useState<CTAButtonWithSections[]>(initialCTAButtons);
   const [searchQuery, setSearchQuery] = useState("");
+  const duplicateCTAButton = useDuplicateCTAButton();
+
+  const handleDuplicate = useCallback(async (id: string) => {
+    try {
+      await duplicateCTAButton.mutateAsync({ id, sectionId });
+      toast.success("CTA button duplicated successfully");
+      // Refresh the list by refetching
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/cta-buttons`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setCTAButtons(updated);
+      }
+    } catch (error: any) {
+      console.error("Error duplicating CTA button:", error);
+      toast.error(error.message || "Failed to duplicate CTA button");
+      throw error;
+    }
+  }, [sectionId, duplicateCTAButton]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -146,10 +174,11 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
         itemId={button.id}
         editHref={editHref}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         deleteLabel={`CTA button "${button.label}"`}
       />
     );
-  }, [pageId, sectionId, handleDelete]);
+  }, [pageId, sectionId, handleDelete, handleDuplicate]);
 
   return (
     <div className="w-full">

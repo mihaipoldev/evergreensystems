@@ -11,7 +11,16 @@ import { faPlus, faCheck, faX, faShareAlt } from "@fortawesome/free-solid-svg-ic
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
+import { useDuplicateSocialPlatform, useDeleteSocialPlatform } from "@/lib/react-query/hooks/useSocialPlatforms";
 import type { SocialPlatform, SocialPlatformWithSection } from "@/features/social-platforms/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionSocialPlatformsTabProps = {
   sectionId: string;
@@ -22,13 +31,10 @@ type SectionSocialPlatformsTabProps = {
 export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlatforms }: SectionSocialPlatformsTabProps) {
   const [sectionSocialPlatforms, setSectionSocialPlatforms] = useState<SocialPlatformWithSection[]>(initialSocialPlatforms);
   const [allSocialPlatforms, setAllSocialPlatforms] = useState<SocialPlatform[]>([]);
+  const duplicateSocialPlatform = useDuplicateSocialPlatform();
+  const deleteSocialPlatform = useDeleteSocialPlatform();
 
-  useEffect(() => {
-    loadSectionSocialPlatforms();
-    loadAllSocialPlatforms();
-  }, [sectionId]);
-
-  const loadSectionSocialPlatforms = async () => {
+  const loadSectionSocialPlatforms = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -47,9 +53,9 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
     } catch (error) {
       console.error("Error loading section social platforms:", error);
     }
-  };
+  }, [sectionId]);
 
-  const loadAllSocialPlatforms = async () => {
+  const loadAllSocialPlatforms = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -68,7 +74,12 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
     } catch (error) {
       console.error("Error loading all social platforms:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSectionSocialPlatforms();
+    loadAllSocialPlatforms();
+  }, [loadSectionSocialPlatforms, loadAllSocialPlatforms]);
 
   const handleAddSocialPlatform = async (platformId: string) => {
     try {
@@ -168,6 +179,36 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
     }
   }, [sectionId]);
 
+  const handleDuplicate = useCallback(async (platformId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateSocialPlatform.mutateAsync({ 
+        id: platformId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("Social platform duplicated successfully");
+      await loadSectionSocialPlatforms();
+      await loadAllSocialPlatforms();
+    } catch (error: any) {
+      console.error("Error duplicating social platform:", error);
+      toast.error(error.message || "Failed to duplicate social platform");
+      throw error;
+    }
+  }, [sectionId, duplicateSocialPlatform, loadSectionSocialPlatforms, loadAllSocialPlatforms]);
+
+  const handleDeleteSocialPlatform = useCallback(async (platformId: string) => {
+    try {
+      await deleteSocialPlatform.mutateAsync(platformId);
+      toast.success("Social platform deleted successfully");
+      await loadSectionSocialPlatforms();
+      await loadAllSocialPlatforms();
+    } catch (error: any) {
+      console.error("Error deleting social platform:", error);
+      toast.error(error.message || "Failed to delete social platform");
+      throw error;
+    }
+  }, [deleteSocialPlatform, loadSectionSocialPlatforms, loadAllSocialPlatforms]);
+
   const handleReorder = useCallback(async (orderedItems: SocialPlatformWithSection[]) => {
     const newOrder = orderedItems.map((item, index) => ({ ...item, section_social: { ...item.section_social, order: index } }));
 
@@ -261,9 +302,12 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
       itemId={platform.id}
       editHref={`/admin/social-platforms/${platform.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=social-platforms`}
       onDelete={async () => {
-        await handleRemoveSocialPlatform(platform.id);
+        await handleDeleteSocialPlatform(platform.id);
       }}
-      deleteLabel="this social platform from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(platform.id, true); // true = is connected
+      }}
+      deleteLabel="this social platform"
       customActions={[
         {
           label: "Deselect",
@@ -274,10 +318,12 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
         },
       ]}
     />
-  ), [pageId, sectionId]);
+  ), [pageId, sectionId, handleRemoveSocialPlatform, handleDuplicate, handleDeleteSocialPlatform]);
 
   const selectedPlatformIds = sectionSocialPlatforms.map((p) => p.id);
-  const unselectedPlatforms = allSocialPlatforms.filter((p) => !selectedPlatformIds.includes(p.id));
+  const unselectedPlatforms = allSocialPlatforms
+    .filter((p) => !selectedPlatformIds.includes(p.id))
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -357,12 +403,26 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <h3 className="font-semibold text-sm line-clamp-1">
-                        {platform.name}
-                      </h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm line-clamp-1 mb-1">
+                          {platform.name}
+                        </h3>
+                        {platform.created_at && (
+                          <div className="text-xs text-muted-foreground">
+                            {formatDate(platform.created_at)}
+                          </div>
+                        )}
+                      </div>
                       <ActionMenu
                         itemId={platform.id}
                         editHref={`/admin/social-platforms/${platform.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=social-platforms`}
+                        onDelete={async () => {
+                          await handleDeleteSocialPlatform(platform.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(platform.id, false); // false = not connected
+                        }}
+                        deleteLabel="this social platform"
                         customActions={[
                           {
                             label: "Select",

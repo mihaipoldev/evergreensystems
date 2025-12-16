@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
@@ -97,7 +97,14 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const { error } = await supabase
+    
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+    
+    // Delete the CTA button
+    // Note: This will automatically cascade delete all entries in section_cta_buttons
+    // junction table due to ON DELETE CASCADE constraint in the database schema
+    const { error } = await adminSupabase
       .from("cta_buttons")
       .delete()
       .eq("id", id);

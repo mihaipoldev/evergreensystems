@@ -44,7 +44,7 @@ const Footer = dynamic(() => import('@/components/landing/Footer').then(mod => (
 const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod => ({ default: mod.Timeline })), {
   loading: () => <div className="h-96" />,
 });
-import { getPageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
+import { getPageBySlug, getActivePageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { CTAButtonWithSection } from '@/features/cta/types';
 import type { MediaWithSection } from '@/features/media/types';
@@ -214,14 +214,21 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function LandingPage() {
+type LandingPageProps = {
+  searchParams?: Promise<Record<string, string>> | Record<string, string>;
+};
+
+export default async function LandingPage({ searchParams }: LandingPageProps) {
+  // Handle both Promise and direct object for searchParams (Next.js compatibility)
+  const params = searchParams instanceof Promise ? await searchParams : (searchParams || {});
+
   // Parallelize all database queries for better performance
   // Note: Features, FAQ items, testimonials, timeline items, and results are now fetched per-section via getVisibleSectionsByPageId
+  
+  // Get home page from site_structure
   const homePageResult = await Promise.allSettled([
-    getPageBySlug('home'),
+    getActivePageBySlug('home'),
   ]);
-
-  // Extract results with error handling
   const homePage = homePageResult[0].status === 'fulfilled' ? homePageResult[0].value : null;
 
   // Fetch sections if home page exists

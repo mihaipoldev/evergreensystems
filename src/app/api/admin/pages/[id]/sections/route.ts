@@ -58,15 +58,6 @@ export async function PUT(
     revalidateTag("pages", "max");
     revalidateTag("sections", "max");
     revalidateTag(`page-sections-${id}`, "max");
-    // Also invalidate page slug cache if we can get it
-    const { data: pageData } = await supabase
-      .from("pages")
-      .select("slug")
-      .eq("id", id)
-      .single();
-    if ((pageData as any)?.slug) {
-      revalidateTag(`page-${(pageData as any).slug}`, "max");
-    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

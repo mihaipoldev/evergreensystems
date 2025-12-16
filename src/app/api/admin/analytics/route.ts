@@ -67,10 +67,31 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Skip tracking in development/localhost mode
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    // Also check hostname from headers as a fallback
+    const headersList = await headers();
+    const host = headersList.get('host') || '';
+    const isLocalhost = 
+      host.includes('localhost') || 
+      host.includes('127.0.0.1') || 
+      host.includes('0.0.0.0') ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.0.');
+
+    if (isDevelopment || isLocalhost) {
+      // Return success response but don't insert into database
+      // This prevents client-side errors while silently ignoring dev events
+      return NextResponse.json(
+        { message: "Analytics tracking skipped (development mode)" },
+        { status: 200 }
+      );
+    }
+
     // Public endpoint - no authentication required for tracking
     // Use service role client to bypass RLS for public analytics tracking
     const supabase = createServiceRoleClient();
-    const headersList = await headers();
     const body = await request.json();
     
     const { 

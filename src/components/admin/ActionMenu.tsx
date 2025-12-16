@@ -3,6 +3,8 @@
 import { MoreHorizontal, Pencil, Trash2, ExternalLink, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +28,7 @@ type ActionMenuProps = {
   itemId: string;
   onEdit?: () => void;
   onDelete?: (id: string) => Promise<void>;
+  onDuplicate?: (id: string) => Promise<void>;
   editHref?: string;
   openPageHref?: string;
   statsHref?: string;
@@ -42,6 +45,7 @@ export function ActionMenu({
   itemId,
   onEdit,
   onDelete,
+  onDuplicate,
   editHref,
   openPageHref,
   statsHref,
@@ -50,6 +54,7 @@ export function ActionMenu({
 }: ActionMenuProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const handleOpenPage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -76,6 +81,20 @@ export function ActionMenu({
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowDeleteDialog(true);
+  };
+
+  const handleDuplicate = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!onDuplicate) return;
+
+    setIsDuplicating(true);
+    try {
+      await onDuplicate(itemId);
+    } catch (error) {
+      console.error("Error duplicating:", error);
+    } finally {
+      setIsDuplicating(false);
+    }
   };
 
   return (
@@ -150,14 +169,31 @@ export function ActionMenu({
                 </Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleDeleteClick}
-              className="text-destructive focus:text-destructive cursor-pointer"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
+            {onDuplicate && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDuplicate}
+                  disabled={isDuplicating}
+                  className="cursor-pointer"
+                >
+                  <FontAwesomeIcon icon={faCopy} className="mr-2 h-4 w-4" />
+                  {isDuplicating ? "Duplicating..." : "Duplicate"}
+                </DropdownMenuItem>
+              </>
+            )}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDeleteClick}
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

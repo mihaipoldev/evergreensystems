@@ -109,6 +109,10 @@ export async function DELETE(
     const adminSupabase = createServiceRoleClient();
 
     const { id } = await params;
+    
+    // Delete the feature
+    // Note: This will automatically cascade delete all entries in section_features
+    // junction table due to ON DELETE CASCADE constraint in the database schema
     const { error } = await adminSupabase
       .from("offer_features")
       .delete()

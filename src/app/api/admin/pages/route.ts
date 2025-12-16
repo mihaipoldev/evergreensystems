@@ -16,12 +16,12 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("pages")
-      .select("id, slug, title, description, status, created_at, updated_at");
+      .select("id, title, description, type, status, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {
       const searchPattern = `%${search.trim()}%`;
-      query = query.or(`title.ilike.${searchPattern},slug.ilike.${searchPattern},description.ilike.${searchPattern}`);
+      query = query.or(`title.ilike.${searchPattern},description.ilike.${searchPattern}`);
     }
 
     const { data, error } = await query.order("created_at", { ascending: false });
@@ -55,11 +55,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { slug, title, description } = body;
+    const { title, description, type } = body;
 
-    if (!slug || !title) {
+    if (!title || !type) {
       return NextResponse.json(
-        { error: "slug and title are required" },
+        { error: "title and type are required" },
         { status: 400 }
       );
     }
@@ -67,9 +67,9 @@ export async function POST(request: Request) {
     const { data, error } = await (supabase
       .from("pages") as any)
       .insert({
-        slug,
         title,
         description: description || null,
+        type,
       })
       .select()
       .single();
@@ -80,9 +80,6 @@ export async function POST(request: Request) {
 
     // Invalidate cache for pages
     revalidateTag("pages", "max");
-    if (data?.slug) {
-      revalidateTag(`page-${data.slug}`, "max");
-    }
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

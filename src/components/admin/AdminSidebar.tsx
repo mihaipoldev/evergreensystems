@@ -16,6 +16,7 @@ import {
   faHome,
   faShareAlt,
   faLaptopCode,
+  faSitemap,
 } from "@fortawesome/free-solid-svg-icons";
 import { ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -45,6 +46,11 @@ const topLevelItems = [
     title: "Analytics",
     href: "/admin/analytics",
     icon: faChartLine,
+  },
+  {
+    title: "Site Structure",
+    href: "/admin/site-structure",
+    icon: faSitemap,
   },
   {
     title: "Media Library",
@@ -215,7 +221,41 @@ export function AdminSidebar() {
                 );
               })}
 
-            {/* All pages - positioned between Analytics and Media Library */}
+            {/* Site Structure */}
+            {topLevelItems
+              .filter((item) => item.title === "Site Structure")
+              .map((item) => {
+                const isActive = pendingPath 
+                  ? pendingPath === item.href || pendingPath.startsWith(item.href + "/")
+                  : pathname === item.href || pathname.startsWith(item.href + "/");
+                
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => startNavigation(item.href)}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "relative overflow-hidden",
+                      "active:scale-[0.98]",
+                      isActive
+                        ? "bg-primary/10 text-sidebar-foreground shadow-sm"
+                        : "text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-primary/10"
+                    )}
+                  >
+                    <FontAwesomeIcon 
+                      icon={item.icon} 
+                      className={cn(
+                        "h-4 w-4 transition-colors shrink-0",
+                        isActive ? "text-primary" : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
+                      )} 
+                    />
+                    <span className="relative">{item.title}</span>
+                  </Link>
+                );
+              })}
+
+            {/* All pages - positioned between Site Structure and Media Library */}
             {pagesLoading ? (
               <div className="px-3 py-2 text-sm text-muted-foreground">Loading pages...</div>
             ) : (
@@ -235,7 +275,7 @@ export function AdminSidebar() {
 
             {/* Media Library and Settings */}
             {topLevelItems
-              .filter((item) => item.title !== "Analytics")
+              .filter((item) => item.title !== "Analytics" && item.title !== "Site Structure")
               .map((item) => {
                 const isActive = pendingPath 
                   ? (item.href === "/admin/analytics" 

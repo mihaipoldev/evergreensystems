@@ -101,3 +101,26 @@ export function useDeleteCTAButton() {
     },
   });
 }
+
+export function useDuplicateCTAButton() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, sectionId }: { id: string; sectionId?: string }) => {
+      const url = sectionId
+        ? `/api/admin/cta-buttons/${id}/duplicate?section_id=${sectionId}`
+        : `/api/admin/cta-buttons/${id}/duplicate`;
+      const response = await fetch(url, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate CTA button");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ctaButtons.all });
+    },
+  });
+}

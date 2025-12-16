@@ -14,6 +14,7 @@ import {
   faEllipsisVertical,
   faUser,
   faSignOutAlt,
+  faSitemap,
 } from "@fortawesome/free-solid-svg-icons";
 import { ChevronDown } from "lucide-react";
 import {
@@ -51,6 +52,11 @@ const topLevelItems = [
     title: "Analytics",
     href: "/admin/analytics",
     icon: faChartLine,
+  },
+  {
+    title: "Site Structure",
+    href: "/admin/site-structure",
+    icon: faSitemap,
   },
   {
     title: "Media Library",

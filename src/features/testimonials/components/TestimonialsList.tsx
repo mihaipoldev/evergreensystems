@@ -12,6 +12,7 @@ import { faPlus, faStar, faStarHalfStroke, faQuoteLeft } from "@fortawesome/free
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
+import { useDuplicateTestimonial } from "@/lib/react-query/hooks/useTestimonials";
 import type { Testimonial } from "../types";
 
 type TestimonialsListProps = {
@@ -25,6 +26,33 @@ export function TestimonialsList({ initialTestimonials, hideHeader = false, sect
   const [testimonials, setTestimonials] = useState<Testimonial[]>(initialTestimonials);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const duplicateTestimonial = useDuplicateTestimonial();
+
+  const handleDuplicate = useCallback(async (id: string) => {
+    try {
+      await duplicateTestimonial.mutateAsync({ id, sectionId });
+      toast.success("Testimonial duplicated successfully");
+      // Refresh the list
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/testimonials`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setTestimonials(updated);
+      }
+    } catch (error: any) {
+      console.error("Error duplicating testimonial:", error);
+      toast.error(error.message || "Failed to duplicate testimonial");
+      throw error;
+    }
+  }, [sectionId, duplicateTestimonial]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -188,10 +216,11 @@ export function TestimonialsList({ initialTestimonials, hideHeader = false, sect
       itemId={item.id}
       editHref={editHref}
       onDelete={handleDelete}
+      onDuplicate={handleDuplicate}
       deleteLabel={`testimonial from "${item.author_name}"`}
     />
   );
-  }, [pageId, sectionId, handleDelete]);
+  }, [pageId, sectionId, handleDelete, handleDuplicate]);
 
   return (
     <div className="w-full">

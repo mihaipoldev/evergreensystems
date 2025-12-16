@@ -12,7 +12,7 @@ import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFrom
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useSections } from "@/lib/react-query/hooks";
+import { useSections, useDuplicateSection, useDeleteSection } from "@/lib/react-query/hooks";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Section } from "@/features/sections/types";
@@ -35,6 +35,8 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
   const [allSections, setAllSections] = useState<Section[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
+  const duplicateSection = useDuplicateSection();
+  const deleteSection = useDeleteSection();
 
   // Fetch all sections for the available sections list
   const { data: sectionsData = [] } = useSections(
@@ -45,6 +47,33 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
   useEffect(() => {
     setAllSections(sectionsData);
   }, [sectionsData]);
+
+  const loadPageSections = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/pages/${pageId}/sections`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const sections = await response.json();
+        const pageSectionsData: PageSection[] = sections.map((section: any) => ({
+          ...section,
+          page_section_id: section.page_section_id || "",
+          position: section.position ?? 0,
+          status: section.status || "draft",
+        }));
+        setPageSections(pageSectionsData);
+      }
+    } catch (error) {
+      console.error("Error loading page sections:", error);
+    }
+  }, [pageId]);
 
   const handleAddSection = async (sectionId: string) => {
     try {
@@ -128,6 +157,80 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
       throw error;
     }
   };
+
+  const handleDuplicate = useCallback(async (sectionId: string) => {
+    try {
+      // Check if this section is connected to the page
+      const isConnected = pageSections.some((s) => s.id === sectionId);
+      
+      // Duplicate the section
+      const duplicated = await duplicateSection.mutateAsync(sectionId);
+      
+      // If the original section was connected, also add the duplicate to the page
+      if (isConnected) {
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        // Get the max position
+        const maxPosition = pageSections.length > 0 
+          ? Math.max(...pageSections.map((s) => s.position)) 
+          : -1;
+
+        const response = await fetch(`/api/admin/pages/${pageId}/sections/connect`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({
+            section_id: duplicated.id,
+            position: maxPosition + 1,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to add duplicated section to page");
+        }
+
+        const newPageSection = await response.json();
+        const duplicatedSectionData = {
+          ...duplicated,
+          page_section_id: newPageSection.id,
+          position: newPageSection.position,
+          status: newPageSection.status || "draft",
+        };
+        
+        // Add to local state
+        setPageSections((prev) => [...prev, duplicatedSectionData]);
+      }
+      
+      toast.success("Section duplicated successfully");
+      // Reload page sections to ensure consistency
+      await loadPageSections();
+      // The useSections hook will automatically refetch due to query invalidation
+    } catch (error: any) {
+      console.error("Error duplicating section:", error);
+      toast.error(error.message || "Failed to duplicate section");
+      throw error;
+    }
+  }, [duplicateSection, loadPageSections, pageId, pageSections]);
+
+  const handleDeleteSection = useCallback(async (sectionId: string) => {
+    try {
+      await deleteSection.mutateAsync(sectionId);
+      toast.success("Section deleted successfully");
+      // Remove from local state immediately
+      setPageSections((prev) => prev.filter((s) => s.id !== sectionId));
+      setAllSections((prev) => prev.filter((s) => s.id !== sectionId));
+      // The useSections hook will automatically refetch due to query invalidation
+    } catch (error: any) {
+      console.error("Error deleting section:", error);
+      toast.error(error.message || "Failed to delete section");
+      throw error;
+    }
+  }, [deleteSection]);
 
   const handleUpdateStatus = async (id: string, newStatus: "published" | "draft" | "deactivated") => {
     const section = pageSections.find((s) => s.id === id);
@@ -261,9 +364,12 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
       itemId={section.id}
       editHref={`/admin/pages/${pageId}/sections/${section.id}?tab=edit`}
       onDelete={async () => {
-        await handleRemoveSection(section.id);
+        await handleDeleteSection(section.id);
       }}
-      deleteLabel="this section from the page"
+      onDuplicate={async () => {
+        await handleDuplicate(section.id);
+      }}
+      deleteLabel="this section"
       customActions={[
         {
           label: "Deselect",
@@ -274,7 +380,7 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
         },
       ]}
     />
-  ), [pageId]);
+  ), [pageId, handleDeleteSection, handleDuplicate, handleRemoveSection]);
 
   // Filter sections based on search
   const filteredPageSections = pageSections.filter((section) => {
@@ -393,6 +499,13 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
                         <ActionMenu
                           itemId={section.id}
                           editHref={`/admin/sections/${section.id}/edit`}
+                          onDelete={async () => {
+                            await handleDeleteSection(section.id);
+                          }}
+                          onDuplicate={async () => {
+                            await handleDuplicate(section.id);
+                          }}
+                          deleteLabel="this section"
                           customActions={[
                             {
                               label: "Select",

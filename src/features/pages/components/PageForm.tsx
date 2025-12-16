@@ -12,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormField,
@@ -24,9 +31,9 @@ import { faFile } from "@fortawesome/free-solid-svg-icons";
 import type { Page } from "../types";
 
 const formSchema = z.object({
-  slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
+  type: z.string().min(1, "Type is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,9 +51,9 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      slug: initialData?.slug || "",
       title: initialData?.title || "",
       description: initialData?.description || "",
+      type: initialData?.type || "",
     },
   });
 
@@ -68,7 +75,8 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
 
 
       toast.success(`Page ${isEdit ? "updated" : "created"} successfully`);
-      router.push("/admin/pages");
+      // Redirect to site structure after update, pages list after create
+      router.push(isEdit ? "/admin/site-structure" : "/admin/pages");
       router.refresh();
     } catch (error: any) {
       console.error("Error saving page:", error);
@@ -113,14 +121,29 @@ export function PageForm({ initialData, isEdit = false }: PageFormProps) {
 
               <FormField
                 control={form.control}
-                name="slug"
+                name="type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Slug <span className="text-destructive">*</span>
+                      Type <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <InputShadow placeholder="my-page-slug" {...field} />
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={field.onChange}
+                        disabled={isEdit}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select page type">
+                            {field.value || "Select page type"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="home">Home</SelectItem>
+                          <SelectItem value="contact">Contact</SelectItem>
+                          <SelectItem value="about">About</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

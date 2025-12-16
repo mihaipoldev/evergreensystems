@@ -108,6 +108,9 @@ export interface Database {
           slug: string;
           title: string;
           description: string | null;
+          type: string | null;
+          variant: string | null;
+          status: string;
           created_at: string;
           updated_at: string;
         };
@@ -116,6 +119,9 @@ export interface Database {
           slug: string;
           title: string;
           description?: string | null;
+          type?: string | null;
+          variant?: string | null;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -124,6 +130,38 @@ export interface Database {
           slug?: string;
           title?: string;
           description?: string | null;
+          type?: string | null;
+          variant?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      site_structure: {
+        Row: {
+          id: string;
+          page_type: string;
+          slug: string;
+          production_page_id: string | null;
+          development_page_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          page_type: string;
+          slug: string;
+          production_page_id?: string | null;
+          development_page_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          page_type?: string;
+          slug?: string;
+          production_page_id?: string | null;
+          development_page_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

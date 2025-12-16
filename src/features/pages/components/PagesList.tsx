@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faFile } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
-import { usePages, useDeletePage } from "@/lib/react-query/hooks";
+import { usePages, useDeletePage, useDuplicatePage } from "@/lib/react-query/hooks";
 import type { Page } from "../types";
 
 type PagesListProps = {
@@ -27,6 +27,19 @@ export function PagesList({ initialPages }: PagesListProps) {
     { initialData: initialPages }
   );
   const deletePage = useDeletePage();
+  const duplicatePage = useDuplicatePage();
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      await duplicatePage.mutateAsync(id);
+      toast.success("Page duplicated successfully");
+      // Stay on the current page - no redirect
+    } catch (error: any) {
+      console.error("Error duplicating page:", error);
+      toast.error(error.message || "Failed to duplicate page");
+      throw error;
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -112,8 +125,8 @@ export function PagesList({ initialPages }: PagesListProps) {
                 <ActionMenu
                   itemId={page.id}
                   editHref={`/admin/pages/${page.id}/edit`}
-                  openPageHref={`/${page.slug}`}
                   onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
                   deleteLabel={`page "${page.title}"`}
                 />
               )}

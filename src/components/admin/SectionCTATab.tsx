@@ -20,7 +20,16 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useDuplicateCTAButton, useDeleteCTAButton } from "@/lib/react-query/hooks/useCTAButtons";
 import type { CTAButton, CTAButtonWithSection } from "@/features/cta/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionCTATabProps = {
   sectionId: string;
@@ -31,6 +40,8 @@ type SectionCTATabProps = {
 export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionCTATabProps) {
   const [sectionCTAButtons, setSectionCTAButtons] = useState<CTAButtonWithSection[]>(initialCTAButtons || []);
   const [allCTAButtons, setAllCTAButtons] = useState<CTAButton[]>([]);
+  const duplicateCTAButton = useDuplicateCTAButton();
+  const deleteCTAButton = useDeleteCTAButton();
 
   const loadSectionCTAs = useCallback(async () => {
     try {
@@ -172,6 +183,36 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
     }
   }, [sectionId, sectionCTAButtons]);
 
+  const handleDuplicate = useCallback(async (ctaButtonId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateCTAButton.mutateAsync({ 
+        id: ctaButtonId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("CTA button duplicated successfully");
+      await loadSectionCTAs();
+      await loadAllCTAButtons();
+    } catch (error: any) {
+      console.error("Error duplicating CTA button:", error);
+      toast.error(error.message || "Failed to duplicate CTA button");
+      throw error;
+    }
+  }, [sectionId, duplicateCTAButton, loadSectionCTAs, loadAllCTAButtons]);
+
+  const handleDeleteCTA = useCallback(async (ctaButtonId: string) => {
+    try {
+      await deleteCTAButton.mutateAsync(ctaButtonId);
+      toast.success("CTA button deleted successfully");
+      await loadSectionCTAs();
+      await loadAllCTAButtons();
+    } catch (error: any) {
+      console.error("Error deleting CTA button:", error);
+      toast.error(error.message || "Failed to delete CTA button");
+      throw error;
+    }
+  }, [deleteCTAButton, loadSectionCTAs, loadAllCTAButtons]);
+
   const handleReorder = useCallback(async (orderedItems: CTAButtonWithSection[]) => {
     const newOrder = orderedItems.map((item, index) => ({ ...item, section_cta_button: { ...item.section_cta_button, position: index } }));
 
@@ -261,9 +302,9 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
             <FontAwesomeIcon icon={faLink} className="h-3 w-3" />
             <span className="truncate">{item.url}</span>
           </div>
-          {item.style && (
+          {item.created_at && (
             <div className="text-xs text-muted-foreground">
-              Style: {item.style}
+              {formatDate(item.created_at)}
             </div>
           )}
         </div>
@@ -276,9 +317,12 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
       itemId={item.id}
       editHref={`/admin/cta/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta`}
       onDelete={async () => {
-        await handleRemoveCTA(item.id);
+        await handleDeleteCTA(item.id);
       }}
-      deleteLabel="this CTA button from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(item.id, true); // true = is connected
+      }}
+      deleteLabel="this CTA button"
       customActions={[
         {
           label: "Deselect",
@@ -289,10 +333,12 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
         },
       ]}
     />
-  ), [pageId, sectionId, handleRemoveCTA]);
+  ), [pageId, sectionId, handleRemoveCTA, handleDuplicate, handleDeleteCTA]);
 
   const selectedCTAIds = sectionCTAButtons.map((c) => c.id);
-  const unselectedCTAs = allCTAButtons.filter((c) => !selectedCTAIds.includes(c.id));
+  const unselectedCTAs = allCTAButtons
+    .filter((c) => !selectedCTAIds.includes(c.id))
+    .sort((a, b) => (a.label || "").localeCompare(b.label || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -363,6 +409,13 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
                       <ActionMenu
                         itemId={item.id}
                         editHref={`/admin/cta/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta`}
+                        onDelete={async () => {
+                          await handleDeleteCTA(item.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(item.id, false); // false = not connected
+                        }}
+                        deleteLabel="this CTA button"
                         customActions={[
                           {
                             label: "Select",
@@ -378,9 +431,9 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
                       <FontAwesomeIcon icon={faLink} className="h-3 w-3" />
                       <span className="truncate">{item.url}</span>
                     </div>
-                    {item.style && (
+                    {item.created_at && (
                       <div className="text-xs text-muted-foreground">
-                        Style: {item.style}
+                        {formatDate(item.created_at)}
                       </div>
                     )}
                   </div>

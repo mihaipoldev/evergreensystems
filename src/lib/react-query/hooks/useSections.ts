@@ -96,3 +96,23 @@ export function useDeleteSection() {
     },
   });
 }
+
+export function useDuplicateSection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/sections/${id}/duplicate`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate section");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sections.all });
+    },
+  });
+}

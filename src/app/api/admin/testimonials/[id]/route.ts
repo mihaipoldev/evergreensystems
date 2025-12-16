@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
@@ -247,8 +247,13 @@ export async function DELETE(
       }
     }
 
+    // Use service role client to bypass RLS for admin operations
+    const adminSupabase = createServiceRoleClient();
+    
     // Delete the testimonial from Supabase
-    const { error } = await supabase
+    // Note: This will automatically cascade delete all entries in section_testimonials
+    // junction table due to ON DELETE CASCADE constraint in the database schema
+    const { error } = await adminSupabase
       .from("testimonials")
       .delete()
       .eq("id", id);

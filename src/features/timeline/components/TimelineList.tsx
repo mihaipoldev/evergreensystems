@@ -12,6 +12,7 @@ import { faPlus, faListOl } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useDuplicateTimelineItem } from "@/lib/react-query/hooks/useTimeline";
 import type { Timeline } from "../types";
 
 type TimelineListProps = {
@@ -25,6 +26,33 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
   const [timelineItems, setTimelineItems] = useState<Timeline[]>(initialTimelineItems);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const duplicateTimelineItem = useDuplicateTimelineItem();
+
+  const handleDuplicate = useCallback(async (id: string) => {
+    try {
+      await duplicateTimelineItem.mutateAsync({ id, sectionId });
+      toast.success("Timeline item duplicated successfully");
+      // Refresh the list
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/timeline`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setTimelineItems(updated);
+      }
+    } catch (error: any) {
+      console.error("Error duplicating timeline item:", error);
+      toast.error(error.message || "Failed to duplicate timeline item");
+      throw error;
+    }
+  }, [sectionId, duplicateTimelineItem]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -161,10 +189,11 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
         itemId={item.id}
         editHref={editHref}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         deleteLabel={`timeline item "${item.title}"`}
       />
     );
-  }, [pageId, sectionId, handleDelete]);
+  }, [pageId, sectionId, handleDelete, handleDuplicate]);
 
   return (
     <div className="w-full">

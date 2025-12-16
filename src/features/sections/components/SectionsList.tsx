@@ -10,8 +10,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useSections, useDeleteSection } from "@/lib/react-query/hooks";
+import { useSections, useDeleteSection, useDuplicateSection } from "@/lib/react-query/hooks";
 import type { SectionWithPages } from "../types";
 
 type SectionsListProps = {
@@ -21,6 +22,7 @@ type SectionsListProps = {
 export function SectionsList({ initialSections }: SectionsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
+  const router = useRouter();
 
   // Use React Query hook with server-side search
   // Note: API returns Section[] but we need SectionWithPages[], so we merge pages data from initialSections
@@ -29,6 +31,20 @@ export function SectionsList({ initialSections }: SectionsListProps) {
     { initialData: initialSections }
   );
   const deleteSection = useDeleteSection();
+  const duplicateSection = useDuplicateSection();
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const duplicated = await duplicateSection.mutateAsync(id);
+      toast.success("Section duplicated successfully");
+      // Redirect to edit page of duplicated section
+      router.push(`/admin/sections/${duplicated.id}/edit`);
+    } catch (error: any) {
+      console.error("Error duplicating section:", error);
+      toast.error(error.message || "Failed to duplicate section");
+      throw error;
+    }
+  };
 
   // Merge pages data from initialSections when available (for search results that don't include pages)
   const sections: SectionWithPages[] = sectionsData.map((section) => {
@@ -126,6 +142,7 @@ export function SectionsList({ initialSections }: SectionsListProps) {
                   itemId={section.id}
                   editHref={`/admin/sections/${section.id}/edit`}
                   onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
                   deleteLabel={`section "${section.admin_title || section.title || section.type}"`}
                 />
               )}

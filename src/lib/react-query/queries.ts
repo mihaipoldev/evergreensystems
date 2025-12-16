@@ -75,4 +75,31 @@ export const queryKeys = {
     details: () => [...queryKeys.results.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.results.details(), id] as const,
   },
+
+  // Softwares
+  softwares: {
+    all: ["softwares"] as const,
+    lists: () => [...queryKeys.softwares.all, "list"] as const,
+    list: (filters?: { search?: string }) => [...queryKeys.softwares.lists(), filters] as const,
+    details: () => [...queryKeys.softwares.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.softwares.details(), id] as const,
+  },
+
+  // Features (Offer Features)
+  features: {
+    all: ["features"] as const,
+    lists: () => [...queryKeys.features.all, "list"] as const,
+    list: (filters?: { search?: string }) => [...queryKeys.features.lists(), filters] as const,
+    details: () => [...queryKeys.features.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.features.details(), id] as const,
+  },
+
+  // Social Platforms
+  socialPlatforms: {
+    all: ["socialPlatforms"] as const,
+    lists: () => [...queryKeys.socialPlatforms.all, "list"] as const,
+    list: (filters?: { search?: string }) => [...queryKeys.socialPlatforms.lists(), filters] as const,
+    details: () => [...queryKeys.socialPlatforms.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.socialPlatforms.details(), id] as const,
+  },
 } as const;

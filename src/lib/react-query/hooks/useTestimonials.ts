@@ -99,3 +99,26 @@ export function useDeleteTestimonial() {
     },
   });
 }
+
+export function useDuplicateTestimonial() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, sectionId }: { id: string; sectionId?: string }) => {
+      const url = sectionId
+        ? `/api/admin/testimonials/${id}/duplicate?section_id=${sectionId}`
+        : `/api/admin/testimonials/${id}/duplicate`;
+      const response = await fetch(url, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate testimonial");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.testimonials.all });
+    },
+  });
+}

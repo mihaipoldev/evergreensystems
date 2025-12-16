@@ -36,6 +36,7 @@ export function shouldIncludeItemByStatus(
  * Get a page by its slug
  * Returns null if page is not found (instead of throwing)
  * Cached for 5 minutes to improve performance
+ * NOTE: This is kept for backward compatibility. Use getActivePageBySlug for variant support.
  */
 export async function getPageBySlug(slug: string): Promise<Database["public"]["Tables"]["pages"]["Row"] | null> {
   return unstable_cache(
@@ -59,6 +60,153 @@ export async function getPageBySlug(slug: string): Promise<Database["public"]["T
       tags: ['pages', `page-${slug}`],
     }
   )();
+}
+
+/**
+ * Get the active page variant by slug from site_structure
+ * Returns null if not found
+ * Cached for 1 minute to improve performance
+ * Automatically selects production or development page based on NODE_ENV
+ */
+export async function getActivePageBySlug(slug: string): Promise<Database["public"]["Tables"]["pages"]["Row"] | null> {
+  return unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      // First, get the site_structure entry for this slug
+      const { data: siteStructure, error: siteError } = await supabase
+        .from("site_structure")
+        .select("production_page_id, development_page_id")
+        .eq("slug", slug)
+        .maybeSingle<{ production_page_id: string | null; development_page_id: string | null }>();
+
+      if (siteError) {
+        throw siteError;
+      }
+
+      if (!siteStructure) {
+        return null;
+      }
+
+      // Select page ID based on environment
+      // Fallback to production if development_page_id is null
+      const pageId = isDevelopment 
+        ? (siteStructure.development_page_id || siteStructure.production_page_id)
+        : siteStructure.production_page_id;
+
+      if (!pageId) {
+        return null;
+      }
+
+      // Then fetch the page by ID
+      const { data: page, error: pageError } = await supabase
+        .from("pages")
+        .select("*")
+        .eq("id", pageId)
+        .maybeSingle();
+
+      if (pageError) {
+        throw pageError;
+      }
+
+      return page;
+    },
+    [`active-page-by-slug-${slug}-${process.env.NODE_ENV}`],
+    {
+      revalidate: 60, // 1 minute
+      tags: ['site-structure', `page-slug-${slug}`],
+    }
+  )();
+}
+
+/**
+ * Get all site structure entries
+ * Returns empty array if none found
+ */
+export async function getSiteStructure(): Promise<Database["public"]["Tables"]["site_structure"]["Row"][]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("site_structure")
+    .select("*")
+    .order("page_type", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Get site structure entry by page_type
+ * Returns null if not found
+ */
+export async function getSiteStructureByPageType(pageType: string): Promise<Database["public"]["Tables"]["site_structure"]["Row"] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("site_structure")
+    .select("*")
+    .eq("page_type", pageType)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Update site structure to set production and development page variants for a page type
+ * Creates entry if it doesn't exist, updates if it does
+ */
+export async function updateSiteStructure(
+  pageType: string, 
+  productionPageId: string | null, 
+  developmentPageId: string | null,
+  slug: string
+): Promise<void> {
+  const supabase = await createClient();
+  
+  // Check if entry exists
+  const existing = await getSiteStructureByPageType(pageType);
+  
+  if (existing) {
+    // Update existing entry
+    const { error } = await (supabase
+      .from("site_structure") as any)
+      .update({
+        production_page_id: productionPageId,
+        development_page_id: developmentPageId,
+        slug: slug,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("page_type", pageType);
+
+    if (error) {
+      throw error;
+    }
+  } else {
+    // Create new entry
+    const { error } = await (supabase
+      .from("site_structure") as any)
+      .insert({
+        page_type: pageType,
+        slug: slug,
+        production_page_id: productionPageId,
+        development_page_id: developmentPageId,
+      });
+
+    if (error) {
+      throw error;
+    }
+  }
+  
+  // Invalidate cache
+  const { revalidateTag } = await import("next/cache");
+  revalidateTag("site-structure", "max");
+  revalidateTag(`page-slug-${slug}`, "max");
 }
 
 /**

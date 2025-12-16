@@ -12,11 +12,11 @@ type Page = Database["public"]["Tables"]["pages"]["Row"];
 export async function getAllSections(): Promise<SectionWithPages[]> {
   const supabase = createServiceRoleClient();
   
-  // Get the home page
+  // Get the home page by type
   const { data: homePage, error: homePageError } = await ((supabase
     .from("pages") as any)
     .select("id")
-    .eq("slug", "home")
+    .eq("type", "home")
     .maybeSingle() as Promise<{ data: { id: string } | null; error: any }>);
 
   if (homePageError) {
@@ -51,7 +51,6 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
       page_id,
       pages (
         id,
-        slug,
         title
       )
     `)
@@ -61,7 +60,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
       position: number;
       status: "published" | "draft" | "deactivated";
       page_id: string;
-      pages: { id: string; slug: string; title: string } | null;
+      pages: { id: string; title: string } | null;
     }> | null; error: any }>);
   const { data: pageSections, error: pageSectionsError } = queryResult;
 
@@ -76,7 +75,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
     position: number;
     status: "published" | "draft" | "deactivated";
     page_id: string;
-    pages: { id: string; slug: string; title: string } | null;
+    pages: { id: string; title: string } | null;
   };
   const typedPageSections: PageSection[] = (pageSections || []) as PageSection[];
   const sectionsWithPages: SectionWithPages[] = sections.map(section => {
@@ -84,7 +83,6 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
       .filter(ps => ps.section_id === section.id)
       .map(ps => ({
         id: (ps.pages as any)?.id || "",
-        slug: (ps.pages as any)?.slug || "",
         title: (ps.pages as any)?.title || "",
         page_section_id: ps.id,
         position: ps.position,

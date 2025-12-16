@@ -110,6 +110,10 @@ export async function DELETE(
     const adminSupabase = createServiceRoleClient();
 
     const { id } = await params;
+    
+    // Delete the timeline item
+    // Note: This will automatically cascade delete all entries in section_timeline
+    // junction table due to ON DELETE CASCADE constraint in the database schema
     const { error } = await adminSupabase
       .from("timeline")
       .delete()

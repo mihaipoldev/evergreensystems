@@ -11,6 +11,31 @@ const SESSION_DURATION = 30 * 60; // 30 minutes in seconds
 export type EventType = "page_view" | "link_click" | "section_view" | "session_start";
 export type EntityType = "cta_button" | "site_section" | "page" | "testimonial" | "faq_item" | "media";
 
+/**
+ * Check if we're in development/localhost mode
+ * Prevents analytics events from being tracked during development
+ */
+function isDevelopment(): boolean {
+  // Check NODE_ENV first (most reliable)
+  if (process.env.NODE_ENV === 'development') {
+    return true;
+  }
+
+  // Also check hostname as a fallback (in case NODE_ENV isn't set correctly)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.0.')
+    );
+  }
+
+  return false;
+}
+
 export interface TrackEventParams {
   event_type: EventType;
   entity_type: EntityType;
@@ -70,6 +95,12 @@ export function getOrCreateSessionId(): string {
  */
 export async function trackEvent(params: TrackEventParams): Promise<void> {
   if (typeof window === "undefined") {
+    return;
+  }
+
+  // Skip tracking in development/localhost mode
+  if (isDevelopment()) {
+    console.log("Analytics tracking skipped (development mode):", params);
     return;
   }
 
@@ -142,6 +173,12 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
  * Should be called once per session when the page loads
  */
 export function trackSessionStart(): void {
+  // Skip tracking in development/localhost mode
+  if (isDevelopment()) {
+    console.log("Analytics session start skipped (development mode)");
+    return;
+  }
+
   const sessionId = getOrCreateSessionId();
   
   // Check if we've already tracked session start for this session

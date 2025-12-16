@@ -20,7 +20,6 @@ export type Section = {
 export type SectionWithPages = Section & {
   pages?: Array<{
     id: string;
-    slug: string;
     title: string;
     page_section_id: string;
     position: number;

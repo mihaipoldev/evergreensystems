@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import { RichText } from "@/components/ui/RichText";
 import { formatRichText } from "@/lib/formatRichText";
+import { useDuplicateFeature } from "@/lib/react-query/hooks/useFeatures";
 import type { OfferFeature } from "../types";
 
 type FeaturesListProps = {
@@ -27,6 +28,33 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
   const [features, setFeatures] = useState<OfferFeature[]>(initialFeatures);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const duplicateFeature = useDuplicateFeature();
+
+  const handleDuplicate = useCallback(async (id: string) => {
+    try {
+      await duplicateFeature.mutateAsync({ id, sectionId });
+      toast.success("Feature duplicated successfully");
+      // Refresh the list
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/offer-features`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setFeatures(updated);
+      }
+    } catch (error: any) {
+      console.error("Error duplicating feature:", error);
+      toast.error(error.message || "Failed to duplicate feature");
+      throw error;
+    }
+  }, [sectionId, duplicateFeature]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -163,10 +191,11 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
         itemId={item.id}
         editHref={editHref}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         deleteLabel={`feature "${item.title}"`}
       />
     );
-  }, [pageId, sectionId, handleDelete]);
+  }, [pageId, sectionId, handleDelete, handleDuplicate]);
 
   return (
     <div className="w-full">

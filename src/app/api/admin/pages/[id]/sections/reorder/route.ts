@@ -46,16 +46,6 @@ export async function POST(
     // Invalidate cache
     revalidateTag("sections", "max");
     revalidateTag(`page-sections-${pageId}`, "max");
-    
-    // Also invalidate page slug cache
-    const { data: pageData } = await supabase
-      .from("pages")
-      .select("slug")
-      .eq("id", pageId)
-      .single();
-    if ((pageData as any)?.slug) {
-      revalidateTag(`page-${(pageData as any).slug}`, "max");
-    }
 
     return NextResponse.json({ message: "Sections reordered successfully" }, { status: 200 });
   } catch (error) {

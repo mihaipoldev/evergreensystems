@@ -14,7 +14,16 @@ import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusS
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RichText } from "@/components/ui/RichText";
+import { useDuplicateFeature, useDeleteFeature } from "@/lib/react-query/hooks/useFeatures";
 import type { OfferFeature, OfferFeatureWithSection } from "@/features/features/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionFeaturesTabProps = {
   sectionId: string;
@@ -25,13 +34,10 @@ type SectionFeaturesTabProps = {
 export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: SectionFeaturesTabProps) {
   const [sectionFeatures, setSectionFeatures] = useState<OfferFeatureWithSection[]>(initialFeatures);
   const [allFeatures, setAllFeatures] = useState<OfferFeature[]>([]);
+  const duplicateFeature = useDuplicateFeature();
+  const deleteFeature = useDeleteFeature();
 
-  useEffect(() => {
-    loadSectionFeatures();
-    loadAllFeatures();
-  }, [sectionId]);
-
-  const loadSectionFeatures = async () => {
+  const loadSectionFeatures = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -50,9 +56,9 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
     } catch (error) {
       console.error("Error loading section features:", error);
     }
-  };
+  }, [sectionId]);
 
-  const loadAllFeatures = async () => {
+  const loadAllFeatures = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -71,7 +77,12 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
     } catch (error) {
       console.error("Error loading all features:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSectionFeatures();
+    loadAllFeatures();
+  }, [loadSectionFeatures, loadAllFeatures]);
 
   const handleAddFeature = async (featureId: string) => {
     try {
@@ -140,6 +151,36 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
       throw error;
     }
   };
+
+  const handleDuplicate = useCallback(async (featureId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateFeature.mutateAsync({ 
+        id: featureId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("Feature duplicated successfully");
+      await loadSectionFeatures();
+      await loadAllFeatures();
+    } catch (error: any) {
+      console.error("Error duplicating feature:", error);
+      toast.error(error.message || "Failed to duplicate feature");
+      throw error;
+    }
+  }, [sectionId, duplicateFeature, loadSectionFeatures, loadAllFeatures]);
+
+  const handleDeleteFeature = useCallback(async (featureId: string) => {
+    try {
+      await deleteFeature.mutateAsync(featureId);
+      toast.success("Feature deleted successfully");
+      await loadSectionFeatures();
+      await loadAllFeatures();
+    } catch (error: any) {
+      console.error("Error deleting feature:", error);
+      toast.error(error.message || "Failed to delete feature");
+      throw error;
+    }
+  }, [deleteFeature, loadSectionFeatures, loadAllFeatures]);
 
   const handleReorder = useCallback(async (orderedItems: OfferFeatureWithSection[]) => {
     const newOrder = orderedItems.map((item, index) => ({ ...item, section_feature: { ...item.section_feature, position: index } }));
@@ -228,22 +269,30 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
           />
         )}
         {feature.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
             {feature.description}
           </p>
         )}
+        {feature.created_at && (
+          <div className="text-xs text-muted-foreground">
+            {formatDate(feature.created_at)}
+          </div>
+        )}
       </div>
     </div>
-  ), []);
+  ), [sectionId, loadSectionFeatures]);
 
   const renderActions = useCallback((feature: OfferFeatureWithSection) => (
     <ActionMenu
       itemId={feature.id}
       editHref={`/admin/features/${feature.id}/edit`}
       onDelete={async () => {
-        await handleRemoveFeature(feature.id);
+        await handleDeleteFeature(feature.id);
       }}
-      deleteLabel="this feature from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(feature.id, true); // true = is connected
+      }}
+      deleteLabel="this feature"
       customActions={[
         {
           label: "Deselect",
@@ -254,10 +303,12 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
         },
       ]}
     />
-  ), []);
+  ), [handleRemoveFeature, handleDuplicate, handleDeleteFeature]);
 
   const selectedFeatureIds = sectionFeatures.map((f) => f.id);
-  const unselectedFeatures = allFeatures.filter((f) => !selectedFeatureIds.includes(f.id));
+  const unselectedFeatures = allFeatures
+    .filter((f) => !selectedFeatureIds.includes(f.id))
+    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -326,6 +377,13 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
                       <ActionMenu
                         itemId={feature.id}
                         editHref={`/admin/features/${feature.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=features`}
+                        onDelete={async () => {
+                          await handleDeleteFeature(feature.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(feature.id, false); // false = not connected
+                        }}
+                        deleteLabel="this feature"
                         customActions={[
                           {
                             label: "Select",

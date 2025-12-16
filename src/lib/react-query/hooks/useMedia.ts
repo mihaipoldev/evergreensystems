@@ -94,3 +94,26 @@ export function useDeleteMedia() {
     },
   });
 }
+
+export function useDuplicateMedia() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, sectionId }: { id: string; sectionId?: string }) => {
+      const url = sectionId
+        ? `/api/admin/media/${id}/duplicate?section_id=${sectionId}`
+        : `/api/admin/media/${id}/duplicate`;
+      const response = await fetch(url, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate media");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.media.all });
+    },
+  });
+}

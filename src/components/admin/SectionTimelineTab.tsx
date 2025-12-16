@@ -14,7 +14,16 @@ import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusS
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useDuplicateTimelineItem, useDeleteTimelineItem } from "@/lib/react-query/hooks/useTimeline";
 import type { Timeline, TimelineWithSection } from "@/features/timeline/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionTimelineTabProps = {
   sectionId: string;
@@ -25,13 +34,10 @@ type SectionTimelineTabProps = {
 export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: SectionTimelineTabProps) {
   const [sectionTimelineItems, setSectionTimelineItems] = useState<TimelineWithSection[]>(initialTimelineItems);
   const [allTimelineItems, setAllTimelineItems] = useState<Timeline[]>([]);
+  const duplicateTimelineItem = useDuplicateTimelineItem();
+  const deleteTimelineItem = useDeleteTimelineItem();
 
-  useEffect(() => {
-    loadSectionTimelineItems();
-    loadAllTimelineItems();
-  }, [sectionId]);
-
-  const loadSectionTimelineItems = async () => {
+  const loadSectionTimelineItems = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -50,9 +56,9 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
     } catch (error) {
       console.error("Error loading section timeline items:", error);
     }
-  };
+  }, [sectionId]);
 
-  const loadAllTimelineItems = async () => {
+  const loadAllTimelineItems = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -71,7 +77,12 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
     } catch (error) {
       console.error("Error loading all timeline items:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSectionTimelineItems();
+    loadAllTimelineItems();
+  }, [loadSectionTimelineItems, loadAllTimelineItems]);
 
   const handleAddTimeline = async (timelineId: string) => {
     try {
@@ -140,6 +151,36 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
       throw error;
     }
   };
+
+  const handleDuplicate = useCallback(async (timelineId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateTimelineItem.mutateAsync({ 
+        id: timelineId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("Timeline item duplicated successfully");
+      await loadSectionTimelineItems();
+      await loadAllTimelineItems();
+    } catch (error: any) {
+      console.error("Error duplicating timeline item:", error);
+      toast.error(error.message || "Failed to duplicate timeline item");
+      throw error;
+    }
+  }, [sectionId, duplicateTimelineItem, loadSectionTimelineItems, loadAllTimelineItems]);
+
+  const handleDeleteTimelineItem = useCallback(async (timelineId: string) => {
+    try {
+      await deleteTimelineItem.mutateAsync(timelineId);
+      toast.success("Timeline item deleted successfully");
+      await loadSectionTimelineItems();
+      await loadAllTimelineItems();
+    } catch (error: any) {
+      console.error("Error deleting timeline item:", error);
+      toast.error(error.message || "Failed to delete timeline item");
+      throw error;
+    }
+  }, [deleteTimelineItem, loadSectionTimelineItems, loadAllTimelineItems]);
 
   const handleReorder = useCallback(async (orderedItems: TimelineWithSection[]) => {
     const newOrder = orderedItems.map((item, index) => ({ ...item, section_timeline: { ...item.section_timeline, position: index } }));
@@ -237,16 +278,19 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
         )}
       </div>
     </div>
-  ), [sectionId, loadSectionTimelineItems]);
+  ), [sectionId]);
 
   const renderActions = useCallback((item: TimelineWithSection) => (
     <ActionMenu
       itemId={item.id}
       editHref={`/admin/timeline/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`}
       onDelete={async () => {
-        await handleRemoveTimeline(item.id);
+        await handleDeleteTimelineItem(item.id);
       }}
-      deleteLabel="this timeline item from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(item.id, true); // true = is connected
+      }}
+      deleteLabel="this timeline item"
       customActions={[
         {
           label: "Deselect",
@@ -257,10 +301,12 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
         },
       ]}
     />
-  ), []);
+  ), [pageId, sectionId, handleRemoveTimeline, handleDuplicate, handleDeleteTimelineItem]);
 
   const selectedTimelineIds = sectionTimelineItems.map((item) => item.id);
-  const unselectedTimelineItems = allTimelineItems.filter((item) => !selectedTimelineIds.includes(item.id));
+  const unselectedTimelineItems = allTimelineItems
+    .filter((item) => !selectedTimelineIds.includes(item.id))
+    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -337,6 +383,13 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
                       <ActionMenu
                         itemId={item.id}
                         editHref={`/admin/timeline/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`}
+                        onDelete={async () => {
+                          await handleDeleteTimelineItem(item.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(item.id, false); // false = not connected
+                        }}
+                        deleteLabel="this timeline item"
                         customActions={[
                           {
                             label: "Select",
@@ -349,9 +402,14 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
                       />
                     </div>
                     {item.subtitle && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1 mb-1">
                         {item.subtitle}
                       </p>
+                    )}
+                    {item.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(item.created_at)}
+                      </div>
                     )}
                   </div>
                 </div>

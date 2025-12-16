@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useDuplicateMedia } from "@/lib/react-query/hooks/useMedia";
 import type { Media, MediaWithSection } from "@/features/media/types";
 
 type SectionMediaTabProps = {
@@ -39,6 +40,7 @@ export function SectionMediaTab({ sectionId, initialMedia, sectionType }: Sectio
   const [editingMedia, setEditingMedia] = useState<Media | null>(null);
   const [previewMedia, setPreviewMedia] = useState<Media | null>(null);
   const [wistiaThumbnails, setWistiaThumbnails] = useState<Record<string, string>>({});
+  const duplicateMedia = useDuplicateMedia();
 
   useEffect(() => {
     loadAllMedia();
@@ -276,6 +278,23 @@ export function SectionMediaTab({ sectionId, initialMedia, sectionType }: Sectio
     await loadSectionMedia();
   };
 
+  const handleDuplicateMedia = async (mediaItem: Media, isConnected: boolean = false): Promise<void> => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateMedia.mutateAsync({ 
+        id: mediaItem.id, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("Media duplicated successfully");
+      await loadAllMedia();
+      await loadSectionMedia();
+    } catch (error: any) {
+      console.error("Error duplicating media:", error);
+      toast.error(error.message || "Failed to duplicate media");
+      throw error;
+    }
+  };
+
   const selectedMediaIds = new Set(sectionMedia.map((m) => m.id));
   const unselectedMedia = allMedia.filter((m) => !selectedMediaIds.has(m.id));
 
@@ -330,6 +349,9 @@ export function SectionMediaTab({ sectionId, initialMedia, sectionType }: Sectio
                 onEdit={handleEditMedia}
                 onDelete={async (mediaItem) => {
                   await handleDeleteMedia(mediaItem.id);
+                }}
+                onDuplicate={async (mediaItem) => {
+                  await handleDuplicateMedia(mediaItem, true); // true = is connected
                 }}
                 onDeselect={async (mediaItem) => {
                   await handleRemoveMedia(mediaItem.id);
@@ -391,6 +413,9 @@ export function SectionMediaTab({ sectionId, initialMedia, sectionType }: Sectio
                 onEdit={handleEditMedia}
                 onDelete={async (mediaItem) => {
                   await handleDeleteMedia(mediaItem.id);
+                }}
+                onDuplicate={async (mediaItem) => {
+                  await handleDuplicateMedia(mediaItem, false); // false = not connected
                 }}
                 onSelect={async (mediaItem) => {
                   await handleSelectMedia(mediaItem.id);

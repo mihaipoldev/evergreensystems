@@ -12,7 +12,16 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { RichText } from "@/components/ui/RichText";
+import { useDuplicateFAQItem, useDeleteFAQItem } from "@/lib/react-query/hooks/useFAQItems";
 import type { FAQItem, FAQItemWithSection } from "@/features/faq/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionFAQTabProps = {
   sectionId: string;
@@ -23,13 +32,10 @@ type SectionFAQTabProps = {
 export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQTabProps) {
   const [sectionFAQItems, setSectionFAQItems] = useState<FAQItemWithSection[]>(initialFAQItems);
   const [allFAQItems, setAllFAQItems] = useState<FAQItem[]>([]);
+  const duplicateFAQItem = useDuplicateFAQItem();
+  const deleteFAQItem = useDeleteFAQItem();
 
-  useEffect(() => {
-    loadSectionFAQItems();
-    loadAllFAQItems();
-  }, [sectionId]);
-
-  const loadSectionFAQItems = async () => {
+  const loadSectionFAQItems = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -43,14 +49,14 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
 
       if (response.ok) {
         const faqItems = await response.json();
-        setSectionFAQItems(faqItems);
+        setSectionFAQItems(faqItems || []);
       }
     } catch (error) {
       console.error("Error loading section FAQ items:", error);
     }
-  };
+  }, [sectionId]);
 
-  const loadAllFAQItems = async () => {
+  const loadAllFAQItems = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -69,7 +75,12 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
     } catch (error) {
       console.error("Error loading all FAQ items:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSectionFAQItems();
+    loadAllFAQItems();
+  }, [loadSectionFAQItems, loadAllFAQItems]);
 
   const handleAddFAQItem = async (faqItemId: string) => {
     try {
@@ -138,6 +149,36 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
       throw error;
     }
   };
+
+  const handleDuplicate = useCallback(async (faqItemId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateFAQItem.mutateAsync({ 
+        id: faqItemId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("FAQ item duplicated successfully");
+      await loadSectionFAQItems();
+      await loadAllFAQItems();
+    } catch (error: any) {
+      console.error("Error duplicating FAQ item:", error);
+      toast.error(error.message || "Failed to duplicate FAQ item");
+      throw error;
+    }
+  }, [sectionId, duplicateFAQItem, loadSectionFAQItems, loadAllFAQItems]);
+
+  const handleDeleteFAQItem = useCallback(async (faqItemId: string) => {
+    try {
+      await deleteFAQItem.mutateAsync(faqItemId);
+      toast.success("FAQ item deleted successfully");
+      await loadSectionFAQItems();
+      await loadAllFAQItems();
+    } catch (error: any) {
+      console.error("Error deleting FAQ item:", error);
+      toast.error(error.message || "Failed to delete FAQ item");
+      throw error;
+    }
+  }, [deleteFAQItem, loadSectionFAQItems, loadAllFAQItems]);
 
   const handleReorder = useCallback(async (orderedItems: FAQItemWithSection[]) => {
     const newOrder = orderedItems.map((item, index) => ({ ...item, section_faq_item: { ...item.section_faq_item, position: index } }));
@@ -221,16 +262,19 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
         />
       </div>
     </div>
-  ), []);
+  ), [sectionId, loadSectionFAQItems]);
 
   const renderActions = useCallback((item: FAQItemWithSection) => (
     <ActionMenu
       itemId={item.id}
       editHref={`/admin/faq/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq`}
       onDelete={async () => {
-        await handleRemoveFAQItem(item.id);
+        await handleDeleteFAQItem(item.id);
       }}
-      deleteLabel="this FAQ item from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(item.id, true); // true = is connected
+      }}
+      deleteLabel="this FAQ item"
       customActions={[
         {
           label: "Deselect",
@@ -241,10 +285,12 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
         },
       ]}
     />
-  ), []);
+  ), [pageId, sectionId, handleRemoveFAQItem, handleDuplicate, handleDeleteFAQItem]);
 
   const selectedFAQItemIds = sectionFAQItems.map((item) => item.id);
-  const unselectedFAQItems = allFAQItems.filter((item) => !selectedFAQItemIds.includes(item.id));
+  const unselectedFAQItems = allFAQItems
+    .filter((item) => !selectedFAQItemIds.includes(item.id))
+    .sort((a, b) => (a.question || "").localeCompare(b.question || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -309,6 +355,13 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
                       <ActionMenu
                         itemId={item.id}
                         editHref={`/admin/faq/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq`}
+                        onDelete={async () => {
+                          await handleDeleteFAQItem(item.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(item.id, false); // false = not connected
+                        }}
+                        deleteLabel="this FAQ item"
                         customActions={[
                           {
                             label: "Select",
@@ -323,8 +376,13 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
                     <RichText
                       text={item.answer}
                       as="p"
-                      className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+                      className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-1"
                     />
+                    {item.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(item.created_at)}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

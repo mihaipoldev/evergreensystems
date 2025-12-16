@@ -13,6 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useDuplicateFAQItem } from "@/lib/react-query/hooks/useFAQItems";
 import type { FAQItem } from "../types";
 
 type FAQListProps = {
@@ -27,6 +28,33 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
   const [searchQuery, setSearchQuery] = useState("");
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const pathname = usePathname();
+  const duplicateFAQItem = useDuplicateFAQItem();
+
+  const handleDuplicate = useCallback(async (id: string) => {
+    try {
+      await duplicateFAQItem.mutateAsync({ id, sectionId });
+      toast.success("FAQ item duplicated successfully");
+      // Refresh the list
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const response = await fetch(`/api/admin/faq-items`, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setFAQItems(updated);
+      }
+    } catch (error: any) {
+      console.error("Error duplicating FAQ item:", error);
+      toast.error(error.message || "Failed to duplicate FAQ item");
+      throw error;
+    }
+  }, [sectionId, duplicateFAQItem]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
@@ -145,10 +173,11 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
         itemId={item.id}
         editHref={editHref}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         deleteLabel={`FAQ item "${item.question}"`}
       />
     );
-  }, [pageId, sectionId, handleDelete]);
+  }, [pageId, sectionId, handleDelete, handleDuplicate]);
 
   return (
     <div className="w-full">

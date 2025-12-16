@@ -12,7 +12,16 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useDuplicateSoftware, useDeleteSoftware } from "@/lib/react-query/hooks/useSoftwares";
 import type { Software, SoftwareWithSection } from "@/features/softwares/types";
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 type SectionSoftwaresTabProps = {
   sectionId: string;
@@ -23,13 +32,10 @@ type SectionSoftwaresTabProps = {
 export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: SectionSoftwaresTabProps) {
   const [sectionSoftwares, setSectionSoftwares] = useState<SoftwareWithSection[]>(initialSoftwares);
   const [allSoftwares, setAllSoftwares] = useState<Software[]>([]);
+  const duplicateSoftware = useDuplicateSoftware();
+  const deleteSoftware = useDeleteSoftware();
 
-  useEffect(() => {
-    loadSectionSoftwares();
-    loadAllSoftwares();
-  }, [sectionId]);
-
-  const loadSectionSoftwares = async () => {
+  const loadSectionSoftwares = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -48,9 +54,9 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
     } catch (error) {
       console.error("Error loading section softwares:", error);
     }
-  };
+  }, [sectionId]);
 
-  const loadAllSoftwares = async () => {
+  const loadAllSoftwares = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -69,7 +75,13 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
     } catch (error) {
       console.error("Error loading all softwares:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSectionSoftwares();
+    loadAllSoftwares();
+  }, [loadSectionSoftwares, loadAllSoftwares]);
+
 
   const handleAddSoftware = async (softwareId: string) => {
     try {
@@ -138,6 +150,36 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
       throw error;
     }
   };
+
+  const handleDuplicate = useCallback(async (softwareId: string, isConnected: boolean = false) => {
+    try {
+      // Only pass sectionId if duplicating from connected section
+      await duplicateSoftware.mutateAsync({ 
+        id: softwareId, 
+        sectionId: isConnected ? sectionId : undefined 
+      });
+      toast.success("Software duplicated successfully");
+      await loadSectionSoftwares();
+      await loadAllSoftwares();
+    } catch (error: any) {
+      console.error("Error duplicating software:", error);
+      toast.error(error.message || "Failed to duplicate software");
+      throw error;
+    }
+  }, [sectionId, duplicateSoftware, loadSectionSoftwares, loadAllSoftwares]);
+
+  const handleDeleteSoftware = useCallback(async (softwareId: string) => {
+    try {
+      await deleteSoftware.mutateAsync(softwareId);
+      toast.success("Software deleted successfully");
+      await loadSectionSoftwares();
+      await loadAllSoftwares();
+    } catch (error: any) {
+      console.error("Error deleting software:", error);
+      toast.error(error.message || "Failed to delete software");
+      throw error;
+    }
+  }, [deleteSoftware, loadSectionSoftwares, loadAllSoftwares]);
 
   const handleUpdateStatus = useCallback(async (software: SoftwareWithSection, newStatus: "published" | "draft" | "deactivated") => {
     try {
@@ -250,12 +292,17 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
               onStatusChange={(newStatus) => handleUpdateStatus(software, newStatus)}
             />
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium">Slug:</span>
-            <span>{software.slug}</span>
-            <span>•</span>
-            <span className="truncate">{software.website_url}</span>
-          </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                      <span className="font-medium">Slug:</span>
+                      <span>{software.slug}</span>
+                      <span>•</span>
+                      <span className="truncate">{software.website_url}</span>
+                    </div>
+                    {software.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(software.created_at)}
+                      </div>
+                    )}
         </div>
       </div>
     );
@@ -266,9 +313,12 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
       itemId={software.id}
       editHref={`/admin/softwares/${software.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=softwares`}
       onDelete={async () => {
-        await handleRemoveSoftware(software.id);
+        await handleDeleteSoftware(software.id);
       }}
-      deleteLabel="this software from the section"
+      onDuplicate={async () => {
+        await handleDuplicate(software.id, true); // true = is connected
+      }}
+      deleteLabel="this software"
       customActions={[
         {
           label: "Deselect",
@@ -279,10 +329,12 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
         },
       ]}
     />
-  ), [pageId, sectionId]);
+  ), [pageId, sectionId, handleRemoveSoftware, handleDuplicate, handleDeleteSoftware]);
 
   const selectedSoftwareIds = sectionSoftwares.map((s) => s.id);
-  const unselectedSoftwares = allSoftwares.filter((s) => !selectedSoftwareIds.includes(s.id));
+  const unselectedSoftwares = allSoftwares
+    .filter((s) => !selectedSoftwareIds.includes(s.id))
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
   return (
     <div className="w-full space-y-4">
@@ -368,6 +420,13 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
                       <ActionMenu
                         itemId={software.id}
                         editHref={`/admin/softwares/${software.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=softwares`}
+                        onDelete={async () => {
+                          await handleDeleteSoftware(software.id);
+                        }}
+                        onDuplicate={async () => {
+                          await handleDuplicate(software.id, false); // false = not connected
+                        }}
+                        deleteLabel="this software"
                         customActions={[
                           {
                             label: "Select",
@@ -379,12 +438,17 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
                         ]}
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <span className="font-medium">Slug:</span>
                       <span>{software.slug}</span>
                       <span>•</span>
                       <span className="truncate">{software.website_url}</span>
                     </div>
+                    {software.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(software.created_at)}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

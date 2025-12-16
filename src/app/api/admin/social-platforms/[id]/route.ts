@@ -107,6 +107,10 @@ export async function DELETE(
     const adminSupabase = createServiceRoleClient();
 
     const { id } = await params;
+    
+    // Delete the social platform
+    // Note: This will automatically cascade delete all entries in section_socials
+    // junction table due to ON DELETE CASCADE constraint in the database schema
     const { error } = await adminSupabase
       .from("social_platforms")
       .delete()

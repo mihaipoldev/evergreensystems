@@ -90,3 +90,26 @@ export function useDeleteTimelineItem() {
     },
   });
 }
+
+export function useDuplicateTimelineItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, sectionId }: { id: string; sectionId?: string }) => {
+      const url = sectionId
+        ? `/api/admin/timeline/${id}/duplicate?section_id=${sectionId}`
+        : `/api/admin/timeline/${id}/duplicate`;
+      const response = await fetch(url, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate timeline item");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.timeline.all });
+    },
+  });
+}

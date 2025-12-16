@@ -16,3 +16,4 @@ export type TeamMember = {
 export type TeamMemberFormData = Omit<TeamMember, 'id' | 'created_at' | 'updated_at'>;
 
 
+

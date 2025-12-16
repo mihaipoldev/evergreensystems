@@ -28,7 +28,7 @@ export function useCreatePage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { slug: string; title: string; description?: string }) => {
+    mutationFn: async (data: { title: string; description?: string; type: string }) => {
       const response = await fetch("/api/admin/pages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,6 +81,26 @@ export function useDeletePage() {
         const error = await response.json();
         throw new Error(error.error || "Failed to delete page");
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pages.all });
+    },
+  });
+}
+
+export function useDuplicatePage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/pages/${id}/duplicate`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to duplicate page");
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.pages.all });

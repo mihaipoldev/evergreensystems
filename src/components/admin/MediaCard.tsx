@@ -24,6 +24,7 @@ type MediaCardProps = {
   onPreview?: (item: Media) => void;
   onEdit?: (item: Media) => void;
   onDelete?: (item: Media) => void;
+  onDuplicate?: (item: Media) => void;
   onSelect?: (item: Media) => void;
   onDeselect?: (item: Media) => void;
   onCopyUrl?: (url: string) => void;
@@ -41,6 +42,7 @@ export function MediaCard({
   onPreview,
   onEdit,
   onDelete,
+  onDuplicate,
   onSelect,
   onDeselect,
   onCopyUrl,
@@ -299,6 +301,7 @@ export function MediaCard({
                 itemId={item.id}
                 onEdit={onEdit ? () => onEdit(item) : undefined}
                 onDelete={onDelete ? async () => await onDelete(item) : undefined}
+                onDuplicate={onDuplicate ? async () => await onDuplicate(item) : undefined}
                 deleteLabel="this media"
                 customActions={[
                   ...(isSelected && onDeselect
