@@ -19,12 +19,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faShareAlt, faImage } from "@fortawesome/free-solid-svg-icons";
 import type { SocialPlatform } from "../types";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   icon: z.string().optional(),
-  base_url: z.string().min(1, "Base URL is required").url("Must be a valid URL"),
+  base_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -98,7 +101,7 @@ export function SocialPlatformForm({ initialData, isEdit = false, returnTo }: So
         body: JSON.stringify({
           name: values.name,
           icon: iconUrl || null,
-          base_url: values.base_url,
+          base_url: values.base_url?.trim() || null,
         }),
       });
 
@@ -122,66 +125,93 @@ export function SocialPlatformForm({ initialData, isEdit = false, returnTo }: So
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Name <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <InputShadow
-                    placeholder="e.g., Twitter, GitHub, LinkedIn"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+          {/* Basic Information Section */}
+          <div className="pb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faShareAlt} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Basic Information</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Platform details</div>
+            </div>
 
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Icon</FormLabel>
-                <FormControl>
-                  <ImageUploadField
-                    value={field.value || null}
-                    onChange={(url) => field.onChange(url || "")}
-                    onFileChange={setSelectedIconFile}
-                    folderPath={isEdit && initialData ? `social-platforms/${initialData.id}` : "social-platforms/temp"}
-                    error={form.formState.errors.icon?.message}
-                    placeholder="https://example.com/icon.svg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Name <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <InputShadow
+                        placeholder="e.g., Twitter, GitHub, LinkedIn"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="base_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Base URL <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <InputShadow
-                    placeholder="https://twitter.com/"
-                    type="url"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="base_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Base URL</FormLabel>
+                    <FormControl>
+                      <InputShadow
+                        placeholder="https://twitter.com/"
+                        type="url"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Media Section */}
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faImage} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Icon</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Platform icon</div>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon</FormLabel>
+                  <FormControl>
+                    <ImageUploadField
+                      value={field.value || null}
+                      onChange={(url) => field.onChange(url || "")}
+                      onFileChange={setSelectedIconFile}
+                      folderPath={isEdit && initialData ? `social-platforms/${initialData.id}` : "social-platforms/temp"}
+                      error={form.formState.errors.icon?.message}
+                      placeholder="https://example.com/icon.svg"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button

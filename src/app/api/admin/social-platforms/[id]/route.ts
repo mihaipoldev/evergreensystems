@@ -65,7 +65,7 @@ export async function PUT(
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (icon !== undefined) updateData.icon = icon || null;
-    if (base_url !== undefined) updateData.base_url = base_url;
+    if (base_url !== undefined) updateData.base_url = base_url?.trim() || null;
 
     const { data, error } = await (adminSupabase
       .from("social_platforms") as any)

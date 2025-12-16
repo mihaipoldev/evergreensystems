@@ -135,6 +135,7 @@ export interface Database {
           title: string | null;
           admin_title: string | null;
           subtitle: string | null;
+          eyebrow: string | null;
           content: Json | null;
           media_url: string | null;
           created_at: string;
@@ -146,6 +147,7 @@ export interface Database {
           title?: string | null;
           admin_title?: string | null;
           subtitle?: string | null;
+          eyebrow?: string | null;
           content?: Json | null;
           media_url?: string | null;
           created_at?: string;
@@ -157,6 +159,7 @@ export interface Database {
           title?: string | null;
           admin_title?: string | null;
           subtitle?: string | null;
+          eyebrow?: string | null;
           content?: Json | null;
           media_url?: string | null;
           created_at?: string;

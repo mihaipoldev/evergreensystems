@@ -25,6 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeading } from "@fortawesome/free-solid-svg-icons";
+import { IconPickerButton } from "@/components/admin/forms/IconPickerButton";
 import type { CTAButton } from "../types";
 type SectionOption = { id: string; label: string };
 
@@ -46,6 +49,7 @@ type CTAButtonFormProps = {
   onCancel?: () => void;
   returnTo?: string;
 };
+
 
 export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderContent, onSuccess, onCancel, returnTo }: CTAButtonFormProps) {
   const router = useRouter();
@@ -168,104 +172,93 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
     <Form {...form}>
       <div className="w-full space-y-6">
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-          <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="label"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Label <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <InputShadow placeholder="Enter button label" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+            {/* Website Content Section */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                    <FontAwesomeIcon icon={faHeading} className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="font-medium text-lg">Website Content</div>
+                </div>
+                <div className="text-sm text-muted-foreground">Public-facing content</div>
+              </div>
 
-              <FormField
-                control={form.control}
-                name="url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      URL <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <InputShadow placeholder="https://example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="label"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Label <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="Enter button label" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="style"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Style</FormLabel>
-                    <FormControl>
-                      <InputShadow placeholder="e.g., primary, secondary" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        URL <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="https://example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="icon"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Icon</FormLabel>
-                    <FormControl>
-                      <InputShadow placeholder="Font Awesome icon name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Link to Section (single select) */}
-              <FormField
-                control={form.control}
-                name="section_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Section</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={(val) => field.onChange(val === "none" ? null : val)}
-                        value={field.value ?? "none"}
-                        disabled={isLoadingSections}
-                      >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <FormField
+                  control={form.control}
+                  name="style"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Style</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger className="bg-input-background">
-                            <SelectValue placeholder="Select a section to link" />
+                            <SelectValue placeholder="Select style" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          {sectionOptions.map((section) => (
-                            <SelectItem key={section.id} value={section.id}>
-                              {section.label}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="primary">Primary</SelectItem>
+                          <SelectItem value="secondary">Secondary</SelectItem>
                         </SelectContent>
                       </Select>
-                    </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="icon"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Icon</FormLabel>
+                      <FormControl>
+                        <IconPickerButton
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </div>
           <div className="flex items-center justify-end gap-4 mt-6">

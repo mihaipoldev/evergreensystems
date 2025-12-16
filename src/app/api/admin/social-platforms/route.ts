@@ -65,9 +65,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, icon, base_url } = body;
 
-    if (!name || !base_url) {
+    if (!name) {
       return NextResponse.json(
-        { error: "name and base_url are required" },
+        { error: "name is required" },
         { status: 400 }
       );
     }
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       .insert({
         name,
         icon: icon || null,
-        base_url,
+        base_url: base_url?.trim() || null,
       })
       .select()
       .single();

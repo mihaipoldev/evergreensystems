@@ -13,6 +13,7 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RichText } from "@/components/ui/RichText";
 import type { OfferFeature, OfferFeatureWithSection } from "@/features/features/types";
 
 type SectionFeaturesTabProps = {
@@ -220,9 +221,11 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
           />
         </div>
         {feature.subtitle && (
-          <p className="text-xs text-muted-foreground mb-1">
-            {feature.subtitle}
-          </p>
+          <RichText
+            text={feature.subtitle}
+            as="p"
+            className="text-xs text-muted-foreground mb-1 leading-relaxed"
+          />
         )}
         {feature.description && (
           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -335,9 +338,11 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
                       />
                     </div>
                     {feature.subtitle && (
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {feature.subtitle}
-                      </p>
+                      <RichText
+                        text={feature.subtitle}
+                        as="p"
+                        className="text-xs text-muted-foreground mb-1 leading-relaxed"
+                      />
                     )}
                     {feature.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2">

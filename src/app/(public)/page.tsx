@@ -46,7 +46,6 @@ const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod 
 });
 import { getPageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
-import type { Database } from '@/lib/supabase/types';
 import type { CTAButtonWithSection } from '@/features/cta/types';
 import type { MediaWithSection } from '@/features/media/types';
 import type { Metadata } from 'next';
@@ -62,6 +61,7 @@ type Section = {
   title: string | null;
   admin_title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
   media_url: string | null;
   page_section_id: string;
@@ -144,6 +144,36 @@ type Section = {
     section_result: {
       id: string;
       position: number;
+      status?: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
+  softwares?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    website_url: string;
+    icon: string | null;
+    created_at: string;
+    updated_at: string;
+    section_software: {
+      id: string;
+      order: number;
+      icon_override: string | null;
+      status?: "published" | "draft" | "deactivated";
+      created_at: string;
+    };
+  }>;
+  socialPlatforms?: Array<{
+    id: string;
+    name: string;
+    icon: string | null;
+    base_url: string | null;
+    created_at: string;
+    updated_at: string;
+    section_social: {
+      id: string;
+      order: number;
       status?: "published" | "draft" | "deactivated";
       created_at: string;
     };
@@ -309,7 +339,7 @@ export default async function LandingPage() {
         return <Header key={section.id} section={section} ctaButtons={section.ctaButtons} />;
       
       case 'logos':
-        return <Logos key={section.id} section={section} />;
+        return <Logos key={section.id} section={section} softwares={section.softwares || []} />;
       
       case 'stories':
         return <Stories key={section.id} section={section} media={section.media as any || []} />;
@@ -345,7 +375,13 @@ export default async function LandingPage() {
         return <Timeline key={section.id} section={section} {...({ timelineItems: section.timelineItems || [] } as any)} />;
       
       case 'footer':
-        return <Footer key={section.id} section={section} />;
+        return (
+          <Footer 
+            key={section.id} 
+            section={section} 
+            socialPlatforms={(section.socialPlatforms || []) as any} 
+          />
+        );
       
       default:
         return null;
@@ -442,7 +478,7 @@ export default async function LandingPage() {
           {/* Subtle dot pattern with fade at bottom */}
           <div className="absolute inset-0">
             {/* Dot pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_20px,transparent_10px)] bg-[size:24px_24px] opacity-40" />
             
             {/* Fade mask at bottom to blend into background */}
             <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/80 to-transparent" />
@@ -458,7 +494,7 @@ export default async function LandingPage() {
           {/* Subtle dot pattern with fade at top */}
           <div className="absolute inset-0">
             {/* Dot pattern - original size */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_20px,transparent_10px)] bg-[size:24px_24px] opacity-20" />
             
             {/* Fade mask at top to blend into background */}
             <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-background via-background/80 to-transparent" />
@@ -497,7 +533,10 @@ export default async function LandingPage() {
           )}
         </main>
           <ErrorBoundary>
-            <Footer section={footerSection} />
+            <Footer 
+              section={footerSection} 
+              {...(footerSection ? { socialPlatforms: (footerSection.socialPlatforms || []) as any } : {})} 
+            />
           </ErrorBoundary>
         </div>
       </div>

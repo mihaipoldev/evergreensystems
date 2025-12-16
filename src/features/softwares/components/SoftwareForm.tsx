@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,12 +19,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLaptopCode, faImage } from "@fortawesome/free-solid-svg-icons";
 import type { Software } from "../types";
+
+// Helper function to generate slug from name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+};
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
-  website_url: z.string().min(1, "Website URL is required").url("Must be a valid URL"),
+  website_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   icon: z.string().optional(),
 });
 
@@ -40,6 +53,7 @@ export function SoftwareForm({ initialData, isEdit = false, returnTo }: Software
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIconFile, setSelectedIconFile] = useState<File | null>(null);
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -50,6 +64,27 @@ export function SoftwareForm({ initialData, isEdit = false, returnTo }: Software
       icon: initialData?.icon || "",
     },
   });
+
+  // Watch name field to auto-generate slug
+  const nameValue = form.watch("name");
+  const slugValue = form.watch("slug");
+
+  // Auto-generate slug from name when name changes
+  // Only auto-generate if:
+  // - Creating new item (not editing), OR
+  // - Editing but slug is empty
+  // - Slug hasn't been manually edited
+  useEffect(() => {
+    if (nameValue && !isSlugManuallyEdited) {
+      const shouldAutoGenerate = !isEdit || !slugValue;
+      if (shouldAutoGenerate) {
+        const generatedSlug = generateSlug(nameValue);
+        if (generatedSlug) {
+          form.setValue("slug", generatedSlug, { shouldValidate: false });
+        }
+      }
+    }
+  }, [nameValue, slugValue, isEdit, isSlugManuallyEdited, form]);
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -100,7 +135,7 @@ export function SoftwareForm({ initialData, isEdit = false, returnTo }: Software
         body: JSON.stringify({
           name: values.name,
           slug: values.slug,
-          website_url: values.website_url,
+          website_url: values.website_url?.trim() || null,
           icon: iconUrl || null,
         }),
       });
@@ -125,88 +160,118 @@ export function SoftwareForm({ initialData, isEdit = false, returnTo }: Software
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Name <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <InputShadow
-                    placeholder="e.g., React, Next.js, TypeScript"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+          {/* Basic Information Section */}
+          <div className="pb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faLaptopCode} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Basic Information</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Software details</div>
+            </div>
 
-          <FormField
-            control={form.control}
-            name="slug"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Slug <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <InputShadow
-                    placeholder="e.g., react, nextjs, typescript"
-                    {...field}
-                  />
-                </FormControl>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Lowercase letters, numbers, and hyphens only
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Name <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <InputShadow
+                        placeholder="e.g., React, Next.js, TypeScript"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="website_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Website URL <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <InputShadow
-                    placeholder="https://react.dev/"
-                    type="url"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Slug <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <InputShadow
+                        placeholder="e.g., react, nextjs, typescript"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setIsSlugManuallyEdited(true);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Icon</FormLabel>
-                <FormControl>
-                  <ImageUploadField
-                    value={field.value || null}
-                    onChange={(url) => field.onChange(url || "")}
-                    onFileChange={setSelectedIconFile}
-                    folderPath={isEdit && initialData ? `softwares/${initialData.id}` : "softwares/temp"}
-                    error={form.formState.errors.icon?.message}
-                    placeholder="https://example.com/icon.svg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="mt-6">
+              <FormField
+                control={form.control}
+                name="website_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website URL</FormLabel>
+                    <FormControl>
+                      <InputShadow
+                        placeholder="https://react.dev/"
+                        type="url"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Media Section */}
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faImage} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Icon</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Software icon</div>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon</FormLabel>
+                  <FormControl>
+                    <ImageUploadField
+                      value={field.value || null}
+                      onChange={(url) => field.onChange(url || "")}
+                      onFileChange={setSelectedIconFile}
+                      folderPath={isEdit && initialData ? `softwares/${initialData.id}` : "softwares/temp"}
+                      error={form.formState.errors.icon?.message}
+                      placeholder="https://example.com/icon.svg"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button

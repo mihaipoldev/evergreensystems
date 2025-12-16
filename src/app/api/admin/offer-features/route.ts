@@ -2,7 +2,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     // Check authentication first using regular client
     const supabase = await createClient();

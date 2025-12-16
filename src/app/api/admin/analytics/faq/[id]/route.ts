@@ -44,7 +44,7 @@ export async function GET(
 
     // Get all FAQ click events for this specific FAQ
     // First, get all events and filter in code (similar to main stats route)
-    let eventsQuery = supabase
+    const eventsQuery = supabase
       .from("analytics_events")
       .select("*")
       .eq("entity_type", "faq_item")

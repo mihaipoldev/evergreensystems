@@ -65,7 +65,7 @@ export async function PUT(
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (slug !== undefined) updateData.slug = slug;
-    if (website_url !== undefined) updateData.website_url = website_url;
+    if (website_url !== undefined) updateData.website_url = website_url?.trim() || null;
     if (icon !== undefined) updateData.icon = icon || null;
 
     const { data, error } = await (adminSupabase

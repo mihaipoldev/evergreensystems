@@ -65,9 +65,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, slug, website_url, icon } = body;
 
-    if (!name || !slug || !website_url) {
+    if (!name || !slug) {
       return NextResponse.json(
-        { error: "name, slug, and website_url are required" },
+        { error: "name and slug are required" },
         { status: 400 }
       );
     }
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       .insert({
         name,
         slug,
-        website_url,
+        website_url: website_url?.trim() || null,
         icon: icon || null,
       })
       .select()

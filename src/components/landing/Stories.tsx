@@ -16,6 +16,7 @@ type Section = {
   type: string;
   title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
 } | undefined;
 
@@ -74,6 +75,11 @@ export const Stories = ({ section, media = [] }: StoriesProps) => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
+            {section?.eyebrow && (
+              <span className="text-primary text-sm font-medium uppercase tracking-wider">
+                {section.eyebrow}
+              </span>
+            )}
             <RichText
               as="h2"
               text={title}

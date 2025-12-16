@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
-import { IconPickerField } from "@/components/admin/forms/IconPickerField";
 import {
   Form,
   FormControl,
@@ -29,12 +28,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGear, faHeading } from "@fortawesome/free-solid-svg-icons";
+import { IconPickerButton } from "@/components/admin/forms/IconPickerButton";
 import type { OfferFeature } from "../types";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   subtitle: z.string().optional(),
-  description: z.string().optional(),
   icon: z.string().optional(),
 });
 
@@ -46,6 +48,7 @@ type FeatureFormProps = {
   returnTo?: string;
 };
 
+
 export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -56,7 +59,6 @@ export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFo
     defaultValues: {
       title: initialData?.title || "",
       subtitle: initialData?.subtitle || "",
-      description: initialData?.description || "",
       icon: initialData?.icon || "",
     },
   });
@@ -102,23 +104,18 @@ export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFo
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Title <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <InputShadow placeholder="Enter feature title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+          {/* Admin Settings Section */}
+          <div className="pb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Admin Settings</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Admin configuration</div>
+            </div>
 
             <FormField
               control={form.control}
@@ -127,10 +124,9 @@ export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFo
                 <FormItem>
                   <FormLabel>Icon</FormLabel>
                   <FormControl>
-                    <IconPickerField
-                      value={field.value}
+                    <IconPickerButton
+                      value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="Icon name or click to browse"
                     />
                   </FormControl>
                   <FormMessage />
@@ -139,42 +135,56 @@ export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFo
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="subtitle"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subtitle</FormLabel>
-                <FormControl>
-                  <TextareaShadow 
-                    placeholder="Enter feature subtitle" 
-                    style={{ minHeight: isMobile ? '200px' : '120px' }}
-                    {...field} 
-                  />
-                </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {/* Website Content Section */}
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faHeading} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Website Content</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Public-facing content</div>
+            </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <TextareaShadow
-                      placeholder="Enter feature description"
-                      style={{ minHeight: isMobile ? '200px' : '120px' }}
-                      {...field}
-                    />
-                  </FormControl>
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Title <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter feature title" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="subtitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subtitle</FormLabel>
+                    <FormControl>
+                      <TextareaShadow 
+                        placeholder="Enter feature subtitle (supports newlines and rich text: **bold**, *italic*, [[primary]], {{secondary}})" 
+                        style={{ minHeight: isMobile ? '200px' : '150px' }}
+                        className="whitespace-pre-wrap"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button

@@ -11,6 +11,7 @@ import { faPlus, faCheck, faX, faCircleQuestion } from "@fortawesome/free-solid-
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
+import { RichText } from "@/components/ui/RichText";
 import type { FAQItem, FAQItemWithSection } from "@/features/faq/types";
 
 type SectionFAQTabProps = {
@@ -213,9 +214,11 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
             }}
           />
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-2">
-          {item.answer}
-        </p>
+        <RichText
+          text={item.answer}
+          as="p"
+          className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+        />
       </div>
     </div>
   ), []);
@@ -317,9 +320,11 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
                         ]}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {item.answer}
-                    </p>
+                    <RichText
+                      text={item.answer}
+                      as="p"
+                      className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+                    />
                   </div>
                 </div>
               </div>

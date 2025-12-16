@@ -17,6 +17,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCog, faVideo, faImage } from "@fortawesome/free-solid-svg-icons";
 import {
   Select,
   SelectContent,
@@ -293,214 +296,256 @@ export function MediaForm({ initialData, isEdit = false, onSuccess, onCancel }: 
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit(onSubmit)(e); return false; }} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="source_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Source Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="bg-input-background">
-                      <SelectValue placeholder="Select source type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="upload">Upload</SelectItem>
-                    <SelectItem value="wistia">Wistia</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="vimeo">Vimeo</SelectItem>
-                    <SelectItem value="external_url">External URL</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit(onSubmit)(e); return false; }} className="w-full space-y-6">
+        {/* Basic Information Section */}
+        <div className="pb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                <FontAwesomeIcon icon={faCog} className="h-4 w-4 text-primary" />
+              </div>
+              <div className="font-medium text-lg">Basic Information</div>
+            </div>
+            <div className="text-sm text-muted-foreground">Media configuration</div>
+          </div>
 
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name (optional)</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="Enter media name (optional)" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="source_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Source Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-input-background">
+                          <SelectValue placeholder="Select source type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="upload">Upload</SelectItem>
+                        <SelectItem value="wistia">Wistia</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="vimeo">Vimeo</SelectItem>
+                        <SelectItem value="external_url">External URL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name (optional)</FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter media name (optional)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+          </div>
         </div>
 
-        {sourceType === "wistia" && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Wistia Link or Video ID
-            </label>
-            <InputShadow
-              placeholder="abc123def4 or https://fast.wistia.com/embed/medias/abc123def4.jsonp"
-              value={wistiaUrl}
-              onChange={(e) => {
-                const input = e.target.value;
-                setWistiaUrl(input);
-                handleWistiaUrlChange(input);
-              }}
-            />
-            <p className="text-sm text-muted-foreground">
-              Paste a Wistia link or video ID. The ID will be extracted automatically.
-            </p>
+        {/* Media Source Section */}
+        <div className="pt-8">
+          <Separator className="mb-8" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                <FontAwesomeIcon icon={faVideo} className="h-4 w-4 text-primary" />
+              </div>
+              <div className="font-medium text-lg">Media Source</div>
+            </div>
+            <div className="text-sm text-muted-foreground">Media content</div>
           </div>
-        )}
 
-        {sourceType === "youtube" && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              YouTube URL
-            </label>
-            <InputShadow
-              placeholder="https://www.youtube.com/watch?v=..."
-              value={form.watch("url")}
-              onChange={(e) => handleYouTubeUrlChange(e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              Paste a YouTube URL. The video ID will be extracted automatically.
-            </p>
-          </div>
-        )}
-
-        {sourceType === "vimeo" && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Vimeo URL
-            </label>
-            <InputShadow
-              placeholder="https://vimeo.com/..."
-              value={form.watch("url")}
-              onChange={(e) => handleVimeoUrlChange(e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              Paste a Vimeo URL. The video ID will be extracted automatically.
-            </p>
-          </div>
-        )}
-
-        {sourceType === "upload" && (
-          <FormField
-            control={form.control}
-            name="url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Media URL</FormLabel>
-                <FormControl>
-                  <VideoUploadField
-                    value={field.value || null}
-                    onChange={(url) => field.onChange(url || "")}
-                    onFileChange={setSelectedFile}
-                    folderPath={isEdit && initialData ? `media/${initialData.id}` : "media/temp"}
-                    error={form.formState.errors.url?.message}
-                    placeholder="https://example.com/video.mp4"
+          <div className="space-y-6">
+              {sourceType === "wistia" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Wistia Link or Video ID
+                  </label>
+                  <InputShadow
+                    placeholder="abc123def4 or https://fast.wistia.com/embed/medias/abc123def4.jsonp"
+                    value={wistiaUrl}
+                    onChange={(e) => {
+                      const input = e.target.value;
+                      setWistiaUrl(input);
+                      handleWistiaUrlChange(input);
+                    }}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+                  <p className="text-sm text-muted-foreground">
+                    Paste a Wistia link or video ID. The ID will be extracted automatically.
+                  </p>
+                </div>
+              )}
 
-        {sourceType === "external_url" && (
-          <FormField
-            control={form.control}
-            name="url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>External URL</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="https://example.com/media" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {sourceType !== "upload" && sourceType !== "wistia" && sourceType !== "youtube" && sourceType !== "vimeo" && (
-          <FormField
-            control={form.control}
-            name="url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="https://example.com/media" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {sourceType !== "wistia" && sourceType !== "upload" && (
-          <FormField
-            control={form.control}
-            name="embed_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Embed ID (optional)</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="Video embed ID" {...field} />
-                </FormControl>
-                <FormDescription>
-                  For YouTube or Vimeo videos, this is extracted automatically.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {sourceType !== "wistia" && sourceType === "upload" && (
-          <FormField
-            control={form.control}
-            name="thumbnail_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Thumbnail URL (optional)</FormLabel>
-                <FormControl>
-                  <ImageUploadField
-                    value={field.value || null}
-                    onChange={(url) => field.onChange(url || "")}
-                    onFileChange={setSelectedThumbnailFile}
-                    folderPath={isEdit && initialData ? `media/${initialData.id}` : "media/temp"}
-                    error={form.formState.errors.thumbnail_url?.message}
-                    placeholder="https://example.com/thumbnail.jpg"
+              {sourceType === "youtube" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    YouTube URL
+                  </label>
+                  <InputShadow
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={form.watch("url")}
+                    onChange={(e) => handleYouTubeUrlChange(e.target.value)}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                  <p className="text-sm text-muted-foreground">
+                    Paste a YouTube URL. The video ID will be extracted automatically.
+                  </p>
+                </div>
+              )}
+
+              {sourceType === "vimeo" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Vimeo URL
+                  </label>
+                  <InputShadow
+                    placeholder="https://vimeo.com/..."
+                    value={form.watch("url")}
+                    onChange={(e) => handleVimeoUrlChange(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Paste a Vimeo URL. The video ID will be extracted automatically.
+                  </p>
+                </div>
+              )}
+
+              {sourceType === "upload" && (
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Media URL</FormLabel>
+                      <FormControl>
+                        <VideoUploadField
+                          value={field.value || null}
+                          onChange={(url) => field.onChange(url || "")}
+                          onFileChange={setSelectedFile}
+                          folderPath={isEdit && initialData ? `media/${initialData.id}` : "media/temp"}
+                          error={form.formState.errors.url?.message}
+                          placeholder="https://example.com/video.mp4"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {sourceType === "external_url" && (
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>External URL</FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="https://example.com/media" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {sourceType !== "upload" && sourceType !== "wistia" && sourceType !== "youtube" && sourceType !== "vimeo" && (
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL</FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="https://example.com/media" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {sourceType !== "wistia" && sourceType !== "upload" && (
+                <FormField
+                  control={form.control}
+                  name="embed_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Embed ID (optional)</FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="Video embed ID" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        For YouTube or Vimeo videos, this is extracted automatically.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+          </div>
+        </div>
+
+        {/* Thumbnail Section */}
+        {sourceType !== "wistia" && (
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faImage} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Thumbnail</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Media thumbnail</div>
+            </div>
+
+            {sourceType === "upload" ? (
+                <FormField
+                  control={form.control}
+                  name="thumbnail_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thumbnail URL (optional)</FormLabel>
+                      <FormControl>
+                        <ImageUploadField
+                          value={field.value || null}
+                          onChange={(url) => field.onChange(url || "")}
+                          onFileChange={setSelectedThumbnailFile}
+                          folderPath={isEdit && initialData ? `media/${initialData.id}` : "media/temp"}
+                          error={form.formState.errors.thumbnail_url?.message}
+                          placeholder="https://example.com/thumbnail.jpg"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="thumbnail_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thumbnail URL (optional)</FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="https://example.com/thumbnail.jpg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
             )}
-          />
+          </div>
         )}
-
-        {sourceType !== "wistia" && sourceType !== "upload" && (
-          <FormField
-            control={form.control}
-            name="thumbnail_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Thumbnail URL (optional)</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="https://example.com/thumbnail.jpg" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-
+        
         <div className="flex items-center justify-end gap-4">
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">

@@ -24,19 +24,19 @@ const statusConfig = {
   published: {
     label: "Published",
     color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-100 dark:bg-green-900/30",
+    bgColor: "bg-green-1000 dark:bg-green-900/30",
     description: "Visible in production",
   },
   draft: {
     label: "Draft",
     color: "text-yellow-600 dark:text-yellow-400",
-    bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+    bgColor: "bg-yellow-1000 dark:bg-yellow-900/30",
     description: "Visible in development only",
   },
   deactivated: {
     label: "Deactivated",
     color: "text-gray-600 dark:text-gray-400",
-    bgColor: "bg-gray-100 dark:bg-gray-900/30",
+    bgColor: "bg-gray-1000 dark:bg-gray-700/30",
     description: "Hidden everywhere",
   },
 };
@@ -66,7 +66,7 @@ export function PageSectionStatusSelector({
             "h-8 gap-2 px-3 text-xs font-medium transition-colors",
             currentConfig.bgColor,
             currentConfig.color,
-            "border-border hover:bg-opacity-80"
+            "border-0 hover:bg-opacity-80"
           )}
         >
           {currentConfig.label}

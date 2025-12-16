@@ -16,6 +16,7 @@ type Section = {
   type: string;
   title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
   ctaButtons?: CTAButtonWithSection[];
 } | undefined;
@@ -73,6 +74,12 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="h-1 bg-primary mx-auto mb-8 rounded-full"
           />
+          
+          {section?.eyebrow && (
+            <span className="text-primary text-sm font-medium uppercase tracking-wider block mb-4">
+              {section.eyebrow}
+            </span>
+          )}
           
           <RichText
             as="h2"

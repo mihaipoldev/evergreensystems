@@ -10,6 +10,7 @@ type Section = {
   type: string;
   title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
 } | undefined;
 
@@ -61,9 +62,11 @@ export const Results = memo(({ section }: ResultsProps) => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="text-primary text-sm font-medium uppercase tracking-wider">
-            Proven Results
-          </span>
+          {section?.eyebrow && (
+            <span className="text-primary text-sm font-medium uppercase tracking-wider">
+              {section.eyebrow}
+            </span>
+          )}
           <RichText
             as="h2"
             text={title}
@@ -80,7 +83,6 @@ export const Results = memo(({ section }: ResultsProps) => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
               className="relative group"
             >
               <div className="border-glow rounded-2xl bg-card p-8 h-full">

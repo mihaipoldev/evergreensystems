@@ -2,8 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope } from '@fortawesome/free-solid-svg-icons';
-import { faLinkedin, faTwitter } from '@fortawesome/free-brands-svg-icons';
+import { faEnvelope, faShareAlt } from '@fortawesome/free-solid-svg-icons';
 
 type FooterSection = {
   id?: string;
@@ -11,16 +10,32 @@ type FooterSection = {
   subtitle?: string | null;
 };
 
-type FooterProps = {
-  section?: FooterSection;
+type SocialPlatform = {
+  id: string;
+  name: string;
+  icon: string | null;
+  base_url: string | null;
+  section_social: {
+    id: string;
+    order: number;
+    status?: "published" | "draft" | "deactivated";
+  };
 };
 
-export const Footer = ({ section }: FooterProps) => {
+type FooterProps = {
+  section?: FooterSection;
+  socialPlatforms?: SocialPlatform[];
+};
+
+export const Footer = ({ section, socialPlatforms = [] }: FooterProps) => {
   const heading = section?.title?.trim() || "Evergreen Systems";
   const subtitle =
     section?.subtitle?.trim() ||
     "Building intelligent automation systems that transform how businesses operate. AI-powered solutions for modern teams.";
   const footerId = section?.id ? `footer-${section.id}` : "footer";
+
+  // Sort social platforms by order
+  const sortedSocialPlatforms = [...socialPlatforms].sort((a, b) => a.section_social.order - b.section_social.order);
 
   return (
     <footer
@@ -66,28 +81,45 @@ export const Footer = ({ section }: FooterProps) => {
             </a>
 
             {/* Social Links */}
-            <div className="flex items-center justify-center gap-4">
-              <a
-                href="#"
-                aria-label="Twitter"
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-background/50 border border-border/50 text-muted-foreground transition-all duration-150 hover:bg-background hover:border-border hover:text-foreground"
-              >
-                <FontAwesomeIcon 
-                  icon={faTwitter} 
-                  className="h-4 w-4" 
-                />
-              </a>
-              <a
-                href="#"
-                aria-label="LinkedIn"
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-background/50 border border-border/50 text-muted-foreground transition-all duration-150 hover:bg-background hover:border-border hover:text-foreground"
-              >
-                <FontAwesomeIcon 
-                  icon={faLinkedin} 
-                  className="h-4 w-4" 
-                />
-              </a>
-            </div>
+            {sortedSocialPlatforms.length > 0 && (
+              <div className="flex items-center justify-center gap-4">
+                {sortedSocialPlatforms.map((platform) => {
+                  const platformUrl = platform.base_url || "#";
+                  return (
+                    <a
+                      key={platform.id}
+                      href={platformUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={platform.name}
+                      className="flex h-12 w-12 items-center justify-center rounded-full bg-background/50 border border-border/50 text-muted-foreground transition-all duration-150 hover:bg-background hover:border-border hover:text-foreground"
+                    >
+                      {platform.icon ? (
+                        <img
+                          src={platform.icon}
+                          alt={platform.name}
+                          className="h-6 w-6 object-contain"
+                          onError={(e) => {
+                            // Fallback to icon if image fails to load
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            const fallback = document.createElement("div");
+                            fallback.className = "h-4 w-4 text-current";
+                            fallback.innerHTML = `<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L3 7v11h4v-6h6v6h4V7l-7-5z"/></svg>`;
+                            target.parentElement?.appendChild(fallback);
+                          }}
+                        />
+                      ) : (
+                        <FontAwesomeIcon 
+                          icon={faShareAlt} 
+                          className="h-4 w-4" 
+                        />
+                      )}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         </div>
 

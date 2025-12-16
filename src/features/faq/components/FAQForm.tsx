@@ -27,6 +27,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import type { FAQItem } from "../types";
 
 const formSchema = z.object({
@@ -96,48 +98,61 @@ export function FAQForm({ initialData, isEdit = false, returnTo }: FAQFormProps)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <FormField
-            control={form.control}
-            name="question"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Question <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <TextareaShadow
-                    placeholder="Enter the question"
-                    style={{ minHeight: isMobile ? '200px' : '120px' }}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+          {/* Frequently Asked Questions Section */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faQuestionCircle} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Frequently Asked Questions</div>
+              </div>
+              <div className="text-sm text-muted-foreground">FAQ content</div>
+            </div>
 
-          <FormField
-            control={form.control}
-            name="answer"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  Answer <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <TextareaShadow
-                    placeholder="Enter the answer"
-                    style={{ minHeight: isMobile ? '200px' : '120px' }}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="question"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Question <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <TextareaShadow
+                        placeholder="Enter the question"
+                        style={{ minHeight: isMobile ? '200px' : '120px' }}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-
+              <FormField
+                control={form.control}
+                name="answer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Answer <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <TextareaShadow
+                        placeholder="Enter the answer"
+                        style={{ minHeight: isMobile ? '200px' : '120px' }}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button

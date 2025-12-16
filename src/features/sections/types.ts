@@ -7,6 +7,7 @@ export type Section = {
   title: string | null;
   admin_title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
   media_url: string | null;
   icon: string | null;

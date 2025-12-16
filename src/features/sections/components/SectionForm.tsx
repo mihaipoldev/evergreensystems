@@ -10,10 +10,12 @@ import * as z from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
 import { IconPickerField } from "@/components/admin/forms/IconPickerField";
+import { IconPickerButton } from "@/components/admin/forms/IconPickerButton";
 import {
   Form,
   FormControl,
@@ -23,6 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -40,7 +43,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrash, faArrowUp, faArrowDown, faImage, faVideo, faFile, faCheck, faPlay, faMousePointer, faLink } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrash, faArrowUp, faArrowDown, faImage, faVideo, faFile, faCheck, faPlay, faMousePointer, faLink, faGear, faHeading, faCode } from "@fortawesome/free-solid-svg-icons";
 import { MediaRenderer } from "@/components/MediaRenderer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +62,7 @@ const formSchema = z.object({
   title: z.string().optional(),
   admin_title: z.string().optional(),
   subtitle: z.string().optional(),
+  eyebrow: z.string().optional(),
   content: z.string().optional(),
   media_url: z.union([z.string().url("Must be a valid URL"), z.literal(""), z.null()]).optional(),
   icon: z.string().optional(),
@@ -91,6 +95,7 @@ const SECTION_TYPES = [
   "timeline",
   "footer",
 ];
+
 
 export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }: SectionFormProps) {
   const router = useRouter();
@@ -133,6 +138,7 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
       title: initialData?.title || "",
       admin_title: initialData?.admin_title || "",
       subtitle: initialData?.subtitle || "",
+      eyebrow: initialData?.eyebrow || "",
       content: parseContent(initialData?.content),
       media_url: initialData?.media_url || "",
       icon: initialData?.icon || "",
@@ -331,6 +337,7 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
         title: values.title || null,
         admin_title: values.admin_title || null,
         subtitle: values.subtitle || null,
+        eyebrow: values.eyebrow || null,
         content: parsedContent,
         icon: values.icon && values.icon.trim() ? values.icon.trim() : null,
       };
@@ -886,105 +893,146 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="admin_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Admin Title</FormLabel>
-                  <FormControl>
-                    <InputShadow placeholder="Enter admin title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+          {/* Admin Settings Section */}
+          <div className="pb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Admin Settings</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Admin configuration</div>
+            </div>
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Type <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="admin_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Admin Title</FormLabel>
                     <FormControl>
-                      <SelectTrigger className="bg-input-background">
-                        <SelectValue placeholder="Select section type" />
-                      </SelectTrigger>
+                      <InputShadow placeholder="Enter admin title" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {SECTION_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Type <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-input-background">
+                          <SelectValue placeholder="Select section type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SECTION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Icon</FormLabel>
+                    <FormControl>
+                      <IconPickerButton
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Icon</FormLabel>
-                <FormControl>
-                  <IconPickerField
-                    value={field.value || ""}
-                    onChange={field.onChange}
-                    placeholder="Click to select an icon or enter icon class name"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Website Content Section */}
+          <div className="pt-8 pb-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faHeading} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Website Content</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Public-facing content</div>
+            </div>
 
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="eyebrow"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Eyebrow</FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter eyebrow text (small text above title)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <TextareaShadow
-                    placeholder="Enter section title"
-                    className="min-h-[150px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <TextareaShadow
+                        placeholder="Enter section title"
+                        className="min-h-[150px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="subtitle"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subtitle</FormLabel>
-                <FormControl>
-                  <TextareaShadow
-                    placeholder="Enter section subtitle"
-                    className="min-h-[150px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="subtitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subtitle</FormLabel>
+                    <FormControl>
+                      <TextareaShadow
+                        placeholder="Enter section subtitle"
+                        className="min-h-[150px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
           {/* Section Media - Hidden (managed via tabs for sections that support it) */}
           {false && isEdit && initialData?.id && (
@@ -1232,38 +1280,52 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
             </div>
           )}
 
-          <FormField
-            control={form.control}
-            name="content"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Content (JSON)</FormLabel>
-                <FormControl>
-                  <div className="border border-input rounded-lg bg-background overflow-hidden">
-                    <CodeEditor
-                      value={field.value || ""}
-                      language="json"
-                      placeholder='Enter JSON content, e.g., {"key": "value"}'
-                      onChange={(value) => field.onChange(value)}
-                      padding={12}
-                      className="font-mono text-sm"
-                      style={{ 
-                        minHeight: "160px", 
-                        borderRadius: 0,
-                        backgroundColor: "transparent",
-                        fontSize: "14px",
-                      }}
-                      data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
-                    />
-                  </div>
-                </FormControl>
-                <FormDescription>
-                  Optional JSON content for the section. Must be valid JSON format.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Content JSON Section */}
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCode} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Content JSON</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Advanced settings</div>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Content (JSON)</FormLabel>
+                  <FormControl>
+                    <div className="border border-input rounded-lg bg-background overflow-hidden">
+                      <CodeEditor
+                        value={field.value || ""}
+                        language="json"
+                        placeholder='Enter JSON content, e.g., {"key": "value"}'
+                        onChange={(value) => field.onChange(value)}
+                        padding={12}
+                        className="font-mono text-sm"
+                        style={{ 
+                          minHeight: "160px", 
+                          borderRadius: 0,
+                          backgroundColor: "transparent",
+                          fontSize: "14px",
+                        }}
+                        data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Optional JSON content for the section. Must be valid JSON format.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Media URL field hidden - using media relationship instead */}
         </div>

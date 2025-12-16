@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const lookbackISO = lookbackDate.toISOString();
 
     // Get all analytics events (we'll aggregate in code for flexibility)
-    let eventsQuery = supabase
+    const eventsQuery = supabase
       .from("analytics_events")
       .select("*")
       .gte("created_at", lookbackISO);

@@ -12,6 +12,7 @@ type Section = {
   type: string;
   title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
 } | undefined;
 
@@ -85,6 +86,11 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
+            {section?.eyebrow && (
+              <span className="text-primary text-sm font-medium uppercase tracking-wider">
+                {section.eyebrow}
+              </span>
+            )}
             <RichText
               as="h2"
               text={title}

@@ -21,6 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faBuilding, faStar, faQuoteLeft, faImage } from "@fortawesome/free-solid-svg-icons";
 import { ImageUploadField } from "@/components/admin/forms/ImageUploadField";
 import { RatingSelect } from "@/components/admin/forms/RatingSelect";
 import type { Testimonial } from "../types";
@@ -222,65 +225,161 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
       <div className="w-full space-y-6">
         {rightSideHeaderContent}
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="author_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Author Name <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <InputShadow placeholder="Enter author name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+          {/* Author Information Section */}
+          <div className="pb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faUser} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Author Information</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Author details</div>
+            </div>
 
-            <FormField
-              control={form.control}
-              name="author_role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Author Role</FormLabel>
-                  <FormControl>
-                    <InputShadow placeholder="e.g., CEO, Marketing Director" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="author_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Author Name <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter author name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="author_role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Author Role</FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="e.g., CEO, Marketing Director" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <FormField
+                control={form.control}
+                name="company_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Name</FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter company name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rating</FormLabel>
+                    <FormControl>
+                      <RatingSelect
+                        value={field.value ?? null}
+                        onChange={field.onChange}
+                        error={form.formState.errors.rating?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="company_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company Name</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="Enter company name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Content Section */}
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faQuoteLeft} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Content</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Testimonial content</div>
+            </div>
+
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="headline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Headline</FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter testimonial headline" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="quote"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Body</FormLabel>
+                    <FormControl>
+                      <TextareaShadow
+                        placeholder="Enter the testimonial quote"
+                        style={{ minHeight: isMobile ? '200px' : '120px' }}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Media Section */}
+          <div className="pt-8">
+            <Separator className="mb-8" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faImage} className="h-4 w-4 text-primary" />
+                </div>
+                <div className="font-medium text-lg">Avatar</div>
+              </div>
+              <div className="text-sm text-muted-foreground">Author avatar</div>
+            </div>
 
             <FormField
               control={form.control}
-              name="rating"
+              name="avatar_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rating</FormLabel>
+                  <FormLabel>Avatar Image</FormLabel>
                   <FormControl>
-                    <RatingSelect
-                      value={field.value ?? null}
-                      onChange={field.onChange}
-                      error={form.formState.errors.rating?.message}
+                    <ImageUploadField
+                      value={field.value || null}
+                      onChange={(url) => field.onChange(url || "")}
+                      onFileChange={(file) => setSelectedFile(file)}
+                      folderPath={isEdit && initialData ? `testimonials/${initialData.id}` : "testimonials/temp"}
+                      error={form.formState.errors.avatar_url?.message}
+                      placeholder="https://example.com/avatar.jpg"
                     />
                   </FormControl>
                   <FormMessage />
@@ -288,60 +387,6 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
               )}
             />
           </div>
-
-          <FormField
-            control={form.control}
-            name="headline"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Headline</FormLabel>
-                <FormControl>
-                  <InputShadow placeholder="Enter testimonial headline" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="quote"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Body</FormLabel>
-                <FormControl>
-                  <TextareaShadow
-                    placeholder="Enter the testimonial quote"
-                    style={{ minHeight: isMobile ? '200px' : '120px' }}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="avatar_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Avatar Image</FormLabel>
-                <FormControl>
-                  <ImageUploadField
-                    value={field.value || null}
-                    onChange={(url) => field.onChange(url || "")}
-                    onFileChange={(file) => setSelectedFile(file)}
-                    folderPath={isEdit && initialData ? `testimonials/${initialData.id}` : "testimonials/temp"}
-                    error={form.formState.errors.avatar_url?.message}
-                    placeholder="https://example.com/avatar.jpg"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
         </div>
         <div className="flex items-center justify-end gap-4 mt-6">
           <Button

@@ -633,7 +633,106 @@ export async function getVisibleSectionsByPageId(pageId: string) {
     }
   });
 
-      // Transform data to return sections with page_sections metadata, media, CTA buttons, features, FAQ items, timeline items, testimonials, and results
+  // Get Softwares for all sections
+  // Query junction table first, then join with base table separately to avoid RLS join issues
+  const { data: sectionSoftwaresData } = await supabase
+    .from("section_softwares")
+    .select("*")
+    .in("section_id", sectionIds)
+    .order("order", { ascending: true });
+
+  // Get all software IDs from junction table
+  const softwareIds = sectionSoftwaresData?.map((item: any) => item.software_id).filter(Boolean) || [];
+  
+  // Query softwares separately
+  // Use regular client - RLS policies should allow public access
+  const { data: softwaresData } = await supabase
+    .from("softwares")
+    .select("*")
+    .in("id", softwareIds);
+
+  // Create a map of software_id -> software for quick lookup
+  const softwaresMap = new Map((softwaresData || []).map((s: any) => [s.id, s]));
+
+  // Group softwares by section_id (filter based on environment)
+  const softwaresBySectionId = new Map<string, any[]>();
+  
+  (sectionSoftwaresData || []).forEach((item: any) => {
+    const software = softwaresMap.get(item.software_id);
+    
+    if (!software) {
+      return;
+    }
+    
+    // Filter softwares based on status from junction table and environment
+    if (shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!softwaresBySectionId.has(item.section_id)) {
+        softwaresBySectionId.set(item.section_id, []);
+      }
+      const softwareWithSection = {
+        ...software,
+        section_software: {
+          id: item.id,
+          order: item.order,
+          icon_override: item.icon_override,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      softwaresBySectionId.get(item.section_id)!.push(softwareWithSection);
+    }
+  });
+
+  // Get Social Platforms for all sections
+  // Query junction table first, then join with base table separately to avoid RLS join issues
+  const { data: sectionSocialsData } = await supabase
+    .from("section_socials")
+    .select("*")
+    .in("section_id", sectionIds)
+    .order("order", { ascending: true });
+
+  // Get all platform IDs from junction table
+  const platformIds = sectionSocialsData?.map((item: any) => item.platform_id).filter(Boolean) || [];
+  
+  // Query social platforms separately
+  // Use regular client - RLS policies should allow public access
+  const { data: socialPlatformsData } = await supabase
+    .from("social_platforms")
+    .select("*")
+    .in("id", platformIds);
+
+  // Create a map of platform_id -> platform for quick lookup
+  const socialPlatformsMap = new Map((socialPlatformsData || []).map((p: any) => [p.id, p]));
+
+  // Group social platforms by section_id (filter based on environment)
+  const socialPlatformsBySectionId = new Map<string, any[]>();
+  
+  (sectionSocialsData || []).forEach((item: any) => {
+    const platform = socialPlatformsMap.get(item.platform_id);
+    
+    if (!platform) {
+      return;
+    }
+    
+    // Filter social platforms based on status from junction table and environment
+    if (shouldIncludeItemByStatus(item.status, isDevelopment)) {
+      if (!socialPlatformsBySectionId.has(item.section_id)) {
+        socialPlatformsBySectionId.set(item.section_id, []);
+      }
+      const platformWithSection = {
+        ...platform,
+        section_social: {
+          id: item.id,
+          order: item.order,
+          status: (item.status || "published") as "published" | "draft" | "deactivated",
+          created_at: item.created_at,
+        },
+      };
+      socialPlatformsBySectionId.get(item.section_id)!.push(platformWithSection);
+    }
+  });
+
+      // Transform data to return sections with page_sections metadata, media, CTA buttons, features, FAQ items, timeline items, testimonials, results, softwares, and social platforms
       // Use filteredPageSections instead of data to ensure status filtering is applied
       const transformedSections = filteredPageSections
         .map(ps => {
@@ -653,6 +752,8 @@ export async function getVisibleSectionsByPageId(pageId: string) {
             timelineItems: timelineItemsBySectionId.get(sectionId) || [],
             testimonials: testimonialsBySectionId.get(sectionId) || [],
             results: resultsBySectionId.get(sectionId) || [],
+            softwares: softwaresBySectionId.get(sectionId) || [],
+            socialPlatforms: socialPlatformsBySectionId.get(sectionId) || [],
           };
         });
 

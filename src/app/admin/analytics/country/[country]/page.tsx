@@ -328,7 +328,6 @@ async function CountryAnalyticsContent({ country, scope }: { country: string; sc
 
     // For country-specific page, topCountries will just show the selected country
     // Use countryCode for consistency (this is what's stored in DB)
-    const displayCountry = getCountryDisplayName(countryCode);
     const topCountries = [{ country: countryCode, count: events.length }];
 
     // Country-specific breakdowns (all will be the same country, but we calculate for consistency)

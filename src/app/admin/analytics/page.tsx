@@ -4,7 +4,6 @@ import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { AnalyticsDebugInfo } from "@/components/admin/AnalyticsDebugInfo";
 import { DashboardTimeScope } from "@/components/admin/DashboardTimeScope";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -84,25 +83,12 @@ async function AnalyticsContent({ scope }: { scope: string }) {
   
   // Force fresh query by adding a small random factor to prevent any caching
   // This ensures the query is always unique
+  // eslint-disable-next-line react-hooks/purity
   const cacheBuster = Date.now();
 
   // For "all" scope, fetch ALL events without any date filter
   // For other scopes, fetch with a safety buffer to ensure we don't miss events due to timezone issues
   // CRITICAL: Supabase has a default limit of 1000 rows - we MUST set a higher limit!
-  let query = supabase
-    .from("analytics_events")
-    .select("*", { count: 'exact' }) // Get count for debugging
-    .order("created_at", { ascending: false });
-  
-  // Only add date filter if NOT "all" scope
-  if (scope !== "all" && lookbackDays > 0) {
-    // Add safety buffer (extra 2 days) to ensure we don't miss events due to timezone issues
-    // But don't make it too large or we'll fetch unnecessary data
-    const safetyDays = lookbackDays + 2;
-    const safetyDate = new Date(now.getTime() - safetyDays * 24 * 60 * 60 * 1000);
-    const safetyISO = safetyDate.toISOString();
-    query = query.gte("created_at", safetyISO);
-  }
   
   // CRITICAL FIX: Supabase defaults to 1000 row limit
   // We need to fetch ALL events, so we'll use pagination to ensure we get everything

@@ -67,34 +67,33 @@
   }
 
   .dark {
-    /* Brand color variables - base hue, saturation, lightness */
-    --brand-h: 212;
-    --brand-s: 96;
-    --brand-l: 51;
+    --brand-h: 0;
+    --brand-s: 0;
+    --brand-l: 98;
+
+    --background: 0 0% 10%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 13.5%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 63.9%;
+
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 95%;
+
+    --border: 0 0% 16%;
+    --input: 0 0% 22%;
+    --input-background: 0 0% 10%;
+    --ring: 0 0% 60.1%;
 
     /* Font family variables - public/landing page (same as light mode) */
     --font-family-public-heading: var(--font-lato);
     --font-family-public-body: var(--font-lato);
-
-    --background: 0 0% 7%;
-    --foreground: 0 0% 98%;
-
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
-
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --input-background: 0 0% 7%;
-    --ring: 0 0% 83.1%;
 
     --primary: var(--brand-h) var(--brand-s)% var(--brand-l)%;
     --primary-foreground: 0 0% 98%;
@@ -184,7 +183,7 @@
     --card: 0 0% 13.5%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 10%;
+    --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
 
     --muted: 0 0% 18%;

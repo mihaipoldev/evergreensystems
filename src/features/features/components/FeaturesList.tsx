@@ -136,9 +136,10 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
             </Link>
           </div>
           {item.subtitle && (
-            <div 
-              className="text-sm text-muted-foreground mb-1 whitespace-pre-line"
-              dangerouslySetInnerHTML={{ __html: formatRichText(item.subtitle) }}
+            <RichText
+              text={item.subtitle}
+              as="p"
+              className="text-sm text-muted-foreground mb-1 leading-relaxed"
             />
           )}
           {item.description && (

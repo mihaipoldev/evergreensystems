@@ -12,6 +12,7 @@ type Section = {
   type: string;
   title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
 } | undefined;
 
@@ -62,6 +63,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
   // Use section data if available, otherwise use defaults
   const titleText = section?.title || defaultTitleText;
   const subtitle = section?.subtitle || defaultSubtitle;
+  const eyebrow = section?.eyebrow || null;
   
   // Convert timeline items to steps
   let steps: TimelineStep[] = [];
@@ -125,9 +127,9 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          {subtitle && (
+          {eyebrow && (
             <span className="text-primary text-sm font-medium uppercase tracking-wider">
-              {subtitle}
+              {eyebrow}
             </span>
           )}
           <RichText

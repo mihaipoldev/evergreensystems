@@ -41,8 +41,9 @@ export function LoginPageClient() {
       }
 
       if (data.user) {
-        router.push("/admin/analytics");
-        router.refresh();
+        // Use window.location for full page reload to ensure middleware runs with fresh auth session
+        // This ensures colors are loaded immediately from the database
+        window.location.href = "/admin/analytics";
       }
     } catch (err) {
       console.error("Login error:", err);

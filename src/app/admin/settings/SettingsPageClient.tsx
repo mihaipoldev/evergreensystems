@@ -29,12 +29,19 @@ export function SettingsPageClient() {
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && URL_SECTION_MAP[tabParam]) {
-      setActiveSection(URL_SECTION_MAP[tabParam]);
-      localStorage.setItem("settings-last-section", URL_SECTION_MAP[tabParam]);
+      const section = URL_SECTION_MAP[tabParam];
+      // Use requestAnimationFrame to defer state update
+      requestAnimationFrame(() => {
+        setActiveSection(section);
+        localStorage.setItem("settings-last-section", section);
+      });
     } else {
       const lastSection = localStorage.getItem("settings-last-section") as Section;
       if (lastSection && (lastSection === "account" || lastSection === "appearance")) {
-        setActiveSection(lastSection);
+        // Use requestAnimationFrame to defer state update
+        requestAnimationFrame(() => {
+          setActiveSection(lastSection);
+        });
       }
     }
   }, [searchParams]);

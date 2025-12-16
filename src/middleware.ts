@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
-import { parseFontFamily, serializeFontFamily } from "@/lib/font-utils";
+import { parseFontFamily, serializeFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
 import { getFontVariable } from "@/lib/font-variables";
 
 export async function middleware(request: NextRequest) {
@@ -96,8 +96,11 @@ export async function middleware(request: NextRequest) {
         }
       );
 
-      // Refresh the auth token - with error handling
+      // Refresh the auth token and session - with error handling
       try {
+        // First refresh the session to ensure we have the latest auth state
+        await supabase.auth.getSession();
+        // Then get the user
         const result = await supabase.auth.getUser();
         user = result.data.user;
       } catch (error) {
@@ -173,6 +176,12 @@ export async function middleware(request: NextRequest) {
           settings = null;
         }
 
+        let colorInjection = "";
+        let fontInjection = "";
+        // Store HSL values for inline HTML style injection
+        let htmlInlineStyle = "";
+        let colorHslValues: { h: string; s: string; l: string; primary: string } | null = null;
+
         if (settings?.active_theme_id) {
           // Get theme with primary color and fonts - with error handling
           let theme = null;
@@ -187,9 +196,6 @@ export async function middleware(request: NextRequest) {
             // If query fails, continue without theme
             theme = null;
           }
-
-          let colorInjection = "";
-          let fontInjection = "";
 
           // Handle color
           if (theme?.primary_color_id) {
@@ -246,9 +252,14 @@ export async function middleware(request: NextRequest) {
               const hslS = String(color.hsl_s);
               const hslL = String(color.hsl_l);
               
+              // Store values for inline HTML injection
+              colorHslValues = { h: hslH, s: hslS, l: hslL, primary: primaryValue };
+              htmlInlineStyle = ` style="--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;"`;
+              
               // Build CSS string safely
               const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
-              const blockingScript = `<script>!function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
+              // Use immediate execution - set colors before any CSS loads
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
               const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;
             }
@@ -288,9 +299,180 @@ export async function middleware(request: NextRequest) {
               // Silently ignore font parsing errors
             }
           }
+        } else {
+          // No active theme - check if user has colors and auto-create default theme
+          let userColor = null;
+          try {
+            // Get the most recent color for the user
+            const result = await (supabase
+              .from("user_colors") as any)
+              .select("id, hsl_h, hsl_s, hsl_l, hex")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            userColor = result.data;
+          } catch (error) {
+            // If query fails, continue without color
+            userColor = null;
+          }
 
-          // Combine injections if we have any
-          if (colorInjection || fontInjection) {
+          if (userColor) {
+            // Create a default theme with this color
+            try {
+              const defaultFontJson = serializeFontFamily(getDefaultFontFamily());
+              
+              // Check if default theme already exists
+              const { data: existingTheme } = await (supabase
+                .from("user_themes") as any)
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("name", "Default Theme")
+                .maybeSingle();
+
+              let themeId: string;
+              if (existingTheme) {
+                // Update existing theme
+                const { error: updateError } = await (supabase
+                  .from("user_themes") as any)
+                  .update({
+                    primary_color_id: userColor.id,
+                    secondary_color_id: userColor.id,
+                    accent_color_id: userColor.id,
+                  })
+                  .eq("id", existingTheme.id);
+                if (updateError) throw updateError;
+                themeId = existingTheme.id;
+              } else {
+                // Create new default theme
+                const { data: newTheme, error: themeError } = await (supabase
+                  .from("user_themes") as any)
+                  .insert({
+                    user_id: user.id,
+                    name: "Default Theme",
+                    primary_color_id: userColor.id,
+                    secondary_color_id: userColor.id,
+                    accent_color_id: userColor.id,
+                    font_family: defaultFontJson,
+                  })
+                  .select("id")
+                  .single();
+                if (themeError) throw themeError;
+                themeId = newTheme.id;
+              }
+
+              // Update user_settings to set active theme
+              await (supabase
+                .from("user_settings") as any)
+                .upsert(
+                  {
+                    user_id: user.id,
+                    active_theme_id: themeId,
+                  },
+                  {
+                    onConflict: "user_id",
+                  }
+                );
+
+              // Apply the color
+              const primaryValue = `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%`;
+              
+              // Set cookie for instant access on next page load
+              try {
+                const expires = new Date();
+                expires.setFullYear(expires.getFullYear() + 1);
+                supabaseResponse.cookies.set('primary-color-hsl', primaryValue, {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                // Also set brand color variables in cookie
+                supabaseResponse.cookies.set('brand-color-h', userColor.hsl_h.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-s', userColor.hsl_s.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-l', userColor.hsl_l.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+              } catch {
+                // Silently ignore cookie setting errors - non-critical
+              }
+              
+              // Inject style tag AND blocking script as the ABSOLUTE FIRST thing in head
+              const hslH = String(userColor.hsl_h);
+              const hslS = String(userColor.hsl_s);
+              const hslL = String(userColor.hsl_l);
+              
+              // Store values for inline HTML injection
+              colorHslValues = { h: hslH, s: hslS, l: hslL, primary: primaryValue };
+              htmlInlineStyle = ` style="--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;"`;
+              
+              // Build CSS string safely
+              const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
+              // Use immediate execution - set colors before any CSS loads
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
+              const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
+              colorInjection = blockingScript + styleTag;
+            } catch (error) {
+              // If theme creation fails, still try to apply the color without creating theme
+              // This ensures colors are visible even if database operations fail
+              const primaryValue = `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%`;
+              
+              // Set cookie for instant access on next page load
+              try {
+                const expires = new Date();
+                expires.setFullYear(expires.getFullYear() + 1);
+                supabaseResponse.cookies.set('primary-color-hsl', primaryValue, {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-h', userColor.hsl_h.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-s', userColor.hsl_s.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-l', userColor.hsl_l.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+              } catch {
+                // Silently ignore cookie setting errors - non-critical
+              }
+              
+              // Inject style tag AND blocking script
+              const hslH = String(userColor.hsl_h);
+              const hslS = String(userColor.hsl_s);
+              const hslL = String(userColor.hsl_l);
+              
+              // Store values for inline HTML injection
+              colorHslValues = { h: hslH, s: hslS, l: hslL, primary: primaryValue };
+              htmlInlineStyle = ` style="--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;"`;
+              
+              const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
+              const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
+              colorInjection = blockingScript + styleTag;
+            }
+          }
+        }
+
+        // Combine injections if we have any
+        if (colorInjection || fontInjection) {
             const injection = colorInjection + fontInjection;
 
             try {
@@ -303,6 +485,7 @@ export async function middleware(request: NextRequest) {
 
               let buffer = "";
               let headInjected = false;
+              let htmlStyled = false;
 
               const stream = new TransformStream({
                 transform(chunk, controller) {
@@ -310,8 +493,25 @@ export async function middleware(request: NextRequest) {
                     const text = new TextDecoder().decode(chunk);
                     buffer += text;
                     
+                    // CRITICAL: First inject inline styles directly into <html> tag
+                    // This applies colors before ANY CSS loads - no flash possible
+                    if (!htmlStyled && htmlInlineStyle) {
+                      const htmlMatch = buffer.match(/<html([^>]*)>/i);
+                      if (htmlMatch) {
+                        const htmlIndex = buffer.indexOf(htmlMatch[0]);
+                        const htmlTagEnd = htmlIndex + htmlMatch[0].length - 1; // Before closing >
+                        // Only inject if style attribute doesn't already exist
+                        if (!htmlMatch[1].includes('style=')) {
+                          buffer = buffer.slice(0, htmlTagEnd) + htmlInlineStyle + buffer.slice(htmlTagEnd);
+                          htmlStyled = true;
+                        } else {
+                          htmlStyled = true; // Already has style, skip
+                        }
+                      }
+                    }
+                    
                     if (!headInjected) {
-                      // CRITICAL: Inject as the ABSOLUTE FIRST thing after <head>
+                      // Then inject as the ABSOLUTE FIRST thing after <head>
                       const headMatch = buffer.match(/<head[^>]*>/i);
                       if (headMatch) {
                         const headIndex = buffer.indexOf(headMatch[0]);
@@ -344,7 +544,15 @@ export async function middleware(request: NextRequest) {
                 flush(controller) {
                   try {
                     if (buffer) {
-                      // Last chance: inject if we haven't yet
+                      // Last chance: inject HTML inline style if we haven't yet
+                      if (!htmlStyled && htmlInlineStyle) {
+                        const htmlMatch = buffer.match(/<html([^>]*)>/i);
+                        if (htmlMatch && !htmlMatch[1].includes('style=')) {
+                          buffer = buffer.replace(/(<html[^>]*)>/i, `$1${htmlInlineStyle}>`);
+                          htmlStyled = true;
+                        }
+                      }
+                      // Last chance: inject head injection if we haven't yet
                       if (!headInjected) {
                         if (/<head[^>]*>/i.test(buffer)) {
                           buffer = buffer.replace(/(<head[^>]*>)/i, `$1${injection}`);
@@ -413,7 +621,6 @@ export async function middleware(request: NextRequest) {
               return supabaseResponse;
             }
           }
-        }
       } catch (error) {
         // Silently ignore middleware injection errors - don't block the page
         // Log in development for debugging
@@ -424,8 +631,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-    // Redirect authenticated users away from login page
-    if (isLoginRoute) {
+  // Redirect authenticated users away from login page
+  if (isLoginRoute) {
       if (user) {
         // Redirect to admin analytics dashboard if already authenticated
         const url = request.nextUrl.clone();

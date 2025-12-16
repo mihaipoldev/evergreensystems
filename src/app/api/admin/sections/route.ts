@@ -25,7 +25,7 @@ export async function GET(request: Request) {
           section_id,
           position,
           status,
-          sections (id, type, title, admin_title, subtitle, content, media_url, icon, created_at, updated_at)
+          sections (id, type, title, admin_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at)
         `)
         .eq("page_id", pageId)
         .order("position", { ascending: true });

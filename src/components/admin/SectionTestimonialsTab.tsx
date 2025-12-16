@@ -11,6 +11,7 @@ import { faPlus, faCheck, faX, faQuoteLeft, faStar } from "@fortawesome/free-sol
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
+import { RichText } from "@/components/ui/RichText";
 import type { Testimonial, TestimonialWithSection } from "@/features/testimonials/types";
 
 type SectionTestimonialsTabProps = {
@@ -209,7 +210,12 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div>
-              <h3 className="font-semibold text-sm">{testimonial.author_name}</h3>
+              <h3 className="font-semibold text-sm">
+                {testimonial.author_name}
+                {testimonial.author_role && (
+                  <span className="text-muted-foreground font-normal"> • {testimonial.author_role}</span>
+                )}
+              </h3>
               {testimonial.rating && (
                 <div className="mt-1">{renderStars(testimonial.rating)}</div>
               )}
@@ -236,10 +242,21 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
               }}
             />
           </div>
-          {testimonial.quote && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {testimonial.quote}
-            </p>
+          {(testimonial.headline || testimonial.quote) && (
+            <div>
+              {testimonial.headline && (
+                <p className="text-xs font-bold text-foreground mb-1">
+                  {testimonial.headline}
+                </p>
+              )}
+              {testimonial.quote && (
+                <RichText
+                  text={testimonial.quote}
+                  as="p"
+                  className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+                />
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -327,7 +344,12 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div>
-                        <h3 className="font-semibold text-sm">{testimonial.author_name}</h3>
+                        <h3 className="font-semibold text-sm">
+                          {testimonial.author_name}
+                          {testimonial.author_role && (
+                            <span className="text-muted-foreground font-normal"> • {testimonial.author_role}</span>
+                          )}
+                        </h3>
                         {testimonial.rating && (
                           <div className="mt-1">{renderStars(testimonial.rating)}</div>
                         )}
@@ -346,10 +368,21 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
                         ]}
                       />
                     </div>
-                    {testimonial.quote && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {testimonial.quote}
-                      </p>
+                    {(testimonial.headline || testimonial.quote) && (
+                      <div>
+                        {testimonial.headline && (
+                          <p className="text-xs font-bold text-foreground mb-1">
+                            {testimonial.headline}
+                          </p>
+                        )}
+                        {testimonial.quote && (
+                          <RichText
+                            text={testimonial.quote}
+                            as="p"
+                            className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

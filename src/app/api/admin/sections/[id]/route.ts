@@ -52,13 +52,14 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { type, title, admin_title, subtitle, content, media_url, icon } = body;
+    const { type, title, admin_title, subtitle, eyebrow, content, media_url, icon } = body;
 
     const updateData: Record<string, unknown> = {};
     if (type !== undefined) updateData.type = type;
     if (title !== undefined) updateData.title = title || null;
     if (admin_title !== undefined) updateData.admin_title = admin_title || null;
     if (subtitle !== undefined) updateData.subtitle = subtitle || null;
+    if (eyebrow !== undefined) updateData.eyebrow = eyebrow || null;
     if (content !== undefined) updateData.content = content;
     if (media_url !== undefined) updateData.media_url = media_url || null;
     if (icon !== undefined) {

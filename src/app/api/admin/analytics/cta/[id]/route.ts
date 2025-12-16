@@ -44,7 +44,7 @@ export async function GET(
 
     // Get all CTA click events for this specific CTA
     // First, get all events and filter in code (similar to main stats route)
-    let eventsQuery = supabase
+    const eventsQuery = supabase
       .from("analytics_events")
       .select("*")
       .eq("entity_type", "cta_button")

@@ -55,6 +55,7 @@ type Section = {
   type: string;
   title: string | null;
   subtitle: string | null;
+  eyebrow: string | null;
   content: any | null;
   media_url: string | null;
   media?: MediaWithSection[];
@@ -224,13 +225,9 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
     console.log('Parsed hero content:', heroContent);
   }
 
-  // Top banner configuration
-  // Show if: JSON is valid AND topBanner exists AND (visible is not false) AND text exists
-  const topBannerText = heroContent?.topBanner?.text || 'FOR B2B COMPANIES ABOVE $100K/MO IN REVENUE';
-  const topBannerVisible = heroContent !== null && 
-                           heroContent?.topBanner &&
-                           heroContent.topBanner.visible !== false &&
-                           !!heroContent.topBanner.text;
+  // Top banner configuration - now uses eyebrow field from section
+  const topBannerText = section?.eyebrow || 'FOR B2B COMPANIES ABOVE $100K/MO IN REVENUE';
+  const topBannerVisible = !!section?.eyebrow;
 
   // Bottom bar configuration  
   // Show if: JSON is valid AND bottomBar exists AND (visible is not false) AND text exists

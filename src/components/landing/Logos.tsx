@@ -12,31 +12,36 @@ type Section = {
   content: any | null;
 } | undefined;
 
-type LogosProps = {
-  section?: Section;
+type Software = {
+  id: string;
+  name: string;
+  slug: string;
+  website_url: string;
+  icon: string | null;
+  section_software: {
+    id: string;
+    order: number;
+    icon_override: string | null;
+    status?: "published" | "draft" | "deactivated";
+  };
 };
 
-const logos = [
-  { name: 'n8n', initials: 'N8N' },
-  { name: 'Instantly', initials: 'IN' },
-  { name: 'Apify', initials: 'AP' },
-  { name: 'OpenAI', initials: 'OA' },
-  { name: 'Apollo', initials: 'AL' },
-  { name: 'StoreLeads', initials: 'SL' },
-  { name: 'Clutch', initials: 'CL' },
-  { name: 'G2', initials: 'G2' },
-  { name: 'Crunchbase', initials: 'CB' },
-  { name: 'ColdSire', initials: 'CS' },
-  { name: 'NeverBounce', initials: 'NB' },
-  { name: 'BuiltWith', initials: 'BW' },
-  { name: 'Outscraper', initials: 'OS' },
-  { name: 'Supabase', initials: 'SB' },
-  { name: 'Vercel', initials: 'VC' },
-];
+type LogosProps = {
+  section?: Section;
+  softwares?: Software[];
+};
 
-export const Logos = ({ section }: LogosProps) => {
+export const Logos = ({ section, softwares = [] }: LogosProps) => {
   // Use section title if available, otherwise use default
   const title = section?.title || 'Built with industry-leading data & automation tools';
+
+  // If no softwares, don't render the section
+  if (!softwares || softwares.length === 0) {
+    return null;
+  }
+
+  // Use softwares from database, sorted by order
+  const sortedSoftwares = [...softwares].sort((a, b) => a.section_software.order - b.section_software.order);
 
   return (
     <section id="logos" className="py-16 relative">
@@ -69,17 +74,37 @@ export const Logos = ({ section }: LogosProps) => {
             className="overflow-hidden"
             direction="left"
           >
-            {logos.map((logo) => (
-              <div
-                key={`row1-${logo.name}`}
-                className="flex items-center gap-2 opacity-40 mx-10"
-              >
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 hidden">
-                  <span className="text-muted-foreground font-semibold text-sm">{logo.initials}</span>
+            {sortedSoftwares.map((software) => {
+              const displayIcon = software.section_software.icon_override || software.icon;
+              return (
+                <div
+                  key={`row1-${software.id}`}
+                  className="flex items-center gap-2 opacity-40 mx-10"
+                >
+                  {displayIcon ? (
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <img
+                        src={displayIcon}
+                        alt={software.name}
+                        className="w-10 h-10 object-contain"
+                        onError={(e) => {
+                          // Hide image on error, show name only
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 hidden">
+                      <span className="text-muted-foreground font-semibold text-sm">
+                        {software.name.substring(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-foreground font-medium text-lg whitespace-nowrap">{software.name}</span>
                 </div>
-                <span className="text-foreground font-medium text-lg whitespace-nowrap">{logo.name}</span>
-              </div>
-            ))}
+              );
+            })}
           </Marquee>
           <Marquee
             speed={30}
@@ -90,17 +115,37 @@ export const Logos = ({ section }: LogosProps) => {
             className="overflow-hidden"
             direction="right"
           >
-            {logos.map((logo) => (
-              <div
-                key={`row2-${logo.name}`}
-                className="flex items-center gap-2 opacity-40 mx-10"
-              >
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 hidden">
-                  <span className="text-muted-foreground font-semibold text-sm">{logo.initials}</span>
+            {sortedSoftwares.map((software) => {
+              const displayIcon = software.section_software.icon_override || software.icon;
+              return (
+                <div
+                  key={`row2-${software.id}`}
+                  className="flex items-center gap-2 opacity-40 mx-10"
+                >
+                  {displayIcon ? (
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <img
+                        src={displayIcon}
+                        alt={software.name}
+                        className="w-10 h-10 object-contain"
+                        onError={(e) => {
+                          // Hide image on error, show name only
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 hidden">
+                      <span className="text-muted-foreground font-semibold text-sm">
+                        {software.name.substring(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-foreground font-medium text-lg whitespace-nowrap">{software.name}</span>
                 </div>
-                <span className="text-foreground font-medium text-lg whitespace-nowrap">{logo.name}</span>
-              </div>
-            ))}
+              );
+            })}
           </Marquee>
         </motion.div>
       </div>
