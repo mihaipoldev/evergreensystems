@@ -151,44 +151,51 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className={`relative lg:flex lg:items-center lg:gap-8 ${
+                className={`relative lg:flex lg:items-center lg:gap-8 group ${
                   index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
                 }`}
               >
                 {/* Content */}
                 <div className={`lg:w-1/2 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:pl-12'}`}>
-                  <div className={`bg-card border border-border rounded-2xl p-6 hover:border-primary/30 transition-colors ${
-                    index % 2 === 0 ? 'lg:ml-auto' : 'lg:mr-auto'
-                  } max-w-md`}>
-                    <div className={`flex items-center gap-3 mb-4 ${index % 2 === 0 ? 'lg:flex-row-reverse' : ''}`}>
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        {step.iconType === 'fontawesome' && step.icon ? (
-                          <FontAwesomeIcon icon={step.icon as IconDefinition} className="w-6 h-6 text-primary" />
-                        ) : step.iconType === 'lucide' && step.icon ? (
-                          (() => {
-                            const IconComponent = step.icon as typeof Search;
-                            return <IconComponent className="w-6 h-6 text-primary" />;
-                          })()
-                        ) : (
-                          <Search className="w-6 h-6 text-primary" />
-                        )}
+                  <div
+                    className={`relative overflow-hidden bg-card border border-border rounded-2xl p-6 ${
+                      index % 2 === 0 ? 'lg:ml-auto' : 'lg:mr-auto'
+                    } max-w-md`}
+                    style={{ boxShadow: '0 0 20px hsl(var(--secondary) / 0.1)' }}
+                  >
+                    {/* Hover Glow */}
+                    <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="relative z-10">
+                      <div className={`flex items-center gap-3 mb-4 ${index % 2 === 0 ? 'lg:flex-row-reverse' : ''}`}>
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                          {step.iconType === 'fontawesome' && step.icon ? (
+                            <FontAwesomeIcon icon={step.icon as IconDefinition} className="w-6 h-6 text-primary" />
+                          ) : step.iconType === 'lucide' && step.icon ? (
+                            (() => {
+                              const IconComponent = step.icon as typeof Search;
+                              return <IconComponent className="w-6 h-6 text-primary" />;
+                            })()
+                          ) : (
+                            <Search className="w-6 h-6 text-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-primary text-xs font-medium uppercase tracking-wider">
+                            Step {step.stepNumber}
+                          </span>
+                          <h3 className="text-foreground text-lg font-semibold">{step.title}</h3>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-primary text-xs font-medium uppercase tracking-wider">
-                          Step {step.stepNumber}
-                        </span>
-                        <h3 className="text-foreground text-lg font-semibold">{step.title}</h3>
-                      </div>
+                      {step.description && (
+                        <p className="text-muted-foreground text-sm mb-4">{step.description}</p>
+                      )}
+                      {step.goal && (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          <span className="text-primary text-xs font-medium">{step.goal}</span>
+                        </div>
+                      )}
                     </div>
-                    {step.description && (
-                      <p className="text-muted-foreground text-sm mb-4">{step.description}</p>
-                    )}
-                    {step.goal && (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span className="text-primary text-xs font-medium">{step.goal}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 

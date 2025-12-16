@@ -140,8 +140,11 @@ export const Testimonials = memo(({ testimonials = [], section }: TestimonialsPr
   }), [displayTestimonials]);
 
   return (
-    <section id="testimonials" className="py-12 md:py-20 relative">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="testimonials" className="py-12 md:py-20 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
+      
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
