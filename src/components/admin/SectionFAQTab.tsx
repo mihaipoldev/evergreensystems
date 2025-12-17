@@ -301,7 +301,7 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add FAQ"
         >
-          <Link href={`/admin/faq/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq`}>
+          <Link href={`/admin/faq/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq&sectionId=${sectionId}`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>

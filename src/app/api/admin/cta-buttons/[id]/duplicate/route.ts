@@ -73,6 +73,7 @@ export async function POST(
       .insert({
         label: duplicateLabel,
         url: original.url,
+        subtitle: original.subtitle,
         style: original.style,
         icon: original.icon,
         position: newPosition,

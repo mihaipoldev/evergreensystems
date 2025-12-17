@@ -25,7 +25,6 @@ export function useCreateTimelineItem() {
 
   return useMutation({
     mutationFn: async (data: {
-      step: number;
       title: string;
       subtitle?: string;
       badge?: string;

@@ -4,9 +4,10 @@ import { revalidateTag } from "next/cache";
 
 type Timeline = {
   id: string;
-  step: number;
   title: string;
-  description: string | null;
+  subtitle: string | null;
+  badge: string | null;
+  icon: string | null;
   position: number;
   created_at: string;
   updated_at: string;
@@ -74,23 +75,14 @@ export async function POST(
 
     const newPosition = maxPositionData?.position ? maxPositionData.position + 1 : 0;
 
-    // Get max step to place duplicate at end
-    const { data: maxStepData } = await adminSupabase
-      .from("timeline")
-      .select("step")
-      .order("step", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ step: number }>();
-
-    const newStep = maxStepData?.step ? maxStepData.step + 1 : 1;
-
     // Create duplicate timeline
     const { data: duplicate, error: duplicateError } = await (adminSupabase
       .from("timeline") as any)
       .insert({
-        step: newStep,
         title: duplicateTitle,
-        description: original.description,
+        subtitle: original.subtitle,
+        badge: original.badge,
+        icon: original.icon,
         position: newPosition,
       })
       .select()

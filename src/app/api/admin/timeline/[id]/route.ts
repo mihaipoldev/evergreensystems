@@ -60,10 +60,9 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { step, title, subtitle, badge, icon, position } = body;
+    const { title, subtitle, badge, icon, position } = body;
 
     const updateData: Record<string, unknown> = {};
-    if (step !== undefined) updateData.step = step;
     if (title !== undefined) updateData.title = title;
     if (subtitle !== undefined) updateData.subtitle = subtitle || null;
     if (badge !== undefined) updateData.badge = badge || null;

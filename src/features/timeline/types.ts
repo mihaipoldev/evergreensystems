@@ -1,6 +1,5 @@
 export type Timeline = {
   id: string;
-  step: number;
   title: string;
   subtitle: string | null;
   badge: string | null;

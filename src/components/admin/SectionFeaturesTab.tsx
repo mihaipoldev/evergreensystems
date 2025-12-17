@@ -285,7 +285,7 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
   const renderActions = useCallback((feature: OfferFeatureWithSection) => (
     <ActionMenu
       itemId={feature.id}
-      editHref={`/admin/features/${feature.id}/edit`}
+      editHref={`/admin/features/${feature.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`}
       onDelete={async () => {
         await handleDeleteFeature(feature.id);
       }}
@@ -303,7 +303,7 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
         },
       ]}
     />
-  ), [handleRemoveFeature, handleDuplicate, handleDeleteFeature]);
+  ), [pageId, sectionId, handleRemoveFeature, handleDuplicate, handleDeleteFeature]);
 
   const selectedFeatureIds = sectionFeatures.map((f) => f.id);
   const unselectedFeatures = allFeatures
@@ -319,7 +319,7 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Feature"
         >
-          <Link href={`/admin/features/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`}>
+          <Link href={`/admin/features/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features&sectionId=${sectionId}`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>

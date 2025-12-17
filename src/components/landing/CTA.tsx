@@ -102,49 +102,54 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
               className="flex flex-wrap gap-4 justify-center items-center max-w-3xl mx-auto"
             >
               {sortedButtons.map((button, index) => (
-                <motion.div
-                  key={button.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ 
-                    opacity: { duration: 0.6, delay: 0.3 + index * 0.1 },
-                    y: { duration: 0.6, delay: 0.3 + index * 0.1 },
-                    scale: { type: "spring", stiffness: 400, damping: 25 }
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative"
-                >
-                  <Button
-                    asChild
-                    className={cn(
-                      "relative h-14 px-8 font-semibold whitespace-nowrap text-base transition-all duration-150",
-                      "border-2",
-                      button.style === "primary" || !button.style
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
-                        : button.style === "secondary"
-                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground border-secondary/20 hover:border-secondary/40"
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
-                    )}
+                <div key={button.id} className="relative flex flex-col items-center">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ 
+                      opacity: { duration: 0.6, delay: 0.3 + index * 0.1 },
+                      y: { duration: 0.6, delay: 0.3 + index * 0.1 },
+                      scale: { type: "spring", stiffness: 400, damping: 25 }
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    <Link 
-                      href={button.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      onClick={() => handleCTAClick(button)}
-                      className="flex items-center justify-center gap-2"
-                    >
-                      {button.icon && (
-                        <FontAwesomeIcon
-                          icon={button.icon as any}
-                          className="h-4 w-4"
-                        />
+                    <Button
+                      asChild
+                      className={cn(
+                        "relative h-14 px-8 font-semibold whitespace-nowrap text-base transition-all duration-150",
+                        "border-2",
+                        button.style === "primary" || !button.style
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
+                          : button.style === "secondary"
+                          ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground border-secondary/20 hover:border-secondary/40"
+                          : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
                       )}
-                      {button.label}
-                    </Link>
-                  </Button>
-                </motion.div>
+                    >
+                      <Link 
+                        href={button.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => handleCTAClick(button)}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        {button.icon && (
+                          <FontAwesomeIcon
+                            icon={button.icon as any}
+                            className="h-4 w-4"
+                          />
+                        )}
+                        {button.label}
+                      </Link>
+                    </Button>
+                  </motion.div>
+                  {button.subtitle && (
+                    <p className="text-sm text-muted-foreground mt-4 text-center max-w-xs">
+                      {button.subtitle}
+                    </p>
+                  )}
+                </div>
               ))}
             </motion.div>
           )}

@@ -283,6 +283,7 @@ export interface Database {
           type: string;
           title: string | null;
           admin_title: string | null;
+          header_title: string | null;
           subtitle: string | null;
           eyebrow: string | null;
           content: Json | null;
@@ -295,6 +296,7 @@ export interface Database {
           type: string;
           title?: string | null;
           admin_title?: string | null;
+          header_title?: string | null;
           subtitle?: string | null;
           eyebrow?: string | null;
           content?: Json | null;
@@ -307,6 +309,7 @@ export interface Database {
           type?: string;
           title?: string | null;
           admin_title?: string | null;
+          header_title?: string | null;
           subtitle?: string | null;
           eyebrow?: string | null;
           content?: Json | null;
@@ -349,6 +352,7 @@ export interface Database {
           id: string;
           label: string;
           url: string;
+          subtitle: string | null;
           style: string | null;
           icon: string | null;
           position: number;
@@ -360,6 +364,7 @@ export interface Database {
           id?: string;
           label: string;
           url: string;
+          subtitle?: string | null;
           style?: string | null;
           icon?: string | null;
           position?: number;
@@ -371,6 +376,7 @@ export interface Database {
           id?: string;
           label?: string;
           url?: string;
+          subtitle?: string | null;
           style?: string | null;
           icon?: string | null;
           position?: number;

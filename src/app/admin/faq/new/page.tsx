@@ -4,12 +4,13 @@ import { FAQForm } from "@/features/faq/components/FAQForm";
 export const dynamic = "force-dynamic";
 
 type NewFAQPageProps = {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; sectionId?: string }>;
 };
 
 export default async function NewFAQPage({ searchParams }: NewFAQPageProps) {
   const params = await searchParams;
   const returnTo = params.returnTo;
+  const sectionId = params.sectionId;
 
   return (
     <div className="w-full space-y-6">
@@ -19,7 +20,7 @@ export default async function NewFAQPage({ searchParams }: NewFAQPageProps) {
           description="Create a new frequently asked question"
         />
       </div>
-      <FAQForm isEdit={false} returnTo={returnTo} />
+      <FAQForm isEdit={false} returnTo={returnTo} sectionId={sectionId} />
     </div>
   );
 }

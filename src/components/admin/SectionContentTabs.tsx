@@ -48,7 +48,7 @@ type SectionContentTabsProps = {
   initialSocialPlatforms?: SocialPlatformWithSection[];
 };
 
-const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta", "timeline", "results"] as const;
+const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "offer", "cta", "timeline", "results"] as const;
 
 export function SectionContentTabs({
   section,
@@ -100,6 +100,8 @@ export function SectionContentTabs({
           return "testimonials";
         case "features":
           return "features";
+        case "offer":
+          return "features";
         case "timeline":
           return "timeline";
         case "results":
@@ -128,6 +130,8 @@ export function SectionContentTabs({
         return { tab: "testimonials" as SectionTab, label: "Testimonials" };
       case "features":
         return { tab: "features" as SectionTab, label: "Features" };
+      case "offer":
+        return { tab: "features" as SectionTab, label: "Features" };
       case "cta":
         return { tab: "cta" as SectionTab, label: "CTA" };
       case "timeline":
@@ -148,6 +152,8 @@ export function SectionContentTabs({
       case "testimonials":
         return <SectionTestimonialsTab sectionId={section.id} pageId={pageId} initialTestimonials={initialTestimonials} />;
       case "features":
+        return <SectionFeaturesTab sectionId={section.id} pageId={pageId} initialFeatures={initialFeatures} />;
+      case "offer":
         return <SectionFeaturesTab sectionId={section.id} pageId={pageId} initialFeatures={initialFeatures} />;
       case "cta":
         return <SectionCTATab sectionId={section.id} pageId={pageId} initialCTAButtons={initialCTAButtons} />;

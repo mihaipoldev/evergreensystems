@@ -47,11 +47,11 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { step, title, subtitle, badge, icon, position } = body;
+    const { title, subtitle, badge, icon, position } = body;
 
-    if (!step || !title) {
+    if (!title) {
       return NextResponse.json(
-        { error: "step and title are required" },
+        { error: "title is required" },
         { status: 400 }
       );
     }
@@ -59,7 +59,6 @@ export async function POST(request: Request) {
     const { data, error } = await (adminSupabase
       .from("timeline") as any)
       .insert({
-        step,
         title,
         subtitle: subtitle || null,
         badge: badge || null,

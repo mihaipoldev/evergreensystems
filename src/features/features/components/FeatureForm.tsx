@@ -46,10 +46,11 @@ type FeatureFormProps = {
   initialData?: OfferFeature | null;
   isEdit?: boolean;
   returnTo?: string;
+  sectionId?: string;
 };
 
 
-export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFormProps) {
+export function FeatureForm({ initialData, isEdit = false, returnTo, sectionId }: FeatureFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,7 +90,52 @@ export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFo
         throw new Error(error.error || `Failed to ${isEdit ? "update" : "create"} feature`);
       }
 
-      toast.success(`Feature ${isEdit ? "updated" : "created"} successfully`);
+      const createdFeature = await response.json();
+      
+      // If sectionId is provided and this is a new feature, automatically add it to the section
+      if (!isEdit && sectionId && createdFeature?.id) {
+        try {
+          // Get current max position for this section
+          const maxPositionResponse = await fetch(`/api/admin/sections/${sectionId}/features`, {
+            headers: {
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+          });
+          
+          let maxPosition = -1;
+          if (maxPositionResponse.ok) {
+            const existingFeatures = await maxPositionResponse.json();
+            if (existingFeatures && existingFeatures.length > 0) {
+              maxPosition = Math.max(...existingFeatures.map((f: any) => f.section_feature?.position || 0));
+            }
+          }
+
+          // Add feature to section
+          const addToSectionResponse = await fetch(`/api/admin/sections/${sectionId}/features`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+            body: JSON.stringify({
+              feature_id: createdFeature.id,
+              position: maxPosition + 1,
+            }),
+          });
+
+          if (addToSectionResponse.ok) {
+            toast.success("Feature created and added to section successfully");
+          } else {
+            toast.success("Feature created successfully");
+          }
+        } catch (error) {
+          console.error("Error adding feature to section:", error);
+          toast.success("Feature created successfully");
+        }
+      } else {
+        toast.success(`Feature ${isEdit ? "updated" : "created"} successfully`);
+      }
+
       const redirectUrl = returnTo || (isEdit && initialData ? `/admin/features/${initialData.id}/edit` : "/admin/features");
       router.push(redirectUrl);
       router.refresh();
@@ -194,7 +240,7 @@ export function FeatureForm({ initialData, isEdit = false, returnTo }: FeatureFo
             asChild
             disabled={isSubmitting}
           >
-            <Link href="/admin/features">Cancel</Link>
+            <Link href={returnTo || "/admin/features"}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Feature" : "Create Feature"}

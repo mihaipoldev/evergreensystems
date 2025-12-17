@@ -42,9 +42,10 @@ type FAQFormProps = {
   initialData?: FAQItem | null;
   isEdit?: boolean;
   returnTo?: string;
+  sectionId?: string;
 };
 
-export function FAQForm({ initialData, isEdit = false, returnTo }: FAQFormProps) {
+export function FAQForm({ initialData, isEdit = false, returnTo, sectionId }: FAQFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,7 +84,52 @@ export function FAQForm({ initialData, isEdit = false, returnTo }: FAQFormProps)
         throw new Error(error.error || `Failed to ${isEdit ? "update" : "create"} FAQ item`);
       }
 
-      toast.success(`FAQ item ${isEdit ? "updated" : "created"} successfully`);
+      const createdFAQItem = await response.json();
+      
+      // If sectionId is provided and this is a new FAQ item, automatically add it to the section
+      if (!isEdit && sectionId && createdFAQItem?.id) {
+        try {
+          // Get current max position for this section
+          const maxPositionResponse = await fetch(`/api/admin/sections/${sectionId}/faq-items`, {
+            headers: {
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+          });
+          
+          let maxPosition = -1;
+          if (maxPositionResponse.ok) {
+            const existingFAQItems = await maxPositionResponse.json();
+            if (existingFAQItems && existingFAQItems.length > 0) {
+              maxPosition = Math.max(...existingFAQItems.map((item: any) => item.section_faq_item?.position || 0));
+            }
+          }
+
+          // Add FAQ item to section
+          const addToSectionResponse = await fetch(`/api/admin/sections/${sectionId}/faq-items`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+            body: JSON.stringify({
+              faq_item_id: createdFAQItem.id,
+              position: maxPosition + 1,
+            }),
+          });
+
+          if (addToSectionResponse.ok) {
+            toast.success("FAQ item created and added to section successfully");
+          } else {
+            toast.success("FAQ item created successfully");
+          }
+        } catch (error) {
+          console.error("Error adding FAQ item to section:", error);
+          toast.success("FAQ item created successfully");
+        }
+      } else {
+        toast.success(`FAQ item ${isEdit ? "updated" : "created"} successfully`);
+      }
+
       const redirectUrl = returnTo || "/admin/faq";
       router.push(redirectUrl);
       router.refresh();

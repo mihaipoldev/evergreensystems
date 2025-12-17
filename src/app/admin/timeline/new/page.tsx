@@ -4,12 +4,13 @@ import { TimelineForm } from "@/features/timeline/components/TimelineForm";
 export const dynamic = "force-dynamic";
 
 type NewTimelinePageProps = {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; sectionId?: string }>;
 };
 
 export default async function NewTimelinePage({ searchParams }: NewTimelinePageProps) {
   const params = await searchParams;
   const returnTo = params.returnTo;
+  const sectionId = params.sectionId;
 
   return (
     <div className="w-full space-y-6">
@@ -19,7 +20,7 @@ export default async function NewTimelinePage({ searchParams }: NewTimelinePageP
           description="Create a new timeline item"
         />
       </div>
-      <TimelineForm isEdit={false} returnTo={returnTo} />
+      <TimelineForm isEdit={false} returnTo={returnTo} sectionId={sectionId} />
     </div>
   );
 }

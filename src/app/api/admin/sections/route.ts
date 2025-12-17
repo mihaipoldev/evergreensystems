@@ -31,7 +31,7 @@ export async function GET(request: Request) {
           section_id,
           position,
           status,
-          sections (id, type, title, admin_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at)
+          sections (id, type, title, admin_title, header_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at)
         `)
         .eq("page_id", pageId)
         .order("position", { ascending: true });
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     // Get all sections (user is authenticated, so RLS should allow this)
     const { data: sections, error: sectionsError } = await supabase
       .from("sections")
-      .select("id, type, title, admin_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at")
+      .select("id, type, title, admin_title, header_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at")
       .order("admin_title", { ascending: true, nullsFirst: false });
 
     if (sectionsError) {
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { type, title, admin_title, subtitle, content, media_url, icon } = body;
+    const { type, title, admin_title, header_title, subtitle, content, media_url, icon } = body;
 
     if (!type) {
       return NextResponse.json(
@@ -164,6 +164,7 @@ export async function POST(request: Request) {
         type,
         title: title || null,
         admin_title: admin_title || null,
+        header_title: header_title || null,
         subtitle: subtitle || null,
         content: content || null,
         media_url: media_url || null,

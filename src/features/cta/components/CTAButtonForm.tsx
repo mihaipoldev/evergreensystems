@@ -34,6 +34,7 @@ type SectionOption = { id: string; label: string };
 const formSchema = z.object({
   label: z.string().min(1, "Label is required"),
   url: z.string().min(1, "URL is required").url("Must be a valid URL"),
+  subtitle: z.string().optional(),
   style: z.string().optional(),
   icon: z.string().optional(),
   section_id: z.string().optional().nullable(),
@@ -60,6 +61,7 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
     defaultValues: {
       label: initialData?.label || "",
       url: initialData?.url || "",
+      subtitle: initialData?.subtitle || "",
       style: initialData?.style || "",
       icon: initialData?.icon || "",
       section_id: (initialData as any)?.section_id || null,
@@ -112,6 +114,7 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
       const payload = {
         label: values.label,
         url: values.url,
+        subtitle: values.subtitle || null,
         style: values.style || null,
         icon: values.icon || null,
       };
@@ -137,19 +140,22 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
 
       const createdCTA = await response.json();
 
-      // Link to section (single) if provided
-      try {
-        const sectionId = values.section_id || null;
-        await fetch(`/api/admin/cta-buttons/${createdCTA.id || initialData?.id}/section`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-          body: JSON.stringify({ section_id: sectionId }),
-        });
-      } catch (err) {
-        console.warn("CTA section link update failed:", err);
+      // Link to section (single) if provided - ONLY on creation, not on edit
+      // When editing, preserve existing section connections
+      if (!isEdit) {
+        try {
+          const sectionId = values.section_id || null;
+          await fetch(`/api/admin/cta-buttons/${createdCTA.id}/section`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+            body: JSON.stringify({ section_id: sectionId }),
+          });
+        } catch (err) {
+          console.warn("CTA section link update failed:", err);
+        }
       }
       toast.success(`CTA button ${isEdit ? "updated" : "created"} successfully`);
       
@@ -202,6 +208,22 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="subtitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subtitle</FormLabel>
+                      <FormControl>
+                        <InputShadow placeholder="Enter button subtitle" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <FormField
                   control={form.control}
                   name="url"
@@ -274,7 +296,7 @@ export function CTAButtonForm({ initialData, isEdit = false, rightSideHeaderCont
                 asChild
                 disabled={isSubmitting}
               >
-                <Link href="/admin/cta">Cancel</Link>
+                <Link href={returnTo || "/admin/cta"}>Cancel</Link>
               </Button>
             )}
             <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">

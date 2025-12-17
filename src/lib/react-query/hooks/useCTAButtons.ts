@@ -5,6 +5,7 @@ type CTAButton = {
   id: string;
   label: string;
   url: string;
+  subtitle?: string | null;
   style?: string;
   icon?: string;
   position: number;
@@ -38,6 +39,7 @@ export function useCreateCTAButton() {
     mutationFn: async (data: {
       label: string;
       url: string;
+      subtitle?: string | null;
       style?: string;
       icon?: string;
       position?: number;

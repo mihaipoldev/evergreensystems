@@ -26,7 +26,7 @@ export async function getAllSections(): Promise<SectionWithPages[]> {
   // Get all sections
   const { data: sections, error: sectionsError } = await supabase
     .from("sections")
-    .select("id, type, title, admin_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at") as { 
+    .select("id, type, title, admin_title, header_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at") as { 
       data: Array<Database["public"]["Tables"]["sections"]["Row"] & { icon: string | null }> | null; 
       error: any 
     };
@@ -141,7 +141,7 @@ export async function getSectionById(id: string): Promise<Section | null> {
   const supabase = createServiceRoleClient();
   const { data, error } = await ((supabase
     .from("sections") as any)
-    .select("id, type, title, admin_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at")
+    .select("id, type, title, admin_title, header_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at")
     .eq("id", id)
     .single() as Promise<{ data: Database["public"]["Tables"]["sections"]["Row"] | null; error: any }>);
 

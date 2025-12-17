@@ -6,6 +6,7 @@ export type Section = {
   type: string;
   title: string | null;
   admin_title: string | null;
+  header_title: string | null;
   subtitle: string | null;
   eyebrow: string | null;
   content: any | null;

@@ -341,7 +341,7 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Testimonial"
         >
-          <Link href={`/admin/testimonials/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`}>
+          <Link href={`/admin/testimonials/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials&sectionId=${sectionId}`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>

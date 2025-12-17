@@ -61,6 +61,7 @@ const formSchema = z.object({
   type: z.string().min(1, "Type is required"),
   title: z.string().optional(),
   admin_title: z.string().optional(),
+  header_title: z.string().optional(),
   subtitle: z.string().optional(),
   eyebrow: z.string().optional(),
   content: z.string().optional(),
@@ -82,10 +83,12 @@ const SECTION_TYPES = [
   "header",
   "logos",
   "features",
+  "offer",
   "testimonials",
   "faq",
   "cta",
   "results",
+  "performance",
   "stories",
   "content",
   "gallery",
@@ -137,6 +140,7 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
       type: initialData?.type || "",
       title: initialData?.title || "",
       admin_title: initialData?.admin_title || "",
+      header_title: initialData?.header_title || "",
       subtitle: initialData?.subtitle || "",
       eyebrow: initialData?.eyebrow || "",
       content: parseContent(initialData?.content),
@@ -336,6 +340,7 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
         type: values.type,
         title: values.title || null,
         admin_title: values.admin_title || null,
+        header_title: values.header_title || null,
         subtitle: values.subtitle || null,
         eyebrow: values.eyebrow || null,
         content: parsedContent,
@@ -893,9 +898,9 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
+        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8 space-y-6">
           {/* Admin Settings Section */}
-          <div className="pb-8">
+          <div className="">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
@@ -969,8 +974,7 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
           </div>
 
           {/* Website Content Section */}
-          <div className="pt-8 pb-8">
-            <Separator className="mb-8" />
+          <div className="">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
@@ -982,6 +986,23 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
             </div>
 
             <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="header_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Header Title</FormLabel>
+                    <FormControl>
+                      <InputShadow placeholder="Enter header menu title (used in navbar)" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      This title will be used in the navigation menu. If left empty, the section type will be used.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="eyebrow"
@@ -1282,7 +1303,6 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
 
           {/* Content JSON Section */}
           <div className="pt-8">
-            <Separator className="mb-8" />
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
@@ -1306,13 +1326,15 @@ export function SectionForm({ initialData, isEdit = false, pageId: pageIdProp }:
                         language="json"
                         placeholder='Enter JSON content, e.g., {"key": "value"}'
                         onChange={(value) => field.onChange(value)}
-                        padding={12}
-                        className="font-mono text-sm"
+                        padding={15}
                         style={{ 
                           minHeight: "160px", 
                           borderRadius: 0,
                           backgroundColor: "transparent",
                           fontSize: "14px",
+                          fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace",
+                          lineHeight: "1.5",
+                          letterSpacing: "0",
                         }}
                         data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
                       />

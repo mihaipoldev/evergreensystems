@@ -513,7 +513,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
   }, [videoId]);
 
   return (
-    <section className="relative flex items-center justify-center pt-[116px] overflow-x-hidden pb-4">
+    <section className="relative flex items-center justify-center pt-[100px] md:pt-[112px] overflow-x-hidden pb-16 overflow-y-visible">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-radial" />
       
@@ -738,13 +738,13 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="relative w-full mb-8 flex justify-center"
+          className="relative w-full mb-6 flex justify-center"
         >
           {/* Gradient Background Container */}
           <div
-            className="w-full max-w-[800px] rounded-2xl p-0.5 relative group"
+            className="w-full max-w-[800px] rounded-2xl p-[1px] relative group"
             style={{
-              backgroundImage: 'linear-gradient(84deg, hsl(var(--secondary)), hsl(var(--primary)) 92%)',
+              backgroundImage: 'linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)',
             }}
           >
             {/* Glow Effect on Hover - Gradient from left (secondary) to right (primary) - Behind the video */}
@@ -758,7 +758,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
             />
             
             {/* Black Inner Container */}
-            <div className="bg-background rounded-2xl p-2 pb-4 relative w-full">
+            <div className="bg-transparent rounded-2xl p-[2px] relative w-full">
               {/* Media Container */}
               {mainMedia ? (
                 <div 
@@ -795,51 +795,57 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="flex flex-wrap gap-4 justify-center items-center max-w-2xl mx-auto"
+            className="flex flex-wrap gap-4 justify-center items-start max-w-2xl mx-auto"
           >
             {sortedButtons.map((button, index) => (
-              <motion.div
-                key={button.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  opacity: { duration: 0.7, delay: 0.4 + index * 0.1 },
-                  y: { duration: 0.7, delay: 0.4 + index * 0.1 },
-                  scale: { type: "spring", stiffness: 400, damping: 25 }
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  asChild
-                  className={cn(
-                    "h-14 px-8 font-semibold whitespace-nowrap text-base transition-all duration-150",
-                    button.style === "primary" || !button.style
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                      : button.style === "secondary"
-                      ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                      : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                  )}
+              <div key={button.id} className="flex flex-col items-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    opacity: { duration: 0.7, delay: 0.4 + index * 0.1 },
+                    y: { duration: 0.7, delay: 0.4 + index * 0.1 },
+                    scale: { type: "spring", stiffness: 400, damping: 25 }
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <Link 
-                    href={button.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleHeroCTAClick(button);
-                    }}
-                  >
-                    {button.icon && (
-                      <FontAwesomeIcon
-                        icon={button.icon as any}
-                        className="h-4 w-4 mr-2"
-                      />
+                  <Button
+                    asChild
+                    className={cn(
+                      "h-16 px-12 font-semibold whitespace-nowrap text-[14px] md:text-[16px] transition-all duration-150",
+                      button.style === "primary" || !button.style
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : button.style === "secondary"
+                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
-                    {button.label}
-                  </Link>
-                </Button>
-              </motion.div>
+                  >
+                    <Link 
+                      href={button.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleHeroCTAClick(button);
+                      }}
+                    >
+                      {button.icon && (
+                        <FontAwesomeIcon
+                          icon={button.icon as any}
+                          className="h-4 w-4 mr-2"
+                        />
+                      )}
+                      {button.label}
+                    </Link>
+                  </Button>
+                </motion.div>
+                {button.subtitle && (
+                  <p className="text-sm text-muted-foreground mt-4 text-center max-w-xs">
+                    {button.subtitle}
+                  </p>
+                )}
+              </div>
             ))}
           </motion.div>
         )}

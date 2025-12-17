@@ -153,16 +153,11 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3 mb-1">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                Step {item.step}
+            {item.badge && (
+              <Badge className="text-xs">
+                {item.badge}
               </Badge>
-              {item.badge && (
-                <Badge className="text-xs">
-                  {item.badge}
-                </Badge>
-              )}
-            </div>
+            )}
           </div>
           <Link
             href={editHref}

@@ -4,6 +4,7 @@ export type CTAButton = {
   id: string;
   label: string;
   url: string;
+  subtitle: string | null;
   style: string | null;
   icon: string | null;
   position: number;

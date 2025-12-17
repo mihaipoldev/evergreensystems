@@ -799,3 +799,25 @@ input[type="password"]:-webkit-autofill:active {
 .rich-text-content strong {
   font-weight: 900;
 }
+
+/* Code Editor Fixes - Fix cursor alignment and font rendering */
+.w-tc-editor textarea,
+.w-tc-editor pre {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+  font-feature-settings: normal !important;
+  font-variant-ligatures: none !important;
+  letter-spacing: 0 !important;
+  line-height: 1.5 !important;
+  tab-size: 2 !important;
+  -moz-tab-size: 2 !important;
+}
+
+.w-tc-editor textarea {
+  caret-color: hsl(var(--foreground));
+}
+
+/* Ensure textarea and pre have matching font metrics for cursor alignment */
+.w-tc-editor pre code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+  letter-spacing: 0 !important;
+}

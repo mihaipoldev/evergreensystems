@@ -41,6 +41,7 @@ import { useSections } from "@/lib/react-query/hooks";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { getSectionTabWithDefault } from "@/lib/tab-persistence";
 import type { Page } from "@/features/pages/types";
 import type { Section } from "@/features/sections/types";
 
@@ -448,10 +449,10 @@ function PageCollapsible({
     
     const currentPath = pendingPath || pathname;
     const queryPageId = searchParams.get("pageId");
-    const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta"];
+    const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "offer", "cta"];
     
     // Check if we're on a content item edit route (e.g., /admin/testimonials/[id]/edit)
-    const contentItemRouteMatch = currentPath.match(/\/admin\/(testimonials|faq|features|cta)\/[^/]+\/edit/);
+    const contentItemRouteMatch = currentPath.match(/\/admin\/(testimonials|faq|features|offer|cta)\/[^/]+\/edit/);
     if (contentItemRouteMatch) {
       // Check if returnTo parameter points to a section on this page
       const returnTo = searchParams.get('returnTo');
@@ -495,10 +496,10 @@ function PageCollapsible({
   // Check if we're on this page or any of its sections
   const isPageActive = useMemo(() => {
     const currentPath = pendingPath || pathname;
-    const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta"];
+    const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "offer", "cta"];
     
     // Check if we're on a content item edit route (e.g., /admin/testimonials/[id]/edit)
-    const contentItemRouteMatch = currentPath.match(/\/admin\/(testimonials|faq|features|cta)\/[^/]+\/edit/);
+    const contentItemRouteMatch = currentPath.match(/\/admin\/(testimonials|faq|features|offer|cta)\/[^/]+\/edit/);
     if (contentItemRouteMatch) {
       // Check if returnTo parameter points to a section on this page
       const returnTo = searchParams.get('returnTo');
@@ -672,45 +673,14 @@ function PageCollapsible({
               return aPos - bPos;
             })
             .map((section) => {
-              const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta", "timeline", "results"];
+              const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "offer", "cta", "timeline", "results"];
               const isContentSection = CONTENT_SECTION_TYPES.includes((section as any).type);
-              const isHeroSection = (section as any).type === "hero";
-              const isHeaderSection = (section as any).type === "header";
-              const isLogosSection = (section as any).type === "logos";
-              const isFooterSection = (section as any).type === "footer";
               
-              // Determine section href based on type (using new URL structure)
+              // Determine section href using stored tab preference or default
               const sectionBase = `/admin/sections/${section.id}`;
-              let sectionHref: string;
-              if (isHeroSection) {
-                sectionHref = `${sectionBase}?pageId=${page.id}&tab=media`;
-              } else if (isHeaderSection) {
-                sectionHref = `${sectionBase}?pageId=${page.id}&tab=cta`;
-              } else if (isLogosSection) {
-                sectionHref = `${sectionBase}?pageId=${page.id}&tab=softwares`;
-              } else if (isFooterSection) {
-                sectionHref = `${sectionBase}?pageId=${page.id}&tab=social-platforms`;
-              } else if (isContentSection) {
-                // Use section-type-specific tab name
-                const sectionType = (section as any).type;
-                if (sectionType === "faq") {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=faq`;
-                } else if (sectionType === "testimonials") {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=testimonials`;
-                } else if (sectionType === "features") {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=features`;
-                } else if (sectionType === "timeline") {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=timeline`;
-                } else if (sectionType === "results") {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=results`;
-                } else if (sectionType === "cta") {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=cta`;
-                } else {
-                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=edit`;
-                }
-              } else {
-                sectionHref = `${sectionBase}?pageId=${page.id}&tab=edit`;
-              }
+              const sectionType = (section as any).type;
+              const tab = getSectionTabWithDefault(section.id, sectionType);
+              const sectionHref = `${sectionBase}?pageId=${page.id}&tab=${tab}`;
               
               const currentPath = pendingPath || pathname;
               

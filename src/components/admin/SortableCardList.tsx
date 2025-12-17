@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, ReactNode, useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -89,6 +89,7 @@ export function SortableCardList<T extends SortableItemBase>({
 }: SortableCardListProps<T>) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const scrollPositionRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -114,18 +115,32 @@ export function SortableCardList<T extends SortableItemBase>({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    // Save current scroll position
+    scrollPositionRef.current = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
     // Prevent body scroll during drag on mobile
     document.body.style.overflow = "hidden";
     document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollPositionRef.current}px`;
     document.body.style.width = "100%";
+  };
+
+  const restoreScrollPosition = () => {
+    const scrollY = scrollPositionRef.current;
+    // Restore body scroll
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    // Restore scroll position using requestAnimationFrame to ensure it happens after style reset
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    // Restore body scroll
-    document.body.style.overflow = "";
-    document.body.style.position = "";
-    document.body.style.width = "";
+    // Restore scroll position
+    restoreScrollPosition();
     setActiveId(null);
     
     if (!over || active.id === over.id) return;
@@ -170,9 +185,7 @@ export function SortableCardList<T extends SortableItemBase>({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => {
-        document.body.style.overflow = "";
-        document.body.style.position = "";
-        document.body.style.width = "";
+        restoreScrollPosition();
         setActiveId(null);
       }}
     >

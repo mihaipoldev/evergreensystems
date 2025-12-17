@@ -4,12 +4,13 @@ import { TestimonialForm } from "@/features/testimonials/components/TestimonialF
 export const dynamic = "force-dynamic";
 
 type NewTestimonialPageProps = {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; sectionId?: string }>;
 };
 
 export default async function NewTestimonialPage({ searchParams }: NewTestimonialPageProps) {
   const params = await searchParams;
   const returnTo = params.returnTo;
+  const sectionId = params.sectionId;
 
   return (
     <div className="w-full space-y-6">
@@ -19,7 +20,7 @@ export default async function NewTestimonialPage({ searchParams }: NewTestimonia
           description="Create a new testimonial to showcase customer feedback"
         />
       </div>
-      <TestimonialForm isEdit={false} returnTo={returnTo} />
+      <TestimonialForm isEdit={false} returnTo={returnTo} sectionId={sectionId} />
     </div>
   );
 }

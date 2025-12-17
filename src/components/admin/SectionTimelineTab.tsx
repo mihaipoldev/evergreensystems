@@ -238,7 +238,7 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              Step {item.step}
+              Step {item.section_timeline.position + 1}
             </Badge>
             {item.badge && (
               <Badge className="text-xs">
@@ -317,7 +317,7 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Timeline"
         >
-          <Link href={`/admin/timeline/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`}>
+          <Link href={`/admin/timeline/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline&sectionId=${sectionId}`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -368,14 +368,11 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">
-                        Step {item.step}
-                      </Badge>
-                      {item.badge && (
+                    {item.badge && (
+                      <div className="flex items-center gap-2 mb-1">
                         <Badge variant="secondary" className="text-xs">{item.badge}</Badge>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-semibold text-sm line-clamp-1">
                         {item.title}

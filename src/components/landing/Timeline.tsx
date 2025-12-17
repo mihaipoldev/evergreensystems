@@ -18,7 +18,6 @@ type Section = {
 
 type TimelineItem = {
   id: string;
-  step: number;
   title: string;
   subtitle: string | null;
   badge: string | null;
@@ -106,7 +105,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
         title: item.title,
         description: item.subtitle || '',
         goal: item.badge || '',
-        stepNumber: item.step || item.section_timeline.position + 1,
+        stepNumber: item.section_timeline.position + 1,
       };
     });
   }

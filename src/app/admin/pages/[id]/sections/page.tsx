@@ -7,6 +7,8 @@ import { notFound } from "next/navigation";
 import type { Section } from "@/features/sections/types";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = 'force-dynamic';
+
 type PageSection = Section & {
   page_section_id: string;
   position: number;

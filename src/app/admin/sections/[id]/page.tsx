@@ -11,7 +11,7 @@ type SectionPageProps = {
 };
 
 // Section types that have associated content items
-const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta", "timeline", "results"] as const;
+const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "offer", "cta", "timeline", "results"] as const;
 
 export default async function SectionPage({ params, searchParams }: SectionPageProps) {
   const { id } = await params;
@@ -53,6 +53,8 @@ export default async function SectionPage({ params, searchParams }: SectionPageP
     } else if (section.type === "testimonials") {
       initialTestimonials = await getTestimonialsBySectionId(id);
     } else if (section.type === "features") {
+      initialFeatures = await getFeaturesBySectionId(id);
+    } else if (section.type === "offer") {
       initialFeatures = await getFeaturesBySectionId(id);
     } else if (section.type === "cta") {
       initialCTAButtons = await getCTAButtonsBySectionId(id);

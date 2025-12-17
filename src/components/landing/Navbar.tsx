@@ -16,6 +16,7 @@ type Section = {
   type: string;
   title: string | null;
   admin_title: string | null;
+  header_title: string | null;
   subtitle: string | null;
   content: any | null;
   media_url: string | null;
@@ -30,13 +31,20 @@ type NavbarProps = {
   headerSection?: Section;
 };
 
+// Helper function to convert string to title case
+const toTitleCase = (str: string): string => {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 // Helper function to format section type to display name
-const formatSectionName = (type: string, title: string | null, adminTitle: string | null): string => {
-  // Use admin_title first, then title, then format the type
-  if (adminTitle) return adminTitle;
-  if (title) {
-    // Remove RichText formatting like [[text]]
-    return title.replace(/\[\[([^\]]+)\]\]/g, '$1');
+const formatSectionName = (type: string, headerTitle: string | null): string => {
+  // Use header_title if available, otherwise format the type
+  if (headerTitle && headerTitle.trim()) {
+    return toTitleCase(headerTitle.trim());
   }
   
   // Format type: "testimonials" -> "Testimonials", "faq" -> "FAQ"
@@ -44,9 +52,12 @@ const formatSectionName = (type: string, title: string | null, adminTitle: strin
     'logos': 'Logos',
     'stories': 'Stories',
     'features': 'Services',
+    'offer': 'Offer',
     'testimonials': 'Testimonials',
     'results': 'Results',
+    'performance': 'Performance',
     'faq': 'FAQ',
+    'timeline': 'Timeline',
   };
   
   return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
@@ -56,6 +67,8 @@ const formatSectionName = (type: string, title: string | null, adminTitle: strin
 const getSectionHref = (type: string): string => {
   // Special case: features type uses "services" as anchor
   if (type === 'features') return '#services';
+  if (type === 'offer') return '#offer';
+  if (type === 'performance') return '#performance';
   return `#${type}`;
 };
 
@@ -171,7 +184,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
         return a.id.localeCompare(b.id);
       })
       .map((section) => ({
-        name: formatSectionName(section.type, section.title, section.admin_title),
+        name: formatSectionName(section.type, section.header_title),
         href: getSectionHref(section.type),
         sectionId: getSectionHref(section.type).replace('#', ''), // Remove # for ID
       }));

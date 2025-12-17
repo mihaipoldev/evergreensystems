@@ -85,6 +85,23 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
         <FeatureForm initialData={feature} isEdit={true} returnTo={returnTo} />
       </div>
     );
+  } else if (section.type === "offer") {
+    const feature = await getOfferFeatureById(itemId);
+    if (!feature) {
+      notFound();
+    }
+    return (
+      <div className="w-full space-y-6">
+        <div className="mb-6 md:mb-8">
+          <AdminPageTitle
+            title="Edit Feature"
+            entityName={feature.title}
+            description="Update the feature details"
+          />
+        </div>
+        <FeatureForm initialData={feature} isEdit={true} returnTo={returnTo} />
+      </div>
+    );
   } else if (section.type === "cta") {
     const ctaButton = await getCTAButtonById(itemId);
     if (!ctaButton) {

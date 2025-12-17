@@ -17,6 +17,10 @@ const Value = dynamic(() => import('@/components/landing/Value').then(mod => ({ 
   loading: () => <div className="h-96" />,
 });
 
+const Offer = dynamic(() => import('@/components/landing/Offer').then(mod => ({ default: mod.Offer })), {
+  loading: () => <div className="h-96" />,
+});
+
 const Testimonials = dynamic(() => import('@/components/landing/Testimonials').then(mod => ({ default: mod.Testimonials })), {
   loading: () => <div className="h-96" />,
 });
@@ -44,6 +48,10 @@ const Footer = dynamic(() => import('@/components/landing/Footer').then(mod => (
 const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod => ({ default: mod.Timeline })), {
   loading: () => <div className="h-96" />,
 });
+
+const Performance = dynamic(() => import('@/components/landing/Performance').then(mod => ({ default: mod.Performance })), {
+  loading: () => <div className="h-96" />,
+});
 import { getPageBySlug, getActivePageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { CTAButtonWithSection } from '@/features/cta/types';
@@ -60,6 +68,7 @@ type Section = {
   type: string;
   title: string | null;
   admin_title: string | null;
+  header_title: string | null;
   subtitle: string | null;
   eyebrow: string | null;
   content: any | null;
@@ -101,7 +110,6 @@ type Section = {
   }>;
   timelineItems?: Array<{
     id: string;
-    step: number;
     title: string;
     subtitle: string | null;
     badge: string | null;
@@ -401,6 +409,9 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
       case 'features':
         return <Value key={section.id} section={section} offerFeatures={(section.features || []) as any} />;
       
+      case 'offer':
+        return <Offer key={section.id} section={section} offerFeatures={(section.features || []) as any} />;
+      
       case 'testimonials':
         return (
           <Testimonials 
@@ -412,6 +423,9 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
       
       case 'results':
         return <Results key={section.id} section={section} />;
+      
+      case 'performance':
+        return <Performance key={section.id} section={section} />;
       
       case 'faq':
         return (

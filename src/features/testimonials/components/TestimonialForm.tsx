@@ -45,9 +45,10 @@ type TestimonialFormProps = {
   isEdit?: boolean;
   rightSideHeaderContent?: React.ReactNode;
   returnTo?: string;
+  sectionId?: string;
 };
 
-export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderContent, returnTo }: TestimonialFormProps) {
+export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderContent, returnTo, sectionId }: TestimonialFormProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const createTestimonial = useCreateTestimonial();
@@ -208,7 +209,54 @@ export function TestimonialForm({ initialData, isEdit = false, rightSideHeaderCo
       // Note: Moving old avatar to bin is now handled automatically by the PUT route
       // No need to do it here to avoid duplicate operations
 
-      toast.success(`Testimonial ${isEdit ? "updated" : "created"} successfully`);
+      // If sectionId is provided and this is a new testimonial, automatically add it to the section
+      if (!isEdit && sectionId && testimonialId) {
+        try {
+          const supabase = createClient();
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData?.session?.access_token;
+
+          // Get current max position for this section
+          const maxPositionResponse = await fetch(`/api/admin/sections/${sectionId}/testimonials`, {
+            headers: {
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+          });
+          
+          let maxPosition = -1;
+          if (maxPositionResponse.ok) {
+            const existingTestimonials = await maxPositionResponse.json();
+            if (existingTestimonials && existingTestimonials.length > 0) {
+              maxPosition = Math.max(...existingTestimonials.map((t: any) => t.section_testimonial?.position || 0));
+            }
+          }
+
+          // Add testimonial to section
+          const addToSectionResponse = await fetch(`/api/admin/sections/${sectionId}/testimonials`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+            body: JSON.stringify({
+              testimonial_id: testimonialId,
+              position: maxPosition + 1,
+            }),
+          });
+
+          if (addToSectionResponse.ok) {
+            toast.success("Testimonial created and added to section successfully");
+          } else {
+            toast.success("Testimonial created successfully");
+          }
+        } catch (error) {
+          console.error("Error adding testimonial to section:", error);
+          toast.success("Testimonial created successfully");
+        }
+      } else {
+        toast.success(`Testimonial ${isEdit ? "updated" : "created"} successfully`);
+      }
+
       const redirectUrl = returnTo || (isEdit && initialData ? `/admin/testimonials/${initialData.id}/edit` : "/admin/testimonials");
       router.push(redirectUrl);
       router.refresh();

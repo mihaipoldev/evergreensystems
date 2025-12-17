@@ -10,7 +10,7 @@ export async function getAllCTAButtons(): Promise<CTAButton[]> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cta_buttons")
-    .select("id, label, url, style, icon, position, created_at, updated_at")
+    .select("id, label, url, subtitle, style, icon, position, created_at, updated_at")
     .order("position", { ascending: true });
 
   if (error) {
@@ -29,7 +29,7 @@ export async function getAllCTAButtonsWithSections(): Promise<CTAButtonWithSecti
   const { data, error } = await supabase
     .from("cta_buttons")
     .select(`
-      id, label, url, style, icon, position, created_at, updated_at,
+      id, label, url, subtitle, style, icon, position, created_at, updated_at,
       section_cta_buttons(
         section_id,
         sections (
@@ -63,6 +63,7 @@ export async function getAllCTAButtonsWithSections(): Promise<CTAButtonWithSecti
       id: btn.id,
       label: btn.label,
       url: btn.url,
+      subtitle: btn.subtitle,
       style: btn.style,
       icon: btn.icon,
       position: btn.position,
@@ -81,7 +82,7 @@ export async function getActiveCTAButtons(): Promise<CTAButton[]> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("cta_buttons")
-    .select("id, label, url, style, icon, position, status, created_at, updated_at")
+    .select("id, label, url, subtitle, style, icon, position, status, created_at, updated_at")
     .eq("status", "active")
     .order("position", { ascending: true });
 
@@ -101,7 +102,7 @@ export async function getCTAButtonById(id: string): Promise<(CTAButton & { secti
   const { data, error } = await supabase
     .from("cta_buttons")
     .select(`
-      id, label, url, style, icon, position, created_at, updated_at,
+      id, label, url, subtitle, style, icon, position, created_at, updated_at,
       section_cta_buttons (
         section_id
       )
@@ -128,6 +129,7 @@ export async function getCTAButtonById(id: string): Promise<(CTAButton & { secti
     id: data.id,
     label: data.label,
     url: data.url,
+    subtitle: data.subtitle,
     style: data.style,
     icon: data.icon,
     position: data.position,

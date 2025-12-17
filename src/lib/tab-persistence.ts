@@ -50,6 +50,58 @@ export function setStoredSectionTab(sectionId: string, tab: SectionTab): void {
 }
 
 /**
+ * Get the stored tab for a section, or return the default tab based on section type
+ * This is used when constructing navigation links to sections
+ * @param sectionId - The section ID
+ * @param sectionType - The section type (e.g., "hero", "faq", "testimonials", etc.)
+ * @returns The tab to use (stored preference or default)
+ */
+export function getSectionTabWithDefault(sectionId: string, sectionType: string): SectionTab {
+  // Try to get stored tab from localStorage
+  const storedTab = getStoredSectionTab(sectionId);
+  if (storedTab) {
+    return storedTab;
+  }
+
+  // Determine default based on section type
+  if (sectionType === "hero") {
+    return "media";
+  }
+  if (sectionType === "header") {
+    return "cta";
+  }
+  if (sectionType === "stories") {
+    return "media";
+  }
+  if (sectionType === "logos") {
+    return "softwares";
+  }
+  if (sectionType === "footer") {
+    return "social-platforms";
+  }
+  if (sectionType === "faq") {
+    return "faq";
+  }
+  if (sectionType === "testimonials") {
+    return "testimonials";
+  }
+  if (sectionType === "features" || sectionType === "offer") {
+    return "features";
+  }
+  if (sectionType === "timeline") {
+    return "timeline";
+  }
+  if (sectionType === "results") {
+    return "results";
+  }
+  if (sectionType === "cta") {
+    return "cta";
+  }
+  // Default to edit for other sections
+  return "edit";
+}
+
+/**
  * Determine which tab a page route corresponds to
  * Now reads from query params first, then falls back to pathname
  */
@@ -96,6 +148,7 @@ export function getSectionTabFromPath(
       if (sectionType === "faq") return "faq";
       if (sectionType === "testimonials") return "testimonials";
       if (sectionType === "features") return "features";
+      if (sectionType === "offer") return "features";
       if (sectionType === "timeline") return "timeline";
       if (sectionType === "results") return "results";
       if (sectionType === "cta") return "cta";
@@ -113,6 +166,7 @@ export function getSectionTabFromPath(
       if (sectionType === "faq") return "faq";
       if (sectionType === "testimonials") return "testimonials";
       if (sectionType === "features") return "features";
+      if (sectionType === "offer") return "features";
       if (sectionType === "timeline") return "timeline";
       if (sectionType === "results") return "results";
       if (sectionType === "cta") return "cta";
@@ -155,6 +209,9 @@ export function getSectionTabFromPath(
     return "testimonials";
   }
   if (sectionType === "features") {
+    return "features";
+  }
+  if (sectionType === "offer") {
     return "features";
   }
   if (sectionType === "timeline") {

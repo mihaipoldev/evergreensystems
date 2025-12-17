@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     let query = adminSupabase
       .from("cta_buttons")
-      .select("id, label, url, style, icon, position, created_at, updated_at");
+      .select("id, label, url, subtitle, style, icon, position, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { label, url, style, icon, position } = body;
+    const { label, url, subtitle, style, icon, position } = body;
 
     if (!label || !url) {
       return NextResponse.json(
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
       .insert({
         label,
         url,
+        subtitle: subtitle || null,
         style: style || null,
         icon: icon || null,
         position: position ?? 0,
