@@ -38,13 +38,17 @@ export async function POST(
       );
     }
 
-    // Generate duplicate name with " (Copy)" suffix if name exists
-    let duplicateName = original.name ? `${original.name} (Copy)` : null;
+    // Generate duplicate name with version number (V2, V3, etc.) if name exists
+    let duplicateName: string | null = null;
     
-    if (duplicateName) {
-      // Check if name already exists, append number if needed
-      let counter = 1;
+    if (original.name) {
+      // Extract base name (remove existing version if present)
+      const baseName = original.name.replace(/\s+V\d+$/, '');
+      
+      // Find the next version number
+      let version = 2;
       while (true) {
+        duplicateName = `${baseName} V${version}`;
         const { data: existing } = await adminSupabase
           .from("media")
           .select("id")
@@ -52,8 +56,7 @@ export async function POST(
           .maybeSingle();
         
         if (!existing) break;
-        counter++;
-        duplicateName = `${original.name} (Copy ${counter})`;
+        version++;
       }
     }
 

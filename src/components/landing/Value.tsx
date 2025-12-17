@@ -124,7 +124,7 @@ export const Value = ({ section, offerFeatures = [] }: ValueProps) => {
               transition={{ delay: index * 0.1, duration: 0.5 }}
               className="relative"
             >
-              <div className="relative h-full border-glow rounded-2xl bg-card p-6 overflow-hidden">
+              <div className="relative h-full rounded-2xl border border-border bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300 p-6 overflow-hidden">
                 <div className="relative z-10">
                   {/* Icon Container */}
                   <motion.div

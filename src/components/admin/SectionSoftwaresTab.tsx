@@ -25,7 +25,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionSoftwaresTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialSoftwares: SoftwareWithSection[];
 };
 
@@ -311,7 +311,7 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
   const renderActions = useCallback((software: SoftwareWithSection) => (
     <ActionMenu
       itemId={software.id}
-      editHref={`/admin/softwares/${software.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=softwares`}
+      editHref={`/admin/softwares/${software.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=softwares`}
       onDelete={async () => {
         await handleDeleteSoftware(software.id);
       }}
@@ -345,7 +345,7 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Software"
         >
-          <Link href={`/admin/softwares/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=softwares`}>
+          <Link href={`/admin/softwares/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=softwares`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -419,7 +419,7 @@ export function SectionSoftwaresTab({ sectionId, pageId, initialSoftwares }: Sec
                       </h3>
                       <ActionMenu
                         itemId={software.id}
-                        editHref={`/admin/softwares/${software.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=softwares`}
+                        editHref={`/admin/softwares/${software.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=softwares`}
                         onDelete={async () => {
                           await handleDeleteSoftware(software.id);
                         }}

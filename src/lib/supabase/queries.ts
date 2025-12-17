@@ -158,6 +158,85 @@ export async function getSiteStructureByPageType(pageType: string): Promise<Data
 }
 
 /**
+ * Get site structure entries by page ID
+ * Returns array of entries where the page is used as production or development page
+ */
+export async function getSiteStructureByPageId(pageId: string): Promise<Array<{ page_type: string; environment: 'production' | 'development' | 'both' }>> {
+  const supabase = await createClient();
+  
+  // Query for entries where the page is used as production page
+  const { data: productionData, error: productionError } = await supabase
+    .from("site_structure")
+    .select("page_type, production_page_id, development_page_id")
+    .eq("production_page_id", pageId);
+
+  if (productionError) {
+    throw productionError;
+  }
+
+  // Query for entries where the page is used as development page
+  const { data: developmentData, error: developmentError } = await supabase
+    .from("site_structure")
+    .select("page_type, production_page_id, development_page_id")
+    .eq("development_page_id", pageId);
+
+  if (developmentError) {
+    throw developmentError;
+  }
+
+  // Combine and deduplicate entries
+  type SiteStructureEntry = {
+    page_type: string;
+    production_page_id: string | null;
+    development_page_id: string | null;
+  };
+  
+  const allEntries = new Map<string, SiteStructureEntry>();
+  const productionEntries: SiteStructureEntry[] = (productionData || []) as SiteStructureEntry[];
+  const developmentEntries: SiteStructureEntry[] = (developmentData || []) as SiteStructureEntry[];
+  
+  productionEntries.forEach(entry => {
+    allEntries.set(entry.page_type, entry);
+  });
+  
+  developmentEntries.forEach(entry => {
+    const existing = allEntries.get(entry.page_type);
+    if (existing) {
+      // Entry already exists, merge the data
+      allEntries.set(entry.page_type, {
+        ...existing,
+        development_page_id: entry.development_page_id,
+      });
+    } else {
+      allEntries.set(entry.page_type, entry);
+    }
+  });
+
+  if (allEntries.size === 0) {
+    return [];
+  }
+
+  return Array.from(allEntries.values()).map(entry => {
+    const isProduction = entry.production_page_id === pageId;
+    const isDevelopment = entry.development_page_id === pageId;
+    
+    let environment: 'production' | 'development' | 'both';
+    if (isProduction && isDevelopment) {
+      environment = 'both';
+    } else if (isProduction) {
+      environment = 'production';
+    } else {
+      environment = 'development';
+    }
+
+    return {
+      page_type: entry.page_type,
+      environment,
+    };
+  });
+}
+
+/**
  * Update site structure to set production and development page variants for a page type
  * Creates entry if it doesn't exist, updates if it does
  */

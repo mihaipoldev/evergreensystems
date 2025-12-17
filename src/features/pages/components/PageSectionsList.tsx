@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { SortableCardList } from "@/components/admin/SortableCardList";
 import { ActionMenu } from "@/components/admin/ActionMenu";
@@ -32,21 +32,43 @@ type PageSectionsListProps = {
 
 export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeader = false }: PageSectionsListProps) {
   const [pageSections, setPageSections] = useState<PageSection[]>(initialSections);
-  const [allSections, setAllSections] = useState<Section[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
   const duplicateSection = useDuplicateSection();
   const deleteSection = useDeleteSection();
 
-  // Fetch all sections for the available sections list
-  const { data: sectionsData = [] } = useSections(
-    { search: debouncedSearch || undefined },
-    { initialData: [] }
+  // Create stable filters object to avoid query key changes
+  const sectionsFilters = useMemo(
+    () => (debouncedSearch ? { search: debouncedSearch } : {}),
+    [debouncedSearch]
   );
 
+  // Fetch all sections for the available sections list
+  const { data: sectionsData = [], isLoading: isLoadingSections, error: sectionsError } = useSections(
+    sectionsFilters,
+    { 
+      enabled: true,
+      refetchOnMount: true,
+      staleTime: 0, // Always consider data stale to ensure fresh fetch
+    }
+  );
+
+  // Use sectionsData directly instead of storing in state to avoid infinite loops
+  const allSections = sectionsData;
+
+  // Debug logging
   useEffect(() => {
-    setAllSections(sectionsData);
-  }, [sectionsData]);
+    console.log("🔍 [PageSectionsList] Debug Info:", {
+      pageId,
+      filters: sectionsFilters,
+      isLoadingSections,
+      sectionsError: sectionsError?.message,
+      sectionsDataLength: sectionsData.length,
+      sectionsData: sectionsData,
+      pageSectionsLength: pageSections.length,
+      pageSections: pageSections,
+    });
+  }, [pageId, sectionsFilters, isLoadingSections, sectionsError, sectionsData, pageSections]);
 
   const loadPageSections = useCallback(async () => {
     try {
@@ -223,7 +245,6 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
       toast.success("Section deleted successfully");
       // Remove from local state immediately
       setPageSections((prev) => prev.filter((s) => s.id !== sectionId));
-      setAllSections((prev) => prev.filter((s) => s.id !== sectionId));
       // The useSections hook will automatically refetch due to query invalidation
     } catch (error: any) {
       console.error("Error deleting section:", error);
@@ -340,7 +361,7 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-2">
           <Link
-            href={`/admin/pages/${pageId}/sections/${section.id}`}
+            href={`/admin/sections/${section.id}?pageId=${pageId}`}
             className="font-semibold text-sm line-clamp-1 hover:text-primary transition-colors cursor-pointer"
           >
             {section.admin_title || section.title || section.type}
@@ -362,7 +383,7 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
   const renderActions = useCallback((section: PageSection) => (
     <ActionMenu
       itemId={section.id}
-      editHref={`/admin/pages/${pageId}/sections/${section.id}?tab=edit`}
+      editHref={`/admin/sections/${section.id}?pageId=${pageId}&tab=edit`}
       onDelete={async () => {
         await handleDeleteSection(section.id);
       }}
@@ -406,6 +427,20 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
       (section.type || "").toLowerCase().includes(query)
     );
   });
+
+  // Debug logging for section filtering
+  useEffect(() => {
+    console.log("🔍 [PageSectionsList] Section Filtering Debug:", {
+      allSectionsLength: allSections.length,
+      allSectionsIds: allSections.map(s => s.id),
+      selectedSectionIds,
+      unselectedSectionsLength: unselectedSections.length,
+      unselectedSectionsIds: unselectedSections.map(s => s.id),
+      filteredUnselectedSectionsLength: filteredUnselectedSections.length,
+      filteredUnselectedSectionsIds: filteredUnselectedSections.map(s => s.id),
+      debouncedSearch,
+    });
+  }, [allSections, selectedSectionIds, unselectedSections, filteredUnselectedSections, debouncedSearch]);
 
   return (
     <div className="w-full">
@@ -491,7 +526,7 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <Link
-                          href={`/admin/sections/${section.id}/edit`}
+                          href={`/admin/sections/${section.id}?tab=edit`}
                           className="font-semibold text-sm line-clamp-1 hover:text-primary transition-colors cursor-pointer"
                         >
                           {section.admin_title || section.title || section.type}

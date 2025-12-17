@@ -37,12 +37,15 @@ export async function POST(
       );
     }
 
-    // Generate duplicate title with " (Copy)" suffix
-    let duplicateTitle = `${original.title} (Copy)`;
+    // Generate duplicate title with version number (V2, V3, etc.)
+    // Extract base name (remove existing version if present)
+    const baseName = original.title.replace(/\s+V\d+$/, '');
     
-    // Check if title already exists, append number if needed
-    let counter = 1;
+    // Find the next version number
+    let version = 2;
+    let duplicateTitle: string;
     while (true) {
+      duplicateTitle = `${baseName} V${version}`;
       const { data: existing } = await adminSupabase
         .from("pages")
         .select("id")
@@ -50,8 +53,7 @@ export async function POST(
         .maybeSingle();
       
       if (!existing) break;
-      counter++;
-      duplicateTitle = `${original.title} (Copy ${counter})`;
+      version++;
     }
 
     // Create duplicate page

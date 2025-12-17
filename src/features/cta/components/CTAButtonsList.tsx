@@ -105,7 +105,7 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
       <div className="flex items-start justify-between gap-3">
         <Link
           href={pageId && sectionId 
-            ? `/admin/cta/${button.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta`
+            ? `/admin/cta/${button.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta`
             : `/admin/cta/${button.id}/edit`}
           className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
         >
@@ -151,7 +151,7 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
           {button.sections.map((section) => (
             <Link
               key={section.id}
-              href={pageId ? `/admin/pages/${pageId}/sections/${section.id}?tab=edit` : `/admin/sections/${section.id}/edit`}
+              href={pageId ? `/admin/sections/${section.id}?pageId=${pageId}&tab=edit` : `/admin/sections/${section.id}?tab=edit`}
               className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/80 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
@@ -167,7 +167,7 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
 
   const renderActions = useCallback((button: CTAButtonWithSections) => {
     const editHref = pageId && sectionId 
-      ? `/admin/pages/${pageId}/sections/${sectionId}/items/${button.id}/edit`
+      ? `/admin/sections/${sectionId}/items/${button.id}/edit?pageId=${pageId}`
       : `/admin/cta/${button.id}/edit`;
     return (
       <ActionMenu
@@ -209,7 +209,7 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
             className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
             title="New CTA Button"
           >
-            <Link href={pageId && sectionId ? `/admin/cta/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta` : "/admin/cta/new"}>
+            <Link href={pageId && sectionId ? `/admin/cta/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta` : "/admin/cta/new"}>
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
             </Link>
           </Button>

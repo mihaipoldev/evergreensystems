@@ -78,14 +78,11 @@ export function InstantFontApply() {
           const adminHeadingVar = fontVarMap[fonts.admin?.heading] || fontVarMap['geist-sans'];
           const adminBodyVar = fontVarMap[fonts.admin?.body] || fontVarMap['geist-sans'];
           
-          const root = document.documentElement;
-          root.style.setProperty('--font-family-admin-heading', 'var(' + adminHeadingVar + ')', 'important');
-          root.style.setProperty('--font-family-admin-body', 'var(' + adminBodyVar + ')', 'important');
-          
-          // Inject style tag at the very beginning of head with maximum specificity
+          // Do NOT set root-level CSS variables - only apply to .preset-admin
+          // This prevents affecting the landing page
           var style = document.createElement('style');
           style.id = 'font-family-session';
-          style.textContent = ':root{--font-family-admin-heading:var(' + adminHeadingVar + ');--font-family-admin-body:var(' + adminBodyVar + ');}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(' + adminBodyVar + '),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(' + adminHeadingVar + '),system-ui,sans-serif!important;}';
+          style.textContent = '.preset-admin,.preset-admin *{--font-family-admin-heading:var(' + adminHeadingVar + ');--font-family-admin-body:var(' + adminBodyVar + ');}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(' + adminBodyVar + '),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(' + adminHeadingVar + '),system-ui,sans-serif!important;}';
           
           // Insert immediately - this must be first in head
           if (document.head) {

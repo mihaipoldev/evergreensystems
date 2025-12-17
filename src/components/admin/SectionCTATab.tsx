@@ -33,7 +33,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionCTATabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialCTAButtons: CTAButtonWithSection[];
 };
 
@@ -315,7 +315,7 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
   const renderActions = useCallback((item: CTAButtonWithSection) => (
     <ActionMenu
       itemId={item.id}
-      editHref={`/admin/cta/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta`}
+      editHref={`/admin/cta/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta`}
       onDelete={async () => {
         await handleDeleteCTA(item.id);
       }}
@@ -349,7 +349,7 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add CTA"
         >
-          <Link href={`/admin/cta/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta`}>
+          <Link href={`/admin/cta/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -408,7 +408,7 @@ export function SectionCTATab({ sectionId, pageId, initialCTAButtons }: SectionC
                       </h3>
                       <ActionMenu
                         itemId={item.id}
-                        editHref={`/admin/cta/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=cta`}
+                        editHref={`/admin/cta/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta`}
                         onDelete={async () => {
                           await handleDeleteCTA(item.id);
                         }}

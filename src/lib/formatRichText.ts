@@ -11,9 +11,9 @@ export function formatRichText(text: string): string {
     // Process bold before italic to avoid conflicts
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // Process primary and secondary highlights
-    .replace(/\[\[(.*?)\]\]/g, '<span class="text-primary font-semibold">$1</span>')
-    .replace(/\{\{(.*?)\}\}/g, '<span class="text-secondary font-semibold">$1</span>')
+    // Process primary and secondary highlights (color only, inherit weight)
+    .replace(/\[\[(.*?)\]\]/g, '<span class="text-primary">$1</span>')
+    .replace(/\{\{(.*?)\}\}/g, '<span class="text-secondary">$1</span>')
     // Convert newlines to <br /> tags
     .replace(/\n/g, '<br />');
 

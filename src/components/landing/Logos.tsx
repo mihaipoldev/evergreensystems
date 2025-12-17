@@ -58,22 +58,25 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
           />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="space-y-10"
-        >
-          <Marquee
-            speed={30}
-            gradient={true}
-            gradientColor="hsl(var(--background))"
-            gradientWidth={100}
-            pauseOnHover={false}
-            className="overflow-hidden"
-            direction="left"
+        <div className="space-y-10 relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+            }}
           >
+            <Marquee
+              speed={30}
+              gradient={false}
+              pauseOnHover={false}
+              className="overflow-visible"
+              direction="left"
+            >
             {sortedSoftwares.map((software) => {
               const displayIcon = software.section_software.icon_override || software.icon;
               return (
@@ -82,7 +85,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                   className="flex items-center gap-2 opacity-40 mx-10"
                 >
                   {displayIcon ? (
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0 overflow-hidden border border-muted-foreground/10">
                       <img
                         src={displayIcon}
                         alt={software.name}
@@ -95,7 +98,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                       />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 hidden">
+                    <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0 hidden border border-muted-foreground/10">
                       <span className="text-muted-foreground font-semibold text-sm">
                         {software.name.substring(0, 2).toUpperCase()}
                       </span>
@@ -105,16 +108,26 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                 </div>
               );
             })}
-          </Marquee>
-          <Marquee
-            speed={30}
-            gradient={true}
-            gradientColor="hsl(var(--background))"
-            gradientWidth={100}
-            pauseOnHover={false}
-            className="overflow-hidden"
-            direction="right"
+            </Marquee>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="relative"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+            }}
           >
+            <Marquee
+              speed={30}
+              gradient={false}
+              pauseOnHover={false}
+              className="overflow-visible"
+              direction="right"
+            >
             {sortedSoftwares.map((software) => {
               const displayIcon = software.section_software.icon_override || software.icon;
               return (
@@ -123,7 +136,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                   className="flex items-center gap-2 opacity-40 mx-10"
                 >
                   {displayIcon ? (
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0 overflow-hidden border border-muted-foreground/10">
                       <img
                         src={displayIcon}
                         alt={software.name}
@@ -136,7 +149,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                       />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 hidden">
+                    <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0 hidden border border-muted-foreground/10">
                       <span className="text-muted-foreground font-semibold text-sm">
                         {software.name.substring(0, 2).toUpperCase()}
                       </span>
@@ -146,8 +159,9 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                 </div>
               );
             })}
-          </Marquee>
-        </motion.div>
+            </Marquee>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

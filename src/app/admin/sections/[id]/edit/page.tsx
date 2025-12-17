@@ -16,5 +16,5 @@ export default async function EditSectionPage({ params }: EditSectionPageProps) 
   }
 
   // Redirect to new URL structure with query param
-  redirect(`/admin/pages/${pageId}/sections/${id}?tab=edit`);
+  redirect(`/admin/sections/${id}?pageId=${pageId}&tab=edit`);
 }

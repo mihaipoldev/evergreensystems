@@ -35,7 +35,7 @@ import type { SocialPlatformWithSection } from "@/features/social-platforms/type
 
 type SectionContentTabsProps = {
   section: Section;
-  pageId: string;
+  pageId?: string;
   initialFAQItems?: FAQItemWithSection[];
   initialTestimonials?: TestimonialWithSection[];
   initialFeatures?: OfferFeatureWithSection[];
@@ -160,13 +160,30 @@ export function SectionContentTabs({
     }
   };
 
-  const baseHref = `/admin/pages/${pageId}/sections/${section.id}`;
-  const editHref = `${baseHref}?tab=edit`;
-  const mediaHref = `${baseHref}?tab=media`;
-  const ctaHref = `${baseHref}?tab=cta`;
-  const softwaresHref = `${baseHref}?tab=softwares`;
-  const socialPlatformsHref = `${baseHref}?tab=social-platforms`;
-  const contentTabHref = contentTabInfo ? `${baseHref}?tab=${contentTabInfo.tab}` : null;
+  // Build base href with new URL structure: /admin/sections/[id]?pageId=[pageId]
+  const baseHref = pageId 
+    ? `/admin/sections/${section.id}?pageId=${pageId}`
+    : `/admin/sections/${section.id}`;
+  const editHref = pageId 
+    ? `/admin/sections/${section.id}?pageId=${pageId}&tab=edit`
+    : `/admin/sections/${section.id}?tab=edit`;
+  const mediaHref = pageId 
+    ? `/admin/sections/${section.id}?pageId=${pageId}&tab=media`
+    : `/admin/sections/${section.id}?tab=media`;
+  const ctaHref = pageId 
+    ? `/admin/sections/${section.id}?pageId=${pageId}&tab=cta`
+    : `/admin/sections/${section.id}?tab=cta`;
+  const softwaresHref = pageId 
+    ? `/admin/sections/${section.id}?pageId=${pageId}&tab=softwares`
+    : `/admin/sections/${section.id}?tab=softwares`;
+  const socialPlatformsHref = pageId 
+    ? `/admin/sections/${section.id}?pageId=${pageId}&tab=social-platforms`
+    : `/admin/sections/${section.id}?tab=social-platforms`;
+  const contentTabHref = contentTabInfo 
+    ? (pageId 
+        ? `/admin/sections/${section.id}?pageId=${pageId}&tab=${contentTabInfo.tab}`
+        : `/admin/sections/${section.id}?tab=${contentTabInfo.tab}`)
+    : null;
 
   // Local state for optimistic tab UI and loading
   const [pendingTab, setPendingTab] = useState<SectionTab | null>(null);
@@ -178,7 +195,10 @@ export function SectionContentTabs({
     if (!hasInitialized) {
       // On initial load, ensure URL has query param
       if (!tabParam) {
-        router.replace(`${baseHref}?tab=${activeTab}`, { scroll: false });
+        const newHref = pageId 
+        ? `/admin/sections/${section.id}?pageId=${pageId}&tab=${activeTab}`
+        : `/admin/sections/${section.id}?tab=${activeTab}`;
+      router.replace(newHref, { scroll: false });
         // Don't set hasInitialized yet - wait for URL to update
         return;
       }
@@ -323,7 +343,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionForm initialData={section} isEdit={true} pageId={pageId} />
+            <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
           </div>
         ) : isMediaTab ? (
           <div className="relative">
@@ -353,7 +373,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionCTATab sectionId={section.id} pageId={pageId} initialCTAButtons={initialHeroCTAButtons} />
+            <SectionCTATab sectionId={section.id} pageId={pageId || undefined} initialCTAButtons={initialHeroCTAButtons} />
           </div>
         )}
       </div>
@@ -410,7 +430,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionForm initialData={section} isEdit={true} pageId={pageId} />
+            <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
           </div>
         ) : (
           <div className="relative">
@@ -425,7 +445,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionCTATab sectionId={section.id} pageId={pageId} initialCTAButtons={initialHeroCTAButtons} />
+            <SectionCTATab sectionId={section.id} pageId={pageId || undefined} initialCTAButtons={initialHeroCTAButtons} />
           </div>
         )}
       </div>
@@ -482,7 +502,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionForm initialData={section} isEdit={true} pageId={pageId} />
+            <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
           </div>
         ) : (
           <div className="relative">
@@ -554,7 +574,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionForm initialData={section} isEdit={true} pageId={pageId} />
+            <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
           </div>
         ) : (
           <div className="relative">
@@ -626,7 +646,7 @@ export function SectionContentTabs({
                 </div>
               </div>
             )}
-            <SectionForm initialData={section} isEdit={true} pageId={pageId} />
+            <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
           </div>
         ) : (
           <div className="relative">
@@ -680,7 +700,7 @@ export function SectionContentTabs({
               </div>
             </div>
           )}
-          <SectionForm initialData={section} isEdit={true} />
+          <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
         </div>
       </div>
     );
@@ -739,7 +759,7 @@ export function SectionContentTabs({
               </div>
             </div>
           )}
-          <SectionForm initialData={section} isEdit={true} pageId={pageId} />
+          <SectionForm initialData={section} isEdit={true} pageId={pageId || undefined} />
         </div>
       ) : (
         <div className="relative">

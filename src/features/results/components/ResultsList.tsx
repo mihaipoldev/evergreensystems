@@ -107,7 +107,7 @@ export function ResultsList({ initialResults, hideHeader = false, sectionId, pag
 
   const renderContent = useCallback((item: Result) => {
     const editHref = pageId && sectionId 
-      ? `/admin/results/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=results`
+      ? `/admin/results/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results`
       : `/admin/results/${item.id}/edit`;
     return (
       <div className="flex items-start gap-3">
@@ -133,7 +133,7 @@ export function ResultsList({ initialResults, hideHeader = false, sectionId, pag
 
   const renderActions = useCallback((item: Result) => {
     const editHref = pageId && sectionId 
-      ? `/admin/results/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=results`
+      ? `/admin/results/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results`
       : `/admin/results/${item.id}/edit`;
     return (
       <ActionMenu
@@ -174,7 +174,7 @@ export function ResultsList({ initialResults, hideHeader = false, sectionId, pag
             className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
             title="Add Result"
           >
-            <Link href={pageId && sectionId ? `/admin/results/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=results` : "/admin/results/new"}>
+            <Link href={pageId && sectionId ? `/admin/results/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results` : "/admin/results/new"}>
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
             </Link>
           </Button>

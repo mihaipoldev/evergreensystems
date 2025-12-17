@@ -14,7 +14,7 @@ export function RichText({ text, as = "p", className, style }: RichTextProps) {
 
   return (
     <Tag
-      className={cn(className)}
+      className={cn("rich-text-content", className)}
       style={style}
       dangerouslySetInnerHTML={{ __html: formatRichText(text) }}
     />

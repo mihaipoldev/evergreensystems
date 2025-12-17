@@ -156,7 +156,7 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
           <div className="flex items-start justify-between gap-3 mb-1">
             <Link
               href={pageId && sectionId 
-                ? `/admin/features/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=features`
+                ? `/admin/features/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`
                 : `/admin/features/${item.id}/edit`}
               className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
             >
@@ -184,7 +184,7 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
 
   const renderActions = useCallback((item: OfferFeature) => {
     const editHref = pageId && sectionId 
-      ? `/admin/pages/${pageId}/sections/${sectionId}/items/${item.id}/edit`
+      ? `/admin/sections/${sectionId}/items/${item.id}/edit?pageId=${pageId}`
       : `/admin/features/${item.id}/edit`;
     return (
       <ActionMenu
@@ -226,7 +226,7 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
             className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
             title="New Feature"
           >
-            <Link href={pageId && sectionId ? `/admin/features/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=features` : "/admin/features/new"}>
+            <Link href={pageId && sectionId ? `/admin/features/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features` : "/admin/features/new"}>
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
             </Link>
           </Button>

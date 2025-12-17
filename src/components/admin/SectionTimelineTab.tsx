@@ -27,7 +27,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionTimelineTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialTimelineItems: TimelineWithSection[];
 };
 
@@ -283,7 +283,7 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
   const renderActions = useCallback((item: TimelineWithSection) => (
     <ActionMenu
       itemId={item.id}
-      editHref={`/admin/timeline/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`}
+      editHref={`/admin/timeline/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`}
       onDelete={async () => {
         await handleDeleteTimelineItem(item.id);
       }}
@@ -317,7 +317,7 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Timeline"
         >
-          <Link href={`/admin/timeline/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`}>
+          <Link href={`/admin/timeline/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -382,7 +382,7 @@ export function SectionTimelineTab({ sectionId, pageId, initialTimelineItems }: 
                       </h3>
                       <ActionMenu
                         itemId={item.id}
-                        editHref={`/admin/timeline/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`}
+                        editHref={`/admin/timeline/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`}
                         onDelete={async () => {
                           await handleDeleteTimelineItem(item.id);
                         }}

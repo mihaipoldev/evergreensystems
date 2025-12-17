@@ -140,7 +140,7 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
 
   const renderContent = useCallback((item: Timeline) => {
     const editHref = pageId && sectionId 
-      ? `/admin/timeline/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`
+      ? `/admin/timeline/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`
       : `/admin/timeline/${item.id}/edit`;
     return (
       <div className="flex items-start gap-3">
@@ -182,7 +182,7 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
 
   const renderActions = useCallback((item: Timeline) => {
     const editHref = pageId && sectionId 
-      ? `/admin/timeline/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline`
+      ? `/admin/timeline/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`
       : `/admin/timeline/${item.id}/edit`;
     return (
       <ActionMenu
@@ -224,7 +224,7 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
             className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
             title="Add Timeline Item"
           >
-            <Link href={pageId && sectionId ? `/admin/timeline/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=timeline` : "/admin/timeline/new"}>
+            <Link href={pageId && sectionId ? `/admin/timeline/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline` : "/admin/timeline/new"}>
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
             </Link>
           </Button>

@@ -45,10 +45,15 @@ export async function POST(
       );
     }
 
-    // Generate unique name (e.g., "Original (Copy)", "Original (Copy 2)")
-    let newName = `${original.name} (Copy)`;
-    let counter = 1;
+    // Generate duplicate name with version number (V2, V3, etc.)
+    // Extract base name (remove existing version if present)
+    const baseName = original.name.replace(/\s+V\d+$/, '');
+    
+    // Find the next version number
+    let version = 2;
+    let newName: string;
     while (true) {
+      newName = `${baseName} V${version}`;
       const { data: existing } = await adminSupabase
         .from("softwares")
         .select("id")
@@ -56,13 +61,12 @@ export async function POST(
         .maybeSingle();
 
       if (!existing) break;
-      counter++;
-      newName = `${original.name} (Copy ${counter})`;
+      version++;
     }
 
     // Generate unique slug
     let newSlug = `${original.slug}-copy`;
-    counter = 1;
+    let counter = 1;
     while (true) {
       const { data: existing } = await adminSupabase
         .from("softwares")

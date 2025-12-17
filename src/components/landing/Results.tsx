@@ -47,14 +47,6 @@ export const Results = memo(({ section }: ResultsProps) => {
 
   return (
     <section id="results" className="py-12 md:py-20 relative">
-      {/* Gradient positioned in the middle with smooth fade at top and bottom */}
-      <div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          background: 'radial-gradient(ellipse 100% 80% at 50% 50%, hsl(var(--primary) / 0.1), transparent 65%)',
-        }}
-      />
-      
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -117,7 +109,7 @@ export const Results = memo(({ section }: ResultsProps) => {
         >
           {metrics.map((metric, index) => (
             <div key={metric.label} className="text-center">
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4">
                 <metric.icon className="w-6 h-6 text-primary" />
               </div>
               <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{metric.value}</div>

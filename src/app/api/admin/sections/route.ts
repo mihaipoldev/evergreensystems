@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAllSections } from "@/features/sections/data";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
@@ -15,6 +14,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get("page_id");
     const search = searchParams.get("search");
+    
+    console.log("🔍 [API /admin/sections] GET request:", {
+      url: request.url,
+      pageId,
+      search,
+      allParams: Object.fromEntries(searchParams.entries()),
+    });
 
     // If pageId is provided, get sections via page_sections junction table
     if (pageId) {
@@ -52,13 +58,46 @@ export async function GET(request: Request) {
       });
     }
 
-    // Otherwise return all sections using the same ordering as getAllSections:
-    // home page sections by position first, then non-home sections alphabetically.
-    const sections = await getAllSections();
+    // Otherwise return all sections - query directly from database
+    // Get all sections (user is authenticated, so RLS should allow this)
+    const { data: sections, error: sectionsError } = await supabase
+      .from("sections")
+      .select("id, type, title, admin_title, subtitle, eyebrow, content, media_url, icon, created_at, updated_at")
+      .order("admin_title", { ascending: true, nullsFirst: false });
+
+    if (sectionsError) {
+      console.error("❌ [API /admin/sections] Error fetching sections:", {
+        error: sectionsError,
+        message: sectionsError.message,
+      });
+      return NextResponse.json(
+        { error: sectionsError.message || "Failed to fetch sections" },
+        { status: 500 }
+      );
+    }
+
+    console.log("🔍 [API /admin/sections] Fetched sections from database:", {
+      count: sections?.length || 0,
+      sections: sections?.map((s: any) => ({ id: s.id, title: s.title || s.admin_title || s.type })) || [],
+    });
+
+    const allSections: Array<{
+      id: string;
+      type: string;
+      title: string | null;
+      admin_title: string | null;
+      subtitle: string | null;
+      eyebrow: string | null;
+      content: any;
+      media_url: string | null;
+      icon?: string | null;
+      created_at: string;
+      updated_at: string;
+    }> = sections || [];
 
     const filteredSections =
       search && search.trim() !== ""
-        ? sections.filter((section) => {
+        ? allSections.filter((section) => {
             const needle = search.trim().toLowerCase();
             return (
               (section.title || "").toLowerCase().includes(needle) ||
@@ -67,7 +106,14 @@ export async function GET(request: Request) {
               (section.type || "").toLowerCase().includes(needle)
             );
           })
-        : sections;
+        : allSections;
+
+    console.log("🔍 [API /admin/sections] Returning filtered sections:", {
+      search,
+      originalCount: allSections.length,
+      filteredCount: filteredSections.length,
+      filteredSections: filteredSections.map((s: any) => ({ id: s.id, title: s.title || s.admin_title || s.type })),
+    });
 
     // No cache for admin routes - always fresh data
     return NextResponse.json(filteredSections, {
@@ -77,8 +123,16 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    console.error("❌ [API /admin/sections] Top-level error:", {
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
+      { 
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+      },
       { status: 500 }
     );
   }

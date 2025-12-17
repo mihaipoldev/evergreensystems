@@ -154,7 +154,7 @@ export function TestimonialsList({ initialTestimonials, hideHeader = false, sect
         <div className="flex items-start justify-between gap-3 mb-0.5">
           <Link
             href={pageId && sectionId 
-              ? `/admin/testimonials/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`
+              ? `/admin/testimonials/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`
               : `/admin/testimonials/${item.id}/edit`}
             className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
           >
@@ -209,7 +209,7 @@ export function TestimonialsList({ initialTestimonials, hideHeader = false, sect
 
   const renderActions = useCallback((item: Testimonial) => {
     const editHref = pageId && sectionId 
-      ? `/admin/testimonials/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`
+      ? `/admin/testimonials/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`
       : `/admin/testimonials/${item.id}/edit`;
     return (
     <ActionMenu
@@ -251,7 +251,7 @@ export function TestimonialsList({ initialTestimonials, hideHeader = false, sect
             className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
             title="New Testimonial"
           >
-            <Link href={pageId && sectionId ? `/admin/testimonials/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials` : "/admin/testimonials/new"}>
+            <Link href={pageId && sectionId ? `/admin/testimonials/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials` : "/admin/testimonials/new"}>
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
             </Link>
           </Button>

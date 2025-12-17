@@ -27,7 +27,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionFeaturesTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialFeatures: OfferFeatureWithSection[];
 };
 
@@ -319,7 +319,7 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Feature"
         >
-          <Link href={`/admin/features/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=features`}>
+          <Link href={`/admin/features/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -376,7 +376,7 @@ export function SectionFeaturesTab({ sectionId, pageId, initialFeatures }: Secti
                       </h3>
                       <ActionMenu
                         itemId={feature.id}
-                        editHref={`/admin/features/${feature.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=features`}
+                        editHref={`/admin/features/${feature.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`}
                         onDelete={async () => {
                           await handleDeleteFeature(feature.id);
                         }}

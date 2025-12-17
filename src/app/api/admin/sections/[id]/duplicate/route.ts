@@ -93,32 +93,39 @@ export async function POST(
       );
     }
 
-    // Generate duplicate title/admin_title with " (Copy)" suffix
-    const titleToUse = original.admin_title || original.title || original.type;
-    let duplicateTitle = `${titleToUse} (Copy)`;
-    let duplicateAdminTitle = original.admin_title ? `${original.admin_title} (Copy)` : null;
+    // Generate duplicate admin_title with version number (V2, V3, etc.)
+    // Keep title as-is (it's shown on website), only change admin_title
+    let duplicateAdminTitle: string | null = null;
     
-    // Check if title already exists, append number if needed
-    let counter = 1;
-    while (true) {
-      const { data: existing } = await adminSupabase
-        .from("sections")
-        .select("id")
-        .or(`title.eq.${duplicateTitle},admin_title.eq.${duplicateAdminTitle || duplicateTitle}`)
-        .maybeSingle();
+    if (original.admin_title) {
+      // Extract base name (remove existing version if present)
+      const baseName = original.admin_title.replace(/\s+V\d+$/, '');
       
-      if (!existing) break;
-      counter++;
-      duplicateTitle = `${titleToUse} (Copy ${counter})`;
-      duplicateAdminTitle = original.admin_title ? `${original.admin_title} (Copy ${counter})` : null;
+      // Find the next version number
+      let version = 2;
+      while (true) {
+        const versionedName = `${baseName} V${version}`;
+        const { data: existing } = await adminSupabase
+          .from("sections")
+          .select("id")
+          .eq("admin_title", versionedName)
+          .maybeSingle();
+        
+        if (!existing) {
+          duplicateAdminTitle = versionedName;
+          break;
+        }
+        version++;
+      }
     }
 
     // Create duplicate section
+    // Keep title as-is (exact copy) since it's shown on website
     const { data: duplicateSection, error: duplicateError } = await (adminSupabase
       .from("sections") as any)
       .insert({
         type: original.type,
-        title: duplicateTitle,
+        title: original.title, // Keep title as-is
         admin_title: duplicateAdminTitle,
         subtitle: original.subtitle,
         eyebrow: original.eyebrow,

@@ -25,7 +25,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionFAQTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialFAQItems: FAQItemWithSection[];
 };
 
@@ -258,7 +258,7 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
         <RichText
           text={item.answer}
           as="p"
-          className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+          className="text-xs text-muted-foreground leading-relaxed"
         />
       </div>
     </div>
@@ -267,7 +267,7 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
   const renderActions = useCallback((item: FAQItemWithSection) => (
     <ActionMenu
       itemId={item.id}
-      editHref={`/admin/faq/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq`}
+      editHref={`/admin/faq/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq`}
       onDelete={async () => {
         await handleDeleteFAQItem(item.id);
       }}
@@ -301,7 +301,7 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add FAQ"
         >
-          <Link href={`/admin/faq/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq`}>
+          <Link href={`/admin/faq/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -354,7 +354,7 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
                       </h3>
                       <ActionMenu
                         itemId={item.id}
-                        editHref={`/admin/faq/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq`}
+                        editHref={`/admin/faq/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq`}
                         onDelete={async () => {
                           await handleDeleteFAQItem(item.id);
                         }}
@@ -376,7 +376,7 @@ export function SectionFAQTab({ sectionId, pageId, initialFAQItems }: SectionFAQ
                     <RichText
                       text={item.answer}
                       as="p"
-                      className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-1"
+                      className="text-xs text-muted-foreground leading-relaxed mb-1"
                     />
                     {item.created_at && (
                       <div className="text-xs text-muted-foreground">

@@ -36,7 +36,7 @@ const StarRating = ({ rating }: { rating?: number | null }) => {
         <FontAwesomeIcon
           key={`full-${i}`}
           icon={faStar}
-          className="w-4 h-4 text-yellow-400"
+          className="w-5 h-5 text-yellow-400"
         />
       ))}
       {/* Half star */}
@@ -44,7 +44,7 @@ const StarRating = ({ rating }: { rating?: number | null }) => {
         <FontAwesomeIcon
           key="half"
           icon={faStarHalfStroke}
-          className="w-4 h-4 text-yellow-400"
+          className="w-5 h-5 text-yellow-400"
         />
       )}
       {/* Empty stars - using solid star with reduced opacity */}
@@ -52,7 +52,7 @@ const StarRating = ({ rating }: { rating?: number | null }) => {
         <FontAwesomeIcon
           key={`empty-${i}`}
           icon={faStar}
-          className="w-4 h-4 text-yellow-400 opacity-30"
+          className="w-5 h-5 text-yellow-400 opacity-30"
         />
       ))}
     </div>
@@ -141,9 +141,6 @@ export const Testimonials = memo(({ testimonials = [], section }: TestimonialsPr
 
   return (
     <section id="testimonials" className="py-12 md:py-20 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
-      
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -174,7 +171,7 @@ export const Testimonials = memo(({ testimonials = [], section }: TestimonialsPr
               transition={{ delay: index * 0.05, duration: 0.5 }}
               className="relative"
             >
-              <div className="relative h-full rounded-xl border border-border bg-card p-6 flex flex-col">
+              <div className="relative h-full rounded-xl border border-border bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300 p-6 flex flex-col">
                 {/* Optional Icon in top-right */}
                 {testimonial.hasIcon && (
                   <div className="absolute top-4 right-4 w-6 h-6 flex gap-0.5">

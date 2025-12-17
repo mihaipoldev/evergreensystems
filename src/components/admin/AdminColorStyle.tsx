@@ -76,10 +76,11 @@ function renderColorScript(primaryValue: string, h: number, s: number, l: number
   // Return style tag - Next.js will move it to head automatically
   // The middleware handles blocking script injection for preventing flash
   // This component serves as a fallback to ensure colors are applied
+  // Apply ONLY to admin preset - NOT to :root to avoid affecting landing page
   const hslH = String(h);
   const hslS = String(s);
   const hslL = String(l);
-  const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
+  const cssContent = `.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
   
   return (
     <style

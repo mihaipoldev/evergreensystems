@@ -25,7 +25,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionTestimonialsTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialTestimonials: TestimonialWithSection[];
 };
 
@@ -307,7 +307,7 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
   const renderActions = useCallback((testimonial: TestimonialWithSection) => (
     <ActionMenu
       itemId={testimonial.id}
-      editHref={`/admin/testimonials/${testimonial.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`}
+      editHref={`/admin/testimonials/${testimonial.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`}
       onDelete={async () => {
         await handleDeleteTestimonial(testimonial.id);
       }}
@@ -341,7 +341,7 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Testimonial"
         >
-          <Link href={`/admin/testimonials/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`}>
+          <Link href={`/admin/testimonials/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -402,7 +402,7 @@ export function SectionTestimonialsTab({ sectionId, pageId, initialTestimonials 
                       </div>
                       <ActionMenu
                         itemId={testimonial.id}
-                        editHref={`/admin/testimonials/${testimonial.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=testimonials`}
+                        editHref={`/admin/testimonials/${testimonial.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`}
                         onDelete={async () => {
                           await handleDeleteTestimonial(testimonial.id);
                         }}

@@ -1,7 +1,5 @@
-"use client";
-
 import { PublicTeamProvider } from "@/providers/PublicTeamProvider";
-import { PublicThemeProvider } from "@/providers/PublicThemeProvider";
+import { PublicThemeProviderWrapper } from "@/providers/PublicThemeProviderWrapper";
 
 export default function PublicLayout({
   children,
@@ -9,10 +7,10 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <PublicThemeProvider>
+    <PublicThemeProviderWrapper>
       <PublicTeamProvider>
         {children}
       </PublicTeamProvider>
-    </PublicThemeProvider>
+    </PublicThemeProviderWrapper>
   );
 }

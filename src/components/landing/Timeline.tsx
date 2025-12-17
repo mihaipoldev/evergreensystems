@@ -117,9 +117,6 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
   }
   return (
     <section id="timeline" className="py-12 md:py-20 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
-      
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -158,13 +155,13 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
                 {/* Content */}
                 <div className={`lg:w-1/2 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:pl-12'}`}>
                   <div
-                    className={`relative overflow-hidden bg-card border border-border rounded-2xl p-6 ${
+                    className={`relative overflow-hidden bg-gradient-to-br from-card/50 via-card/55 to-card/50 border border-border rounded-2xl p-6 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300 ${
                       index % 2 === 0 ? 'lg:ml-auto' : 'lg:mr-auto'
                     } max-w-md`}
-                    style={{ boxShadow: '0 0 20px hsl(var(--secondary) / 0.1)' }}
+                    style={{ boxShadow: '0 0 20px hsl(var(--muted) / 0.1)' }}
                   >
                     {/* Hover Glow */}
-                    <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-muted/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div className="relative z-10">
                       <div className={`flex items-center gap-3 mb-4 ${index % 2 === 0 ? 'lg:flex-row-reverse' : ''}`}>
                         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">

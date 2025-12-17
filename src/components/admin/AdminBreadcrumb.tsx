@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Breadcrumb,
@@ -44,6 +44,7 @@ async function fetchItemName(resource: string, slug: string): Promise<string | n
 
 export function AdminBreadcrumb() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [pageName, setPageName] = useState<string | null>(null);
   const [sectionName, setSectionName] = useState<string | null>(null);
   const [itemName, setItemName] = useState<string | null>(null);
@@ -56,28 +57,46 @@ export function AdminBreadcrumb() {
   const adminIndex = segments.indexOf("admin");
   const relevantSegments = adminIndex >= 0 ? segments.slice(adminIndex + 1) : segments;
 
-  // Check for new nested structure: /admin/pages/[id]/sections/[sectionId]/...
+  // Check for new section route: /admin/sections/[id]
+  const isNewSectionRoute = relevantSegments[0] === "sections" && relevantSegments.length >= 2;
+  const sectionId = isNewSectionRoute ? relevantSegments[1] : null;
+  const pageIdFromQuery = isNewSectionRoute ? searchParams.get("pageId") : null;
+
+  // Check for old nested structure: /admin/pages/[id]/sections/[sectionId]/...
   const isPagesRoute = relevantSegments[0] === "pages" && relevantSegments.length >= 2;
-  const pageId = isPagesRoute ? relevantSegments[1] : null;
+  const pageId = isPagesRoute ? relevantSegments[1] : (isNewSectionRoute ? pageIdFromQuery : null);
   const isSectionsRoute = isPagesRoute && relevantSegments[2] === "sections" && relevantSegments.length >= 4;
-  const sectionId = isSectionsRoute ? relevantSegments[3] : null;
+  const oldSectionId = isSectionsRoute ? relevantSegments[3] : null;
   const isSectionEditRoute = isSectionsRoute && relevantSegments[4] === "edit";
   const isMediaRoute = isSectionsRoute && relevantSegments[4] === "media";
   const isCTARoute = isSectionsRoute && relevantSegments[4] === "cta";
 
   // Check for old routes
-  const isOldEditPage = !isPagesRoute && relevantSegments.length >= 3 && relevantSegments[2] === "edit";
-  const isOldStatsPage = !isPagesRoute && relevantSegments.length >= 3 && relevantSegments[2] === "stats";
-  const resource = !isPagesRoute ? (relevantSegments[0] || null) : null;
+  const isOldEditPage = !isPagesRoute && !isNewSectionRoute && relevantSegments.length >= 3 && relevantSegments[2] === "edit";
+  const isOldStatsPage = !isPagesRoute && !isNewSectionRoute && relevantSegments.length >= 3 && relevantSegments[2] === "stats";
+  const resource = !isPagesRoute && !isNewSectionRoute ? (relevantSegments[0] || null) : null;
   const itemSlug = (isOldEditPage || isOldStatsPage) ? relevantSegments[1] : null;
 
-  // Fetch names for nested routes
+  // Fetch names for routes
   useEffect(() => {
-    if (isPagesRoute && pageId) {
+    if (isNewSectionRoute && sectionId) {
       setIsLoading(true);
       Promise.all([
         pageId ? fetchItemName("pages", pageId) : Promise.resolve(null),
         sectionId ? fetchItemName("sections", sectionId) : Promise.resolve(null),
+      ]).then(([page, section]) => {
+        setPageName(page);
+        setSectionName(section);
+        setItemName(null);
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
+      });
+    } else if (isPagesRoute && pageId) {
+      setIsLoading(true);
+      Promise.all([
+        pageId ? fetchItemName("pages", pageId) : Promise.resolve(null),
+        oldSectionId ? fetchItemName("sections", oldSectionId) : Promise.resolve(null),
       ]).then(([page, section]) => {
         setPageName(page);
         setSectionName(section);
@@ -101,7 +120,7 @@ export function AdminBreadcrumb() {
       setSectionName(null);
       setItemName(null);
     }
-  }, [isPagesRoute, pageId, sectionId, isOldEditPage, isOldStatsPage, resource, itemSlug]);
+  }, [isNewSectionRoute, isPagesRoute, pageId, sectionId, oldSectionId, isOldEditPage, isOldStatsPage, resource, itemSlug]);
 
   // Handle dashboard page
   if (!relevantSegments.length || relevantSegments[0] === "") {
@@ -122,7 +141,36 @@ export function AdminBreadcrumb() {
     );
   }
 
-  // Handle new nested structure: /admin/pages/[id]/sections/[sectionId]/...
+  // Handle new section route: /admin/sections/[id]?pageId=[pageId]
+  if (isNewSectionRoute && sectionId) {
+    const sectionHref = pageId 
+      ? `/admin/sections/${sectionId}?pageId=${pageId}`
+      : `/admin/sections/${sectionId}`;
+    
+    return (
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/admin/analytics">Menu</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/admin/sections">Sections</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{isLoading ? "Loading..." : sectionName || "Section"}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
+
+  // Handle old nested structure: /admin/pages/[id]/sections/[sectionId]/...
   if (isPagesRoute && pageId) {
     return (
       <Breadcrumb>
@@ -144,13 +192,13 @@ export function AdminBreadcrumb() {
               <BreadcrumbPage>{isLoading ? "Loading..." : pageName || "Page"}</BreadcrumbPage>
             )}
           </BreadcrumbItem>
-              {isSectionsRoute && sectionId && (
+              {isSectionsRoute && oldSectionId && (
                 <>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     {isSectionEditRoute || isMediaRoute || isCTARoute ? (
                       <BreadcrumbLink asChild>
-                        <Link href={`/admin/pages/${pageId}/sections/${sectionId}?tab=edit`}>
+                        <Link href={`/admin/pages/${pageId}/sections/${oldSectionId}?tab=edit`}>
                           {isLoading ? "Loading..." : sectionName || "Section"}
                         </Link>
                       </BreadcrumbLink>

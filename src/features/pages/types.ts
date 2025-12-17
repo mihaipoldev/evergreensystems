@@ -4,6 +4,7 @@ export type Page = {
   description: string | null;
   type: string | null;
   status?: "published" | "draft" | "deactivated";
+  order: number;
   created_at: string;
   updated_at: string;
 };

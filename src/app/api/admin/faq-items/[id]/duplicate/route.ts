@@ -38,12 +38,15 @@ export async function POST(
       );
     }
 
-    // Generate duplicate question with " (Copy)" suffix
-    let duplicateQuestion = `${original.question} (Copy)`;
+    // Generate duplicate question with version number (V2, V3, etc.)
+    // Extract base name (remove existing version if present)
+    const baseName = original.question.replace(/\s+V\d+$/, '');
     
-    // Check if question already exists, append number if needed
-    let counter = 1;
+    // Find the next version number
+    let version = 2;
+    let duplicateQuestion: string;
     while (true) {
+      duplicateQuestion = `${baseName} V${version}`;
       const { data: existing } = await adminSupabase
         .from("faq_items")
         .select("id")
@@ -51,8 +54,7 @@ export async function POST(
         .maybeSingle();
       
       if (!existing) break;
-      counter++;
-      duplicateQuestion = `${original.question} (Copy ${counter})`;
+      version++;
     }
 
     // Get max position to place duplicate at end

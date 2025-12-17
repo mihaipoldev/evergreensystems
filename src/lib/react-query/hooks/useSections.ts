@@ -8,11 +8,19 @@ async function fetchSections(filters?: { pageId?: string; search?: string }): Pr
   if (filters?.search) params.append("search", filters.search);
   
   const url = `/api/admin/sections${params.toString() ? `?${params.toString()}` : ""}`;
+  console.log("🔍 [fetchSections] Fetching sections:", { filters, url });
   const response = await fetch(url);
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("❌ [fetchSections] Error response:", { status: response.status, errorText });
     throw new Error("Failed to fetch sections");
   }
-  return response.json();
+  const data = await response.json();
+  console.log("✅ [fetchSections] Received sections:", { 
+    count: data.length, 
+    sections: data.map((s: any) => ({ id: s.id, title: s.title || s.admin_title || s.type }))
+  });
+  return data;
 }
 
 export function useSections(

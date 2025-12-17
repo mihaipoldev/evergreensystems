@@ -38,12 +38,15 @@ export async function POST(
       );
     }
 
-    // Generate duplicate label with " (Copy)" suffix
-    let duplicateLabel = `${original.label} (Copy)`;
+    // Generate duplicate label with version number (V2, V3, etc.)
+    // Extract base name (remove existing version if present)
+    const baseName = original.label.replace(/\s+V\d+$/, '');
     
-    // Check if label already exists, append number if needed
-    let counter = 1;
+    // Find the next version number
+    let version = 2;
+    let duplicateLabel: string;
     while (true) {
+      duplicateLabel = `${baseName} V${version}`;
       const { data: existing } = await adminSupabase
         .from("cta_buttons")
         .select("id")
@@ -51,8 +54,7 @@ export async function POST(
         .maybeSingle();
       
       if (!existing) break;
-      counter++;
-      duplicateLabel = `${original.label} (Copy ${counter})`;
+      version++;
     }
 
     // Get max position to place duplicate at end

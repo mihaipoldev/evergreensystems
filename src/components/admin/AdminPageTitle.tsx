@@ -5,7 +5,7 @@ import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import type { ReactNode } from "react";
 
 type AdminPageTitleProps = {
-  title: string;
+  title: string | ReactNode;
   entityName?: string;
   description?: string | ReactNode;
   entityType?: "album" | "event" | "update";

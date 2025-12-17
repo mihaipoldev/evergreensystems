@@ -24,7 +24,7 @@ const formatDate = (dateString: string): string => {
 
 type SectionSocialPlatformsTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialSocialPlatforms: SocialPlatformWithSection[];
 };
 
@@ -300,7 +300,7 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
   const renderActions = useCallback((platform: SocialPlatformWithSection) => (
     <ActionMenu
       itemId={platform.id}
-      editHref={`/admin/social-platforms/${platform.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=social-platforms`}
+      editHref={`/admin/social-platforms/${platform.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=social-platforms`}
       onDelete={async () => {
         await handleDeleteSocialPlatform(platform.id);
       }}
@@ -334,7 +334,7 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Social Platform"
         >
-          <Link href={`/admin/social-platforms/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=social-platforms`}>
+          <Link href={`/admin/social-platforms/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=social-platforms`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -415,7 +415,7 @@ export function SectionSocialPlatformsTab({ sectionId, pageId, initialSocialPlat
                       </div>
                       <ActionMenu
                         itemId={platform.id}
-                        editHref={`/admin/social-platforms/${platform.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=social-platforms`}
+                        editHref={`/admin/social-platforms/${platform.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=social-platforms`}
                         onDelete={async () => {
                           await handleDeleteSocialPlatform(platform.id);
                         }}

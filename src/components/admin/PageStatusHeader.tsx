@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
+import { PageActionMenu } from "@/components/admin/PageActionMenu";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 
@@ -62,10 +63,13 @@ export function PageStatusHeader({
   };
 
   return (
-    <PageSectionStatusSelector
-      status={status}
-      onStatusChange={handleStatusChange}
-      disabled={isUpdating}
-    />
+    <div className="flex items-center gap-2">
+      <PageSectionStatusSelector
+        status={status}
+        onStatusChange={handleStatusChange}
+        disabled={isUpdating}
+      />
+      <PageActionMenu pageId={pageId} />
+    </div>
   );
 }

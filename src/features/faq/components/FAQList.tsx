@@ -143,7 +143,7 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
 
   const renderContent = useCallback((item: FAQItem) => {
     const editHref = pageId && sectionId 
-      ? `/admin/faq/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq`
+      ? `/admin/faq/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq`
       : `/admin/faq/${item.id}/edit`;
     return (
       <div className="flex flex-col gap-2">
@@ -158,7 +158,7 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
         <RichText
           text={item.answer}
           as="div"
-          className="text-sm text-muted-foreground leading-relaxed line-clamp-2 md:line-clamp-3"
+          className="text-sm text-muted-foreground leading-relaxed"
         />
       </div>
     );
@@ -166,7 +166,7 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
 
   const renderActions = useCallback((item: FAQItem) => {
     const editHref = pageId && sectionId 
-      ? `/admin/pages/${pageId}/sections/${sectionId}/items/${item.id}/edit`
+      ? `/admin/sections/${sectionId}/items/${item.id}/edit?pageId=${pageId}`
       : `/admin/faq/${item.id}/edit`;
     return (
       <ActionMenu
@@ -208,7 +208,7 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
             className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
             title="New FAQ Item"
           >
-            <Link href={pageId && sectionId ? `/admin/faq/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=faq` : "/admin/faq/new"}>
+            <Link href={pageId && sectionId ? `/admin/faq/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq` : "/admin/faq/new"}>
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
             </Link>
           </Button>

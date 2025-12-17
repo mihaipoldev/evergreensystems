@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("pages")
-      .select("id, title, description, type, status, created_at, updated_at");
+      .select("id, title, description, type, status, order, created_at, updated_at");
 
     // Server-side search filtering
     if (search && search.trim() !== "") {
@@ -24,7 +24,9 @@ export async function GET(request: Request) {
       query = query.or(`title.ilike.${searchPattern},description.ilike.${searchPattern}`);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await query
+      .order("order", { ascending: true })
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -70,6 +72,7 @@ export async function POST(request: Request) {
         title,
         description: description || null,
         type,
+        status: "published",
       })
       .select()
       .single();

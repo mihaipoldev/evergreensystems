@@ -1,10 +1,11 @@
 import { getPageById } from "@/features/pages/data";
-import { getSectionsByPageId } from "@/lib/supabase/queries";
+import { getSectionsByPageId, getSiteStructureByPageId } from "@/lib/supabase/queries";
 import { PageContentTabs } from "@/components/admin/PageContentTabs";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { PageStatusHeader } from "@/components/admin/PageStatusHeader";
 import { notFound } from "next/navigation";
 import type { Section } from "@/features/sections/types";
+import { Badge } from "@/components/ui/badge";
 
 type PageSection = Section & {
   page_section_id: string;
@@ -25,6 +26,7 @@ export default async function PageEditPage({
   }
 
   const sections = await getSectionsByPageId(id);
+  const siteStructureInfo = await getSiteStructureByPageId(id);
   
   // Transform sections to include page_section metadata
   const pageSections: PageSection[] = sections.map((section: any) => ({
@@ -36,11 +38,48 @@ export default async function PageEditPage({
 
   const pageStatus = (page.status || "draft") as "published" | "draft" | "deactivated";
 
+  // Create badges for site structure
+  const siteStructureBadges = siteStructureInfo.map((info) => {
+    if (info.environment === 'both') {
+      return (
+        <div key={info.page_type} className="flex items-center gap-1">
+          <Badge variant="destructive" className="text-xs font-semibold">
+            Production
+          </Badge>
+          <Badge className="text-xs font-semibold bg-primary text-primary-foreground border-transparent">
+            Development
+          </Badge>
+        </div>
+      );
+    } else if (info.environment === 'production') {
+      return (
+        <Badge key={info.page_type} variant="destructive" className="text-xs font-semibold">
+          Production
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge key={info.page_type} className="text-xs font-semibold bg-primary text-primary-foreground border-transparent">
+          Development
+        </Badge>
+      );
+    }
+  });
+
   return (
     <div className="w-full space-y-6">
       <div className="mb-6 md:mb-8">
         <AdminPageTitle
-          title={page.title}
+          title={
+            <div className="flex items-baseline gap-3">
+              <span>{page.title}</span>
+              {siteStructureBadges.length > 0 && (
+                <div className="flex items-end gap-2">
+                  {siteStructureBadges}
+                </div>
+              )}
+            </div>
+          }
           rightSideContent={
             <PageStatusHeader
               pageId={page.id}

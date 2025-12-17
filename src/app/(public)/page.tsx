@@ -225,6 +225,53 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
   // Parallelize all database queries for better performance
   // Note: Features, FAQ items, testimonials, timeline items, and results are now fetched per-section via getVisibleSectionsByPageId
   
+  // Determine environment based on NODE_ENV
+  const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
+  
+  // Get website settings with preset to fetch styling_options
+  const supabase = await createClient();
+  let dotsEnabled = true; // Default to true if not found
+  let waveGradientEnabled = false; // Default to false if not found
+  let noiseTextureEnabled = false; // Default to false if not found
+  try {
+    const { data: settings } = await (supabase
+      .from("website_settings") as any)
+      .select(`
+        preset_id,
+        website_settings_presets (
+          styling_options
+        )
+      `)
+      .eq("environment", environment)
+      .maybeSingle();
+
+    // Extract styling_options from preset
+    if (settings?.website_settings_presets) {
+      const preset = Array.isArray(settings.website_settings_presets) 
+        ? settings.website_settings_presets[0] 
+        : settings.website_settings_presets;
+      
+      if (preset?.styling_options) {
+        try {
+          const stylingOptions = typeof preset.styling_options === 'string' 
+            ? JSON.parse(preset.styling_options) 
+            : preset.styling_options;
+          dotsEnabled = stylingOptions?.dots_enabled !== false; // Default to true if not present
+          waveGradientEnabled = stylingOptions?.wave_gradient_enabled === true; // Default to false if not present
+          noiseTextureEnabled = stylingOptions?.noise_texture_enabled === true; // Default to false if not present
+        } catch (e) {
+          // If parsing fails, default to true for dots, false for others
+          dotsEnabled = true;
+          waveGradientEnabled = false;
+          noiseTextureEnabled = false;
+        }
+      }
+    }
+  } catch (error) {
+    // Silently fail and use default
+    console.warn("Failed to load styling options:", error);
+  }
+  
   // Get home page from site_structure
   const homePageResult = await Promise.allSettled([
     getActivePageBySlug('home'),
@@ -481,34 +528,69 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
       )}
       <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden w-full">
         {/* Dot pattern at the top - fading at bottom */}
-        <div className="absolute top-0 left-0 right-0 h-[1000px] pointer-events-none z-0">
-          {/* Subtle dot pattern with fade at bottom */}
-          <div className="absolute inset-0">
-            {/* Dot pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_20px,transparent_10px)] bg-[size:24px_24px] opacity-40" />
-            
-            {/* Fade mask at bottom to blend into background */}
-            <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/80 to-transparent" />
+        {dotsEnabled && (
+          <div className="absolute top-0 left-0 right-0 h-[1100px] pointer-events-none z-0">
+            {/* Subtle dot pattern with fade at bottom */}
+            <div className="absolute inset-0">
+              {/* Dot pattern */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle,hsl(var(--muted-foreground))_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 dark:opacity-15" />
+              
+              {/* Fade mask at bottom to blend into background */}
+              <div className="absolute bottom-0 left-0 right-0 h-[400px] bg-gradient-to-t from-background via-background/80 to-transparent" />
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Unified background effects at the bottom - overlapping CTA and Footer */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1300px] pointer-events-none z-0">
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/95 to-background" />
-          
-          
-          {/* Subtle dot pattern with fade at top */}
-          <div className="absolute inset-0">
-            {/* Dot pattern - original size */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle,#80808012_20px,transparent_10px)] bg-[size:24px_24px] opacity-20" />
+        {dotsEnabled && (
+          <div className="absolute bottom-0 left-0 right-0 h-[1350px] pointer-events-none z-0">
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/95 to-background" />
             
-            {/* Fade mask at top to blend into background */}
-            <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-background via-background/80 to-transparent" />
+            
+            {/* Subtle dot pattern with fade at top */}
+            <div className="absolute inset-0">
+              {/* Dot pattern - original size */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle,hsl(var(--muted-foreground))_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 dark:opacity-15" />
+              
+              {/* Fade mask at top to blend into background */}
+              <div className="absolute top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-background via-background/80 to-transparent" />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Wave Gradient Background - covers entire viewport continuously */}
+        {waveGradientEnabled && (
+          <div 
+            className="fixed inset-0 pointer-events-none z-[1]"
+            style={{
+              background: `
+                radial-gradient(ellipse 140% 70% at 50% 0%, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.08) 25%, hsl(var(--primary) / 0.04) 45%, transparent 70%),
+                radial-gradient(ellipse 130% 65% at 50% 100%, hsl(var(--secondary) / 0.1) 0%, hsl(var(--secondary) / 0.06) 25%, hsl(var(--secondary) / 0.03) 45%, transparent 70%),
+                radial-gradient(ellipse 110% 60% at 20% 50%, hsl(var(--primary) / 0.08) 0%, hsl(var(--primary) / 0.05) 30%, hsl(var(--primary) / 0.02) 50%, transparent 75%),
+                radial-gradient(ellipse 115% 62% at 80% 50%, hsl(var(--secondary) / 0.06) 0%, hsl(var(--secondary) / 0.04) 30%, hsl(var(--secondary) / 0.02) 50%, transparent 75%)
+              `,
+            }}
+          />
+        )}
+
+        {/* Noise Texture Overlay */}
+        {noiseTextureEnabled && (
+          <div 
+            className="fixed inset-0 pointer-events-none z-[1]"
+            style={{
+              background: `
+                repeating-linear-gradient(0deg, hsl(var(--foreground) / 0.08) 0px, transparent 0px, transparent 1px, hsl(var(--background) / 0.05) 1px, hsl(var(--background) / 0.05) 2px, transparent 2px, transparent 3px),
+                repeating-linear-gradient(90deg, hsl(var(--foreground) / 0.06) 0px, transparent 0px, transparent 1px, hsl(var(--background) / 0.04) 1px, hsl(var(--background) / 0.04) 2px, transparent 2px, transparent 3px),
+                repeating-linear-gradient(45deg, hsl(var(--foreground) / 0.04) 0px, transparent 0px, transparent 1px, hsl(var(--background) / 0.03) 1px, hsl(var(--background) / 0.03) 2px, transparent 2px, transparent 3px)
+              `,
+              backgroundSize: '3px 3px, 2px 2px, 4px 4px',
+              opacity: 0.4,
+            }}
+          />
+        )}
         
-        <div className="relative z-10">
+        <div className="relative z-[2]">
           {homePage && (
           <ErrorBoundary>
             <AnalyticsTracker 

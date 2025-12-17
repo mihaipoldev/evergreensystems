@@ -7,16 +7,20 @@ import { SettingsContent } from "@/components/admin/settings/SettingsContent";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type Section = "account" | "appearance";
+type Section = "account" | "appearance" | "production" | "development";
 
 const SECTION_URL_MAP: Record<Section, string> = {
   account: "account",
   appearance: "appearance",
+  production: "production",
+  development: "development",
 };
 
 const URL_SECTION_MAP: Record<string, Section> = {
   account: "account",
   appearance: "appearance",
+  production: "production",
+  development: "development",
 };
 
 export function SettingsPageClient() {
@@ -37,7 +41,7 @@ export function SettingsPageClient() {
       });
     } else {
       const lastSection = localStorage.getItem("settings-last-section") as Section;
-      if (lastSection && (lastSection === "account" || lastSection === "appearance")) {
+        if (lastSection && (lastSection === "account" || lastSection === "appearance" || lastSection === "production" || lastSection === "development")) {
         // Use requestAnimationFrame to defer state update
         requestAnimationFrame(() => {
           setActiveSection(lastSection);
@@ -58,9 +62,11 @@ export function SettingsPageClient() {
         {isMobile ? (
           <div className="space-y-6">
             <Tabs value={activeSection} onValueChange={(value) => handleSectionChange(value as Section)}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="account">Account</TabsTrigger>
                 <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                <TabsTrigger value="production">Production</TabsTrigger>
+                <TabsTrigger value="development">Development</TabsTrigger>
               </TabsList>
             </Tabs>
             <SettingsContent activeSection={activeSection} />

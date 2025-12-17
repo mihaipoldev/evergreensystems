@@ -1,110 +1,29 @@
-import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { SectionContentTabs } from "@/components/admin/SectionContentTabs";
-import { SectionStatusHeader } from "@/components/admin/SectionStatusHeader";
-import { getSectionById } from "@/features/sections/data";
-import { getFeaturesBySectionId, getTestimonialsBySectionId, getFAQItemsBySectionId, getTimelineBySectionId, getResultsBySectionId, getCTAButtonsBySectionId, getPageSectionStatus, getSoftwaresBySectionId, getSocialPlatformsBySectionId } from "@/lib/supabase/queries";
+import { redirect } from "next/navigation";
 
 type SectionPageProps = {
   params: Promise<{ id: string; sectionId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-// Section types that have associated content items
-const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta", "timeline", "results"] as const;
-
-export default async function SectionPage({ params }: SectionPageProps) {
+export default async function SectionPage({ params, searchParams }: SectionPageProps) {
   const { id: pageId, sectionId } = await params;
-  const section = await getSectionById(sectionId);
-
-  if (!section) {
-    notFound();
-  }
-
-  const hasContentItems = CONTENT_SECTION_TYPES.includes(section.type as any);
-  const isHeroSection = section.type === "hero";
-  const isHeaderSection = section.type === "header";
-  const isStoriesSection = section.type === "stories";
-  const isLogosSection = section.type === "logos";
-  const isFooterSection = section.type === "footer";
-  const hasMediaAndCTATabs = isHeroSection;
-  const hasCTATabOnly = isHeaderSection;
-  const hasMediaTabOnly = isStoriesSection;
-
-  // Fetch content items if this section type has them
-  let initialFAQItems: Awaited<ReturnType<typeof getFAQItemsBySectionId>> = [];
-  let initialTestimonials: Awaited<ReturnType<typeof getTestimonialsBySectionId>> = [];
-  let initialFeatures: Awaited<ReturnType<typeof getFeaturesBySectionId>> = [];
-  let initialCTAButtons: Awaited<ReturnType<typeof getCTAButtonsBySectionId>> = [];
-  let initialTimelineItems: Awaited<ReturnType<typeof getTimelineBySectionId>> = [];
-  let initialResults: Awaited<ReturnType<typeof getResultsBySectionId>> = [];
-
-  if (hasContentItems) {
-    if (section.type === "faq") {
-      initialFAQItems = await getFAQItemsBySectionId(sectionId);
-    } else if (section.type === "testimonials") {
-      initialTestimonials = await getTestimonialsBySectionId(sectionId);
-    } else if (section.type === "features") {
-      initialFeatures = await getFeaturesBySectionId(sectionId);
-    } else if (section.type === "cta") {
-      initialCTAButtons = await getCTAButtonsBySectionId(sectionId);
-    } else if (section.type === "timeline") {
-      initialTimelineItems = await getTimelineBySectionId(sectionId);
-    } else if (section.type === "results") {
-      initialResults = await getResultsBySectionId(sectionId);
+  const searchParamsObj = await searchParams;
+  
+  // Build query string from search params (preserve tab and other params)
+  const queryParams = new URLSearchParams();
+  queryParams.set("pageId", pageId);
+  
+  // Preserve existing query params (like tab)
+  Object.entries(searchParamsObj).forEach(([key, value]) => {
+    if (key !== "pageId" && value) {
+      if (Array.isArray(value)) {
+        value.forEach(v => queryParams.append(key, v));
+      } else {
+        queryParams.set(key, value);
+      }
     }
-  }
-
-  // For hero sections, get media and CTA buttons from the section data
-  // For header sections, get CTA buttons from the section data
-  // For stories sections, get media from the section data
-  const initialMedia = (hasMediaAndCTATabs || hasMediaTabOnly) ? (section.media || []) : [];
-  const initialHeroCTAButtons = (hasMediaAndCTATabs || hasCTATabOnly) ? (section.ctaButtons || []) : [];
-
-  // Fetch softwares for logos sections
-  let initialSoftwares: Awaited<ReturnType<typeof getSoftwaresBySectionId>> = [];
-  if (isLogosSection) {
-    initialSoftwares = await getSoftwaresBySectionId(sectionId);
-  }
-
-  // Fetch social platforms for footer sections
-  let initialSocialPlatforms: Awaited<ReturnType<typeof getSocialPlatformsBySectionId>> = [];
-  if (isFooterSection) {
-    initialSocialPlatforms = await getSocialPlatformsBySectionId(sectionId);
-  }
-
-  // Fetch page_section status for this section on this page
-  const pageSectionStatus = await getPageSectionStatus(pageId, sectionId);
-
-  return (
-    <div className="w-full space-y-6">
-      <div className="mb-6 md:mb-8">
-        <AdminPageTitle
-          title={section.admin_title || section.title || section.type}
-          rightSideContent={
-            pageSectionStatus ? (
-              <SectionStatusHeader
-                pageId={pageId}
-                pageSectionId={pageSectionStatus.id}
-                initialStatus={pageSectionStatus.status}
-              />
-            ) : null
-          }
-        />
-      </div>
-      <SectionContentTabs
-        section={section}
-        pageId={pageId}
-        initialFAQItems={initialFAQItems}
-        initialTestimonials={initialTestimonials}
-        initialFeatures={initialFeatures}
-        initialCTAButtons={initialCTAButtons}
-        initialMedia={initialMedia}
-        initialHeroCTAButtons={initialHeroCTAButtons}
-        initialTimelineItems={initialTimelineItems}
-        initialResults={initialResults}
-        initialSoftwares={initialSoftwares}
-        initialSocialPlatforms={initialSocialPlatforms}
-      />
-    </div>
-  );
+  });
+  
+  // Redirect to new URL structure
+  redirect(`/admin/sections/${sectionId}?${queryParams.toString()}`);
 }

@@ -77,7 +77,6 @@ export function AppearanceSettings() {
   // Apply fonts to CSS variables
   const applyFontsToCSS = (fonts: FontConfig) => {
     if (typeof document === "undefined") return;
-    const root = document.documentElement;
     const css = generateFontCSS(fonts);
     
     // Remove existing font style tags
@@ -86,21 +85,16 @@ export function AppearanceSettings() {
       document.getElementById("font-family-script"),
       document.getElementById("font-family-session"),
       document.getElementById("font-family-inline-server"),
+      document.getElementById("font-family-client"),
     ].filter(Boolean) as HTMLElement[];
     
     existingStyles.forEach((style) => style.remove());
     
-    // Apply fonts via CSS variables (admin only)
-    const adminHeadingVar = getFontVariable(fonts.admin.heading);
-    const adminBodyVar = getFontVariable(fonts.admin.body);
-    
-    root.style.setProperty("--font-family-admin-heading", `var(${adminHeadingVar})`, "important");
-    root.style.setProperty("--font-family-admin-body", `var(${adminBodyVar})`, "important");
-    
-    // Inject style tag
+    // Apply fonts via CSS - generateFontCSS already scopes to .preset-admin
+    // Do NOT set root-level CSS variables as that would affect landing page
     const style = document.createElement("style");
     style.id = "font-family-client";
-    style.textContent = `:root{--font-family-admin-heading:var(${adminHeadingVar});--font-family-admin-body:var(${adminBodyVar});}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(${adminBodyVar}),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(${adminHeadingVar}),system-ui,sans-serif!important;}`;
+    style.textContent = css;
     document.head.appendChild(style);
     
     // Save to sessionStorage and cookie
@@ -120,7 +114,6 @@ export function AppearanceSettings() {
   // Apply color to CSS variable
   const applyColorToCSS = (color: Color | null) => {
     if (!color || typeof document === "undefined") return;
-    const root = document.documentElement;
     const cssValue = hslToCssString(color.hsl.h, color.hsl.s, color.hsl.l);
     
     // Remove existing injected style tags that might have !important
@@ -128,20 +121,17 @@ export function AppearanceSettings() {
       document.getElementById("primary-color-inline"),
       document.getElementById("primary-color-script"),
       document.getElementById("primary-color-session"),
+      document.getElementById("primary-color-client"),
+      document.getElementById("primary-color-inline-server"),
     ].filter(Boolean) as HTMLElement[];
     
     existingStyles.forEach((style) => style.remove());
     
-    // Apply brand color variables and primary (which uses brand variables)
-    root.style.setProperty("--brand-h", color.hsl.h.toString(), "important");
-    root.style.setProperty("--brand-s", color.hsl.s.toString(), "important");
-    root.style.setProperty("--brand-l", color.hsl.l.toString(), "important");
-    root.style.setProperty("--primary", cssValue, "important");
-    
-    // Also inject a new style tag to ensure it persists
+    // Apply brand color variables ONLY to admin preset - NOT to :root
+    // This prevents affecting the landing page
     const style = document.createElement("style");
     style.id = "primary-color-client";
-    style.textContent = `:root,html,body,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl.h}!important;--brand-s:${color.hsl.s}!important;--brand-l:${color.hsl.l}!important;--primary:${cssValue}!important;}`;
+    style.textContent = `.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl.h}!important;--brand-s:${color.hsl.s}!important;--brand-l:${color.hsl.l}!important;--primary:${cssValue}!important;}`;
     document.head.appendChild(style);
     
     // Save to sessionStorage for InstantColorApply fallback

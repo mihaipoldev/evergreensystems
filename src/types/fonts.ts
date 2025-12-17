@@ -26,6 +26,10 @@ export interface FontConfig {
     heading: FontId;
     body: FontId;
   };
+  landing?: {
+    heading: FontId;
+    body: FontId;
+  };
 }
 
 export interface FontOption {
@@ -38,6 +42,10 @@ export const DEFAULT_FONT_CONFIG: FontConfig = {
   admin: {
     heading: "geist-sans",
     body: "geist-sans",
+  },
+  landing: {
+    heading: "gotham",
+    body: "gotham",
   },
 };
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
-import { CardList } from "@/components/admin/CardList";
+import { SortableCardList } from "@/components/admin/SortableCardList";
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { faPlus, faFile } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePages, useDeletePage, useDuplicatePage } from "@/lib/react-query/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Page } from "../types";
 
 type PagesListProps = {
@@ -20,6 +21,7 @@ type PagesListProps = {
 export function PagesList({ initialPages }: PagesListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
+  const queryClient = useQueryClient();
 
   // Use React Query hook with server-side search
   const { data: pages = initialPages, isLoading, error } = usePages(
@@ -51,6 +53,43 @@ export function PagesList({ initialPages }: PagesListProps) {
       throw error;
     }
   };
+
+  const handleReorder = useCallback(async (orderedItems: Array<Page & { position?: number }>) => {
+    if (searchQuery.trim()) {
+      toast.info("Clear the search to reorder pages.");
+      return;
+    }
+
+    const toastId = toast.loading("Saving order...");
+
+    try {
+      const response = await fetch("/api/admin/pages/reorder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: orderedItems.map((item, index) => ({
+            id: item.id,
+            order: index,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reorder pages");
+      }
+
+      toast.success("Pages reordered successfully", { id: toastId });
+      
+      // Invalidate and refetch pages to show updated order
+      queryClient.invalidateQueries({ queryKey: ["pages"] });
+    } catch (error: any) {
+      console.error("Error reordering pages:", error);
+      toast.error(error.message || "Failed to reorder pages", { id: toastId });
+    }
+  }, [searchQuery, queryClient]);
 
   return (
     <div className="w-full">
@@ -101,8 +140,9 @@ export function PagesList({ initialPages }: PagesListProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <CardList
-              items={pages}
+            <SortableCardList
+              items={pages.map((page) => ({ ...page, position: page.order }))}
+              onReorder={handleReorder}
               renderContent={(page) => (
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">

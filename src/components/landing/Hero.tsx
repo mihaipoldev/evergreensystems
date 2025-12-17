@@ -554,22 +554,28 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
             style={{ maxWidth: '100%' }}
           >
             {/* Gradient Border Container */}
-            <div
-              className="rounded-full p-[1px] sm:p-[2px]"
-              style={{
-                backgroundImage: 'linear-gradient(84deg, #446F94, #D4932C 92%)',
-              }}
-            >
-              {/* Inner Content */}
-              <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 rounded-full bg-background text-xs font-regular min-w-0">
-                <span 
-                  className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0"
-                  style={{
-                    backgroundImage: 'linear-gradient(84deg, #D4932C, #446F94 92%)',
-                  }}
-                />
-                <span className="uppercase text-foreground">{topBannerText}</span>
-              </div>
+            <div className="relative inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 rounded-full text-xs font-regular min-w-0">
+              {/* Gradient Border - positioned behind content */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'linear-gradient(84deg, hsl(var(--secondary)), hsl(var(--primary)) 92%)',
+                  padding: '1px',
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  maskComposite: 'exclude',
+                  zIndex: 0,
+                }}
+              />
+              {/* Content - positioned above border */}
+              <span 
+                className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0 relative z-10"
+                style={{
+                  backgroundImage: 'linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)',
+                }}
+              />
+              <span className="uppercase text-foreground relative z-10">{topBannerText}</span>
             </div>
           </motion.div>
         )}
@@ -738,14 +744,14 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           <div
             className="w-full max-w-[800px] rounded-2xl p-0.5 relative group"
             style={{
-              backgroundImage: 'linear-gradient(84deg, #446F94, #D4932C 92%)',
+              backgroundImage: 'linear-gradient(84deg, hsl(var(--secondary)), hsl(var(--primary)) 92%)',
             }}
           >
-            {/* Glow Effect on Hover - Gradient from left (blue) to right (orange) - Behind the video */}
+            {/* Glow Effect on Hover - Gradient from left (secondary) to right (primary) - Behind the video */}
             <div 
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none -z-10 overflow-hidden" 
               style={{ 
-                background: 'linear-gradient(84deg, rgba(68, 111, 148, 0.1), rgba(212, 147, 44, 0.1) 92%)',
+                background: 'linear-gradient(84deg, hsl(var(--secondary) / 0.1), hsl(var(--primary) / 0.1) 92%)',
                 filter: 'blur(30px)',
                 transform: 'scale(1.1)',
               }} 

@@ -783,3 +783,19 @@ input[type="password"]:-webkit-autofill:active {
   transform: translateY(-2.5rem);
   z-index: 1;
 }
+
+/* Rich Text Styling - Inherit font-weight and make bold heavier */
+.rich-text-content {
+  font-weight: inherit;
+}
+
+/* Color markers inherit weight from parent */
+.rich-text-content span.text-primary,
+.rich-text-content span.text-secondary {
+  font-weight: inherit;
+}
+
+/* Bold markers make text heavier than parent */
+.rich-text-content strong {
+  font-weight: 900;
+}

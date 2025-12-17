@@ -11,8 +11,9 @@ export async function getPagesByType(): Promise<Record<string, Page[]>> {
   const supabase = createServiceRoleClient();
   const { data: pages, error } = await supabase
     .from("pages")
-    .select("id, title, description, type, status, created_at, updated_at")
+    .select("id, title, description, type, status, order, created_at, updated_at")
     .not("type", "is", null)
+    .order("order", { ascending: true })
     .order("created_at", { ascending: false })
     .returns<Page[]>();
 
@@ -29,6 +30,16 @@ export async function getPagesByType(): Promise<Record<string, Page[]>> {
       }
       pagesByType[page.type].push(page);
     }
+  });
+
+  // Sort pages within each type by order
+  Object.keys(pagesByType).forEach((type) => {
+    pagesByType[type].sort((a, b) => {
+      if (a.order !== b.order) {
+        return a.order - b.order;
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   });
 
   return pagesByType;

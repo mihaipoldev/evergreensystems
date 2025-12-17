@@ -99,8 +99,7 @@ export const Stories = ({ section, media = [] }: StoriesProps) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.01 }}
-                className="group cursor-pointer"
-                style={index === 1 ? { marginTop: '70px' } : {}}
+                className={`group cursor-pointer ${index === 1 ? 'md:mt-[70px]' : ''}`}
                 onClick={() => setSelectedMedia(mediaItem)}
               >
                 <div className="relative rounded-md overflow-hidden aspect-video bg-gradient-to-br from-primary/20 to-muted border border-muted-foreground">
@@ -118,14 +117,12 @@ export const Stories = ({ section, media = [] }: StoriesProps) => {
                   </div>
                   
                   {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-card/60 group-hover:bg-card/40 transition-colors" />
+                  <div className="absolute inset-0 bg-card/25 group-hover:bg-card/10 transition-colors" />
                   
                   {/* Play Button - YouTube Style */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-                    <motion.div
-                      className="w-32 h-20 rounded-[4px] flex items-center justify-center shadow-lg transition-all duration-100 bg-primary/30 group-hover:bg-primary/50"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
+                    <div
+                      className="w-32 h-20 rounded-[4px] flex items-center justify-center shadow-lg transition-colors duration-200 bg-primary/30 hover:bg-primary/50 pointer-events-auto"
                     >
                       <svg
                         className="w-20 h-20 ml-1 transition-colors duration-300 text-primary-foreground fill-primary-foreground"
@@ -138,7 +135,7 @@ export const Stories = ({ section, media = [] }: StoriesProps) => {
                           strokeLinecap="round"
                         />
                       </svg>
-                    </motion.div>
+                    </div>
                   </div>
                 </div>
               </motion.div>

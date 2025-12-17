@@ -6,6 +6,8 @@ import { AdminColorStyle } from "@/components/admin/AdminColorStyle";
 import { InstantColorApply } from "@/components/admin/InstantColorApply";
 import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
 import { InstantFontApply } from "@/components/admin/InstantFontApply";
+import { WebsiteColorStyle } from "@/components/admin/WebsiteColorStyle";
+import { WebsiteFontStyle } from "@/components/admin/WebsiteFontStyle";
 import { geistSans, geistMono, lato, getAllFontVariables } from "@/lib/fonts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -109,6 +111,9 @@ export default async function RootLayout({
         {isAdminPage && <AdminColorStyle />}
         {/* CRITICAL: Server-side font injection */}
         {isAdminPage && <AdminFontStyle />}
+        {/* Website styles for landing page (always include) */}
+        <WebsiteColorStyle />
+        <WebsiteFontStyle />
         {/* Client-side fallback from sessionStorage */}
         {isAdminPage && <InstantColorApply />}
         {isAdminPage && <InstantFontApply />}

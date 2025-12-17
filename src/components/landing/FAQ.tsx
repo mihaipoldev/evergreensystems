@@ -128,16 +128,16 @@ export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
               <AccordionItem
                 key={faq.id}
                 value={`item-${faq.id}`}
-                className="border border-border rounded-xl px-6 bg-card/50"
+                className="border border-border rounded-xl px-6 bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300"
               >
-                <AccordionTrigger className="text-left text-foreground py-5 [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:underline transition-all">
+                <AccordionTrigger className="text-left text-lg text-foreground py-5 [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:no-underline transition-all">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="pb-5">
+                <AccordionContent className="pb-5 text-md">
                   <RichText
                     text={faq.answer}
                     as="div"
-                    className="text-muted-foreground leading-relaxed"
+                    className="text-foreground/70 leading-relaxed"
                   />
                 </AccordionContent>
               </AccordionItem>

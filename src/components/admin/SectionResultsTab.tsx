@@ -15,7 +15,7 @@ import type { Result, ResultWithSection } from "@/features/results/types";
 
 type SectionResultsTabProps = {
   sectionId: string;
-  pageId: string;
+  pageId?: string;
   initialResults: ResultWithSection[];
 };
 
@@ -197,7 +197,7 @@ export function SectionResultsTab({ sectionId, pageId, initialResults }: Section
   const renderActions = useCallback((item: ResultWithSection) => (
     <ActionMenu
       itemId={item.id}
-      editHref={`/admin/results/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=results`}
+      editHref={`/admin/results/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results`}
       onDelete={async () => {
         await handleRemoveResult(item.id);
       }}
@@ -226,7 +226,7 @@ export function SectionResultsTab({ sectionId, pageId, initialResults }: Section
           className="rounded-full w-10 h-10 p-0 bg-transparent text-muted-foreground hover:text-primary hover:bg-transparent border-0 shadow-none transition-colors"
           title="Add Result"
         >
-          <Link href={`/admin/results/new?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=results`}>
+          <Link href={`/admin/results/new?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results`}>
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
           </Link>
         </Button>
@@ -281,7 +281,7 @@ export function SectionResultsTab({ sectionId, pageId, initialResults }: Section
                       </div>
                       <ActionMenu
                         itemId={item.id}
-                        editHref={`/admin/results/${item.id}/edit?returnTo=/admin/pages/${pageId}/sections/${sectionId}?tab=results`}
+                        editHref={`/admin/results/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results`}
                         customActions={[
                           {
                             label: "Select",

@@ -102,6 +102,117 @@ export interface Database {
           updated_at?: string;
         };
       };
+      website_colors: {
+        Row: {
+          id: string;
+          name: string;
+          hex: string;
+          hsl_h: number;
+          hsl_s: number;
+          hsl_l: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          hex: string;
+          hsl_h: number;
+          hsl_s: number;
+          hsl_l: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          hex?: string;
+          hsl_h?: number;
+          hsl_s?: number;
+          hsl_l?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      website_settings: {
+        Row: {
+          id: string; // UUID
+          environment: string; // 'production' or 'development'
+          preset_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string; // UUID
+          environment: string; // 'production' or 'development'
+          preset_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string; // UUID
+          environment?: string; // 'production' or 'development'
+          preset_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      website_settings_presets: {
+        Row: {
+          id: string; // UUID
+          name: string;
+          theme: string;
+          primary_color_hex: string | null;
+          primary_color_h: number | null;
+          primary_color_s: number | null;
+          primary_color_l: number | null;
+          secondary_color_hex: string | null;
+          secondary_color_h: number | null;
+          secondary_color_s: number | null;
+          secondary_color_l: number | null;
+          font_family: string;
+          styling_options: Json | null;
+          favorite: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string; // UUID
+          name: string;
+          theme?: string;
+          primary_color_hex?: string | null;
+          primary_color_h?: number | null;
+          primary_color_s?: number | null;
+          primary_color_l?: number | null;
+          secondary_color_hex?: string | null;
+          secondary_color_h?: number | null;
+          secondary_color_s?: number | null;
+          secondary_color_l?: number | null;
+          font_family?: string;
+          styling_options?: Json | null;
+          favorite?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string; // UUID
+          name?: string;
+          theme?: string;
+          primary_color_hex?: string | null;
+          primary_color_h?: number | null;
+          primary_color_s?: number | null;
+          primary_color_l?: number | null;
+          secondary_color_hex?: string | null;
+          secondary_color_h?: number | null;
+          secondary_color_s?: number | null;
+          secondary_color_l?: number | null;
+          font_family?: string;
+          styling_options?: Json | null;
+          favorite?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       pages: {
         Row: {
           id: string;

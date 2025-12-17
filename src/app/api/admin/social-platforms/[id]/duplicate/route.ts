@@ -44,12 +44,15 @@ export async function POST(
       );
     }
 
-    // Generate duplicate name with " (Copy)" suffix
-    let duplicateName = `${original.name} (Copy)`;
+    // Generate duplicate name with version number (V2, V3, etc.)
+    // Extract base name (remove existing version if present)
+    const baseName = original.name.replace(/\s+V\d+$/, '');
     
-    // Check if name already exists, append number if needed
-    let counter = 1;
+    // Find the next version number
+    let version = 2;
+    let duplicateName: string;
     while (true) {
+      duplicateName = `${baseName} V${version}`;
       const { data: existing } = await adminSupabase
         .from("social_platforms")
         .select("id")
@@ -57,8 +60,7 @@ export async function POST(
         .maybeSingle();
       
       if (!existing) break;
-      counter++;
-      duplicateName = `${original.name} (Copy ${counter})`;
+      version++;
     }
 
     // Create duplicate social platform

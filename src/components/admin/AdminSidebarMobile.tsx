@@ -15,6 +15,7 @@ import {
   faUser,
   faSignOutAlt,
   faSitemap,
+  faGlobe,
 } from "@fortawesome/free-solid-svg-icons";
 import { ChevronDown } from "lucide-react";
 import {
@@ -27,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,6 +46,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { usePages } from "@/lib/react-query/hooks";
 import { useSections } from "@/lib/react-query/hooks";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 import type { Page } from "@/features/pages/types";
 
 const topLevelItems = [
@@ -68,6 +71,11 @@ const topLevelItems = [
     href: "/admin/settings",
     icon: faGear,
   },
+  {
+    title: "Website Settings",
+    href: "/admin/website-settings",
+    icon: faGlobe,
+  },
 ];
 
 export function AdminSidebarMobile() {
@@ -77,6 +85,7 @@ export function AdminSidebarMobile() {
   const { startNavigation, pendingPath } = useNavigationLoading();
   const [open, setOpen] = useState(false);
   const [openPages, setOpenPages] = useState<Set<string>>(new Set());
+  const [isInitialized, setIsInitialized] = useState(false);
   const [user, setUser] = useState<{
     email: string | null;
     name: string | null;
@@ -87,23 +96,53 @@ export function AdminSidebarMobile() {
   const { data: pages = [], isLoading: pagesLoading } = usePages();
 
   // Determine which page should be open based on current route
-  const currentPageId = pathname.match(/\/admin\/pages\/([^/]+)/)?.[1] || null;
-
-  // Expand all pages by default when pages are loaded
-  useEffect(() => {
-    if (pages.length > 0) {
-      // Set all pages to be open by default
-      const allPageIds = new Set(pages.map((page) => page.id));
-      setOpenPages(allPageIds);
+  // Check query params first (new URL structure), then fall back to pathname (old structure)
+  const currentPageId = useMemo(() => {
+    // Check query params for pageId (new URL structure: /admin/sections/[id]?pageId=[pageId])
+    const queryPageId = searchParams.get("pageId");
+    if (queryPageId) {
+      return queryPageId;
     }
-  }, [pages]);
+    // Fall back to old URL structure: /admin/pages/[id]/...
+    const match = pathname.match(/\/admin\/pages\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [pathname, searchParams]);
 
-  // Auto-open page if we're on a page route (fallback, but all should already be open)
+  // Load persisted sidebar state from localStorage
   useEffect(() => {
-    if (currentPageId && !openPages.has(currentPageId)) {
-      setOpenPages((prev) => new Set([...prev, currentPageId]));
+    if (pages.length > 0 && !isInitialized) {
+      try {
+        const stored = localStorage.getItem("admin-sidebar-open-pages");
+        if (stored) {
+          const storedPageIds = JSON.parse(stored) as string[];
+          const storedSet = new Set(storedPageIds.filter((id) => 
+            pages.some((page) => page.id === id)
+          ));
+          setOpenPages(storedSet);
+        }
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error loading sidebar state:", error);
+        setIsInitialized(true);
+      }
     }
-  }, [currentPageId, openPages]);
+  }, [pages, isInitialized]);
+
+  // Auto-open page if we're on a page route (but don't persist this)
+  useEffect(() => {
+    if (isInitialized && currentPageId && !openPages.has(currentPageId)) {
+      setOpenPages((prev) => {
+        const next = new Set([...prev, currentPageId]);
+        // Store updated state
+        try {
+          localStorage.setItem("admin-sidebar-open-pages", JSON.stringify(Array.from(next)));
+        } catch (error) {
+          console.error("Error saving sidebar state:", error);
+        }
+        return next;
+      });
+    }
+  }, [currentPageId, openPages, isInitialized]);
 
   const togglePage = (pageId: string) => {
     setOpenPages((prev) => {
@@ -112,6 +151,12 @@ export function AdminSidebarMobile() {
         next.delete(pageId);
       } else {
         next.add(pageId);
+      }
+      // Persist to localStorage
+      try {
+        localStorage.setItem("admin-sidebar-open-pages", JSON.stringify(Array.from(next)));
+      } catch (error) {
+        console.error("Error saving sidebar state:", error);
       }
       return next;
     });
@@ -395,37 +440,68 @@ function PageCollapsibleMobile({
     { pageId: page.id },
     { enabled: true } // Always fetch to check active state for content item routes
   );
+
+  // Fetch site structure info for this page
+  const { data: siteStructureInfo = [] } = useQuery({
+    queryKey: ["site-structure", page.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/site-structure?pageId=${page.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json() as Promise<Array<{ page_type: string; environment: 'production' | 'development' | 'both' }>>;
+    },
+  });
   
   // Auto-open page if we're on a route that belongs to this page
   useEffect(() => {
     if (isOpen) return; // Already open, no need to check
     
     const currentPath = pendingPath || pathname;
+    const queryPageId = searchParams.get("pageId");
     const CONTENT_SECTION_TYPES = ["faq", "testimonials", "features", "cta"];
     
     // Check if we're on a content item edit route (e.g., /admin/testimonials/[id]/edit)
     const contentItemRouteMatch = currentPath.match(/\/admin\/(testimonials|faq|features|cta)\/[^/]+\/edit/);
     if (contentItemRouteMatch) {
-      const contentType = contentItemRouteMatch[1];
-      // Check if this page has a section of this content type
-      const hasMatchingSection = sections.some((section) => (section as any).type === contentType);
-      if (hasMatchingSection) {
-        onToggle();
-        return;
+      // Check if returnTo parameter points to a section on this page
+      const returnTo = searchParams.get('returnTo');
+      if (returnTo) {
+        // Parse page ID from returnTo URL (new or old structure)
+        const newReturnToMatch = returnTo.match(/\/admin\/sections\/[^/?]+.*[?&]pageId=([^&]+)/);
+        const oldReturnToMatch = returnTo.match(/\/admin\/pages\/([^/]+)\/sections\/[^/?]+/);
+        const returnToPageId = newReturnToMatch?.[1] || oldReturnToMatch?.[1];
+        if (returnToPageId === page.id) {
+          onToggle();
+          return;
+        }
+      }
+      // If no returnTo, check if query param pageId matches this page
+      if (queryPageId === page.id) {
+        const contentType = contentItemRouteMatch[1];
+        // Check if this page has a section of this content type
+        const hasMatchingSection = sections.some((section) => (section as any).type === contentType);
+        if (hasMatchingSection) {
+          onToggle();
+          return;
+        }
       }
     }
     
-    // Check section routes
+    // Check section routes (new URL structure)
     const sectionMatch = currentPath.match(/\/admin\/sections\/([^/]+)/);
     if (sectionMatch) {
       const sectionId = sectionMatch[1];
-      const hasMatchingSection = sections.some((section) => section.id === sectionId);
-      if (hasMatchingSection) {
-        onToggle();
-        return;
+      // Only auto-open if the pageId query param matches this page
+      if (queryPageId === page.id) {
+        const hasMatchingSection = sections.some((section) => section.id === sectionId);
+        if (hasMatchingSection) {
+          onToggle();
+          return;
+        }
       }
     }
-  }, [pathname, pendingPath, sections, isOpen, onToggle]);
+  }, [pathname, pendingPath, sections, isOpen, onToggle, page.id, searchParams]);
 
   // Check if we're on this page or any of its sections
   const currentPath = pendingPath || pathname;
@@ -435,37 +511,69 @@ function PageCollapsibleMobile({
   const contentItemRouteMatch = currentPath.match(/\/admin\/(testimonials|faq|features|cta)\/[^/]+\/edit/);
   let isPageActive = false;
   if (contentItemRouteMatch) {
-    const contentType = contentItemRouteMatch[1];
-    // Check if this page has a section of this content type
-    isPageActive = sections.some((section) => (section as any).type === contentType);
+    // Check if returnTo parameter points to a section on this page
+    const returnTo = searchParams.get('returnTo');
+    if (returnTo) {
+      // Parse page ID and section ID from returnTo URL (new or old structure)
+      // New structure: /admin/sections/[sectionId]?pageId=[pageId]&tab=...
+      const newReturnToMatch = returnTo.match(/\/admin\/sections\/([^/?]+).*[?&]pageId=([^&]+)/);
+      // Old structure: /admin/pages/[pageId]/sections/[sectionId]?tab=...
+      const oldReturnToMatch = returnTo.match(/\/admin\/pages\/([^/]+)\/sections\/([^/?]+)/);
+      const returnToPageId = newReturnToMatch?.[2] || oldReturnToMatch?.[1];
+      const returnToSectionId = newReturnToMatch?.[1] || oldReturnToMatch?.[2];
+      if (returnToPageId === page.id && returnToSectionId) {
+        isPageActive = sections.some((section) => section.id === returnToSectionId);
+      }
+    } else {
+      // Only check if query param pageId matches this page
+      if (searchParams.get("pageId") === page.id) {
+        const contentType = contentItemRouteMatch[1];
+        isPageActive = sections.some((section) => (section as any).type === contentType);
+      }
+    }
   } else {
+    // Check if we're on a section route with this page's pageId in query params
+    const isNewSectionRoute = currentPath.startsWith("/admin/sections/");
+    const queryPageId = searchParams.get("pageId");
+    const isSectionOnThisPage = isNewSectionRoute && queryPageId === page.id;
+    
     isPageActive =
       currentPath === `/admin/pages/${page.id}/sections` ||
       currentPath.startsWith(`/admin/pages/${page.id}/`) ||
+      isSectionOnThisPage ||
       sections.some((section) => {
-        const isContentSection = CONTENT_SECTION_TYPES.includes((section as any).type);
-        const isHeroSection = (section as any).type === "hero";
-        const newSectionBase = `/admin/pages/${page.id}/sections/${section.id}`;
+        const sectionType = (section as any).type;
+        const isContentSection = CONTENT_SECTION_TYPES.includes(sectionType);
+        const isHeroSection = sectionType === "hero";
+        
+        // Check new URL structure: /admin/sections/[sectionId]?pageId=[pageId]
+        const newSectionPath = `/admin/sections/${section.id}`;
+        const isNewSectionPath = currentPath.startsWith(newSectionPath);
+        const isSectionWithThisPage = isNewSectionPath && queryPageId === page.id;
+        
+        // Check old URL structure: /admin/pages/[pageId]/sections/[sectionId]/...
+        const oldSectionPath = `/admin/pages/${page.id}/sections/${section.id}`;
+        
         if (isContentSection) {
+          // For content sections, check new routes and old routes (only if pageId matches)
           return (
-            currentPath.startsWith(`${newSectionBase}/items`) ||
-            currentPath === `${newSectionBase}/edit` ||
-            currentPath === `/admin/sections/${section.id}` ||
-            currentPath === `/admin/sections/${section.id}/edit`
+            isSectionWithThisPage ||
+            currentPath.startsWith(`${oldSectionPath}/items`) ||
+            currentPath === `${oldSectionPath}/edit`
           );
         } else if (isHeroSection) {
+          // For hero sections, check new routes and old routes (only if pageId matches)
           return (
-            currentPath === `${newSectionBase}/media` ||
-            currentPath === `${newSectionBase}/cta` ||
-            currentPath === `${newSectionBase}/edit` ||
-            currentPath === `/admin/sections/${section.id}/edit` ||
-            currentPath === `/admin/sections/${section.id}` ||
-            currentPath.startsWith(`/admin/sections/${section.id}?`)
+            isSectionWithThisPage ||
+            currentPath === `${oldSectionPath}/media` ||
+            currentPath === `${oldSectionPath}/cta` ||
+            currentPath === `${oldSectionPath}/edit`
           );
         } else {
+          // For other non-content sections, check new routes and old routes (only if pageId matches)
           return (
-            currentPath === `${newSectionBase}/edit` ||
-            currentPath === `/admin/sections/${section.id}/edit`
+            isSectionWithThisPage ||
+            currentPath === `${oldSectionPath}/edit`
           );
         }
       });
@@ -497,7 +605,37 @@ function PageCollapsibleMobile({
               : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
           )}
         />
-        <span className="relative flex-1 text-left">{page.title}</span>
+        <span className="relative flex-1 text-left truncate">{page.title}</span>
+        {siteStructureInfo.length > 0 && (
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            {siteStructureInfo.map((info) => {
+              if (info.environment === 'both') {
+                return (
+                  <div key={info.page_type} className="flex items-center gap-0.5">
+                    <Badge variant="destructive" className="text-[10px] font-semibold px-1 py-0 h-4">
+                      Prod
+                    </Badge>
+                    <Badge className="text-[10px] font-semibold px-1 py-0 h-4 bg-primary text-primary-foreground border-transparent">
+                      Dev
+                    </Badge>
+                  </div>
+                );
+              } else if (info.environment === 'production') {
+                return (
+                  <Badge key={info.page_type} variant="destructive" className="text-[10px] font-semibold px-1 py-0 h-4">
+                    Prod
+                  </Badge>
+                );
+              } else {
+                return (
+                  <Badge key={info.page_type} className="text-[10px] font-semibold px-1 py-0 h-4 bg-primary text-primary-foreground border-transparent">
+                    Dev
+                  </Badge>
+                );
+              }
+            })}
+          </div>
+        )}
         <ChevronDown
           className={cn(
             "h-3 w-3 transition-transform shrink-0",
@@ -549,56 +687,56 @@ function PageCollapsibleMobile({
               const isHeaderSection = (section as any).type === "header";
               const isCTASection = (section as any).type === "cta";
               
-              // Determine section href based on type (using query params)
-              const sectionBase = `/admin/pages/${page.id}/sections/${section.id}`;
+              // Determine section href based on type (using new URL structure)
+              const sectionBase = `/admin/sections/${section.id}`;
               let sectionHref: string;
               if (isHeroSection) {
-                sectionHref = `${sectionBase}?tab=media`;
+                sectionHref = `${sectionBase}?pageId=${page.id}&tab=media`;
               } else if (isHeaderSection) {
-                sectionHref = `${sectionBase}?tab=cta`;
+                sectionHref = `${sectionBase}?pageId=${page.id}&tab=cta`;
               } else if (isContentSection) {
                 // Use section-type-specific tab name
                 const sectionType = (section as any).type;
                 if (sectionType === "faq") {
-                  sectionHref = `${sectionBase}?tab=faq`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=faq`;
                 } else if (sectionType === "testimonials") {
-                  sectionHref = `${sectionBase}?tab=testimonials`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=testimonials`;
                 } else if (sectionType === "features") {
-                  sectionHref = `${sectionBase}?tab=features`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=features`;
                 } else if (sectionType === "timeline") {
-                  sectionHref = `${sectionBase}?tab=timeline`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=timeline`;
                 } else if (sectionType === "results") {
-                  sectionHref = `${sectionBase}?tab=results`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=results`;
                 } else if (sectionType === "cta") {
-                  sectionHref = `${sectionBase}?tab=cta`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=cta`;
                 } else {
-                  sectionHref = `${sectionBase}?tab=edit`;
+                  sectionHref = `${sectionBase}?pageId=${page.id}&tab=edit`;
                 }
               } else {
-                sectionHref = `${sectionBase}?tab=edit`;
+                sectionHref = `${sectionBase}?pageId=${page.id}&tab=edit`;
               }
               
               const currentPath = pendingPath || pathname;
               
-              // Check if we're on a section route (new query param routes or old routes for backward compatibility)
+              // Check if we're on a section route (new URL structure or old routes for backward compatibility)
               let isSectionActive = false;
               
-              // Check if pathname matches section base (with or without query params)
-              if (currentPath.startsWith(sectionBase)) {
-                // Check for exact match or old route structure (for backward compatibility)
-                if (currentPath === sectionBase ||
-                    currentPath === `${sectionBase}/media` ||
-                    currentPath === `${sectionBase}/cta` ||
-                    currentPath === `${sectionBase}/edit`) {
+              // Check new URL structure: /admin/sections/[sectionId]?pageId=[pageId]
+              const newSectionPath = `/admin/sections/${section.id}`;
+              if (currentPath.startsWith(newSectionPath)) {
+                const queryPageId = searchParams.get("pageId");
+                // Only mark as active if pageId matches this page
+                if (queryPageId === page.id) {
                   isSectionActive = true;
                 }
               }
               
-              // Check old routes for backward compatibility
+              // Check old route structure for backward compatibility: /admin/pages/[pageId]/sections/[sectionId]
               if (!isSectionActive) {
-                isSectionActive = 
-                  currentPath === `/admin/sections/${section.id}` || 
-                  currentPath === `/admin/sections/${section.id}/edit`;
+                const oldSectionBase = `/admin/pages/${page.id}/sections/${section.id}`;
+                if (currentPath.startsWith(oldSectionBase)) {
+                  isSectionActive = true;
+                }
               }
               
               // Check content item edit routes (old routes only - no /items/ routes)
@@ -608,17 +746,27 @@ function PageCollapsibleMobile({
                 
                 // Check if we're on a content item edit route
                 if (oldContentItemRoutePattern.test(currentPath)) {
-                  // Check if returnTo parameter points to this section
+                  // Check if returnTo parameter points to this section AND this page
                   const returnTo = searchParams.get('returnTo');
                   if (returnTo) {
-                    // Parse section ID from returnTo URL: /admin/pages/[pageId]/sections/[sectionId]?tab=...
-                    const returnToMatch = returnTo.match(/\/admin\/pages\/[^/]+\/sections\/([^/?]+)/);
-                    if (returnToMatch && returnToMatch[1] === section.id) {
+                    // Parse section ID and page ID from returnTo URL (new or old structure)
+                    // New structure: /admin/sections/[sectionId]?pageId=[pageId]&tab=...
+                    const newReturnToMatch = returnTo.match(/\/admin\/sections\/([^/?]+).*[?&]pageId=([^&]+)/);
+                    // Old structure: /admin/pages/[pageId]/sections/[sectionId]?tab=...
+                    const oldReturnToMatch = returnTo.match(/\/admin\/pages\/([^/]+)\/sections\/([^/?]+)/);
+                    
+                    const returnToPageId = newReturnToMatch?.[2] || oldReturnToMatch?.[1];
+                    const returnToSectionId = newReturnToMatch?.[1] || oldReturnToMatch?.[2];
+                    
+                    if (returnToPageId === page.id && returnToSectionId === section.id) {
                       isSectionActive = true;
                     }
                   } else {
-                    // Fallback: if no returnTo, check if page has matching section type
-                    isSectionActive = true;
+                    // If no returnTo, check if query param pageId matches this page
+                    const queryPageId = searchParams.get("pageId");
+                    if (queryPageId === page.id) {
+                      isSectionActive = true;
+                    }
                   }
                 }
               }

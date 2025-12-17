@@ -55,7 +55,7 @@ export function SiteStructurePageClient({ pagesByType, siteStructure, allPages }
         />
         
         {/* Pages Section */}
-        <div className="border-t border-border/60 pt-8">
+        <div className="pt-8">
           <PagesList initialPages={allPages} />
         </div>
       </div>

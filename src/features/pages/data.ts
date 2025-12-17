@@ -9,7 +9,8 @@ export async function getAllPages(): Promise<Page[]> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("pages")
-    .select("id, title, description, type, status, created_at, updated_at")
+    .select("id, title, description, type, status, order, created_at, updated_at")
+    .order("order", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (error) {

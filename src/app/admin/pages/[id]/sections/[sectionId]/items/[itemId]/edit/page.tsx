@@ -24,7 +24,7 @@ export default async function EditItemPage({ params }: EditItemPageProps) {
     notFound();
   }
 
-  const returnTo = `/admin/pages/${pageId}/sections/${sectionId}?tab=items`;
+  const returnTo = `/admin/sections/${sectionId}?pageId=${pageId}&tab=items`;
 
   // Render appropriate form based on section type
   if (section.type === "faq") {

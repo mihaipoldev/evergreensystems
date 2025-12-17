@@ -156,7 +156,7 @@ export function SiteStructureList({ pagesByType, siteStructure, onSaveButtonStat
                     </span>
                   )}
                 </div>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Production Select */}
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Production</Label>
@@ -164,7 +164,7 @@ export function SiteStructureList({ pagesByType, siteStructure, onSaveButtonStat
                       value={selected.production || undefined}
                       onValueChange={(value) => handleVariantChange(pageType, 'production', value === "__none__" ? null : value)}
                     >
-                      <SelectTrigger className="w-full max-w-md">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select production page">
                           {productionPage
                             ? productionPage.title
@@ -189,7 +189,7 @@ export function SiteStructureList({ pagesByType, siteStructure, onSaveButtonStat
                       value={selected.development || undefined}
                       onValueChange={(value) => handleVariantChange(pageType, 'development', value === "__none__" ? null : value)}
                     >
-                      <SelectTrigger className="w-full max-w-md">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select development page">
                           {developmentPage
                             ? developmentPage.title
