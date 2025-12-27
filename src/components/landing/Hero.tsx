@@ -813,7 +813,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                   <Button
                     asChild
                     className={cn(
-                      "h-16 px-12 font-semibold whitespace-nowrap text-[14px] md:text-[16px] transition-all duration-150",
+                      "h-16 px-12 font-semibold whitespace-nowrap text-[15px] md:text-[16px] transition-all duration-150",
                       button.style === "primary" || !button.style
                         ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                         : button.style === "secondary"
