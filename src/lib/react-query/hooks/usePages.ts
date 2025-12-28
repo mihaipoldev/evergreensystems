@@ -1,16 +1,41 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
 import type { Page } from "@/features/pages/types";
+import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
 async function fetchPages(search?: string): Promise<Page[]> {
+  const fetchStartTime = getTimestamp();
   const url = search
     ? `/api/admin/pages?search=${encodeURIComponent(search)}`
     : "/api/admin/pages";
+  
+  const networkStartTime = getTimestamp();
   const response = await fetch(url);
+  const networkDuration = getDuration(networkStartTime);
+  debugClientTiming("usePages", "Network request", networkDuration, { 
+    url,
+    status: response.status,
+    ok: response.ok 
+  });
+  
   if (!response.ok) {
+    const totalDuration = getDuration(fetchStartTime);
+    debugClientTiming("usePages", "Total (ERROR)", totalDuration, { status: response.status });
     throw new Error("Failed to fetch pages");
   }
-  return response.json();
+  
+  const parseStartTime = getTimestamp();
+  const data = await response.json();
+  const parseDuration = getDuration(parseStartTime);
+  debugClientTiming("usePages", "Response parsing", parseDuration, { dataLength: data?.length || 0 });
+  
+  const totalDuration = getDuration(fetchStartTime);
+  debugClientTiming("usePages", "Total", totalDuration, { 
+    pageCount: data?.length || 0,
+    hasSearch: !!search 
+  });
+  
+  return data;
 }
 
 export function usePages(

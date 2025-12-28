@@ -18,9 +18,11 @@ import {
   faLaptopCode,
   faSitemap,
   faGlobe,
+  faBook,
 } from "@fortawesome/free-solid-svg-icons";
 import { ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -33,17 +35,16 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { CircleButton } from "@/components/admin/CircleButton";
 import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
-import { usePages } from "@/lib/react-query/hooks";
-import { useSections } from "@/lib/react-query/hooks";
+import { useSidebarData } from "@/lib/react-query/hooks";
 import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
 import { getSectionTabWithDefault } from "@/lib/tab-persistence";
 import type { Page } from "@/features/pages/types";
 import type { Section } from "@/features/sections/types";
+import { getTimestamp, getDuration, debugClientTiming, debugQuery } from "@/lib/debug-performance";
 
 const topLevelItems = [
   {
@@ -72,6 +73,11 @@ const topLevelItems = [
     icon: faLaptopCode,
   },
   {
+    title: "AI Knowledge",
+    href: "/admin/ai-knowledge",
+    icon: faBook,
+  },
+  {
     title: "Settings",
     href: "/admin/settings",
     icon: faGear,
@@ -84,6 +90,9 @@ const topLevelItems = [
 ];
 
 export function AdminSidebar() {
+  const mountStartTime = useRef<number>(getTimestamp());
+  const renderCount = useRef<number>(0);
+  
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -95,9 +104,38 @@ export function AdminSidebar() {
   const [loading, setLoading] = useState(true);
   const [openPages, setOpenPages] = useState<Set<string>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollAreaRef = useRef<React.ElementRef<typeof ScrollArea>>(null);
 
-  // Fetch pages
-  const { data: pages = [], isLoading: pagesLoading } = usePages();
+  // Fetch all sidebar data in one request (optimized)
+  const sidebarDataQueryStartTime = useRef<number>(getTimestamp());
+  const { data: sidebarData, isLoading: sidebarDataLoading } = useSidebarData();
+  
+  // Extract data from combined response
+  // Note: pages are minimal (id, title, order) - cast to Page type for compatibility
+  const pages: Page[] = (sidebarData?.pages || []).map(p => ({
+    ...p,
+    description: null,
+    type: 'page',
+    status: 'published',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  })) as Page[];
+  const sectionsByPage = sidebarData?.sectionsByPage || {};
+  const pagesLoading = sidebarDataLoading;
+  
+  // Track sidebar data query completion
+  useEffect(() => {
+    if (!sidebarDataLoading && sidebarData) {
+      const sidebarDataQueryDuration = getDuration(sidebarDataQueryStartTime.current);
+      debugQuery("AdminSidebar", "Sidebar data query", sidebarDataQueryDuration, {
+        pagesCount: pages.length,
+        sectionsPagesCount: Object.keys(sectionsByPage).length,
+        isLoading: sidebarDataLoading
+      });
+    }
+  }, [sidebarDataLoading, sidebarData, pages.length, sectionsByPage]);
 
   // Determine which page should be open based on current route
   // Check query params first (new URL structure), then fall back to pathname (old structure)
@@ -150,10 +188,15 @@ export function AdminSidebar() {
 
   useEffect(() => {
     const getUser = async () => {
+      const userFetchStartTime = getTimestamp();
       const supabase = createClient();
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
+      const userFetchDuration = getDuration(userFetchStartTime);
+      debugClientTiming("AdminSidebar", "User data fetch", userFetchDuration, {
+        hasUser: !!authUser
+      });
       setUser({
         email: authUser?.email || null,
         name: authUser?.user_metadata?.full_name || authUser?.email?.split("@")[0] || null,
@@ -163,6 +206,24 @@ export function AdminSidebar() {
 
     getUser();
   }, []);
+  
+  // Track component mount and renders
+  useEffect(() => {
+    const mountDuration = getDuration(mountStartTime.current);
+    debugClientTiming("AdminSidebar", "Mount", mountDuration);
+  }, []);
+  
+  // Track re-renders
+  useEffect(() => {
+    renderCount.current += 1;
+    if (renderCount.current > 1) {
+      debugClientTiming("AdminSidebar", `Render #${renderCount.current}`, 0, {
+        pagesCount: pages.length,
+        openPagesCount: openPages.size,
+        isInitialized
+      });
+    }
+  });
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -199,6 +260,35 @@ export function AdminSidebar() {
     });
   };
 
+  // Handle scroll detection for scrollbar visibility
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollArea) return;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      // Hide scrollbar after scrolling stops
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 1000);
+    };
+
+    scrollArea.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      scrollArea.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm">
       <div className="flex flex-col h-full">
@@ -224,8 +314,12 @@ export function AdminSidebar() {
         </div>
 
         {/* Navigation Section */}
-        <ScrollArea className="flex-1">
-          <nav className="px-3 py-4 space-y-0.5">
+        <ScrollAreaPrimitive.Root
+          ref={scrollAreaRef}
+          className={cn("relative overflow-hidden flex-1 sidebar-scroll-area", isScrolling && "scrolling")}
+        >
+          <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+            <nav className="px-4 py-4 space-y-0.5 min-w-0">
             {/* Analytics */}
             {topLevelItems
               .filter((item) => item.title === "Analytics")
@@ -244,7 +338,7 @@ export function AdminSidebar() {
                     href={item.href}
                     onClick={() => startNavigation(item.href)}
                     className={cn(
-                      "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
                       "relative overflow-hidden",
                       "active:scale-[0.98]",
                       isActive
@@ -278,7 +372,7 @@ export function AdminSidebar() {
                     href={item.href}
                     onClick={() => startNavigation(item.href)}
                     className={cn(
-                      "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
                       "relative overflow-hidden",
                       "active:scale-[0.98]",
                       isActive
@@ -300,7 +394,7 @@ export function AdminSidebar() {
 
             {/* All pages - positioned between Site Structure and Media Library */}
             {pagesLoading ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">Loading pages...</div>
+              <div className="px-4 py-2 text-sm text-muted-foreground">Loading pages...</div>
             ) : (
               pages.map((page) => (
                 <PageCollapsible
@@ -312,6 +406,8 @@ export function AdminSidebar() {
                   pendingPath={pendingPath}
                   searchParams={searchParams}
                   startNavigation={startNavigation}
+                  sections={sectionsByPage[page.id] || []}
+                  siteStructureInfo={[]}
                 />
               ))
             )}
@@ -334,7 +430,7 @@ export function AdminSidebar() {
                     href={item.href}
                     onClick={() => startNavigation(item.href)}
                     className={cn(
-                      "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
                       "relative overflow-hidden",
                       "active:scale-[0.98]",
                       isActive
@@ -353,8 +449,24 @@ export function AdminSidebar() {
                   </Link>
                 );
               })}
-          </nav>
-        </ScrollArea>
+            </nav>
+          </ScrollAreaPrimitive.Viewport>
+          <ScrollAreaPrimitive.ScrollAreaScrollbar
+            orientation="vertical"
+            className={cn(
+              "flex touch-none select-none transition-opacity duration-300",
+              "h-full w-2.5 border-l border-l-transparent p-[1px]",
+              !isScrolling && "opacity-0 pointer-events-none"
+            )}
+            style={{
+              opacity: isScrolling ? 1 : 0,
+              pointerEvents: isScrolling ? 'auto' : 'none',
+            }}
+          >
+            <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border" />
+          </ScrollAreaPrimitive.ScrollAreaScrollbar>
+          <ScrollAreaPrimitive.Corner />
+        </ScrollAreaPrimitive.Root>
 
         {/* User Section */}
         {!loading && user && (
@@ -415,6 +527,8 @@ type PageCollapsibleProps = {
   pendingPath: string | null;
   searchParams: URLSearchParams;
   startNavigation: (href: string) => void;
+  sections: Array<any>; // Sections for this page (from combined API)
+  siteStructureInfo: Array<{ page_type: string; environment: 'production' | 'development' | 'both' }>; // Site structure for this page (from combined API)
 };
 
 function PageCollapsible({
@@ -425,23 +539,11 @@ function PageCollapsible({
   pendingPath,
   searchParams,
   startNavigation,
+  sections,
+  siteStructureInfo,
 }: PageCollapsibleProps) {
-  const { data: sections = [], isLoading: sectionsLoading } = useSections(
-    { pageId: page.id },
-    { enabled: true } // Always fetch to check active state for content item routes
-  );
-
-  // Fetch site structure info for this page
-  const { data: siteStructureInfo = [] } = useQuery({
-    queryKey: ["site-structure", page.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/admin/site-structure?pageId=${page.id}`);
-      if (!response.ok) {
-        return [];
-      }
-      return response.json() as Promise<Array<{ page_type: string; environment: 'production' | 'development' | 'both' }>>;
-    },
-  });
+  // Sections and site structure are now passed as props from the combined API
+  const sectionsLoading = false; // No longer loading separately
   
   // Auto-open page if we're on a route that belongs to this page
   useEffect(() => {
@@ -581,11 +683,11 @@ function PageCollapsible({
     currentPath === `/admin/pages/${page.id}/edit`;
 
   return (
-    <Collapsible open={isOpen} onOpenChange={onToggle}>
+    <Collapsible open={isOpen} onOpenChange={onToggle} className="w-full min-w-0">
       <CollapsibleTrigger
         className={cn(
-          "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full",
-          "relative overflow-hidden",
+          "group flex items-center gap-3 rounded-sm px-4 py-2 text-[16px] font-medium w-full",
+          "relative overflow-hidden min-w-0",
           "active:scale-[0.98]",
           isPageActive
             ? "bg-primary/10 text-sidebar-foreground shadow-sm"
@@ -599,9 +701,9 @@ function PageCollapsible({
             isPageActive ? "text-primary" : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
           )}
         />
-        <span className="relative flex-1 text-left truncate">{page.title}</span>
+        <span className="relative flex-1 text-left truncate min-w-0">{page.title}</span>
         {siteStructureInfo.length > 0 && (
-          <div className="flex items-center gap-1 shrink-0 ml-2">
+          <div className="flex items-center gap-1 shrink-0">
             {siteStructureInfo.map((info) => {
               if (info.environment === 'both') {
                 return (
@@ -632,20 +734,20 @@ function PageCollapsible({
         )}
         <ChevronDown
           className={cn(
-            "h-3 w-3 transition-transform shrink-0",
+            "h-3 w-3 transition-transform shrink-0 ml-auto",
             isOpen && "rotate-180",
             isPageActive ? "text-primary" : "text-sidebar-foreground/70"
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="pl-4 pr-4 space-y-0.5 mt-0.5">
+      <CollapsibleContent className="pl-4 pr-4 space-y-0.5 mt-0.5 overflow-hidden">
         {/* Page Settings link */}
         <Link
           href={viewAllSectionsHref}
           onClick={() => startNavigation(viewAllSectionsHref)}
           className={cn(
-            "group flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-200",
-            "relative overflow-hidden",
+            "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
+            "relative overflow-hidden min-w-0",
             "active:scale-[0.98]",
             isViewAllActive
               ? "bg-primary/10 text-sidebar-foreground shadow-sm"
@@ -655,16 +757,16 @@ function PageCollapsible({
           <FontAwesomeIcon
             icon={faLayerGroup}
             className={cn(
-              "h-3.5 w-3.5 transition-colors shrink-0",
+              "h-4 w-4 transition-colors shrink-0",
               isViewAllActive ? "text-primary" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"
             )}
           />
-          <span className="relative">Page Settings</span>
+          <span className="relative flex-1 truncate min-w-0">Page Settings</span>
         </Link>
 
         {/* Individual section links */}
         {sectionsLoading ? (
-          <div className="px-3 py-1.5 text-xs text-muted-foreground">Loading sections...</div>
+          <div className="px-4 py-1.5 text-sm text-muted-foreground">Loading sections...</div>
         ) : (
           sections
             .sort((a, b) => {
@@ -746,8 +848,8 @@ function PageCollapsible({
                   href={sectionHref}
                   onClick={() => startNavigation(sectionHref)}
                   className={cn(
-                    "group flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-200",
-                    "relative overflow-hidden",
+                    "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
+                    "relative overflow-hidden min-w-0",
                     "active:scale-[0.98]",
                     isSectionActive
                       ? "bg-primary/10 text-sidebar-foreground shadow-sm"
@@ -760,7 +862,7 @@ function PageCollapsible({
                     iconClass={(section as any).icon || null}
                     fallbackIcon={faLayerGroup}
                     className={cn(
-                      "h-3.5 w-3.5 transition-colors shrink-0",
+                      "h-4 w-4 transition-colors shrink-0",
                       isSectionActive
                         ? "text-primary"
                         : isSectionPublished
@@ -768,7 +870,7 @@ function PageCollapsible({
                         : "text-sidebar-foreground/40"
                     )}
                   />
-                  <span className="relative flex-1 truncate">
+                  <span className="relative flex-1 truncate min-w-0">
                     {section.admin_title || section.title || section.type}
                   </span>
                 </Link>

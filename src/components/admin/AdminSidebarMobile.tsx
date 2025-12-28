@@ -16,6 +16,7 @@ import {
   faSignOutAlt,
   faSitemap,
   faGlobe,
+  faBook,
 } from "@fortawesome/free-solid-svg-icons";
 import { ChevronDown } from "lucide-react";
 import {
@@ -28,9 +29,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigationLoading } from "@/providers/NavigationLoadingProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -68,6 +70,11 @@ const topLevelItems = [
     icon: faImages,
   },
   {
+    title: "AI Knowledge",
+    href: "/admin/ai-knowledge",
+    icon: faBook,
+  },
+  {
     title: "Settings",
     href: "/admin/settings",
     icon: faGear,
@@ -87,6 +94,9 @@ export function AdminSidebarMobile() {
   const [open, setOpen] = useState(false);
   const [openPages, setOpenPages] = useState<Set<string>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollAreaRef = useRef<React.ElementRef<typeof ScrollArea>>(null);
   const [user, setUser] = useState<{
     email: string | null;
     name: string | null;
@@ -199,6 +209,35 @@ export function AdminSidebarMobile() {
     return name[0]?.toUpperCase() || "U";
   };
 
+  // Handle scroll detection for scrollbar visibility
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollArea) return;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      // Hide scrollbar after scrolling stops
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 1000);
+    };
+
+    scrollArea.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      scrollArea.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -239,8 +278,13 @@ export function AdminSidebarMobile() {
             </div>
           </SheetHeader>
 
-          <ScrollArea className="flex-1">
-            <nav className="px-3 py-4 space-y-0.5">
+          <ScrollAreaPrimitive.Root
+            ref={scrollAreaRef}
+            className={cn("relative overflow-hidden flex-1 sidebar-scroll-area", isScrolling && "scrolling")}
+          >
+            <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+              <nav className="px-4 min-w-0">
+                <div className="py-4 space-y-0.5 min-w-0">
               {/* Analytics */}
               {topLevelItems
                 .filter((item) => item.title === "Analytics")
@@ -266,7 +310,7 @@ export function AdminSidebarMobile() {
                       setOpen(false);
                     }}
                     className={cn(
-                      "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
                       "relative overflow-hidden",
                       "active:scale-[0.98]",
                       isActive
@@ -290,7 +334,7 @@ export function AdminSidebarMobile() {
 
               {/* All pages - positioned between Analytics and Media Library */}
               {pagesLoading ? (
-                <div className="px-3 py-2 text-sm text-muted-foreground">Loading pages...</div>
+                <div className="px-4 py-2 text-sm text-muted-foreground">Loading pages...</div>
               ) : (
                 pages.map((page) => (
                   <PageCollapsibleMobile
@@ -334,7 +378,7 @@ export function AdminSidebarMobile() {
                         setOpen(false);
                       }}
                       className={cn(
-                        "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                        "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
                         "relative overflow-hidden",
                         "active:scale-[0.98]",
                         isActive
@@ -355,8 +399,25 @@ export function AdminSidebarMobile() {
                     </Link>
                   );
                 })}
-            </nav>
-          </ScrollArea>
+                </div>
+              </nav>
+            </ScrollAreaPrimitive.Viewport>
+            <ScrollAreaPrimitive.ScrollAreaScrollbar
+              orientation="vertical"
+              className={cn(
+                "flex touch-none select-none transition-opacity duration-300",
+                "h-full w-2.5 border-l border-l-transparent p-[1px]",
+                !isScrolling && "opacity-0 pointer-events-none"
+              )}
+              style={{
+                opacity: isScrolling ? 1 : 0,
+                pointerEvents: isScrolling ? 'auto' : 'none',
+              }}
+            >
+              <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border" />
+            </ScrollAreaPrimitive.ScrollAreaScrollbar>
+            <ScrollAreaPrimitive.Corner />
+          </ScrollAreaPrimitive.Root>
 
           {!loading && user && (
             <div className="mt-auto p-3 border-t border-border/50 bg-sidebar/95 backdrop-blur-sm">
@@ -586,11 +647,11 @@ function PageCollapsibleMobile({
     currentPath === `/admin/pages/${page.id}/edit`;
 
   return (
-    <Collapsible open={isOpen} onOpenChange={onToggle}>
+    <Collapsible open={isOpen} onOpenChange={onToggle} className="w-full min-w-0">
       <CollapsibleTrigger
         className={cn(
-          "group flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full",
-          "relative overflow-hidden",
+          "group flex items-center gap-3 rounded-sm px-4 py-2 text-[16px] font-medium w-full",
+          "relative overflow-hidden min-w-0",
           "active:scale-[0.98]",
           isPageActive
             ? "bg-primary/10 text-sidebar-foreground shadow-sm"
@@ -606,9 +667,9 @@ function PageCollapsibleMobile({
               : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
           )}
         />
-        <span className="relative flex-1 text-left truncate">{page.title}</span>
+        <span className="relative flex-1 text-left truncate min-w-0">{page.title}</span>
         {siteStructureInfo.length > 0 && (
-          <div className="flex items-center gap-1 shrink-0 ml-2">
+          <div className="flex items-center gap-1 shrink-0">
             {siteStructureInfo.map((info) => {
               if (info.environment === 'both') {
                 return (
@@ -639,20 +700,20 @@ function PageCollapsibleMobile({
         )}
         <ChevronDown
           className={cn(
-            "h-3 w-3 transition-transform shrink-0",
+            "h-3 w-3 transition-transform shrink-0 ml-auto",
             isOpen && "rotate-180",
             isPageActive ? "text-primary" : "text-sidebar-foreground/70"
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="pl-4 pr-4 space-y-0.5 mt-0.5">
+      <CollapsibleContent className="pl-4 pr-4 space-y-0.5 mt-0.5 overflow-hidden">
         {/* Page Settings link */}
         <Link
           href={viewAllSectionsHref}
           onClick={() => startNavigation(viewAllSectionsHref)}
           className={cn(
-            "group flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-200",
-            "relative overflow-hidden",
+            "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
+            "relative overflow-hidden min-w-0",
             "active:scale-[0.98]",
             isViewAllActive
               ? "bg-primary/10 text-sidebar-foreground shadow-sm"
@@ -662,18 +723,18 @@ function PageCollapsibleMobile({
           <FontAwesomeIcon
             icon={faLayerGroup}
             className={cn(
-              "h-3.5 w-3.5 transition-colors shrink-0",
+              "h-4 w-4 transition-colors shrink-0",
               isViewAllActive
                 ? "text-primary"
                 : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground"
             )}
           />
-          <span className="relative">Page Settings</span>
+          <span className="relative flex-1 truncate min-w-0">Page Settings</span>
         </Link>
 
         {/* Individual section links */}
         {sectionsLoading ? (
-          <div className="px-3 py-1.5 text-xs text-muted-foreground">Loading sections...</div>
+          <div className="px-4 py-1.5 text-sm text-muted-foreground">Loading sections...</div>
         ) : (
           sections
             .sort((a, b) => {
@@ -752,8 +813,8 @@ function PageCollapsibleMobile({
                   href={sectionHref}
                   onClick={() => startNavigation(sectionHref)}
                   className={cn(
-                    "group flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-200",
-                    "relative overflow-hidden",
+                    "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
+                    "relative overflow-hidden min-w-0",
                     "active:scale-[0.98]",
                     isSectionActive
                       ? "bg-primary/10 text-sidebar-foreground shadow-sm"
@@ -766,7 +827,7 @@ function PageCollapsibleMobile({
                     iconClass={(section as any).icon || null}
                     fallbackIcon={faLayerGroup}
                     className={cn(
-                      "h-3.5 w-3.5 transition-colors shrink-0",
+                      "h-4 w-4 transition-colors shrink-0",
                       isSectionActive
                         ? "text-primary"
                         : isSectionPublished
@@ -774,7 +835,7 @@ function PageCollapsibleMobile({
                         : "text-sidebar-foreground/40"
                     )}
                   />
-                  <span className="relative flex-1 truncate">
+                  <span className="relative flex-1 truncate min-w-0">
                     {section.admin_title || section.title || section.type}
                   </span>
                 </Link>

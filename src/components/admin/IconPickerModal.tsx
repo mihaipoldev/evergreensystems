@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import * as Icons from "@fortawesome/free-solid-svg-icons";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { loadAllIcons } from "@/lib/icon-registry";
 import { cn } from "@/lib/utils";
 
 type IconPickerModalProps = {
@@ -60,9 +60,32 @@ export function IconPickerModal({
   selectedIconClass,
 }: IconPickerModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [allIcons, setAllIcons] = useState<Record<string, IconDefinition> | null>(null);
+  const [isLoadingIcons, setIsLoadingIcons] = useState(false);
+
+  // Dynamically load all icons only when the modal opens
+  // This prevents importing thousands of icons during build time
+  useEffect(() => {
+    if (open && !allIcons && !isLoadingIcons) {
+      setIsLoadingIcons(true);
+      loadAllIcons()
+        .then((icons) => {
+          setAllIcons(icons);
+          setIsLoadingIcons(false);
+        })
+        .catch((error) => {
+          console.error("Failed to load icons:", error);
+          setIsLoadingIcons(false);
+        });
+    }
+  }, [open, allIcons, isLoadingIcons]);
 
   // Extract all Font Awesome icons
   const availableIcons = useMemo(() => {
+    if (!allIcons) {
+      return [];
+    }
+
     const iconList: Array<{
       key: string;
       icon: IconDefinition;
@@ -71,8 +94,8 @@ export function IconPickerModal({
     }> = [];
 
     // Get all keys from the Icons object
-    Object.keys(Icons).forEach((key) => {
-      const icon = Icons[key as keyof typeof Icons];
+    Object.keys(allIcons).forEach((key) => {
+      const icon = allIcons[key];
       
       // Check if it's an IconDefinition (has icon property)
       if (
@@ -95,7 +118,7 @@ export function IconPickerModal({
 
     // Sort alphabetically by display name
     return iconList.sort((a, b) => a.displayName.localeCompare(b.displayName));
-  }, []);
+  }, [allIcons]);
 
   // Filter icons based on search query
   const filteredIcons = useMemo(() => {
@@ -150,7 +173,11 @@ export function IconPickerModal({
 
           {/* Icons Grid */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            {filteredIcons.length === 0 ? (
+            {isLoadingIcons ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Loading icons...
+              </div>
+            ) : filteredIcons.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 {searchQuery
                   ? "No icons found matching your search"

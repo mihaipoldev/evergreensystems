@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { StylePresetProvider } from "@/providers/StylePresetProvider";
 import { AdminColorStyle } from "@/components/admin/AdminColorStyle";
@@ -8,10 +9,14 @@ import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
 import { InstantFontApply } from "@/components/admin/InstantFontApply";
 import { WebsiteColorStyle } from "@/components/admin/WebsiteColorStyle";
 import { WebsiteFontStyle } from "@/components/admin/WebsiteFontStyle";
-import { geistSans, geistMono, lato, getAllFontVariables } from "@/lib/fonts";
+import { getSelectedFontVariables, getAllFontVariables } from "@/lib/fonts";
+import { parseFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
+import { createClient } from "@/lib/supabase/server";
+import type { FontId } from "@/types/fonts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { SEO_CONFIG, ALL_KEYWORDS } from "@/lib/seo";
+import { getTimestamp, getDuration, debugServerTiming, timeAsync } from "@/lib/debug-performance";
 
 // Force dynamic rendering since we use headers() to detect admin pages
 export const dynamic = 'force-dynamic';
@@ -85,23 +90,247 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const layoutStartTime = getTimestamp();
+  
   // Safely get headers with fallback
   let pathname = "";
   let isAdminPage = false;
   
+  const headerStartTime = getTimestamp();
   try {
     const headersList = await headers();
     pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
     isAdminPage = pathname.includes("/admin") && !pathname.includes("/admin/login");
+    const headerDuration = getDuration(headerStartTime);
+    debugServerTiming("Root Layout", "Header detection", headerDuration, { pathname, isAdminPage });
   } catch (error) {
     // If headers() fails, continue without admin features
     // This prevents the entire site from breaking
+    const headerDuration = getDuration(headerStartTime);
+    debugServerTiming("Root Layout", "Header detection (ERROR)", headerDuration, { error: error instanceof Error ? error.message : 'Unknown error' });
     console.warn('Failed to get headers in layout:', error);
   }
 
-  // Load all fonts for both admin and public pages so all font CSS variables are available
-  // This allows the landing page to use any font from the font registry
-  const fontClasses = getAllFontVariables();
+  // PERFORMANCE: Load only selected fonts, with safe fallback to all fonts
+  // This reduces font loading from ~500-800KB to ~100-200KB when optimization works
+  let fontClasses = "";
+  const fontsToLoad: FontId[] = [];
+  
+  const fontSelectionStartTime = getTimestamp();
+  try {
+    if (isAdminPage) {
+      // For admin pages: get fonts from cookie first, then database
+      const cookieCheckStartTime = getTimestamp();
+      const cookieStore = await cookies();
+      const fontCookie = cookieStore.get("font-family-json");
+      const cookieCheckDuration = getDuration(cookieCheckStartTime);
+      debugServerTiming("Root Layout", "Font cookie check", cookieCheckDuration, { hasCookie: !!fontCookie?.value });
+      
+      let fontsFromCookie: ReturnType<typeof parseFontFamily> | null = null;
+      if (fontCookie?.value) {
+        try {
+          const parseStartTime = getTimestamp();
+          // Try to decode the cookie value safely
+          let decodedValue = fontCookie.value;
+          try {
+            decodedValue = decodeURIComponent(fontCookie.value);
+          } catch (decodeError) {
+            // If decodeURIComponent fails, try using the value as-is
+            debugServerTiming("Root Layout", "Font cookie decode (skipped)", 0, { 
+              error: decodeError instanceof Error ? decodeError.message : 'Unknown error',
+              usingRawValue: true
+            });
+          }
+          fontsFromCookie = parseFontFamily(decodedValue);
+          if (fontsFromCookie.admin?.heading) fontsToLoad.push(fontsFromCookie.admin.heading);
+          if (fontsFromCookie.admin?.body) fontsToLoad.push(fontsFromCookie.admin.body);
+          const parseDuration = getDuration(parseStartTime);
+          debugServerTiming("Root Layout", "Font cookie parse", parseDuration, { 
+            source: 'cookie',
+            heading: fontsFromCookie.admin?.heading,
+            body: fontsFromCookie.admin?.body 
+          });
+        } catch (parseError) {
+          const parseDuration = getDuration(getTimestamp());
+          debugServerTiming("Root Layout", "Font cookie parse (ERROR)", parseDuration, {
+            error: parseError instanceof Error ? parseError.message : 'Unknown error'
+          });
+          fontsFromCookie = null;
+        }
+      }
+      
+      // If no cookie or missing admin fonts, get from database
+      if (!fontsFromCookie?.admin?.heading || !fontsFromCookie?.admin?.body) {
+        try {
+          const dbQueryStartTime = getTimestamp();
+          const supabase = await createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            const settingsQueryStartTime = getTimestamp();
+            const { data: settings } = await (supabase
+              .from("user_settings") as any)
+              .select("active_theme_id")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            const settingsQueryDuration = getDuration(settingsQueryStartTime);
+            debugServerTiming("Root Layout", "Font settings query", settingsQueryDuration, { hasSettings: !!settings });
+            
+            if (settings?.active_theme_id) {
+              const themeQueryStartTime = getTimestamp();
+              const { data: theme } = await (supabase
+                .from("user_themes") as any)
+                .select("font_family")
+                .eq("id", settings.active_theme_id)
+                .single();
+              const themeQueryDuration = getDuration(themeQueryStartTime);
+              debugServerTiming("Root Layout", "Font theme query", themeQueryDuration, { hasTheme: !!theme });
+              
+              if (theme?.font_family) {
+                const fonts = parseFontFamily(theme.font_family);
+                // Clear and add admin fonts from database
+                fontsToLoad.length = 0;
+                if (fonts.admin?.heading) fontsToLoad.push(fonts.admin.heading);
+                if (fonts.admin?.body) fontsToLoad.push(fonts.admin.body);
+                debugServerTiming("Root Layout", "Font DB parse", getDuration(themeQueryStartTime), {
+                  source: 'database',
+                  heading: fonts.admin?.heading,
+                  body: fonts.admin?.body
+                });
+              }
+            }
+          }
+          const dbQueryDuration = getDuration(dbQueryStartTime);
+          debugServerTiming("Root Layout", "Font DB query total", dbQueryDuration);
+        } catch (error) {
+          // Database query failed, will fall back to defaults
+          debugServerTiming("Root Layout", "Font DB query (ERROR)", getDuration(getTimestamp()), { 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          });
+        }
+      }
+    } else {
+      // For public pages: ALWAYS get landing fonts from website_settings preset
+      // Don't use cookie - always query database to get the correct preset fonts
+      try {
+        const publicFontStartTime = getTimestamp();
+        const supabase = await createClient();
+        const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
+        
+        const { data: settings } = await (supabase
+          .from("website_settings") as any)
+          .select(`
+            preset_id,
+            website_settings_presets (
+              font_family
+            )
+          `)
+          .eq("environment", environment)
+          .maybeSingle();
+        
+        if (settings?.website_settings_presets) {
+          const preset = Array.isArray(settings.website_settings_presets) 
+            ? settings.website_settings_presets[0] 
+            : settings.website_settings_presets;
+          
+          if (preset?.font_family) {
+            const fonts = parseFontFamily(preset.font_family);
+            // Add landing fonts from preset (these are the correct ones for the landing page)
+            if (fonts.landing?.heading) {
+              fontsToLoad.push(fonts.landing.heading);
+            }
+            if (fonts.landing?.body) {
+              fontsToLoad.push(fonts.landing.body);
+            }
+          }
+        }
+        const publicFontDuration = getDuration(publicFontStartTime);
+        debugServerTiming("Root Layout", "Public font query", publicFontDuration, { 
+          environment,
+          fontsLoaded: fontsToLoad.length 
+        });
+      } catch (error) {
+        // Database query failed, will fall back to defaults below
+        debugServerTiming("Root Layout", "Public font query (ERROR)", getDuration(getTimestamp()), {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        console.warn('Failed to get landing fonts from preset:', error);
+      }
+    }
+    
+    // Ensure we have the right fonts for the page type
+    const defaults = getDefaultFontFamily();
+    
+    // For public pages, always ensure landing fonts are included
+    if (!isAdminPage) {
+      const hasLandingHeading = fontsToLoad.some(f => f === defaults.landing?.heading);
+      const hasLandingBody = fontsToLoad.some(f => f === defaults.landing?.body);
+      
+      if (!hasLandingHeading && defaults.landing?.heading) {
+        fontsToLoad.push(defaults.landing.heading);
+      }
+      if (!hasLandingBody && defaults.landing?.body) {
+        fontsToLoad.push(defaults.landing.body);
+      }
+    }
+    
+    // For admin pages, always ensure admin fonts are included
+    if (isAdminPage) {
+      const hasAdminHeading = fontsToLoad.some(f => f === defaults.admin.heading);
+      const hasAdminBody = fontsToLoad.some(f => f === defaults.admin.body);
+      
+      if (!hasAdminHeading) {
+        fontsToLoad.push(defaults.admin.heading);
+      }
+      if (!hasAdminBody) {
+        fontsToLoad.push(defaults.admin.body);
+      }
+    }
+    
+    // If we have selected fonts, use them; otherwise fall back to all defaults
+    const fontClassGenStartTime = getTimestamp();
+    if (fontsToLoad.length > 0) {
+      fontClasses = getSelectedFontVariables(fontsToLoad);
+    } else {
+      // Fallback to all defaults if nothing found (shouldn't happen with above logic)
+      const defaultFonts: FontId[] = [
+        defaults.admin.heading,
+        defaults.admin.body,
+      ];
+      if (defaults.landing) {
+        defaultFonts.push(defaults.landing.heading, defaults.landing.body);
+      }
+      fontClasses = getSelectedFontVariables(defaultFonts);
+    }
+    const fontClassGenDuration = getDuration(fontClassGenStartTime);
+    debugServerTiming("Root Layout", "Font class generation", fontClassGenDuration, { 
+      fontsCount: fontsToLoad.length,
+      fontClasses: fontClasses.split(' ').length 
+    });
+    
+    const fontSelectionDuration = getDuration(fontSelectionStartTime);
+    debugServerTiming("Root Layout", "Font selection total", fontSelectionDuration, { 
+      fontsToLoad: fontsToLoad,
+      source: isAdminPage ? 'admin' : 'public'
+    });
+  } catch (error) {
+    // CRITICAL: If anything fails, fall back to loading ALL fonts
+    // This ensures fonts always work, even if optimization fails
+    const fontSelectionDuration = getDuration(fontSelectionStartTime);
+    debugServerTiming("Root Layout", "Font selection (ERROR)", fontSelectionDuration, {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    console.warn('Font selection failed, falling back to all fonts:', error);
+    fontClasses = getAllFontVariables();
+  }
+  
+  // Final safety check: ensure fontClasses is never empty
+  if (!fontClasses || fontClasses.trim() === "") {
+    fontClasses = getAllFontVariables();
+  }
+  
+  const layoutTotalDuration = getDuration(layoutStartTime);
+  debugServerTiming("Root Layout", "Total render", layoutTotalDuration, { isAdminPage });
 
   return (
     <html lang="en" suppressHydrationWarning className={fontClasses}>

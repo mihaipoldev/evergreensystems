@@ -1,5 +1,6 @@
 export * from "./usePages";
 export * from "./useSections";
+export * from "./useSidebarData";
 export * from "./useMedia";
 export * from "./useTestimonials";
 export * from "./useFAQItems";

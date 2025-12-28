@@ -228,6 +228,23 @@ export function getAllFontVariables(): string {
 }
 
 /**
+ * Get font variable classes for only the selected fonts
+ * Returns a space-separated string of font classes needed
+ * @param fontIds - Array of font IDs to load
+ * @returns Space-separated string of font CSS variable classes
+ */
+export function getSelectedFontVariables(fontIds: FontId[]): string {
+  const uniqueFontIds = [...new Set(fontIds)]; // Remove duplicates
+  return uniqueFontIds
+    .map((fontId) => {
+      const font = fontRegistry[fontId];
+      return font?.className || fontRegistry["geist-sans"].className;
+    })
+    .filter(Boolean) // Remove any null/undefined values
+    .join(" ");
+}
+
+/**
  * Get the CSS variable name for a font ID
  */
 export function getFontVariable(fontId: FontId): string {

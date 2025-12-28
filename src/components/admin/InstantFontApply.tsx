@@ -6,14 +6,20 @@ export function InstantFontApply() {
   // Script that runs before React hydrates, using cookies and sessionStorage as fallback
   const scriptContent = `
     (function() {
+      const scriptStartTime = performance.now();
+      console.log('[PERF] 🔤 InstantFontApply - Script execution start');
+      
       // Check if fonts were already applied by middleware or AdminFontStyle
       if (document.getElementById('font-family-inline') || 
           document.getElementById('font-family-blocking') || 
           document.getElementById('font-family-script')) {
+        const alreadyAppliedDuration = performance.now() - scriptStartTime;
+        console.log('[PERF] 🔤 InstantFontApply - Already applied: ' + alreadyAppliedDuration.toFixed(1) + 'ms');
         return; // Already applied
       }
       
       // Try to get fonts from cookie first (fastest, available immediately)
+      const cookieReadStartTime = performance.now();
       let savedFonts = null;
       try {
         const cookies = document.cookie.split(';');
@@ -35,9 +41,12 @@ export function InstantFontApply() {
       } catch (e) {
         // Cookie parsing failed
       }
+      const cookieReadDuration = performance.now() - cookieReadStartTime;
+      console.log('[PERF] 🔤 InstantFontApply - Cookie read: ' + cookieReadDuration.toFixed(1) + 'ms (hasFonts: ' + !!savedFonts + ')');
       
       // Fallback to sessionStorage if no cookie
       if (!savedFonts) {
+        const storageReadStartTime = performance.now();
         try {
           savedFonts = sessionStorage.getItem('font-family-json');
           // Validate it's valid JSON
@@ -50,10 +59,13 @@ export function InstantFontApply() {
           // sessionStorage not available or invalid JSON
           savedFonts = null;
         }
+        const storageReadDuration = performance.now() - storageReadStartTime;
+        console.log('[PERF] 🔤 InstantFontApply - SessionStorage read: ' + storageReadDuration.toFixed(1) + 'ms (hasFonts: ' + !!savedFonts + ')');
       }
       
       if (savedFonts) {
         try {
+          const fontApplyStartTime = performance.now();
           const fonts = JSON.parse(savedFonts);
           
           // Font ID to CSS variable mapping
@@ -78,13 +90,17 @@ export function InstantFontApply() {
           const adminHeadingVar = fontVarMap[fonts.admin?.heading] || fontVarMap['geist-sans'];
           const adminBodyVar = fontVarMap[fonts.admin?.body] || fontVarMap['geist-sans'];
           
-          // Do NOT set root-level CSS variables - only apply to .preset-admin
+          // Do NOT set root-level CSS variables - only apply to html.preset-admin
           // This prevents affecting the landing page
+          // Use universal selector to ensure fonts apply to ALL elements including buttons, inputs, etc.
+          // Must be outside @layer to override Tailwind utilities
+          // Set CSS variables on html.preset-admin so they're available to all children
           var style = document.createElement('style');
           style.id = 'font-family-session';
-          style.textContent = '.preset-admin,.preset-admin *{--font-family-admin-heading:var(' + adminHeadingVar + ');--font-family-admin-body:var(' + adminBodyVar + ');}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(' + adminBodyVar + '),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(' + adminHeadingVar + '),system-ui,sans-serif!important;}';
+          style.textContent = 'html.preset-admin,html.preset-admin *{--font-family-admin-heading:var(' + adminHeadingVar + ');--font-family-admin-body:var(' + adminBodyVar + ');}html.preset-admin *,html.preset-admin *::before,html.preset-admin *::after{font-family:var(--font-family-admin-body),system-ui,sans-serif!important;}html.preset-admin h1,html.preset-admin h2,html.preset-admin h3,html.preset-admin h4,html.preset-admin h5,html.preset-admin h6,html.preset-admin h1 *,html.preset-admin h2 *,html.preset-admin h3 *,html.preset-admin h4 *,html.preset-admin h5 *,html.preset-admin h6 *{font-family:var(--font-family-admin-heading),system-ui,sans-serif!important;}';
           
           // Insert immediately - this must be first in head
+          const domManipStartTime = performance.now();
           if (document.head) {
             if (document.head.firstChild) {
               document.head.insertBefore(style, document.head.firstChild);
@@ -92,10 +108,17 @@ export function InstantFontApply() {
               document.head.appendChild(style);
             }
           }
+          const domManipDuration = performance.now() - domManipStartTime;
+          const fontApplyDuration = performance.now() - fontApplyStartTime;
+          console.log('[PERF] 🔤 InstantFontApply - Font application: ' + fontApplyDuration.toFixed(1) + 'ms (DOM: ' + domManipDuration.toFixed(1) + 'ms)');
         } catch (e) {
           // Error applying fonts, ignore
+          console.log('[PERF] 🔤 InstantFontApply - Font application (ERROR): ' + (e instanceof Error ? e.message : 'Unknown error'));
         }
       }
+      
+      const scriptTotalDuration = performance.now() - scriptStartTime;
+      console.log('[PERF] 🔤 InstantFontApply - Total: ' + scriptTotalDuration.toFixed(1) + 'ms');
     })();
   `;
 

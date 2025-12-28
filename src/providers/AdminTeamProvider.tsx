@@ -2,6 +2,7 @@
 
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
 // Admin team member type - full details for management
 export type AdminTeamMember = {
@@ -38,6 +39,7 @@ export function AdminTeamProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchTeamMembers = useCallback(async () => {
+    const fetchStartTime = getTimestamp();
     try {
       setLoading(true);
       setError(null);
@@ -55,7 +57,17 @@ export function AdminTeamProvider({ children }: { children: ReactNode }) {
       
       // Temporary: Use empty array until table is created
       setTeamMembers([]);
+      
+      const fetchDuration = getDuration(fetchStartTime);
+      debugClientTiming("AdminTeamProvider", "Fetch team members", fetchDuration, {
+        memberCount: 0,
+        source: 'temporary'
+      });
     } catch (err) {
+      const fetchDuration = getDuration(fetchStartTime);
+      debugClientTiming("AdminTeamProvider", "Fetch team members (ERROR)", fetchDuration, {
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
       setError(err instanceof Error ? err.message : 'Failed to fetch team members');
       console.error('Error fetching team members:', err);
     } finally {

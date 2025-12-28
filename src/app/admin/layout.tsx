@@ -7,12 +7,41 @@ import { AdminTeamProvider } from "@/providers/AdminTeamProvider";
 import { AdminThemeProvider } from "@/providers/AdminThemeProvider";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
 import { PageTransitionLoader } from "@/components/admin/PageTransitionLoader";
+import { useEffect, useRef } from "react";
+import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const mountStartTime = useRef<number>(getTimestamp());
+  const providersInitTime = useRef<number | null>(null);
+  const firstRenderTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    const mountDuration = getDuration(mountStartTime.current);
+    debugClientTiming("AdminLayout", "Mount", mountDuration);
+    
+    providersInitTime.current = getTimestamp();
+    // Small delay to measure provider initialization
+    setTimeout(() => {
+      if (providersInitTime.current) {
+        const providersDuration = getDuration(providersInitTime.current);
+        debugClientTiming("AdminLayout", "Providers init", providersDuration);
+      }
+      
+      firstRenderTime.current = getTimestamp();
+      // Measure first render completion
+      requestAnimationFrame(() => {
+        if (firstRenderTime.current) {
+          const firstRenderDuration = getDuration(firstRenderTime.current);
+          debugClientTiming("AdminLayout", "First render", firstRenderDuration);
+        }
+      });
+    }, 0);
+  }, []);
+
   return (
     <QueryClientProvider>
       <AdminThemeProvider>

@@ -143,7 +143,7 @@
     --input: 0 0% 90%;
     --input-background: 0 0% 100%;
     --ring: 0 0% 50%;
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     --primary: var(--brand-h) var(--brand-s) var(--brand-l);
     --primary-foreground: 0 0% 98%;
@@ -246,50 +246,7 @@
     --ring: 0 0% 3.9%;
     --radius: 0.75rem;
 
-
-    --primary: 0 80% 50%; /* red ! */
-
-    --primary: 20 90% 45%; /* orange ! */ 
-    --primary: 40 90% 50%; /* orange 2 */
-
-
-    --primary: 140 80% 40%; /* green */
-    --primary: 150 80% 40%; /* green 2 */
-    --primary: 160 80% 40%; /* green 3 */
-    --primary: 165 100% 30%; /* green 4 */
-    --primary: 165 60% 40%; /* green 5 ! */
-
-
-    --primary: 170 80% 40%; /* green blue */
-
-    --primary: 195 80% 50%; /* blue ! */
-    --primary: 196 100% 40%; /* blue 4 */
-    --primary: 200 90% 45%; /* blue 3 ! */
-    --primary: 202 100% 40%; /* blue */
-    --primary: 208 65% 50%; /* blue 2 ! */
-    --primary: 206 85% 50%; /* blue 1 */
-
-  
-    --primary: 208 65% 50%; /* blue 2 ! */
-    --primary: 208 80% 50%; /* blue 2 ! */
-
-
-
-    
-    /* --primary: 20 90% 45%;  */
-    /* --primary: 20 90% 45%;  */
-    /* --primary: 20 90% 45%;  */
-    /* --primary: 20 90% 45%;  */
-    /* --primary: 20 90% 45%;  */
-    /* --primary: 20 90% 45%;  */
-
-    /* --primary: 193 57% 50%; */
-    /* --primary: 202 51% 50%; */
-
-    /* --primary: 170 71% 49%;    */
-    /* --primary: 186 59% 49%; */
-    /* --primary: 160 90% 32%; */
-
+    --primary: 208 80% 50%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 96.1%;
@@ -358,49 +315,44 @@
     z-index: 0;
   }
 
-  
-  /* Admin-specific font families */
-  html.preset-admin body,
-  html.preset-admin body *,
-  .preset-admin body,
-  .preset-admin body * {
-    font-family: var(--font-family-admin-body), system-ui, sans-serif !important;
-  }
-  
-  html.preset-admin body h1,
-  html.preset-admin body h2,
-  html.preset-admin body h3,
-  html.preset-admin body h4,
-  html.preset-admin body h5,
-  html.preset-admin body h6,
-  .preset-admin h1,
-  .preset-admin h2,
-  .preset-admin h3,
-  .preset-admin h4,
-  .preset-admin h5,
-  .preset-admin h6 {
-    font-family: var(--font-family-admin-heading), system-ui, sans-serif !important;
-  }
-
-  /* Public/landing page font families - apply to body and headings */
-  /* Only apply to public pages (not admin pages) - override Tailwind font-sans */
-  body:not(.preset-admin).font-sans,
-  body:not(.preset-admin) {
+  /* Public/landing page font families - only apply when NOT in admin */
+  /* Check html element since preset-admin class is on html, not body */
+  html:not(.preset-admin) body,
+  html:not(.preset-admin) body * {
     font-family: var(--font-family-public-body), system-ui, sans-serif !important;
   }
   
-  body:not(.preset-admin) *:not(.preset-admin):not(button):not(input):not(textarea):not(select) {
-    font-family: var(--font-family-public-body), system-ui, sans-serif !important;
-  }
-  
-  body:not(.preset-admin) h1:not(.preset-admin),
-  body:not(.preset-admin) h2:not(.preset-admin),
-  body:not(.preset-admin) h3:not(.preset-admin),
-  body:not(.preset-admin) h4:not(.preset-admin),
-  body:not(.preset-admin) h5:not(.preset-admin),
-  body:not(.preset-admin) h6:not(.preset-admin) {
+  html:not(.preset-admin) body h1,
+  html:not(.preset-admin) body h2,
+  html:not(.preset-admin) body h3,
+  html:not(.preset-admin) body h4,
+  html:not(.preset-admin) body h5,
+  html:not(.preset-admin) body h6 {
     font-family: var(--font-family-public-heading), system-ui, sans-serif !important;
   }
+}
+
+/* Admin-specific font families - MUST be outside @layer to override Tailwind utilities */
+/* Use universal selector to ensure fonts apply to ALL elements including buttons, divs, spans, etc. */
+html.preset-admin *,
+html.preset-admin *::before,
+html.preset-admin *::after {
+  font-family: var(--font-family-admin-body), system-ui, sans-serif !important;
+}
+
+html.preset-admin h1,
+html.preset-admin h2,
+html.preset-admin h3,
+html.preset-admin h4,
+html.preset-admin h5,
+html.preset-admin h6,
+html.preset-admin h1 *,
+html.preset-admin h2 *,
+html.preset-admin h3 *,
+html.preset-admin h4 *,
+html.preset-admin h5 *,
+html.preset-admin h6 * {
+  font-family: var(--font-family-admin-heading), system-ui, sans-serif !important;
 }
 
 /* Sparkle animation for decorative elements */
@@ -820,4 +772,36 @@ input[type="password"]:-webkit-autofill:active {
 .w-tc-editor pre code {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
   letter-spacing: 0 !important;
+}
+
+/* Sidebar scrollbar - only show when scrolling, not on hover */
+.sidebar-scroll-area [data-radix-scroll-area-scrollbar] {
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: opacity 300ms ease !important;
+}
+
+.sidebar-scroll-area:hover [data-radix-scroll-area-scrollbar] {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.sidebar-scroll-area:hover [data-radix-scroll-area-scrollbar][data-state="visible"] {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.sidebar-scroll-area [data-radix-scroll-area-scrollbar][data-state="visible"] {
+  opacity: 0 !important;
+}
+
+/* Only show scrollbar when scrolling class is active */
+.sidebar-scroll-area.scrolling [data-radix-scroll-area-scrollbar] {
+  opacity: 1 !important;
+  pointer-events: auto;
+}
+
+.sidebar-scroll-area.scrolling [data-radix-scroll-area-scrollbar][data-state="visible"] {
+  opacity: 1 !important;
+  pointer-events: auto;
 }

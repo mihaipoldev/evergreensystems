@@ -66,9 +66,12 @@ export function generateFontCSS(fonts: FontConfig): string {
   const headingVar = getFontVariableLightweight(fonts.admin.heading);
   const bodyVar = getFontVariableLightweight(fonts.admin.body);
 
-  // Only set CSS variables on .preset-admin, not :root
+  // Only set CSS variables on html.preset-admin, not :root
   // This prevents website fonts from affecting admin panel
-  return `.preset-admin,.preset-admin *{--font-family-admin-heading:var(${headingVar});--font-family-admin-body:var(${bodyVar});}html.preset-admin body,html.preset-admin body *,.preset-admin body,.preset-admin body *{font-family:var(${bodyVar}),system-ui,sans-serif!important;}html.preset-admin body h1,html.preset-admin body h2,html.preset-admin body h3,html.preset-admin body h4,html.preset-admin body h5,html.preset-admin body h6,.preset-admin h1,.preset-admin h2,.preset-admin h3,.preset-admin h4,.preset-admin h5,.preset-admin h6{font-family:var(${headingVar}),system-ui,sans-serif!important;}`;
+  // Use universal selector to ensure fonts apply to ALL elements including buttons, inputs, etc.
+  // Must be outside @layer to override Tailwind utilities
+  // Set CSS variables on html.preset-admin so they're available to all children
+  return `html.preset-admin,html.preset-admin *{--font-family-admin-heading:var(${headingVar});--font-family-admin-body:var(${bodyVar});}html.preset-admin *,html.preset-admin *::before,html.preset-admin *::after{font-family:var(--font-family-admin-body),system-ui,sans-serif!important;}html.preset-admin h1,html.preset-admin h2,html.preset-admin h3,html.preset-admin h4,html.preset-admin h5,html.preset-admin h6,html.preset-admin h1 *,html.preset-admin h2 *,html.preset-admin h3 *,html.preset-admin h4 *,html.preset-admin h5 *,html.preset-admin h6 *{font-family:var(--font-family-admin-heading),system-ui,sans-serif!important;}`;
 }
 
 /**

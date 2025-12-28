@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
 interface NavigationLoadingContextType {
   isNavigating: boolean;
@@ -15,8 +16,11 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const navigationStartTime = useRef<number | null>(null);
 
   const startNavigation = useCallback((path: string) => {
+    navigationStartTime.current = getTimestamp();
+    debugClientTiming("NavigationLoadingProvider", "Navigation start", 0, { path });
     setPendingPath(path);
     setIsNavigating(true);
   }, []);
@@ -30,12 +34,27 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       const pendingPathWithoutQuery = pendingPath.split('?')[0];
       
       if (pathnameWithoutQuery === pendingPathWithoutQuery) {
+        if (navigationStartTime.current) {
+          const navigationDuration = getDuration(navigationStartTime.current);
+          debugClientTiming("NavigationLoadingProvider", "Navigation complete", navigationDuration, {
+            from: pendingPath,
+            to: pathname
+          });
+          navigationStartTime.current = null;
+        }
         setIsNavigating(false);
         setPendingPath(null);
       }
     }
     // Also clear if pathname changes but no pending path (handles query param-only updates)
     else if (isNavigating) {
+      if (navigationStartTime.current) {
+        const navigationDuration = getDuration(navigationStartTime.current);
+        debugClientTiming("NavigationLoadingProvider", "Navigation complete (no pending)", navigationDuration, {
+          pathname
+        });
+        navigationStartTime.current = null;
+      }
       setIsNavigating(false);
     }
   }, [pathname, pendingPath, isNavigating]);
