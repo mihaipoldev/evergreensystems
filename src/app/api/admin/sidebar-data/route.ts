@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { getTimestamp, getDuration, debugServerTiming, debugQuery } from "@/lib/debug-performance";
 
@@ -13,13 +13,17 @@ export const revalidate = 0;
  */
 export async function GET(request: Request) {
   const requestStartTime = getTimestamp();
+  console.log("[API /admin/sidebar-data] Request received at", new Date().toISOString());
   
   try {
     // Single authentication check
     const authStartTime = getTimestamp();
+    console.log("[API /admin/sidebar-data] Creating Supabase client...");
     const supabase = await createClient();
+    console.log("[API /admin/sidebar-data] Checking authentication...");
     const { data: { user } } = await supabase.auth.getUser();
     const authDuration = getDuration(authStartTime);
+    console.log("[API /admin/sidebar-data] Authentication completed in", authDuration, "ms");
     debugServerTiming("API /admin/sidebar-data", "Authentication", authDuration, { hasUser: !!user });
 
     if (!user) {
@@ -28,19 +32,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Use service role client to bypass RLS for faster queries
+    // Safe because middleware already authenticated the user
+    const adminSupabase = createServiceRoleClient();
+    console.log("[API /admin/sidebar-data] Using service role client to bypass RLS");
+
     // Fetch all data in parallel - MINIMAL fields only
+    // Optimized: Use JOIN to fetch page_sections with sections in one query
     const dataFetchStartTime = getTimestamp();
+    console.log("[API /admin/sidebar-data] Starting parallel queries...");
     
-    // Run all queries in parallel using Promise.all
-    const [pagesResult, pageSectionsResult] = await Promise.all([
+    // Run queries in parallel
+    const [pagesResult, pageSectionsWithSectionsResult] = await Promise.all([
       // 1. Fetch pages - ONLY id, title, order
       (async () => {
         const pagesQueryStartTime = getTimestamp();
-        const result = await supabase
+        console.log("[API /admin/sidebar-data] Executing pages query...");
+        const result = await adminSupabase
           .from("pages")
           .select("id, title, order")
           .order("order", { ascending: true });
         const pagesQueryDuration = getDuration(pagesQueryStartTime);
+        console.log("[API /admin/sidebar-data] Pages query completed in", pagesQueryDuration, "ms, rows:", result.data?.length || 0);
         debugQuery("API /admin/sidebar-data", "Pages query", pagesQueryDuration, {
           rowCount: result.data?.length || 0,
           dbQueryTime: pagesQueryDuration
@@ -48,16 +61,30 @@ export async function GET(request: Request) {
         return result;
       })(),
       
-      // 2. Fetch page_sections - ONLY page_id, position, section_id
+      // 2. Fetch page_sections with sections data in one JOIN query
+      // This eliminates the need for a separate sections query
+      // Note: Admin sidebar shows ALL sections (published, draft, deactivated) for management
       (async () => {
         const pageSectionsQueryStartTime = getTimestamp();
-        const result = await supabase
+        console.log("[API /admin/sidebar-data] Executing page_sections JOIN query...");
+        const result = await adminSupabase
           .from("page_sections")
-          .select("page_id, position, section_id")
+          .select(`
+            page_id,
+            position,
+            section_id,
+            sections (
+              id,
+              title,
+              admin_title,
+              type
+            )
+          `)
           .order("page_id", { ascending: true })
           .order("position", { ascending: true });
         const pageSectionsQueryDuration = getDuration(pageSectionsQueryStartTime);
-        debugQuery("API /admin/sidebar-data", "Page sections query", pageSectionsQueryDuration, {
+        console.log("[API /admin/sidebar-data] Page sections JOIN query completed in", pageSectionsQueryDuration, "ms, rows:", result.data?.length || 0);
+        debugQuery("API /admin/sidebar-data", "Page sections with sections JOIN query", pageSectionsQueryDuration, {
           rowCount: result.data?.length || 0,
           dbQueryTime: pageSectionsQueryDuration
         });
@@ -66,7 +93,7 @@ export async function GET(request: Request) {
     ]);
 
     const { data: pages, error: pagesError } = pagesResult;
-    const { data: pageSections, error: sectionsError } = pageSectionsResult;
+    const { data: pageSectionsWithSections, error: sectionsError } = pageSectionsWithSectionsResult;
 
     if (pagesError) {
       debugServerTiming("API /admin/sidebar-data", "Pages query (ERROR)", 0, { error: pagesError.message });
@@ -79,52 +106,33 @@ export async function GET(request: Request) {
     }
 
     // Type definitions
-    type PageSection = { page_id: string; position: number; section_id: string };
-    type Section = { id: string; title: string | null; admin_title: string | null; type: string };
-
-    // 3. Fetch sections data separately (after we have section IDs)
-    const sectionIds = (pageSections as PageSection[] | null)?.map(ps => ps.section_id).filter(Boolean) || [];
-      let sectionsMap = new Map<string, { id: string; title: string | null; admin_title: string | null; type: string }>();
-    
-    if (sectionIds.length > 0) {
-      const sectionsQueryStartTime = getTimestamp();
-      const { data: sections, error: sectionsDataError } = await supabase
-        .from("sections")
-        .select("id, title, admin_title, type")
-        .in("id", sectionIds);
-      const sectionsQueryDuration = getDuration(sectionsQueryStartTime);
-      debugQuery("API /admin/sidebar-data", "Sections data query", sectionsQueryDuration, {
-        rowCount: sections?.length || 0,
-        dbQueryTime: sectionsQueryDuration
-      });
-      
-      if (sectionsDataError) {
-        debugServerTiming("API /admin/sidebar-data", "Sections data query (ERROR)", sectionsQueryDuration, { error: sectionsDataError.message });
-      } else if (sections) {
-        (sections as Section[]).forEach(s => {
-          sectionsMap.set(s.id, { id: s.id, title: s.title, admin_title: s.admin_title, type: s.type });
-        });
-      }
-    }
+    type PageSectionWithSection = { 
+      page_id: string; 
+      position: number; 
+      section_id: string;
+      sections: { id: string; title: string | null; admin_title: string | null; type: string } | null;
+    };
 
     // 3. Skip site structure - not needed for sidebar navigation
     // (Only needed when editing sections, not for displaying the sidebar)
 
     const dataFetchDuration = getDuration(dataFetchStartTime);
+    console.log("[API /admin/sidebar-data] Parallel queries completed in", dataFetchDuration, "ms");
     debugServerTiming("API /admin/sidebar-data", "Data fetch (parallel)", dataFetchDuration, {
       pagesCount: pages?.length || 0,
-      sectionsCount: pageSections?.length || 0
+      sectionsCount: pageSectionsWithSections?.length || 0
     });
 
     // Transform sections data to group by page - minimal data only
+    // Since we used JOIN, sections data is already included
     const transformStartTime = getTimestamp();
+    console.log("[API /admin/sidebar-data] Transforming data...");
     const sectionsByPage = new Map<string, Array<{ id: string; title: string | null; admin_title: string | null; type: string; position: number }>>();
     
-    if (pageSections) {
-      for (const pageSection of pageSections as PageSection[]) {
+    if (pageSectionsWithSections) {
+      for (const pageSection of pageSectionsWithSections as PageSectionWithSection[]) {
         const pageId = pageSection.page_id;
-        const sectionId = pageSection.section_id;
-        const section = sectionsMap.get(sectionId);
+        const section = pageSection.sections;
         
         if (section) {
           if (!sectionsByPage.has(pageId)) {
@@ -159,6 +167,7 @@ export async function GET(request: Request) {
     });
 
     const serializeStartTime = getTimestamp();
+    console.log("[API /admin/sidebar-data] Serializing response...");
     const response = NextResponse.json(responseData, {
       status: 200,
       headers: {
@@ -166,12 +175,14 @@ export async function GET(request: Request) {
       },
     });
     const serializeDuration = getDuration(serializeStartTime);
+    console.log("[API /admin/sidebar-data] Response serialized in", serializeDuration, "ms");
     debugServerTiming("API /admin/sidebar-data", "Response serialization", serializeDuration, { responseSize });
     
     const totalDuration = getDuration(requestStartTime);
+    console.log("[API /admin/sidebar-data] Total request time:", totalDuration, "ms");
     debugServerTiming("API /admin/sidebar-data", "Total", totalDuration, {
       pagesCount: pages?.length || 0,
-      sectionsCount: pageSections?.length || 0
+      sectionsCount: pageSectionsWithSections?.length || 0
     });
     
     return response;

@@ -119,96 +119,11 @@ export default async function RootLayout({
   const fontSelectionStartTime = getTimestamp();
   try {
     if (isAdminPage) {
-      // For admin pages: get fonts from cookie first, then database
-      const cookieCheckStartTime = getTimestamp();
-      const cookieStore = await cookies();
-      const fontCookie = cookieStore.get("font-family-json");
-      const cookieCheckDuration = getDuration(cookieCheckStartTime);
-      debugServerTiming("Root Layout", "Font cookie check", cookieCheckDuration, { hasCookie: !!fontCookie?.value });
-      
-      let fontsFromCookie: ReturnType<typeof parseFontFamily> | null = null;
-      if (fontCookie?.value) {
-        try {
-          const parseStartTime = getTimestamp();
-          // Try to decode the cookie value safely
-          let decodedValue = fontCookie.value;
-          try {
-            decodedValue = decodeURIComponent(fontCookie.value);
-          } catch (decodeError) {
-            // If decodeURIComponent fails, try using the value as-is
-            debugServerTiming("Root Layout", "Font cookie decode (skipped)", 0, { 
-              error: decodeError instanceof Error ? decodeError.message : 'Unknown error',
-              usingRawValue: true
-            });
-          }
-          fontsFromCookie = parseFontFamily(decodedValue);
-          if (fontsFromCookie.admin?.heading) fontsToLoad.push(fontsFromCookie.admin.heading);
-          if (fontsFromCookie.admin?.body) fontsToLoad.push(fontsFromCookie.admin.body);
-          const parseDuration = getDuration(parseStartTime);
-          debugServerTiming("Root Layout", "Font cookie parse", parseDuration, { 
-            source: 'cookie',
-            heading: fontsFromCookie.admin?.heading,
-            body: fontsFromCookie.admin?.body 
-          });
-        } catch (parseError) {
-          const parseDuration = getDuration(getTimestamp());
-          debugServerTiming("Root Layout", "Font cookie parse (ERROR)", parseDuration, {
-            error: parseError instanceof Error ? parseError.message : 'Unknown error'
-          });
-          fontsFromCookie = null;
-        }
-      }
-      
-      // If no cookie or missing admin fonts, get from database
-      if (!fontsFromCookie?.admin?.heading || !fontsFromCookie?.admin?.body) {
-        try {
-          const dbQueryStartTime = getTimestamp();
-          const supabase = await createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (user) {
-            const settingsQueryStartTime = getTimestamp();
-            const { data: settings } = await (supabase
-              .from("user_settings") as any)
-              .select("active_theme_id")
-              .eq("user_id", user.id)
-              .maybeSingle();
-            const settingsQueryDuration = getDuration(settingsQueryStartTime);
-            debugServerTiming("Root Layout", "Font settings query", settingsQueryDuration, { hasSettings: !!settings });
-            
-            if (settings?.active_theme_id) {
-              const themeQueryStartTime = getTimestamp();
-              const { data: theme } = await (supabase
-                .from("user_themes") as any)
-                .select("font_family")
-                .eq("id", settings.active_theme_id)
-                .single();
-              const themeQueryDuration = getDuration(themeQueryStartTime);
-              debugServerTiming("Root Layout", "Font theme query", themeQueryDuration, { hasTheme: !!theme });
-              
-              if (theme?.font_family) {
-                const fonts = parseFontFamily(theme.font_family);
-                // Clear and add admin fonts from database
-                fontsToLoad.length = 0;
-                if (fonts.admin?.heading) fontsToLoad.push(fonts.admin.heading);
-                if (fonts.admin?.body) fontsToLoad.push(fonts.admin.body);
-                debugServerTiming("Root Layout", "Font DB parse", getDuration(themeQueryStartTime), {
-                  source: 'database',
-                  heading: fonts.admin?.heading,
-                  body: fonts.admin?.body
-                });
-              }
-            }
-          }
-          const dbQueryDuration = getDuration(dbQueryStartTime);
-          debugServerTiming("Root Layout", "Font DB query total", dbQueryDuration);
-        } catch (error) {
-          // Database query failed, will fall back to defaults
-          debugServerTiming("Root Layout", "Font DB query (ERROR)", getDuration(getTimestamp()), { 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-          });
-        }
-      }
+      // For admin pages: always load only geist-sans (no dynamic font switching)
+      fontsToLoad.push("geist-sans");
+      debugServerTiming("Root Layout", "Admin font load", getDuration(fontSelectionStartTime), {
+        font: "geist-sans"
+      });
     } else {
       // For public pages: ALWAYS get landing fonts from website_settings preset
       // Don't use cookie - always query database to get the correct preset fonts
@@ -274,20 +189,7 @@ export default async function RootLayout({
       }
     }
     
-    // For admin pages, always ensure admin fonts are included
-    if (isAdminPage) {
-      const hasAdminHeading = fontsToLoad.some(f => f === defaults.admin.heading);
-      const hasAdminBody = fontsToLoad.some(f => f === defaults.admin.body);
-      
-      if (!hasAdminHeading) {
-        fontsToLoad.push(defaults.admin.heading);
-      }
-      if (!hasAdminBody) {
-        fontsToLoad.push(defaults.admin.body);
-      }
-    }
-    
-    // If we have selected fonts, use them; otherwise fall back to all defaults
+    // Generate font classes - admin pages already have geist-sans, public pages have landing fonts
     const fontClassGenStartTime = getTimestamp();
     if (fontsToLoad.length > 0) {
       fontClasses = getSelectedFontVariables(fontsToLoad);

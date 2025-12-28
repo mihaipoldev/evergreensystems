@@ -1,8 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
-import { parseFontFamily, serializeFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
-import { getFontVariable } from "@/lib/font-variables";
+import { serializeFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
 
 export async function middleware(request: NextRequest) {
   try {
@@ -265,44 +264,19 @@ export async function middleware(request: NextRequest) {
             }
           }
 
-          // Handle fonts
-          if (theme?.font_family) {
-            try {
-              const fonts = parseFontFamily(theme.font_family);
-              const fontJson = serializeFontFamily(fonts);
-              
-              // Set cookie for instant access on next page load
-              try {
-                const expires = new Date();
-                expires.setFullYear(expires.getFullYear() + 1);
-                supabaseResponse.cookies.set('font-family-json', fontJson, {
-                  expires: expires,
-                  path: '/',
-                  sameSite: 'lax',
-                });
-              } catch {
-                // Silently ignore cookie setting errors - non-critical
-              }
-              
-              // Generate CSS variables (admin only)
-              const adminHeadingVar = getFontVariable(fonts.admin.heading);
-              const adminBodyVar = getFontVariable(fonts.admin.body);
-              
-              // Only apply to html.preset-admin, not :root to avoid affecting landing page
-              // Use universal selector to ensure fonts apply to ALL elements including buttons, inputs, etc.
-              // Must be outside @layer to override Tailwind utilities
-              // Set CSS variables on html.preset-admin so they're available to all children
-              const fontCSS = `html.preset-admin,html.preset-admin *{--font-family-admin-heading:var(${adminHeadingVar});--font-family-admin-body:var(${adminBodyVar});}html.preset-admin *,html.preset-admin *::before,html.preset-admin *::after{font-family:var(--font-family-admin-body),system-ui,sans-serif!important;}html.preset-admin h1,html.preset-admin h2,html.preset-admin h3,html.preset-admin h4,html.preset-admin h5,html.preset-admin h6,html.preset-admin h1 *,html.preset-admin h2 *,html.preset-admin h3 *,html.preset-admin h4 *,html.preset-admin h5 *,html.preset-admin h6 *{font-family:var(--font-family-admin-heading),system-ui,sans-serif!important;}`;
-              
-              // Inject blocking script for fonts
-              // Do NOT set root-level CSS variables - only apply to .preset-admin
-              // Use JSON.stringify to safely escape fontJson for JavaScript
-              const fontBlockingScript = `<script>!function(){var d=document;var s=d.createElement('style');s.id='font-family-blocking';s.textContent=${JSON.stringify(fontCSS)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='font-family-json='+encodeURIComponent(${JSON.stringify(fontJson)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}}();</script>`;
-              const fontStyleTag = `<style id="font-family-inline">${fontCSS}</style>`;
-              fontInjection = fontBlockingScript + fontStyleTag;
-            } catch {
-              // Silently ignore font parsing errors
-            }
+          // Handle fonts - always use geist-sans for admin (static font)
+          // No need to check theme?.font_family since we always use the same font
+          try {
+            // Always use geist-sans for admin (no dynamic font switching)
+            const fontCSS = `html.preset-admin,html.preset-admin *{--font-family-admin-heading:var(--font-geist-sans);--font-family-admin-body:var(--font-geist-sans);}html.preset-admin *,html.preset-admin *::before,html.preset-admin *::after{font-family:var(--font-geist-sans),system-ui,sans-serif!important;}html.preset-admin h1,html.preset-admin h2,html.preset-admin h3,html.preset-admin h4,html.preset-admin h5,html.preset-admin h6,html.preset-admin h1 *,html.preset-admin h2 *,html.preset-admin h3 *,html.preset-admin h4 *,html.preset-admin h5 *,html.preset-admin h6 *{font-family:var(--font-geist-sans),system-ui,sans-serif!important;}`;
+            
+            // Inject blocking script for fonts (early font application)
+            // Do NOT set root-level CSS variables - only apply to .preset-admin
+            const fontBlockingScript = `<script>!function(){var d=document;var s=d.createElement('style');s.id='font-family-blocking';s.textContent=${JSON.stringify(fontCSS)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){c();}}c();}}();</script>`;
+            const fontStyleTag = `<style id="font-family-inline">${fontCSS}</style>`;
+            fontInjection = fontBlockingScript + fontStyleTag;
+          } catch {
+            // Silently ignore font injection errors
           }
         } else {
           // No active theme - check if user has colors and auto-create default theme

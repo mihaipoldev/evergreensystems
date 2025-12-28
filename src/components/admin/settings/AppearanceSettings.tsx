@@ -15,14 +15,12 @@ import {
 import { useTheme } from "next-themes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { Moon, Sun, Monitor, Palette, Type, Edit2, Trash2 } from "lucide-react";
+import { Moon, Sun, Monitor, Palette, Edit2, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { hexToHsl, hslToCssString, hslToCssHsl } from "@/lib/color-utils";
 import { ColorModal } from "./ColorModal";
 import { cn } from "@/lib/utils";
-import type { FontConfig } from "@/types/fonts";
-import { fontOptions, getFontVariable } from "@/lib/fonts";
-import { parseFontFamily, serializeFontFamily, generateFontCSS, getDefaultFontFamily } from "@/lib/font-utils";
+import { serializeFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
 import { useToast } from "@/hooks/use-toast";
 
 // Color type from database
@@ -55,9 +53,6 @@ export function AppearanceSettings() {
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [fontConfig, setFontConfig] = useState<FontConfig>({
-    admin: { heading: "geist-sans", body: "geist-sans" },
-  });
 
   // Convert database color to component color
   const dbColorToComponent = (dbColor: DatabaseColor): Color => {
@@ -72,43 +67,6 @@ export function AppearanceSettings() {
       },
       value: hslToCssHsl(dbColor.hsl_h, dbColor.hsl_s, dbColor.hsl_l),
     };
-  };
-
-  // Apply fonts to CSS variables
-  const applyFontsToCSS = (fonts: FontConfig) => {
-    if (typeof document === "undefined") return;
-    const css = generateFontCSS(fonts);
-    
-    // Remove existing font style tags
-    const existingStyles = [
-      document.getElementById("font-family-inline"),
-      document.getElementById("font-family-script"),
-      document.getElementById("font-family-session"),
-      document.getElementById("font-family-inline-server"),
-      document.getElementById("font-family-client"),
-    ].filter(Boolean) as HTMLElement[];
-    
-    existingStyles.forEach((style) => style.remove());
-    
-    // Apply fonts via CSS - generateFontCSS already scopes to .preset-admin
-    // Do NOT set root-level CSS variables as that would affect landing page
-    const style = document.createElement("style");
-    style.id = "font-family-client";
-    style.textContent = css;
-    document.head.appendChild(style);
-    
-    // Save to sessionStorage and cookie
-    try {
-      const fontJson = serializeFontFamily(fonts);
-      sessionStorage.setItem("font-family-json", fontJson);
-      
-      // Save to cookie
-      const expires = new Date();
-      expires.setFullYear(expires.getFullYear() + 1);
-      document.cookie = `font-family-json=${encodeURIComponent(fontJson)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-    } catch (e) {
-      // Storage not available
-    }
   };
 
   // Apply color to CSS variable
@@ -198,7 +156,7 @@ export function AppearanceSettings() {
         if (settings?.active_theme_id) {
           const { data: theme } = await (supabase
             .from("user_themes") as any)
-            .select("primary_color_id, font_family")
+            .select("primary_color_id")
             .eq("id", settings.active_theme_id)
             .single();
 
@@ -223,13 +181,6 @@ export function AppearanceSettings() {
             } else if (componentColors.length > 0) {
               setSelectedColor(componentColors[0]);
               applyColorToCSS(componentColors[0]);
-            }
-
-            // Load fonts
-            if (theme.font_family) {
-              const fonts = parseFontFamily(theme.font_family);
-              setFontConfig(fonts);
-              applyFontsToCSS(fonts);
             }
           } else if (componentColors.length > 0) {
             setSelectedColor(componentColors[0]);
@@ -320,87 +271,6 @@ export function AppearanceSettings() {
       if (settingsError) throw settingsError;
     } catch (error) {
       console.error("Error saving color preference:", error);
-      // Don't show alert for automatic saves, just log the error
-    }
-  };
-
-  const handleFontChange = async (type: "heading" | "body", fontId: string) => {
-    const newFontConfig: FontConfig = {
-      ...fontConfig,
-      admin: {
-        ...fontConfig.admin,
-        [type]: fontId as any,
-      },
-    };
-    
-    setFontConfig(newFontConfig);
-    applyFontsToCSS(newFontConfig);
-    
-    // Save to database
-    if (!userId) return;
-    
-    try {
-      const supabase = createClient();
-      const fontJson = serializeFontFamily(newFontConfig);
-
-      // Create or update theme
-      const { data: existingTheme } = await (supabase
-        .from("user_themes") as any)
-        .select("id")
-        .eq("user_id", userId)
-        .eq("name", "Default Theme")
-        .maybeSingle();
-
-      let themeId: string;
-      if (existingTheme) {
-        const { error: updateError } = await (supabase
-          .from("user_themes") as any)
-          .update({
-            font_family: fontJson,
-          })
-          .eq("id", existingTheme.id);
-        if (updateError) throw updateError;
-        themeId = existingTheme.id;
-      } else {
-        // Create new theme with default color if needed
-        const defaultColorId = selectedColor?.id || userColors[0]?.id;
-        if (!defaultColorId) {
-          throw new Error("No color available");
-        }
-        
-        const { data: newTheme, error: themeError } = await (supabase
-          .from("user_themes") as any)
-          .insert({
-            user_id: userId,
-            name: "Default Theme",
-            primary_color_id: defaultColorId,
-            secondary_color_id: defaultColorId,
-            accent_color_id: defaultColorId,
-            font_family: fontJson,
-          })
-          .select("id")
-          .single();
-
-        if (themeError) throw themeError;
-        themeId = newTheme.id;
-      }
-
-      // Update user_settings
-      const { error: settingsError } = await (supabase
-        .from("user_settings") as any)
-        .upsert(
-          {
-            user_id: userId,
-            active_theme_id: themeId,
-          },
-          {
-            onConflict: "user_id",
-          }
-        );
-
-      if (settingsError) throw settingsError;
-    } catch (error) {
-      console.error("Error saving font preference:", error);
       // Don't show alert for automatic saves, just log the error
     }
   };
@@ -809,72 +679,6 @@ export function AppearanceSettings() {
               </div>
             )}
           </div>
-
-          {/* Admin Fonts Section */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Type className="h-5 w-5 text-primary" />
-                <div className="font-medium text-lg">Admin Fonts</div>
-              </div>
-              <div className="text-sm text-muted-foreground">Customize typography</div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="admin-heading" className="text-sm font-medium">
-                  Heading Font
-                </Label>
-                <Select
-                  value={fontConfig.admin.heading}
-                  onValueChange={(value) => handleFontChange("heading", value)}
-                >
-                  <SelectTrigger id="admin-heading" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fontOptions.map((font) => (
-                      <SelectItem key={font.id} value={font.id}>
-                        <span
-                          style={{
-                            fontFamily: `var(${getFontVariable(font.id)}), system-ui, sans-serif`,
-                          }}
-                        >
-                          {font.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                    </div>
-              <div className="space-y-2">
-                <Label htmlFor="admin-body" className="text-sm font-medium">
-                  Body Font
-                </Label>
-                <Select
-                  value={fontConfig.admin.body}
-                  onValueChange={(value) => handleFontChange("body", value)}
-                >
-                  <SelectTrigger id="admin-body" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fontOptions.map((font) => (
-                      <SelectItem key={font.id} value={font.id}>
-                        <span
-                          style={{
-                            fontFamily: `var(${getFontVariable(font.id)}), system-ui, sans-serif`,
-                          }}
-                        >
-                          {font.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                  </div>
-                </div>
-              </div>
         </CardContent>
       </Card>
 

@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next';
-import { getPageBySlug } from '@/lib/supabase/queries';
+import { getActivePageBySlug } from '@/lib/supabase/queries';
 import { SEO_CONFIG } from '@/lib/seo';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Get home page for last modified date
   let homePage = null;
   try {
-    homePage = await getPageBySlug('home');
+    homePage = await getActivePageBySlug('home');
   } catch (error) {
     console.error('Error fetching home page for sitemap:', error);
   }

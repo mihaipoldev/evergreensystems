@@ -52,7 +52,7 @@ const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod 
 const Performance = dynamic(() => import('@/components/landing/Performance').then(mod => ({ default: mod.Performance })), {
   loading: () => <div className="h-96" />,
 });
-import { getPageBySlug, getActivePageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
+import { getActivePageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { CTAButtonWithSection } from '@/features/cta/types';
 import type { MediaWithSection } from '@/features/media/types';
@@ -609,7 +609,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
           <ErrorBoundary>
             <AnalyticsTracker 
               pageId={homePage.id} 
-              pageSlug={homePage.slug} 
+              pageSlug="home" 
             />
           </ErrorBoundary>
         )}

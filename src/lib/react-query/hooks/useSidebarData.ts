@@ -21,16 +21,18 @@ export function useSidebarData() {
     queryKey: ["sidebar-data"],
     queryFn: async () => {
       const totalStartTime = performance.now();
+      console.log("[useSidebarData] Starting fetch at", new Date().toISOString());
       
       // Network request (includes headers, but not body)
       const networkStartTime = performance.now();
+      console.log("[useSidebarData] Fetching /api/admin/sidebar-data...");
       const response = await fetch("/api/admin/sidebar-data");
       const networkEndTime = performance.now();
       const networkDuration = networkEndTime - networkStartTime;
-      debugClientTiming("useSidebarData", "Network request (headers)", networkStartTime, {
+      console.log("[useSidebarData] Response received after", networkDuration, "ms");
+      debugClientTiming("useSidebarData", "Network request (headers)", networkDuration, {
         status: response.status,
         ok: response.ok,
-        duration: networkDuration,
         contentType: response.headers.get("content-type")
       });
 
@@ -40,28 +42,29 @@ export function useSidebarData() {
 
       // Read response body (this includes network transfer + parsing)
       const bodyStartTime = performance.now();
+      console.log("[useSidebarData] Reading response body...");
       const data = await response.json();
       const bodyEndTime = performance.now();
       const bodyDuration = bodyEndTime - bodyStartTime;
-      debugClientTiming("useSidebarData", "Response body read + parse", bodyStartTime, {
+      console.log("[useSidebarData] Body parsed after", bodyDuration, "ms");
+      debugClientTiming("useSidebarData", "Response body read + parse", bodyDuration, {
         pagesCount: data.pages?.length || 0,
         sectionsPagesCount: Object.keys(data.sectionsByPage || {}).length,
-        duration: bodyDuration,
         totalSections: (Object.values(data.sectionsByPage || {}) as any[][]).reduce((sum: number, sections: any[]) => sum + sections.length, 0)
       });
 
       const totalDuration = performance.now() - totalStartTime;
-      debugClientTiming("useSidebarData", "Total", totalStartTime, {
+      console.log("[useSidebarData] Total time:", totalDuration, "ms (network:", networkDuration, "ms, body:", bodyDuration, "ms)");
+      debugClientTiming("useSidebarData", "Total", totalDuration, {
         pagesCount: data.pages?.length || 0,
         totalSections: (Object.values(data.sectionsByPage || {}) as any[][]).reduce((sum: number, sections: any[]) => sum + sections.length, 0),
         networkDuration,
-        bodyDuration,
-        totalDuration
+        bodyDuration
       });
 
       return data;
     },
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 30 * 1000, // Cache for 30 seconds to reduce unnecessary refetches
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 }

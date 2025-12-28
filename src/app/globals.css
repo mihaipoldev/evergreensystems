@@ -46,7 +46,7 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* Font family variables - admin only */
+    /* Font family variables - admin only (using geist-sans directly) */
     --font-family-admin-heading: var(--font-geist-sans);
     --font-family-admin-body: var(--font-geist-sans);
     
@@ -334,10 +334,11 @@
 
 /* Admin-specific font families - MUST be outside @layer to override Tailwind utilities */
 /* Use universal selector to ensure fonts apply to ALL elements including buttons, divs, spans, etc. */
+/* Always use geist-sans for admin (no dynamic font switching) */
 html.preset-admin *,
 html.preset-admin *::before,
 html.preset-admin *::after {
-  font-family: var(--font-family-admin-body), system-ui, sans-serif !important;
+  font-family: var(--font-geist-sans), system-ui, sans-serif !important;
 }
 
 html.preset-admin h1,
@@ -352,7 +353,7 @@ html.preset-admin h3 *,
 html.preset-admin h4 *,
 html.preset-admin h5 *,
 html.preset-admin h6 * {
-  font-family: var(--font-family-admin-heading), system-ui, sans-serif !important;
+  font-family: var(--font-geist-sans), system-ui, sans-serif !important;
 }
 
 /* Sparkle animation for decorative elements */
