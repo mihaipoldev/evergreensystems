@@ -1,0 +1,8 @@
+src/app/admin/sections/[id]/edit/page.tsx:import { getFirstPageIdBySectionId } from "@/lib/supabase/queries";
+src/app/admin/sections/[id]/page.tsx:import { getFeaturesBySectionId, getTestimonialsBySectionId, getFAQItemsBySectionId, getTimelineBySectionId, getResultsBySectionId, getCTAButtonsBySectionId, getPageSectionStatus, getSoftwaresBySectionId, getSocialPlatformsBySectionId, getFirstPageIdBySectionId } from "@/lib/supabase/queries";
+src/app/admin/pages/[id]/sections/page.tsx:import { getSectionsByPageId, getSiteStructureByPageId } from "@/lib/supabase/queries";
+src/app/admin/pages/[id]/edit/page.tsx:import { getSectionsByPageId, getSiteStructureByPageId } from "@/lib/supabase/queries";
+src/app/api/admin/sections/[id]/page/route.ts:import { getFirstPageIdBySectionId } from "@/lib/supabase/queries";
+src/app/api/admin/results/reorder/route.ts:import { reorderItems } from "@/lib/supabase/queries";
+src/app/api/admin/timeline/reorder/route.ts:import { reorderItems } from "@/lib/supabase/queries";
+src/features/page-builder/site-structure/data.ts:import { getSiteStructure, getSiteStructureByPageType, updateSiteStructure } from "@/lib/supabase/queries";
