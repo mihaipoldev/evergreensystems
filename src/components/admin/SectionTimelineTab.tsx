@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useDuplicateTimelineItem, useDeleteTimelineItem } from "@/lib/react-query/hooks/useTimeline";
-import type { Timeline, TimelineWithSection } from "@/features/timeline/types";
+import type { Timeline, TimelineWithSection } from "@/features/page-builder/timeline/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

@@ -2,8 +2,8 @@
 
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { ApprovedSwitchForm } from "@/components/admin/ApprovedSwitchForm";
-import { TestimonialForm } from "@/features/testimonials/components/TestimonialForm";
-import type { Testimonial } from "@/features/testimonials/types";
+import { TestimonialForm } from "@/features/page-builder/testimonials/components/TestimonialForm";
+import type { Testimonial } from "@/features/page-builder/testimonials/types";
 
 type EditTestimonialClientProps = {
   testimonial: Testimonial;

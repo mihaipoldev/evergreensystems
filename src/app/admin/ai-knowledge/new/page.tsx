@@ -1,5 +1,5 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { AIKnowledgeForm } from "@/features/ai-knowledge/components/AIKnowledgeForm";
+import { KnowledgeBaseForm } from "@/features/rag/knowledge-bases/components/KnowledgeBaseForm";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function NewAIKnowledgePage() {
           description="Create a new knowledge base for AI-powered responses"
         />
       </div>
-      <AIKnowledgeForm isEdit={false} />
+      <KnowledgeBaseForm isEdit={false} />
     </div>
   );
 }

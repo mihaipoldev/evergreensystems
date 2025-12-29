@@ -21,7 +21,7 @@ import {
   faLink,
 } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
-import type { CTAButton } from "@/features/cta/types";
+import type { CTAButton } from "@/features/page-builder/cta/types";
 
 type CTAButtonSelectorProps = {
   open: boolean;

@@ -1,15 +1,15 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { ApprovedSwitchForm } from "@/components/admin/ApprovedSwitchForm";
-import { FAQForm } from "@/features/faq/components/FAQForm";
-import { TestimonialForm } from "@/features/testimonials/components/TestimonialForm";
-import { FeatureForm } from "@/features/features/components/FeatureForm";
-import { CTAButtonForm } from "@/features/cta/components/CTAButtonForm";
-import { getFAQItemById } from "@/features/faq/data";
-import { getTestimonialById } from "@/features/testimonials/data";
-import { getOfferFeatureById } from "@/features/features/data";
-import { getCTAButtonById } from "@/features/cta/data";
-import { getSectionById } from "@/features/sections/data";
+import { FAQForm } from "@/features/page-builder/faq/components/FAQForm";
+import { TestimonialForm } from "@/features/page-builder/testimonials/components/TestimonialForm";
+import { FeatureForm } from "@/features/page-builder/features/components/FeatureForm";
+import { CTAButtonForm } from "@/features/page-builder/cta/components/CTAButtonForm";
+import { getFAQItemById } from "@/features/page-builder/faq/data";
+import { getTestimonialById } from "@/features/page-builder/testimonials/data";
+import { getOfferFeatureById } from "@/features/page-builder/features/data";
+import { getCTAButtonById } from "@/features/page-builder/cta/data";
+import { getSectionById } from "@/features/page-builder/sections/data";
 
 type EditItemPageProps = {
   params: Promise<{ id: string; sectionId: string; itemId: string }>;

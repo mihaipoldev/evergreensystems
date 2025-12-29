@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RichText } from "@/components/ui/RichText";
 import { useDuplicateFeature, useDeleteFeature } from "@/lib/react-query/hooks/useFeatures";
-import type { OfferFeature, OfferFeatureWithSection } from "@/features/features/types";
+import type { OfferFeature, OfferFeatureWithSection } from "@/features/page-builder/features/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

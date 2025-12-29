@@ -35,9 +35,9 @@ import { RichText } from '@/components/ui/RichText';
 import { MediaRenderer } from '@/components/MediaRenderer';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
-import type { MediaWithSection } from '@/features/media/types';
-import type { CTAButtonWithSection } from '@/features/cta/types';
-import type { Media } from '@/features/media/types';
+import type { MediaWithSection } from '@/features/page-builder/media/types';
+import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
+import type { Media } from '@/features/page-builder/media/types';
 
 type HeroContent = {
   topBanner?: {

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { TimelineForm } from "@/features/timeline/components/TimelineForm";
-import { getTimelineItemById } from "@/features/timeline/data";
+import { TimelineForm } from "@/features/page-builder/timeline/components/TimelineForm";
+import { getTimelineItemById } from "@/features/page-builder/timeline/data";
 
 export const dynamic = "force-dynamic";
 

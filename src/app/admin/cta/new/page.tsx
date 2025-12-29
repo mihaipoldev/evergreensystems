@@ -2,7 +2,7 @@ import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import dynamicImport from "next/dynamic";
 
 const CTAButtonForm = dynamicImport(
-  () => import("@/features/cta/components/CTAButtonForm").then((mod) => mod.CTAButtonForm)
+  () => import("@/features/page-builder/cta/components/CTAButtonForm").then((mod) => mod.CTAButtonForm)
 );
 
 export const dynamic = "force-dynamic";

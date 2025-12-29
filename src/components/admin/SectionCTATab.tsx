@@ -21,7 +21,7 @@ import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusS
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDuplicateCTAButton, useDeleteCTAButton } from "@/lib/react-query/hooks/useCTAButtons";
-import type { CTAButton, CTAButtonWithSection } from "@/features/cta/types";
+import type { CTAButton, CTAButtonWithSection } from "@/features/page-builder/cta/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

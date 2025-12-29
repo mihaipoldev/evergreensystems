@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Section } from "@/features/sections/types";
+import type { Section } from "@/features/page-builder/sections/types";
 import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
 async function fetchSections(filters?: { pageId?: string; search?: string }): Promise<Section[]> {

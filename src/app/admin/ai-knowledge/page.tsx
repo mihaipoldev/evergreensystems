@@ -1,5 +1,5 @@
-import { getAllAIKnowledge } from "@/features/ai-knowledge/data";
-import { AIKnowledgeList } from "@/features/ai-knowledge/components/AIKnowledgeList";
+import { getAllKnowledgeBases } from "@/features/rag/knowledge-bases/data";
+import { KnowledgeBaseList } from "@/features/rag/knowledge-bases/components/KnowledgeBaseList";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBook } from "@fortawesome/free-solid-svg-icons";
@@ -7,7 +7,7 @@ import { faBook } from "@fortawesome/free-solid-svg-icons";
 export const dynamic = "force-dynamic";
 
 export default async function AIKnowledgePage() {
-  const knowledgeWithCounts = await getAllAIKnowledge();
+  const knowledgeWithCounts = await getAllKnowledgeBases();
 
   return (
     <div className="w-full space-y-6">
@@ -18,7 +18,7 @@ export default async function AIKnowledgePage() {
           icon={faBook}
         />
       </div>
-      <AIKnowledgeList initialKnowledge={knowledgeWithCounts} />
+      <KnowledgeBaseList initialKnowledge={knowledgeWithCounts} />
     </div>
   );
 }

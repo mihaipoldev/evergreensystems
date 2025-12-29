@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Software } from "@/features/softwares/types";
+import type { Software } from "@/features/page-builder/softwares/types";
 
 async function fetchSoftwares(): Promise<Software[]> {
   const response = await fetch("/api/admin/softwares");

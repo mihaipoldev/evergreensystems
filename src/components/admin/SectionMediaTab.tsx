@@ -11,7 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { MediaCard } from "@/components/admin/MediaCard";
 import { MediaRenderer } from "@/components/MediaRenderer";
-import { MediaForm } from "@/features/media/components/MediaForm";
+import { MediaForm } from "@/features/page-builder/media/components/MediaForm";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import {
   Dialog,
@@ -23,7 +23,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDuplicateMedia } from "@/lib/react-query/hooks/useMedia";
-import type { Media, MediaWithSection } from "@/features/media/types";
+import type { Media, MediaWithSection } from "@/features/page-builder/media/types";
 
 type SectionMediaTabProps = {
   sectionId: string;

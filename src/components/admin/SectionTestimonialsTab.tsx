@@ -13,7 +13,7 @@ import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusS
 import { toast } from "sonner";
 import { RichText } from "@/components/ui/RichText";
 import { useDuplicateTestimonial, useDeleteTestimonial } from "@/lib/react-query/hooks/useTestimonials";
-import type { Testimonial, TestimonialWithSection } from "@/features/testimonials/types";
+import type { Testimonial, TestimonialWithSection } from "@/features/page-builder/testimonials/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

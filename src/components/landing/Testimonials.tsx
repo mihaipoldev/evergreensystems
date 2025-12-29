@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faStarHalfStroke } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from '@/components/ui/RichText';
-import type { Testimonial } from '@/features/testimonials/types';
+import type { Testimonial } from '@/features/page-builder/testimonials/types';
 
 type Section = {
   id: string;

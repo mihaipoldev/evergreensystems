@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/button';
 import { RichText } from '@/components/ui/RichText';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMousePointer } from '@fortawesome/free-solid-svg-icons';
-import { usePublicTeam } from '@/providers/PublicTeamProvider';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
-import type { CTAButtonWithSection } from '@/features/cta/types';
+import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
 
 type Section = {
   id: string;
@@ -27,9 +26,6 @@ type CTAProps = {
 };
 
 export const CTA = ({ section, ctaButtons }: CTAProps) => {
-  const { teamMembers, totalTeamCount, displayCount } = usePublicTeam();
-  const remainingCount = totalTeamCount - displayCount;
-  
   // Use section data if available, otherwise use defaults
   const title = section?.title || "Let's build your [[automation engine]]";
   const subtitle = section?.subtitle?.trim() || "Book a free 30-minute strategy session with our team. We'll analyze your current workflow and show you exactly how automation can transform your business.";

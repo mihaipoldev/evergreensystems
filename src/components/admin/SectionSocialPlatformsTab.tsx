@@ -12,7 +12,7 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
 import { toast } from "sonner";
 import { useDuplicateSocialPlatform, useDeleteSocialPlatform } from "@/lib/react-query/hooks/useSocialPlatforms";
-import type { SocialPlatform, SocialPlatformWithSection } from "@/features/social-platforms/types";
+import type { SocialPlatform, SocialPlatformWithSection } from "@/features/page-builder/social-platforms/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

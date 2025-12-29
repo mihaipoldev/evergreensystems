@@ -1,5 +1,5 @@
-import { getAllCTAButtonsWithSections } from "@/features/cta/data";
-import { CTAButtonsList } from "@/features/cta/components/CTAButtonsList";
+import { getAllCTAButtonsWithSections } from "@/features/page-builder/cta/data";
+import { CTAButtonsList } from "@/features/page-builder/cta/components/CTAButtonsList";
 
 export const dynamic = 'force-dynamic';
 

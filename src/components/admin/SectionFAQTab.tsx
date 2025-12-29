@@ -13,7 +13,7 @@ import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusS
 import { toast } from "sonner";
 import { RichText } from "@/components/ui/RichText";
 import { useDuplicateFAQItem, useDeleteFAQItem } from "@/lib/react-query/hooks/useFAQItems";
-import type { FAQItem, FAQItemWithSection } from "@/features/faq/types";
+import type { FAQItem, FAQItemWithSection } from "@/features/page-builder/faq/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

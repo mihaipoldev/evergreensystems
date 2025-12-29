@@ -1,4 +1,3 @@
-import { PublicTeamProvider } from "@/providers/PublicTeamProvider";
 import { PublicThemeProviderWrapper } from "@/providers/PublicThemeProviderWrapper";
 
 export default function PublicLayout({
@@ -8,9 +7,7 @@ export default function PublicLayout({
 }) {
   return (
     <PublicThemeProviderWrapper>
-      <PublicTeamProvider>
-        {children}
-      </PublicTeamProvider>
+      {children}
     </PublicThemeProviderWrapper>
   );
 }

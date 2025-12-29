@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { FeatureForm } from "@/features/features/components/FeatureForm";
-import { getOfferFeatureById } from "@/features/features/data";
+import { FeatureForm } from "@/features/page-builder/features/components/FeatureForm";
+import { getOfferFeatureById } from "@/features/page-builder/features/data";
 
 export const dynamic = "force-dynamic";
 

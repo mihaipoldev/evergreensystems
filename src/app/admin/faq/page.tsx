@@ -1,5 +1,5 @@
-import { getAllFAQItems } from "@/features/faq/data";
-import { FAQList } from "@/features/faq/components/FAQList";
+import { getAllFAQItems } from "@/features/page-builder/faq/data";
+import { FAQList } from "@/features/page-builder/faq/components/FAQList";
 
 export const dynamic = 'force-dynamic';
 

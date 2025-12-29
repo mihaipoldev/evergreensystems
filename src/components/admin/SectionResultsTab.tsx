@@ -11,7 +11,7 @@ import { faPlus, faCheck, faX, faChartLine } from "@fortawesome/free-solid-svg-i
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { Result, ResultWithSection } from "@/features/results/types";
+import type { Result, ResultWithSection } from "@/features/page-builder/results/types";
 
 type SectionResultsTabProps = {
   sectionId: string;

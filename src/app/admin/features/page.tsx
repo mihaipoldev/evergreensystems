@@ -1,5 +1,5 @@
-import { getAllOfferFeatures } from "@/features/features/data";
-import { FeaturesList } from "@/features/features/components/FeaturesList";
+import { getAllOfferFeatures } from "@/features/page-builder/features/data";
+import { FeaturesList } from "@/features/page-builder/features/components/FeaturesList";
 
 export const dynamic = "force-dynamic";
 

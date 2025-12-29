@@ -1,6 +1,6 @@
 import { createClient } from "./server";
 import type { Database } from "./types";
-import type { CTAButtonWithSection } from "@/features/cta/types";
+import type { CTAButtonWithSection } from "@/features/page-builder/cta/types";
 import { unstable_cache } from "next/cache";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;

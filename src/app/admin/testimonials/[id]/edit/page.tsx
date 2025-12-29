@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { ApprovedSwitchForm } from "@/components/admin/ApprovedSwitchForm";
-import { TestimonialForm } from "@/features/testimonials/components/TestimonialForm";
-import { getTestimonialById } from "@/features/testimonials/data";
+import { TestimonialForm } from "@/features/page-builder/testimonials/components/TestimonialForm";
+import { getTestimonialById } from "@/features/page-builder/testimonials/data";
 
 type EditTestimonialPageProps = {
   params: Promise<{ id: string }>;

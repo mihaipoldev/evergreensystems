@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Timeline } from "@/features/timeline/types";
+import type { Timeline } from "@/features/page-builder/timeline/types";
 
 async function fetchTimelineItems(): Promise<Timeline[]> {
   const response = await fetch("/api/admin/timeline");

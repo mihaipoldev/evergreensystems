@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { CTAButtonForm } from "@/features/cta/components/CTAButtonForm";
-import { getCTAButtonById } from "@/features/cta/data";
+import { CTAButtonForm } from "@/features/page-builder/cta/components/CTAButtonForm";
+import { getCTAButtonById } from "@/features/page-builder/cta/data";
 
 type EditCTAPageProps = {
   params: Promise<{ id: string }>;

@@ -54,8 +54,8 @@ const Performance = dynamic(() => import('@/components/landing/Performance').the
 });
 import { getActivePageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
-import type { CTAButtonWithSection } from '@/features/cta/types';
-import type { MediaWithSection } from '@/features/media/types';
+import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
+import type { MediaWithSection } from '@/features/page-builder/media/types';
 import type { Metadata } from 'next';
 import { SEO_CONFIG, generatePageMetadata, generateOrganizationSchema, generateServiceSchema, generateWebSiteSchema } from '@/lib/seo';
 

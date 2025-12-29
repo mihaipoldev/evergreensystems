@@ -7,7 +7,7 @@
  * is not used, or wrap lines in block elements when line-clamp is needed.
  */
 export function formatRichText(text: string): string {
-  let html = text
+  const html = text
     // Process bold before italic to avoid conflicts
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')

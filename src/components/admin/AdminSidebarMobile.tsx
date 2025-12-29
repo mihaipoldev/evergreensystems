@@ -51,13 +51,18 @@ import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFrom
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { getSectionTabWithDefault } from "@/lib/tab-persistence";
-import type { Page } from "@/features/pages/types";
+import type { Page } from "@/features/page-builder/pages/types";
 
 const topLevelItems = [
   {
     title: "Analytics",
     href: "/admin/analytics",
     icon: faChartLine,
+  },
+  {
+    title: "AI Knowledge",
+    href: "/admin/ai-knowledge",
+    icon: faBook,
   },
   {
     title: "Site Structure",
@@ -68,11 +73,6 @@ const topLevelItems = [
     title: "Media Library",
     href: "/admin/media",
     icon: faImages,
-  },
-  {
-    title: "AI Knowledge",
-    href: "/admin/ai-knowledge",
-    icon: faBook,
   },
   {
     title: "Settings",
@@ -332,7 +332,48 @@ export function AdminSidebarMobile() {
                 );
                 })}
 
-              {/* All pages - positioned between Analytics and Media Library */}
+              {/* AI Knowledge */}
+              {topLevelItems
+                .filter((item) => item.title === "AI Knowledge")
+                .map((item) => {
+                const isActive = pendingPath
+                  ? pendingPath === item.href ||
+                    pendingPath.startsWith(item.href + "/")
+                  : pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => {
+                      startNavigation(item.href);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
+                      "relative overflow-hidden",
+                      "active:scale-[0.98]",
+                      isActive
+                        ? "bg-primary/10 text-sidebar-foreground shadow-sm"
+                        : "text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-primary/10"
+                    )}
+                  >
+                    <FontAwesomeIcon
+                      icon={item.icon}
+                      className={cn(
+                        "h-4 w-4 transition-colors shrink-0",
+                        isActive
+                          ? "text-primary"
+                          : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"
+                      )}
+                    />
+                    <span className="relative">{item.title}</span>
+                  </Link>
+                );
+                })}
+
+              {/* All pages - positioned between AI Knowledge and Media Library */}
               {pagesLoading ? (
                 <div className="px-4 py-2 text-sm text-muted-foreground">Loading pages...</div>
               ) : (
@@ -355,7 +396,7 @@ export function AdminSidebarMobile() {
 
               {/* Media Library and Settings */}
               {topLevelItems
-                .filter((item) => item.title !== "Analytics")
+                .filter((item) => item.title !== "Analytics" && item.title !== "AI Knowledge")
                 .map((item) => {
                   const isActive = pendingPath
                     ? item.href === "/admin/analytics"

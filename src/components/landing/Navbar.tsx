@@ -9,7 +9,7 @@ import { trackEvent } from '@/lib/analytics';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import type { CTAButtonWithSection } from '@/features/cta/types';
+import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
 
 type Section = {
   id: string;

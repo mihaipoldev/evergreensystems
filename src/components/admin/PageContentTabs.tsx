@@ -6,11 +6,11 @@ import { useEffect, useState, startTransition } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
-import { PageForm } from "@/features/pages/components/PageForm";
-import { PageSectionsList } from "@/features/pages/components/PageSectionsList";
+import { PageForm } from "@/features/page-builder/pages/components/PageForm";
+import { PageSectionsList } from "@/features/page-builder/pages/components/PageSectionsList";
 import { getStoredPageTab, setStoredPageTab } from "@/lib/tab-persistence";
-import type { Page } from "@/features/pages/types";
-import type { Section } from "@/features/sections/types";
+import type { Page } from "@/features/page-builder/pages/types";
+import type { Section } from "@/features/page-builder/sections/types";
 
 type PageTab = "sections" | "edit";
 

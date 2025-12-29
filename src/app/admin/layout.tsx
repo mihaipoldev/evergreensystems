@@ -3,7 +3,6 @@
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NavigationLoadingProvider } from "@/providers/NavigationLoadingProvider";
-import { AdminTeamProvider } from "@/providers/AdminTeamProvider";
 import { AdminThemeProvider } from "@/providers/AdminThemeProvider";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
 import { PageTransitionLoader } from "@/components/admin/PageTransitionLoader";
@@ -46,7 +45,6 @@ export default function AdminLayout({
     <QueryClientProvider>
       <AdminThemeProvider>
         <NavigationLoadingProvider>
-          <AdminTeamProvider>
           {/* Body scroll (single scroll), sidebar fixed on desktop; prevent horizontal scroll */}
           <div className="relative flex min-h-screen bg-background overflow-x-hidden">
             <AdminSidebar />
@@ -62,7 +60,6 @@ export default function AdminLayout({
               </main>
             </div>
           </div>
-          </AdminTeamProvider>
         </NavigationLoadingProvider>
       </AdminThemeProvider>
     </QueryClientProvider>

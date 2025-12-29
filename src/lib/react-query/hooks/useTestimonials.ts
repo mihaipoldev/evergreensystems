@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Testimonial } from "@/features/testimonials/types";
+import type { Testimonial } from "@/features/page-builder/testimonials/types";
 
 async function fetchTestimonials(filters?: { status?: string; search?: string }): Promise<Testimonial[]> {
   const params = new URLSearchParams();

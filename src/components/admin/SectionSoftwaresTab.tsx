@@ -13,7 +13,7 @@ import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusS
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useDuplicateSoftware, useDeleteSoftware } from "@/lib/react-query/hooks/useSoftwares";
-import type { Software, SoftwareWithSection } from "@/features/softwares/types";
+import type { Software, SoftwareWithSection } from "@/features/page-builder/softwares/types";
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);

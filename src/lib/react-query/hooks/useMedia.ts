@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Media } from "@/features/media/types";
+import type { Media } from "@/features/page-builder/media/types";
 
 async function fetchMedia(search?: string): Promise<Media[]> {
   const url = search

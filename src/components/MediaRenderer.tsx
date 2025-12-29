@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import type { Media } from "@/features/media/types";
+import type { Media } from "@/features/page-builder/media/types";
 
 type MediaRendererProps = {
   media: Media;

@@ -1,5 +1,5 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { PageForm } from "@/features/pages/components/PageForm";
+import { PageForm } from "@/features/page-builder/pages/components/PageForm";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,5 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { SocialPlatformForm } from "@/features/social-platforms/components/SocialPlatformForm";
+import { SocialPlatformForm } from "@/features/page-builder/social-platforms/components/SocialPlatformForm";
 
 export const dynamic = "force-dynamic";
 

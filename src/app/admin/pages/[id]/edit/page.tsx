@@ -1,10 +1,10 @@
-import { getPageById } from "@/features/pages/data";
+import { getPageById } from "@/features/page-builder/pages/data";
 import { getSectionsByPageId, getSiteStructureByPageId } from "@/lib/supabase/queries";
 import { PageContentTabs } from "@/components/admin/PageContentTabs";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { PageStatusHeader } from "@/components/admin/PageStatusHeader";
 import { notFound } from "next/navigation";
-import type { Section } from "@/features/sections/types";
+import type { Section } from "@/features/page-builder/sections/types";
 import { Badge } from "@/components/ui/badge";
 
 type PageSection = Section & {

@@ -39,3 +39,4 @@ ALTER TABLE public.rag_chunks
 -- - rag_chunks_kb_doc_idx (on knowledge_base_id, document_id)
 -- - rag_chunks_embedding_ivfflat (vector index)
 
+

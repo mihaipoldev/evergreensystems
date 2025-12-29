@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { SectionContentTabs } from "@/components/admin/SectionContentTabs";
 import { SectionStatusHeader } from "@/components/admin/SectionStatusHeader";
-import { getSectionById } from "@/features/sections/data";
+import { getSectionById } from "@/features/page-builder/sections/data";
 import { getFeaturesBySectionId, getTestimonialsBySectionId, getFAQItemsBySectionId, getTimelineBySectionId, getResultsBySectionId, getCTAButtonsBySectionId, getPageSectionStatus, getSoftwaresBySectionId, getSocialPlatformsBySectionId, getFirstPageIdBySectionId } from "@/lib/supabase/queries";
 
 type SectionPageProps = {

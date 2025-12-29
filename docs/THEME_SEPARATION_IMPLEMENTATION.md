@@ -47,9 +47,7 @@ The admin and public sections now have completely separate theme management syst
 ### Public Layout (`src/app/(public)/layout.tsx`)
 ```typescript
 <PublicThemeProvider>
-  <PublicTeamProvider>
-    {children}
-  </PublicTeamProvider>
+  {children}
 </PublicThemeProvider>
 ```
 
@@ -57,9 +55,7 @@ The admin and public sections now have completely separate theme management syst
 ```typescript
 <AdminThemeProvider>
   <NavigationLoadingProvider>
-    <AdminTeamProvider>
-      {/* Admin UI */}
-    </AdminTeamProvider>
+    {/* Admin UI */}
   </NavigationLoadingProvider>
 </AdminThemeProvider>
 ```

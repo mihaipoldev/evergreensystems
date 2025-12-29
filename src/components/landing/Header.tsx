@@ -7,7 +7,7 @@ import { RichText } from '@/components/ui/RichText';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
-import type { CTAButtonWithSection } from '@/features/cta/types';
+import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
 
 type Section = {
   id: string;

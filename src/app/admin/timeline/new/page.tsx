@@ -1,5 +1,5 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { TimelineForm } from "@/features/timeline/components/TimelineForm";
+import { TimelineForm } from "@/features/page-builder/timeline/components/TimelineForm";
 
 export const dynamic = "force-dynamic";
 

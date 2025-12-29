@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { SocialPlatform } from "@/features/social-platforms/types";
+import type { SocialPlatform } from "@/features/page-builder/social-platforms/types";
 
 async function fetchSocialPlatforms(search?: string): Promise<SocialPlatform[]> {
   const url = search

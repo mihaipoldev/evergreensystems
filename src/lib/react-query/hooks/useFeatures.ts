@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { OfferFeature } from "@/features/features/types";
+import type { OfferFeature } from "@/features/page-builder/features/types";
 
 async function fetchFeatures(): Promise<OfferFeature[]> {
   const response = await fetch("/api/admin/offer-features");

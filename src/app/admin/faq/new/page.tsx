@@ -1,5 +1,5 @@
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { FAQForm } from "@/features/faq/components/FAQForm";
+import { FAQForm } from "@/features/page-builder/faq/components/FAQForm";
 
 export const dynamic = "force-dynamic";
 

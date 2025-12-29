@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Page } from "@/features/pages/types";
+import type { Page } from "@/features/page-builder/pages/types";
 import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
 async function fetchPages(search?: string): Promise<Page[]> {

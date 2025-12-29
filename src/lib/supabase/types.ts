@@ -653,6 +653,93 @@ export interface Database {
           created_at?: string;
         };
       };
+      rag_runs: {
+        Row: {
+          id: string;
+          knowledge_base_id: string;
+          run_type: string;
+          input: Record<string, any>;
+          status: string;
+          error: string | null;
+          metadata: Record<string, any>;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          knowledge_base_id: string;
+          run_type: string;
+          input?: Record<string, any>;
+          status?: string;
+          error?: string | null;
+          metadata?: Record<string, any>;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          knowledge_base_id?: string;
+          run_type?: string;
+          input?: Record<string, any>;
+          status?: string;
+          error?: string | null;
+          metadata?: Record<string, any>;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      rag_run_outputs: {
+        Row: {
+          id: string;
+          run_id: string;
+          output_json: Record<string, any>;
+          pdf_storage_path: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          run_id: string;
+          output_json?: Record<string, any>;
+          pdf_storage_path?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          run_id?: string;
+          output_json?: Record<string, any>;
+          pdf_storage_path?: string | null;
+          created_at?: string;
+        };
+      };
+      rag_run_documents: {
+        Row: {
+          id: string;
+          run_id: string;
+          document_id: string;
+          role: string | null;
+          metadata: Record<string, any>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          run_id: string;
+          document_id: string;
+          role?: string | null;
+          metadata?: Record<string, any>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          run_id?: string;
+          document_id?: string;
+          role?: string | null;
+          metadata?: Record<string, any>;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [key: string]: {

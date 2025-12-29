@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { queryKeys } from "../queries";
-import type { Result } from "@/features/results/types";
+import type { Result } from "@/features/page-builder/results/types";
 
 async function fetchResults(): Promise<Result[]> {
   const response = await fetch("/api/admin/results");

@@ -133,7 +133,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
         // Do NOT set root-level CSS variables as that would affect admin panel
         if (fonts.landing && document.head) {
           // Check if style already exists to avoid duplicates
-          let existingStyle = document.getElementById("landing-font-family-client");
+          const existingStyle = document.getElementById("landing-font-family-client");
           if (existingStyle) {
             existingStyle.textContent = css;
           } else {
@@ -197,7 +197,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
         // This prevents affecting the admin panel
         if (document.head) {
           // Check if style already exists to avoid duplicates
-          let existingStyle = document.getElementById("website-primary-color-client");
+          const existingStyle = document.getElementById("website-primary-color-client");
           if (existingStyle) {
             existingStyle.textContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{--brand-h:${color.h}!important;--brand-s:${color.s}!important;--brand-l:${color.l}!important;--primary:${cssValue}!important;}`;
           } else {
@@ -264,7 +264,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
         // This prevents affecting the admin panel
         if (document.head) {
           // Check if style already exists to avoid duplicates
-          let existingStyle = document.getElementById("website-secondary-color-client");
+          const existingStyle = document.getElementById("website-secondary-color-client");
           if (existingStyle) {
             existingStyle.textContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{--secondary:${cssValue}!important;}`;
           } else {

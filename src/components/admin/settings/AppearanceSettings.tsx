@@ -675,7 +675,7 @@ export function AppearanceSettings() {
               <div className="text-sm text-muted-foreground py-8 text-center rounded-xl border-2 border-dashed border-border/50 bg-muted/20">
                 <Palette className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="font-medium mb-1">No saved colors yet</p>
-                <p className="text-xs">Click "Add Color" to create your first custom color!</p>
+                <p className="text-xs">Click &quot;Add Color&quot; to create your first custom color!</p>
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
-import { getAllTestimonials } from "@/features/testimonials/data";
-import { TestimonialsList } from "@/features/testimonials/components/TestimonialsList";
+import { getAllTestimonials } from "@/features/page-builder/testimonials/data";
+import { TestimonialsList } from "@/features/page-builder/testimonials/components/TestimonialsList";
 
 export const dynamic = 'force-dynamic';
 

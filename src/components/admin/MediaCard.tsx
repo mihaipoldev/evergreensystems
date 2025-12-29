@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ActionMenu } from "@/components/admin/ActionMenu";
 import { cn } from "@/lib/utils";
-import type { Media } from "@/features/media/types";
+import type { Media } from "@/features/page-builder/media/types";
 import { ReactNode } from "react";
 
 type MediaCardProps = {

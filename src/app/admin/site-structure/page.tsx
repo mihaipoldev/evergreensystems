@@ -1,6 +1,6 @@
-import { SiteStructurePageClient } from "@/features/site-structure/components/SiteStructurePageClient";
-import { getPagesByType, getSiteStructureWithPages } from "@/features/site-structure/data";
-import { getAllPages } from "@/features/pages/data";
+import { SiteStructurePageClient } from "@/features/page-builder/site-structure/components/SiteStructurePageClient";
+import { getPagesByType, getSiteStructureWithPages } from "@/features/page-builder/site-structure/data";
+import { getAllPages } from "@/features/page-builder/pages/data";
 
 export const dynamic = 'force-dynamic';
 

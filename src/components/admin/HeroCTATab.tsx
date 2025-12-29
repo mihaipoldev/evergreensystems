@@ -16,7 +16,7 @@ import { ActionMenu } from "@/components/admin/ActionMenu";
 import { CTAButtonSelector } from "@/components/admin/CTAButtonSelector";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { CTAButton, CTAButtonWithSection } from "@/features/cta/types";
+import type { CTAButton, CTAButtonWithSection } from "@/features/page-builder/cta/types";
 
 type HeroCTATabProps = {
   sectionId: string;

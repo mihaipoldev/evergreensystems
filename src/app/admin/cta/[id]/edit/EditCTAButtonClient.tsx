@@ -2,10 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import type { CTAButton } from "@/features/cta/types";
+import type { CTAButton } from "@/features/page-builder/cta/types";
 
 const CTAButtonForm = dynamic(
-  () => import("@/features/cta/components/CTAButtonForm").then((mod) => mod.CTAButtonForm),
+  () => import("@/features/page-builder/cta/components/CTAButtonForm").then((mod) => mod.CTAButtonForm),
   { ssr: false }
 );
 
