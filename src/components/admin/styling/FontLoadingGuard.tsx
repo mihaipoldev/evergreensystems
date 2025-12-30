@@ -19,63 +19,50 @@ export function FontLoadingGuard() {
         document.body.style.visibility = 'hidden';
       }
       
+      var hasShown = false;
+      
       // Wait for fonts to load
       function showContent() {
+        if (hasShown) return;
+        hasShown = true;
         document.body.classList.add('fonts-loaded');
         document.body.style.visibility = '';
       }
       
-      // Check if specific font is loaded (Inter/geist-sans)
-      function checkFontLoaded() {
-        if (document.fonts && document.fonts.check) {
-          // Check if Inter font (geist-sans) is loaded
-          // Inter is the font family name used by Next.js
-          try {
-            if (document.fonts.check('400 1em Inter') || 
-                document.fonts.check('500 1em Inter') ||
-                document.fonts.check('600 1em Inter') ||
-                document.fonts.check('700 1em Inter')) {
-              return true;
-            }
-          } catch (e) {
-            // Font check failed, fall through to ready check
-          }
-        }
-        return false;
-      }
-      
-      // If font is already loaded, show immediately
-      if (checkFontLoaded()) {
+      // Safety timeout - ALWAYS show content after 500ms max
+      // This ensures content is never hidden indefinitely
+      var safetyTimeout = setTimeout(function() {
         showContent();
-        return;
-      }
+      }, 500);
       
-      // Wait for fonts to load
+      // Try to wait for fonts, but don't block if they don't load
       if (document.fonts && document.fonts.ready) {
-        var fontCheckInterval = setInterval(function() {
-          if (checkFontLoaded()) {
-            clearInterval(fontCheckInterval);
-            showContent();
-          }
-        }, 50);
-        
-        // Also listen to fonts.ready as backup
-        document.fonts.ready.then(function() {
-          clearInterval(fontCheckInterval);
+        // Wait for fonts.ready with a race against the safety timeout
+        Promise.race([
+          document.fonts.ready,
+          new Promise(function(resolve) {
+            setTimeout(resolve, 400);
+          })
+        ]).then(function() {
+          clearTimeout(safetyTimeout);
           showContent();
         }).catch(function() {
-          clearInterval(fontCheckInterval);
-          // If font loading fails, show content after timeout
+          clearTimeout(safetyTimeout);
+          showContent();
+        });
+      } else {
+        // No font API available, show immediately
+        clearTimeout(safetyTimeout);
+        setTimeout(showContent, 50);
+      }
+      
+      // Also show on DOMContentLoaded as additional safety
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
           setTimeout(showContent, 100);
         });
-        
-        // Safety timeout - show content after 3 seconds max
-        setTimeout(function() {
-          clearInterval(fontCheckInterval);
-          showContent();
-        }, 3000);
       } else {
-        // Fallback: show content after short delay
+        // DOM already loaded, show after short delay
         setTimeout(showContent, 100);
       }
     })();
