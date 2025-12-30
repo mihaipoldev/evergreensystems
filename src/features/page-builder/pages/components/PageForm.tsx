@@ -7,7 +7,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useCreatePage, useUpdatePage } from "@/lib/react-query/hooks";
+import { useCreatePage, useUpdatePage } from "../hooks";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";

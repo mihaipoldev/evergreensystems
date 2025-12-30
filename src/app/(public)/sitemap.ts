@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getActivePageBySlug } from '@/lib/supabase/queries';
+import { getActivePageBySlug } from '@/features/page-builder/pages/queries';
 import { SEO_CONFIG } from '@/lib/seo';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

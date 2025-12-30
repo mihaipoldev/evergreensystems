@@ -1,4 +1,4 @@
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { FeatureForm } from "@/features/page-builder/features/components/FeatureForm";
 
 export const dynamic = "force-dynamic";

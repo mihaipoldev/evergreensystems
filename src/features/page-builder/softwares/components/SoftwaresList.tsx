@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { CardList } from "@/components/admin/CardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { CardListContainer } from "@/components/admin/ui/CardListContainer";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faCode } from "@fortawesome/free-solid-svg-icons";
@@ -159,7 +159,7 @@ export function SoftwaresList({ initialSoftwares }: SoftwaresListProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <CardList
+            <CardListContainer
               items={filteredSoftwares}
               renderContent={renderContent}
               renderActions={renderActions}

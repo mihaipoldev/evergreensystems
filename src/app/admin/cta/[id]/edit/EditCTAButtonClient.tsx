@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import type { CTAButton } from "@/features/page-builder/cta/types";
 
 const CTAButtonForm = dynamic(

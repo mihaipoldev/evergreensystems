@@ -3,17 +3,17 @@
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { SortableCardList } from "@/components/admin/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RichText } from "@/components/ui/RichText";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useDuplicateFAQItem } from "@/lib/react-query/hooks/useFAQItems";
+import { useDuplicateFAQItem } from "../hooks";
+import { FAQCard } from "./FAQCard";
 import type { FAQItem } from "../types";
 
 type FAQListProps = {
@@ -146,21 +146,13 @@ export function FAQList({ initialFAQItems, hideHeader = false, sectionId, pageId
       ? `/admin/faq/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=faq`
       : `/admin/faq/${item.id}/edit`;
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-3">
-          <Link
-            href={editHref}
-            className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
-          >
-            {item.question}
-          </Link>
-        </div>
-        <RichText
-          text={item.answer}
-          as="div"
-          className="text-sm text-muted-foreground leading-relaxed"
-        />
-      </div>
+      <FAQCard
+        item={item}
+        showIcon={false}
+        showStatus={false}
+        editHref={editHref}
+        variant="default"
+      />
     );
   }, [pageId, sectionId]);
 

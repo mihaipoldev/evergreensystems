@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useMedia, useDeleteMedia } from "@/lib/react-query/hooks";
+import { useMedia, useDeleteMedia } from "../hooks";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { MediaForm } from "./MediaForm";
 import { MediaRenderer } from "@/components/MediaRenderer";
-import { MediaCard } from "@/components/admin/MediaCard";
+import { MediaCard } from "@/components/admin/ui/MediaCard";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import type { Media } from "../types";

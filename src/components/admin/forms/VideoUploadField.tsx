@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpload, faX, faLink, faVideo } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/components/ui/button";
-import { ShadowInput } from "@/components/admin/ShadowInput";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -237,7 +237,7 @@ export function VideoUploadField({
         <div className="flex-1 space-y-2">
           <div className="relative">
             <FontAwesomeIcon icon={faLink} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <ShadowInput
+            <Input
               type="url"
               placeholder={placeholder}
               value={urlInput}

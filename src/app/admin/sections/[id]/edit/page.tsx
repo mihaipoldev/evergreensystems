@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getFirstPageIdBySectionId } from "@/lib/supabase/queries";
+import { getFirstPageIdBySectionId } from "@/features/page-builder/sections/queries";
 
 type EditSectionPageProps = {
   params: Promise<{ id: string }>;

@@ -1,4 +1,4 @@
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { SocialPlatformForm } from "@/features/page-builder/social-platforms/components/SocialPlatformForm";
 
 export const dynamic = "force-dynamic";

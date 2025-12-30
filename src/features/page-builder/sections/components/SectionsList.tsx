@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CardList } from "@/components/admin/CardList";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { CardListContainer } from "@/components/admin/ui/CardListContainer";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
+import { IconFromClass } from "@/components/admin/modals/IconFromClass";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useSections, useDeleteSection, useDuplicateSection } from "@/lib/react-query/hooks";
+import { useSections, useDeleteSection, useDuplicateSection } from "../hooks";
 import type { SectionWithPages } from "../types";
 
 type SectionsListProps = {
@@ -116,12 +116,12 @@ export function SectionsList({ initialSections }: SectionsListProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <CardList
+            <CardListContainer
               items={sections}
               renderContent={(section) => (
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
-                    <FontAwesomeIconFromClass
+                    <IconFromClass
                       iconClass={(section as any).icon}
                       fallbackIcon={faLayerGroup}
                       className="h-6 w-6 !text-primary"

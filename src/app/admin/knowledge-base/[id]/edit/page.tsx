@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { KnowledgeBaseForm } from "@/features/rag/knowledge-bases/components/KnowledgeBaseForm";
 import { getKnowledgeBaseById } from "@/features/rag/knowledge-bases/data";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { SiteStructureList } from "./SiteStructureList";
 import { PagesList } from "@/features/page-builder/pages/components/PagesList";
 import { Button } from "@/components/ui/button";

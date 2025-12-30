@@ -5,8 +5,8 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { InputShadow } from "./InputShadow";
 import { Button } from "@/components/ui/button";
-import { IconPickerModal } from "@/components/admin/IconPickerModal";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
+import { IconPickerModal } from "@/components/admin/modals/IconPickerModal";
+import { IconFromClass } from "@/components/admin/modals/IconFromClass";
 import { faImage as faPlaceholderIcon } from "@fortawesome/free-solid-svg-icons";
 
 type IconPickerFieldProps = Omit<React.ComponentProps<"input">, "value" | "onChange"> & {
@@ -37,13 +37,13 @@ export const IconPickerField = React.forwardRef<HTMLInputElement, IconPickerFiel
             )}
           >
             {value ? (
-              <FontAwesomeIconFromClass
+              <IconFromClass
                 iconClass={value}
                 fallbackIcon={faPlaceholderIcon}
                 className="h-5 w-5"
               />
             ) : (
-              <FontAwesomeIconFromClass
+              <IconFromClass
                 iconClass={null}
                 fallbackIcon={faPlaceholderIcon}
                 className="h-5 w-5 text-muted-foreground"

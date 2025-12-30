@@ -22,7 +22,23 @@ export async function GET(_request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // Get document counts for each knowledge base (excluding soft-deleted)
+    const knowledgeBasesWithCounts = await Promise.all(
+      (data || []).map(async (kb: any) => {
+        const { count, error: countError } = await adminSupabase
+          .from("rag_documents")
+          .select("*", { count: "exact", head: true })
+          .eq("knowledge_base_id", kb.id)
+          .is("deleted_at", null);
+
+        return {
+          ...kb,
+          document_count: countError ? 0 : (count || 0),
+        };
+      })
+    );
+
+    return NextResponse.json(knowledgeBasesWithCounts, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

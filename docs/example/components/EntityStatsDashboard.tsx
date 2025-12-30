@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AdminMetricTab } from "@/components/admin/AdminMetricTab";
+import { AnalyticsMetricTab } from "@/features/analytics/components/AnalyticsMetricTab";
 import { AnalyticsLineChart } from "./AnalyticsLineChart";
 import { getCardGradient } from "@/lib/gradient-presets";
 import { cn } from "@/lib/utils";
@@ -36,14 +36,14 @@ export function EntityStatsDashboard({ data, entityType, entityTitle }: EntitySt
       >
         <Tabs defaultValue="visits" className="w-full">
           <TabsList className="grid grid-cols-2 w-full bg-transparent p-0 gap-0 overflow-hidden h-auto min-h-[88px] border-b border-border/30 rounded-none">
-            <AdminMetricTab
+            <AnalyticsMetricTab
               value="visits"
               label="Page Visits"
               metric={totalPageViews}
               subtitle=""
               className="border-r border-border/30"
             />
-            <AdminMetricTab
+            <AnalyticsMetricTab
               value="clicks"
               label="Service Clicks"
               metric={totalServiceClicks}

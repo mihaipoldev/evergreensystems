@@ -2,10 +2,10 @@
 
 import { ChevronRight } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faPalette, faGlobe } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faPalette } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 
-type Section = "account" | "appearance" | "production" | "development";
+type Section = "account" | "appearance";
 
 interface SettingsSidebarProps {
   activeSection: Section;
@@ -29,18 +29,6 @@ const sections: Array<{
     label: "Appearance",
     icon: faPalette,
     description: "Theme & colors",
-  },
-  {
-    id: "production",
-    label: "Production",
-    icon: faGlobe,
-    description: "Production environment",
-  },
-  {
-    id: "development",
-    label: "Development",
-    icon: faGlobe,
-    description: "Development environment",
   },
 ];
 

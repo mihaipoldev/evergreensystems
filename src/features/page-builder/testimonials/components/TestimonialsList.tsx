@@ -2,17 +2,17 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { SortableCardList } from "@/components/admin/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faStar, faStarHalfStroke, faQuoteLeft } from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
-import { useDuplicateTestimonial } from "@/lib/react-query/hooks/useTestimonials";
+import { useDuplicateTestimonial } from "../hooks";
+import { TestimonialCard } from "./TestimonialCard";
 import type { Testimonial } from "../types";
 
 type TestimonialsListProps = {
@@ -141,71 +141,20 @@ export function TestimonialsList({ initialTestimonials, hideHeader = false, sect
     });
   }, [testimonials, searchQuery]);
 
-  const renderContent = useCallback((item: Testimonial) => (
-    <div className="flex items-start gap-3">
-      <div className="h-12 w-12 rounded-full overflow-hidden hidden md:flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
-        <FontAwesomeIconFromClass
-          iconClass={(item as any).icon}
-          fallbackIcon={faQuoteLeft}
-          className="h-6 w-6 !text-primary"
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3 mb-0.5">
-          <Link
-            href={pageId && sectionId 
-              ? `/admin/testimonials/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`
-              : `/admin/testimonials/${item.id}/edit`}
-            className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
-          >
-            {item.author_name}
-          </Link>
-        </div>
-        {(item.author_role || item.company_name) && (
-          <p className="text-sm text-muted-foreground mb-3">
-            {item.author_role && item.company_name
-              ? `${item.author_role} at ${item.company_name}`
-              : item.author_role || item.company_name}
-          </p>
-        )}
-        {item.headline && (
-          <p className="text-sm font-semibold text-foreground">
-            {item.headline}
-          </p>
-        )}
-        {item.quote && (
-          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 md:line-clamp-3">
-            {item.quote}
-          </p>
-        )}
-        {item.rating && (
-          <div className="flex gap-0.5 mt-2">
-            {[...Array(Math.floor(item.rating))].map((_, i) => (
-              <FontAwesomeIcon
-                key={`full-${i}`}
-                icon={faStar}
-                className="w-3.5 h-3.5 text-yellow-400"
-              />
-            ))}
-            {item.rating % 1 >= 0.5 && (
-              <FontAwesomeIcon
-                key="half"
-                icon={faStarHalfStroke}
-                className="w-3.5 h-3.5 text-yellow-400"
-              />
-            )}
-            {[...Array(5 - Math.ceil(item.rating))].map((_, i) => (
-              <FontAwesomeIcon
-                key={`empty-${i}`}
-                icon={faStar}
-                className="w-3.5 h-3.5 text-yellow-400 opacity-30"
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  ), []);
+  const renderContent = useCallback((item: Testimonial) => {
+    const editHref = pageId && sectionId 
+      ? `/admin/testimonials/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=testimonials`
+      : `/admin/testimonials/${item.id}/edit`;
+    return (
+      <TestimonialCard
+        item={item}
+        showIcon={true}
+        showStatus={false}
+        editHref={editHref}
+        variant="default"
+      />
+    );
+  }, [pageId, sectionId]);
 
   const renderActions = useCallback((item: Testimonial) => {
     const editHref = pageId && sectionId 

@@ -1,7 +1,7 @@
 "use client";
 
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { ApprovedSwitchForm } from "@/components/admin/ApprovedSwitchForm";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
+import { ApprovedSwitchForm } from "@/components/admin/status/ApprovedSwitchForm";
 import { TestimonialForm } from "@/features/page-builder/testimonials/components/TestimonialForm";
 import type { Testimonial } from "@/features/page-builder/testimonials/types";
 

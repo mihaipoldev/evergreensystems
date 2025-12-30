@@ -1,4 +1,4 @@
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { TestimonialForm } from "@/features/page-builder/testimonials/components/TestimonialForm";
 
 export const dynamic = "force-dynamic";

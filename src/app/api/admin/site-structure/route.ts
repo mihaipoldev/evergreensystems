@@ -27,35 +27,94 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const pageId = searchParams.get("pageId");
 
-    if (!pageId) {
+    // If pageId is provided, return entries for that specific page
+    if (pageId) {
+      // OPTIMIZE: Single query with OR condition instead of two separate queries
+      // This uses indexes on production_page_id and development_page_id
+      const dbQueryStartTime = getTimestamp();
+      const { data: allData, error: queryError } = await supabase
+        .from("site_structure")
+        .select("page_type, production_page_id, development_page_id")
+        .or(`production_page_id.eq.${pageId},development_page_id.eq.${pageId}`);
+      
+      const dbQueryDuration = getDuration(dbQueryStartTime);
+      debugQuery("API /admin/site-structure", "Site structure query", dbQueryDuration, {
+        pageId,
+        rowCount: allData?.length || 0
+      });
+      
+      if (dbQueryDuration > 100) {
+        debugServerTiming("API /admin/site-structure", "⚠️ SLOW DB QUERY", dbQueryDuration, {
+          pageId,
+          threshold: "100ms"
+        });
+      }
+
+      if (queryError) {
+        const totalDuration = getDuration(requestStartTime);
+        debugServerTiming("API /admin/site-structure", "Total (ERROR)", totalDuration, { error: queryError.message });
+        return NextResponse.json({ error: queryError.message }, { status: 500 });
+      }
+
+      // Process single query result
+      const processStartTime = getTimestamp();
+      type SiteStructureEntry = {
+        page_type: string;
+        production_page_id: string | null;
+        development_page_id: string | null;
+      };
+      
+      const entries: SiteStructureEntry[] = (allData || []) as SiteStructureEntry[];
+      
+      const result = entries.map(entry => {
+        const isProduction = entry.production_page_id === pageId;
+        const isDevelopment = entry.development_page_id === pageId;
+        
+        let environment: 'production' | 'development' | 'both';
+        if (isProduction && isDevelopment) {
+          environment = 'both';
+        } else if (isProduction) {
+          environment = 'production';
+        } else {
+          environment = 'development';
+        }
+
+        return {
+          page_type: entry.page_type,
+          environment,
+        };
+      });
+      
+      const processDuration = getDuration(processStartTime);
+      debugServerTiming("API /admin/site-structure", "Data processing", processDuration, {
+        resultCount: result.length
+      });
+
+      const serializeStartTime = getTimestamp();
+      const response = NextResponse.json(result, { status: 200 });
+      const serializeDuration = getDuration(serializeStartTime);
+      debugServerTiming("API /admin/site-structure", "Response serialization", serializeDuration);
+      
       const totalDuration = getDuration(requestStartTime);
-      debugServerTiming("API /admin/site-structure", "Total (no pageId)", totalDuration);
-      return NextResponse.json(
-        { error: "pageId is required" },
-        { status: 400 }
-      );
+      debugServerTiming("API /admin/site-structure", "Total", totalDuration, {
+        pageId,
+        resultCount: result.length
+      });
+
+      return response;
     }
 
-    // OPTIMIZE: Single query with OR condition instead of two separate queries
-    // This uses indexes on production_page_id and development_page_id
+    // If no pageId, return all site structure entries with page information
     const dbQueryStartTime = getTimestamp();
-    const { data: allData, error: queryError } = await supabase
+    const { data: allSiteStructure, error: queryError } = await supabase
       .from("site_structure")
-      .select("page_type, production_page_id, development_page_id")
-      .or(`production_page_id.eq.${pageId},development_page_id.eq.${pageId}`);
+      .select("*")
+      .order("page_type", { ascending: true });
     
     const dbQueryDuration = getDuration(dbQueryStartTime);
-    debugQuery("API /admin/site-structure", "Site structure query", dbQueryDuration, {
-      pageId,
-      rowCount: allData?.length || 0
+    debugQuery("API /admin/site-structure", "All site structure query", dbQueryDuration, {
+      rowCount: allSiteStructure?.length || 0
     });
-    
-    if (dbQueryDuration > 100) {
-      debugServerTiming("API /admin/site-structure", "⚠️ SLOW DB QUERY", dbQueryDuration, {
-        pageId,
-        threshold: "100ms"
-      });
-    }
 
     if (queryError) {
       const totalDuration = getDuration(requestStartTime);
@@ -63,49 +122,49 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: queryError.message }, { status: 500 });
     }
 
-    // Process single query result
+    // Fetch production and development pages for each site structure entry
     const processStartTime = getTimestamp();
-    type SiteStructureEntry = {
-      page_type: string;
-      production_page_id: string | null;
-      development_page_id: string | null;
-    };
-    
-    const entries: SiteStructureEntry[] = (allData || []) as SiteStructureEntry[];
-    
-    const result = entries.map(entry => {
-      const isProduction = entry.production_page_id === pageId;
-      const isDevelopment = entry.development_page_id === pageId;
-      
-      let environment: 'production' | 'development' | 'both';
-      if (isProduction && isDevelopment) {
-        environment = 'both';
-      } else if (isProduction) {
-        environment = 'production';
-      } else {
-        environment = 'development';
-      }
+    const siteStructureWithPages = await Promise.all(
+      (allSiteStructure || []).map(async (entry: any) => {
+        // Fetch production page
+        const productionPage = entry.production_page_id
+          ? await supabase
+              .from("pages")
+              .select("id, title")
+              .eq("id", entry.production_page_id)
+              .maybeSingle()
+          : { data: null };
 
-      return {
-        page_type: entry.page_type,
-        environment,
-      };
-    });
+        // Fetch development page
+        const developmentPage = entry.development_page_id
+          ? await supabase
+              .from("pages")
+              .select("id, title")
+              .eq("id", entry.development_page_id)
+              .maybeSingle()
+          : { data: null };
+
+        return {
+          ...entry,
+          production_page: productionPage.data || null,
+          development_page: developmentPage.data || null,
+        };
+      })
+    );
     
     const processDuration = getDuration(processStartTime);
     debugServerTiming("API /admin/site-structure", "Data processing", processDuration, {
-      resultCount: result.length
+      resultCount: siteStructureWithPages.length
     });
 
     const serializeStartTime = getTimestamp();
-    const response = NextResponse.json(result, { status: 200 });
+    const response = NextResponse.json(siteStructureWithPages, { status: 200 });
     const serializeDuration = getDuration(serializeStartTime);
     debugServerTiming("API /admin/site-structure", "Response serialization", serializeDuration);
     
     const totalDuration = getDuration(requestStartTime);
     debugServerTiming("API /admin/site-structure", "Total", totalDuration, {
-      pageId,
-      resultCount: result.length
+      resultCount: siteStructureWithPages.length
     });
 
     return response;

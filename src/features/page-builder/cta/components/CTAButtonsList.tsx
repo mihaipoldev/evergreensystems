@@ -2,17 +2,17 @@
 
 import { useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { CardList } from "@/components/admin/CardList";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { CardListContainer } from "@/components/admin/ui/CardListContainer";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faLink } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
-import { useDuplicateCTAButton } from "@/lib/react-query/hooks/useCTAButtons";
+import { useDuplicateCTAButton } from "../hooks";
+import { CTAButtonCard } from "./CTAButtonCard";
 import type { CTAButton, CTAButtonWithSections } from "../types";
 
 type CTAButtonsListProps = {
@@ -100,70 +100,39 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
     });
   }, [ctaButtons, searchQuery]);
 
-  const renderContent = useCallback((button: CTAButtonWithSections) => (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-3">
-        <Link
-          href={pageId && sectionId 
-            ? `/admin/cta/${button.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta`
-            : `/admin/cta/${button.id}/edit`}
-          className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
-        >
-          {button.label}
-        </Link>
-        {(button as any).status && (
-          <PageSectionStatusSelector
-            status={(button as any).status}
-            onStatusChange={(newStatus) => {
-              // handleUpdateStatus would need to be implemented if status updates are needed
-              console.warn("Status update not implemented for CTAButtonWithSections");
-            }}
-          />
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        {button.icon && (
-          <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center bg-muted flex-shrink-0">
-            <FontAwesomeIcon
-              icon={button.icon as any}
-              className="h-4 w-4 text-primary"
-            />
+  const renderContent = useCallback((button: CTAButtonWithSections) => {
+    const editHref = pageId && sectionId 
+      ? `/admin/cta/${button.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=cta`
+      : `/admin/cta/${button.id}/edit`;
+    
+    return (
+      <div className="flex flex-col gap-2">
+        <CTAButtonCard
+          item={button as CTAButton}
+          showIcon={true}
+          showStatus={false}
+          editHref={editHref}
+          variant="default"
+        />
+        {button.sections && button.sections.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {button.sections.map((section) => (
+              <Link
+                key={section.id}
+                href={pageId ? `/admin/sections/${section.id}?pageId=${pageId}&tab=edit` : `/admin/sections/${section.id}?tab=edit`}
+                className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/80 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="font-medium truncate max-w-[200px]">
+                  {section.admin_title || section.title || "Untitled section"}
+                </span>
+              </Link>
+            ))}
           </div>
         )}
-        <a
-          href={button.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 truncate"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <FontAwesomeIcon icon={faLink} className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">{button.url}</span>
-        </a>
       </div>
-      {button.style && (
-        <div className="text-xs text-muted-foreground">
-          Style: {button.style}
-        </div>
-      )}
-      {button.sections && button.sections.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {button.sections.map((section) => (
-            <Link
-              key={section.id}
-              href={pageId ? `/admin/sections/${section.id}?pageId=${pageId}&tab=edit` : `/admin/sections/${section.id}?tab=edit`}
-              className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/80 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="font-medium truncate max-w-[200px]">
-                {section.admin_title || section.title || "Untitled section"}
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  ), [pageId]);
+    );
+  }, [pageId, sectionId]);
 
   const renderActions = useCallback((button: CTAButtonWithSections) => {
     const editHref = pageId && sectionId 
@@ -223,7 +192,7 @@ export function CTAButtonsList({ initialCTAButtons, hideHeader = false, sectionI
           </div>
         ) : (
           <div className="space-y-2">
-            <CardList
+            <CardListContainer
               items={filteredCTAButtons}
               renderContent={renderContent}
               renderActions={renderActions}

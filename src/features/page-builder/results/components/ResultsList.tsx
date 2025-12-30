@@ -2,14 +2,15 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { SortableCardList } from "@/components/admin/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faChartLine } from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { ResultCard } from "./ResultCard";
 import type { Result } from "../types";
 
 type ResultsListProps = {
@@ -110,24 +111,13 @@ export function ResultsList({ initialResults, hideHeader = false, sectionId, pag
       ? `/admin/results/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=results`
       : `/admin/results/${item.id}/edit`;
     return (
-      <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
-          <FontAwesomeIcon icon={faChartLine} className="h-6 w-6 !text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <Link
-            href={editHref}
-            className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer block mb-1"
-          >
-            Result Item
-          </Link>
-          <div className="text-sm text-muted-foreground">
-            <pre className="line-clamp-2 whitespace-pre-wrap font-sans">
-              {JSON.stringify(item.content, null, 2)}
-            </pre>
-          </div>
-        </div>
-      </div>
+      <ResultCard
+        item={item}
+        showIcon={true}
+        showStatus={false}
+        editHref={editHref}
+        variant="default"
+      />
     );
   }, [pageId, sectionId]);
 

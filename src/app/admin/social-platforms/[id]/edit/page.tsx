@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { SocialPlatformForm } from "@/features/page-builder/social-platforms/components/SocialPlatformForm";
-import { getSocialPlatformById } from "@/features/page-builder/social-platforms/data";
+import { getSocialPlatformById } from "@/features/page-builder/social-platforms/queries";
 
 export const dynamic = "force-dynamic";
 

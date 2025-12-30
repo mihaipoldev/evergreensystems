@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ActionMenu } from "@/components/admin/ActionMenu";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFile, faTrash, faExternalLinkAlt, faEye, faDownload } from "@fortawesome/free-solid-svg-icons";
 import ReactMarkdown from "react-markdown";

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { CardList } from "@/components/admin/CardList";
+import { CardListContainer } from "@/components/admin/ui/CardListContainer";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSitemap, faEdit } from "@fortawesome/free-solid-svg-icons";
 import type { Page } from "@/features/page-builder/pages/types";
@@ -128,7 +128,7 @@ export function SiteStructureList({ pagesByType, siteStructure, onSaveButtonStat
 
   return (
     <div className="w-full space-y-6">
-      <CardList
+      <CardListContainer
         items={pageTypes.map((type) => ({ id: type }))}
         renderContent={(item) => {
           const pageType = item.id;

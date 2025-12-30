@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBook, faEllipsisVertical, faLock, faGlobe } from "@fortawesome/free-solid-svg-icons";
-import { ActionMenu } from "@/components/admin/ActionMenu";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";

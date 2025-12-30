@@ -2,9 +2,9 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useParams } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { FAQAnalyticsDashboard } from "@/components/admin/FAQAnalyticsDashboard";
-import { DashboardTimeScope } from "@/components/admin/DashboardTimeScope";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
+import { FAQAnalyticsDashboard } from "@/features/analytics/components/FAQAnalyticsDashboard";
+import { DashboardTimeScope } from "@/features/analytics/components/DashboardTimeScope";
 
 type FAQAnalyticsData = {
   totalFAQClicks: number;

@@ -1,8 +1,9 @@
-import { getPageById } from "@/features/page-builder/pages/data";
-import { getSectionsByPageId, getSiteStructureByPageId } from "@/lib/supabase/queries";
-import { PageContentTabs } from "@/components/admin/PageContentTabs";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { PageStatusHeader } from "@/components/admin/PageStatusHeader";
+import { getPageById } from "@/features/page-builder/pages/queries";
+import { getSectionsByPageId } from "@/features/page-builder/sections/queries";
+import { getSiteStructureByPageId } from "@/features/page-builder/site-structure/queries";
+import { PageContentTabs } from "@/features/page-builder/pages/components/PageContentTabs";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
+import { PageStatusHeader } from "@/features/page-builder/pages/components/PageStatusHeader";
 import { notFound } from "next/navigation";
 import type { Section } from "@/features/page-builder/sections/types";
 import { Badge } from "@/components/ui/badge";

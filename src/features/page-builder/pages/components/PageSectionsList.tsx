@@ -2,17 +2,17 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { SortableCardList } from "@/components/admin/SortableCardList";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faCheck, faX, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
-import { PageSectionStatusSelector } from "@/components/admin/PageSectionStatusSelector";
+import { IconFromClass } from "@/components/admin/modals/IconFromClass";
+import { PageSectionStatusSelector } from "./PageSectionStatusSelector";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useSections, useDuplicateSection, useDeleteSection } from "@/lib/react-query/hooks";
+import { useSections, useDuplicateSection, useDeleteSection } from "@/features/page-builder/sections/hooks";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Section } from "@/features/page-builder/sections/types";
@@ -352,7 +352,7 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
   const renderContent = useCallback((section: PageSection) => (
     <div className="flex items-center gap-3">
       <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/10">
-        <FontAwesomeIconFromClass
+        <IconFromClass
           iconClass={(section as any).icon}
           fallbackIcon={faLayerGroup}
           className="h-5 w-5 text-primary"
@@ -517,7 +517,7 @@ export function PageSectionsList({ pageId, pageTitle, initialSections, hideHeade
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 bg-muted">
-                      <FontAwesomeIconFromClass
+                      <IconFromClass
                         iconClass={(section as any).icon}
                         fallbackIcon={faLayerGroup}
                         className="h-5 w-5 text-muted-foreground"

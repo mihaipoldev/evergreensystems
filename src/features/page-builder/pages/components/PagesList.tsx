@@ -2,15 +2,15 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { SortableCardList } from "@/components/admin/SortableCardList";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faFile } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
-import { usePages, useDeletePage, useDuplicatePage } from "@/lib/react-query/hooks";
+import { usePages, useDeletePage, useDuplicatePage } from "../hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Page } from "../types";
 

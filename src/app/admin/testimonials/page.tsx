@@ -1,10 +1,24 @@
-import { getAllTestimonials } from "@/features/page-builder/testimonials/data";
-import { TestimonialsList } from "@/features/page-builder/testimonials/components/TestimonialsList";
+"use client";
 
+import { Suspense } from "react";
+
+// Force dynamic rendering - page is client-side only, no server data fetching
 export const dynamic = 'force-dynamic';
+import { TestimonialsList } from "@/features/page-builder/testimonials/components/TestimonialsList";
+import { PageSkeleton } from "@/components/admin/ui/PageSkeleton";
 
-export default async function TestimonialsPage() {
-  const testimonials = await getAllTestimonials();
-
-  return <TestimonialsList initialTestimonials={testimonials || []} />;
+export default function TestimonialsPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageSkeleton
+          title="Testimonials"
+          description="Manage your testimonials."
+          variant="list"
+        />
+      }
+    >
+      <TestimonialsList initialTestimonials={[]} />
+    </Suspense>
+  );
 }

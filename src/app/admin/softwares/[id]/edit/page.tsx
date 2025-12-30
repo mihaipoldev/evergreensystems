@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { SoftwareForm } from "@/features/page-builder/softwares/components/SoftwareForm";
-import { getSoftwareById } from "@/features/page-builder/softwares/data";
+import { getSoftwareById } from "@/features/page-builder/softwares/queries";
 
 export const dynamic = "force-dynamic";
 

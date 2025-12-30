@@ -1,9 +1,17 @@
 import { notFound } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { SectionContentTabs } from "@/components/admin/SectionContentTabs";
-import { SectionStatusHeader } from "@/components/admin/SectionStatusHeader";
-import { getSectionById } from "@/features/page-builder/sections/data";
-import { getFeaturesBySectionId, getTestimonialsBySectionId, getFAQItemsBySectionId, getTimelineBySectionId, getResultsBySectionId, getCTAButtonsBySectionId, getPageSectionStatus, getSoftwaresBySectionId, getSocialPlatformsBySectionId, getFirstPageIdBySectionId } from "@/lib/supabase/queries";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
+import { SectionContentTabs } from "@/features/page-builder/sections/components/SectionContentTabs";
+import { SectionStatusHeader } from "@/features/page-builder/sections/components/SectionStatusHeader";
+import { getSectionById } from "@/features/page-builder/sections/queries";
+import { getPageSectionStatus, getFirstPageIdBySectionId } from "@/features/page-builder/sections/queries";
+import { getTestimonialsBySectionId } from "@/features/page-builder/testimonials/queries";
+import { getResultsBySectionId } from "@/features/page-builder/results/queries";
+import { getSocialPlatformsBySectionId } from "@/features/page-builder/social-platforms/queries";
+import { getSoftwaresBySectionId } from "@/features/page-builder/softwares/queries";
+import { getTimelineBySectionId } from "@/features/page-builder/timeline/queries";
+import { getFeaturesBySectionId } from "@/features/page-builder/features/queries";
+import { getFAQItemsBySectionId } from "@/features/page-builder/faq/queries";
+import { getCTAButtonsBySectionIdAdmin as getCTAButtonsBySectionId } from "@/features/page-builder/cta/queries";
 
 type SectionPageProps = {
   params: Promise<{ id: string }>;

@@ -2,16 +2,16 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { CardList } from "@/components/admin/CardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { CardListContainer } from "@/components/admin/ui/CardListContainer";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faShareAlt } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
+import { IconFromClass } from "@/components/admin/modals/IconFromClass";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useDuplicateSocialPlatform } from "@/lib/react-query/hooks/useSocialPlatforms";
+import { useDuplicateSocialPlatform } from "../hooks";
 import type { SocialPlatform } from "../types";
 
 type SocialPlatformsListProps = {
@@ -183,7 +183,7 @@ export function SocialPlatformsList({ initialSocialPlatforms }: SocialPlatformsL
           </div>
         ) : (
           <div className="space-y-2">
-            <CardList
+            <CardListContainer
               items={filteredSocialPlatforms}
               renderContent={renderContent}
               renderActions={renderActions}

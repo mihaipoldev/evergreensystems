@@ -2,17 +2,16 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { SortableCardList } from "@/components/admin/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faListOl } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useDuplicateTimelineItem } from "@/lib/react-query/hooks/useTimeline";
+import { useDuplicateTimelineItem } from "../hooks";
+import { TimelineCard } from "./TimelineCard";
 import type { Timeline } from "../types";
 
 type TimelineListProps = {
@@ -143,35 +142,13 @@ export function TimelineList({ initialTimelineItems, hideHeader = false, section
       ? `/admin/timeline/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=timeline`
       : `/admin/timeline/${item.id}/edit`;
     return (
-      <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-full overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
-          <FontAwesomeIconFromClass
-            iconClass={item.icon}
-            fallbackIcon={faListOl}
-            className="h-6 w-6 !text-primary"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3 mb-1">
-            {item.badge && (
-              <Badge className="text-xs">
-                {item.badge}
-              </Badge>
-            )}
-          </div>
-          <Link
-            href={editHref}
-            className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer block mb-1"
-          >
-            {item.title}
-          </Link>
-          {item.subtitle && (
-            <p className="text-sm text-muted-foreground">
-              {item.subtitle}
-            </p>
-          )}
-        </div>
-      </div>
+      <TimelineCard
+        item={item}
+        showIcon={true}
+        showStatus={false}
+        editHref={editHref}
+        variant="default"
+      />
     );
   }, [pageId, sectionId]);
 

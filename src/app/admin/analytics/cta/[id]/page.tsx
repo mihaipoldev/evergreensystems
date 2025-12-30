@@ -2,9 +2,9 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useParams } from "next/navigation";
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
-import { CTAAnalyticsDashboard } from "@/components/admin/CTAAnalyticsDashboard";
-import { DashboardTimeScope } from "@/components/admin/DashboardTimeScope";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
+import { CTAAnalyticsDashboard } from "@/features/analytics/components/CTAAnalyticsDashboard";
+import { DashboardTimeScope } from "@/features/analytics/components/DashboardTimeScope";
 
 type CTAAnalyticsData = {
   totalCTAClicks: number;

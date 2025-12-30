@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { StylePresetProvider } from "@/providers/StylePresetProvider";
-import { AdminColorStyle } from "@/components/admin/AdminColorStyle";
-import { InstantColorApply } from "@/components/admin/InstantColorApply";
-import { AdminFontStyle } from "@/components/admin/AdminFontStyle";
-import { InstantFontApply } from "@/components/admin/InstantFontApply";
-import { WebsiteColorStyle } from "@/components/admin/WebsiteColorStyle";
-import { WebsiteFontStyle } from "@/components/admin/WebsiteFontStyle";
+import { AdminColorStyle } from "@/components/admin/styling/AdminColorStyle";
+import { InstantColorApply } from "@/components/admin/styling/InstantColorApply";
+import { AdminFontStyle } from "@/components/admin/styling/AdminFontStyle";
+import { InstantFontApply } from "@/components/admin/styling/InstantFontApply";
+import { FontLoadingGuard } from "@/components/admin/styling/FontLoadingGuard";
+import { WebsiteColorStyle } from "@/components/admin/styling/WebsiteColorStyle";
+import { WebsiteFontStyle } from "@/components/admin/styling/WebsiteFontStyle";
 import { getSelectedFontVariables, getAllFontVariables } from "@/lib/fonts";
 import { parseFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
 import { createClient } from "@/lib/supabase/server";
@@ -235,7 +236,11 @@ export default async function RootLayout({
   debugServerTiming("Root Layout", "Total render", layoutTotalDuration, { isAdminPage });
 
   return (
-    <html lang="en" suppressHydrationWarning className={fontClasses}>
+    <html 
+      lang="en" 
+      suppressHydrationWarning 
+      className={`${fontClasses}${isAdminPage ? " preset-admin" : ""}`}
+    >
       <body className="font-sans antialiased" suppressHydrationWarning>
         {/* CRITICAL: Server-side color injection - must be first in body */}
         {/* Next.js will move style tags to head automatically */}
@@ -248,6 +253,7 @@ export default async function RootLayout({
         {/* Client-side fallback from sessionStorage */}
         {isAdminPage && <InstantColorApply />}
         {isAdminPage && <InstantFontApply />}
+        {isAdminPage && <FontLoadingGuard />}
         <StylePresetProvider />
         <Toaster />
         <SonnerToaster />

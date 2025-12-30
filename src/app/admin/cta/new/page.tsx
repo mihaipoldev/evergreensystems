@@ -1,4 +1,4 @@
-import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
+import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import dynamicImport from "next/dynamic";
 
 const CTAButtonForm = dynamicImport(

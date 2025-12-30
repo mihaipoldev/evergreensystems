@@ -9,7 +9,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useCreateTestimonial, useUpdateTestimonial } from "@/lib/react-query/hooks";
+import { useCreateTestimonial, useUpdateTestimonial } from "../hooks";
 import { Button } from "@/components/ui/button";
 import { InputShadow } from "@/components/admin/forms/InputShadow";
 import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";

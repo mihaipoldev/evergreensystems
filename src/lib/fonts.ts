@@ -157,7 +157,8 @@ export const geistSans = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-geist-sans",
-  display: "swap",
+  display: "block",
+  preload: true,
 });
 
 export const geistMono = Inter({

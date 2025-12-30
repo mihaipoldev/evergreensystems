@@ -1,10 +1,24 @@
-import { getAllSections } from "@/features/page-builder/sections/data";
-import { SectionsList } from "@/features/page-builder/sections/components/SectionsList";
+"use client";
 
+import { Suspense } from "react";
+
+// Force dynamic rendering - page is client-side only, no server data fetching
 export const dynamic = 'force-dynamic';
+import { SectionsList } from "@/features/page-builder/sections/components/SectionsList";
+import { PageSkeleton } from "@/components/admin/ui/PageSkeleton";
 
-export default async function SectionsPage() {
-  const sections = await getAllSections();
-
-  return <SectionsList initialSections={sections || []} />;
+export default function SectionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageSkeleton
+          title="Sections"
+          description="Manage your sections."
+          variant="list"
+        />
+      }
+    >
+      <SectionsList initialSections={[]} />
+    </Suspense>
+  );
 }

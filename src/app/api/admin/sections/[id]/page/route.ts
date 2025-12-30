@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getFirstPageIdBySectionId } from "@/lib/supabase/queries";
+import { getFirstPageIdBySectionId } from "@/features/page-builder/sections/queries";
 
 type RouteParams = {
   params: Promise<{ id: string }>;

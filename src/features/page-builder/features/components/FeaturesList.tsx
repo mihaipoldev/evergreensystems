@@ -2,19 +2,17 @@
 
 import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ActionMenu } from "@/components/admin/ActionMenu";
-import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { SortableCardList } from "@/components/admin/SortableCardList";
+import { ActionMenu } from "@/components/admin/ui/ActionMenu";
+import { AdminToolbar } from "@/components/admin/ui/AdminToolbar";
+import { SortableCardList } from "@/components/admin/ui/SortableCardList";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faBullseye } from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { FontAwesomeIconFromClass } from "@/components/admin/FontAwesomeIconFromClass";
-import { RichText } from "@/components/ui/RichText";
-import { formatRichText } from "@/lib/formatRichText";
-import { useDuplicateFeature } from "@/lib/react-query/hooks/useFeatures";
+import { useDuplicateFeature } from "../hooks";
+import { FeatureCard } from "./FeatureCard";
 import type { OfferFeature } from "../types";
 
 type FeaturesListProps = {
@@ -142,45 +140,20 @@ export function FeaturesList({ initialFeatures, hideHeader = false, sectionId, p
     });
   }, [features, searchQuery]);
 
-  const renderContent = useCallback((item: OfferFeature) => (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-full overflow-hidden hidden md:flex items-center justify-center shadow-md flex-shrink-0 bg-muted">
-          <FontAwesomeIconFromClass
-            iconClass={item.icon}
-            fallbackIcon={faBullseye}
-            className="h-6 w-6 !text-primary"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3 mb-1">
-            <Link
-              href={pageId && sectionId 
-                ? `/admin/features/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`
-                : `/admin/features/${item.id}/edit`}
-              className="text-base font-semibold text-foreground leading-snug hover:text-primary transition-colors cursor-pointer"
-            >
-              {item.title}
-            </Link>
-          </div>
-          {item.subtitle && (
-            <RichText
-              text={item.subtitle}
-              as="p"
-              className="text-sm text-muted-foreground mb-1 leading-relaxed"
-            />
-          )}
-          {item.description && (
-            <RichText
-              text={item.description}
-              as="div"
-              className="text-sm text-muted-foreground leading-relaxed line-clamp-2 md:line-clamp-3"
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  ), [pageId, sectionId]);
+  const renderContent = useCallback((item: OfferFeature) => {
+    const editHref = pageId && sectionId 
+      ? `/admin/features/${item.id}/edit?returnTo=/admin/sections/${sectionId}?pageId=${pageId}&tab=features`
+      : `/admin/features/${item.id}/edit`;
+    return (
+      <FeatureCard
+        item={item}
+        showIcon={true}
+        showStatus={false}
+        editHref={editHref}
+        variant="default"
+      />
+    );
+  }, [pageId, sectionId]);
 
   const renderActions = useCallback((item: OfferFeature) => {
     const editHref = pageId && sectionId 

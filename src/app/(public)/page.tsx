@@ -52,7 +52,9 @@ const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod 
 const Performance = dynamic(() => import('@/components/landing/Performance').then(mod => ({ default: mod.Performance })), {
   loading: () => <div className="h-96" />,
 });
-import { getActivePageBySlug, getVisibleSectionsByPageId, shouldIncludeItemByStatus } from '@/lib/supabase/queries';
+import { getActivePageBySlug } from '@/features/page-builder/pages/queries';
+import { getVisibleSectionsByPageId } from '@/features/page-builder/sections/queries';
+import { shouldIncludeItemByStatus } from '@/lib/supabase/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
 import type { MediaWithSection } from '@/features/page-builder/media/types';
