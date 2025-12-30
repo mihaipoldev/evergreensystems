@@ -10,7 +10,7 @@ import { InstantFontApply } from "@/components/admin/styling/InstantFontApply";
 import { FontLoadingGuard } from "@/components/admin/styling/FontLoadingGuard";
 import { WebsiteColorStyle } from "@/components/admin/styling/WebsiteColorStyle";
 import { WebsiteFontStyle } from "@/components/admin/styling/WebsiteFontStyle";
-import { getSelectedFontVariables, getAllFontVariables } from "@/lib/fonts";
+import { getSelectedFontVariables, getAllFontVariables, geistSans } from "@/lib/fonts";
 import { parseFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
 import { createClient } from "@/lib/supabase/server";
 import type { FontId } from "@/types/fonts";
@@ -235,11 +235,15 @@ export default async function RootLayout({
   const layoutTotalDuration = getDuration(layoutStartTime);
   debugServerTiming("Root Layout", "Total render", layoutTotalDuration, { isAdminPage });
 
+  // Ensure geistSans is included in the build for admin pages
+  // Next.js needs to see the font object being used to include it
+  const adminFontClass = isAdminPage ? geistSans.variable : "";
+
   return (
     <html 
       lang="en" 
       suppressHydrationWarning 
-      className={`${fontClasses}${isAdminPage ? " preset-admin" : ""}`}
+      className={`${fontClasses}${isAdminPage ? ` ${adminFontClass} preset-admin` : ""}`}
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
         {/* CRITICAL: Server-side color injection - must be first in body */}
