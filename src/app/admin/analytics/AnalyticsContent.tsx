@@ -40,7 +40,7 @@ export function AnalyticsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Ensure preset-admin class and font styles are applied
+  // Ensure preset-admin class is applied immediately
   // This is needed for dynamically imported components
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -49,14 +49,14 @@ export function AnalyticsContent() {
         document.documentElement.classList.add("preset-admin");
       }
       
-      // Ensure font CSS variable is set if not already set
+      // Ensure font CSS variable is set immediately (CSS should handle this, but double-check)
       const root = document.documentElement;
       const computedStyle = getComputedStyle(root);
       const fontVar = computedStyle.getPropertyValue("--font-geist-sans").trim();
       
       if (!fontVar) {
-        // Set fallback font variable
-        root.style.setProperty("--font-geist-sans", "'Inter', system-ui, -apple-system, sans-serif");
+        // Set fallback font variable immediately
+        root.style.setProperty("--font-geist-sans", "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif", "important");
       }
     }
   }, []);

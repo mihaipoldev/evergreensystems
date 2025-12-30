@@ -336,15 +336,21 @@
 /* Use universal selector to ensure fonts apply to ALL elements including buttons, divs, spans, etc. */
 /* Always use geist-sans for admin (no dynamic font switching) */
 
-/* Ensure CSS variable is set - fallback to Inter if variable not available */
+/* Ensure CSS variable is set IMMEDIATELY - this prevents Times font flash on analytics page */
+/* Set it on :root first so it's available before Next.js sets it */
+:root {
+  --font-geist-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Also set on html.preset-admin to ensure it's always available */
 html.preset-admin {
-  --font-geist-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-geist-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 html.preset-admin *,
 html.preset-admin *::before,
 html.preset-admin *::after {
-  font-family: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif), system-ui, sans-serif !important;
+  font-family: var(--font-geist-sans) !important;
 }
 
 html.preset-admin h1,
@@ -359,7 +365,7 @@ html.preset-admin h3 *,
 html.preset-admin h4 *,
 html.preset-admin h5 *,
 html.preset-admin h6 * {
-  font-family: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif), system-ui, sans-serif !important;
+  font-family: var(--font-geist-sans) !important;
 }
 
 
