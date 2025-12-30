@@ -5,6 +5,7 @@ import Script from "next/script";
 /**
  * FontLoadingGuard - Hides admin content until fonts are loaded
  * Runs before React hydrates to prevent FOUT (Flash of Unstyled Text)
+ * Uses multiple independent timeouts to ensure content ALWAYS appears
  */
 export function FontLoadingGuard() {
   const scriptContent = `
@@ -14,56 +15,55 @@ export function FontLoadingGuard() {
         document.documentElement.classList.add('preset-admin');
       }
       
-      // Hide body immediately if not already hidden
-      if (!document.body.classList.contains('fonts-loaded')) {
-        document.body.style.visibility = 'hidden';
-      }
-      
       var hasShown = false;
       
-      // Wait for fonts to load
+      // Function to show content - can be called multiple times safely
       function showContent() {
         if (hasShown) return;
         hasShown = true;
-        document.body.classList.add('fonts-loaded');
-        document.body.style.visibility = '';
+        if (document.body) {
+          document.body.classList.add('fonts-loaded');
+          document.body.style.visibility = '';
+        }
       }
       
-      // Safety timeout - ALWAYS show content after 500ms max
-      // This ensures content is never hidden indefinitely
-      var safetyTimeout = setTimeout(function() {
-        showContent();
-      }, 500);
+      // MULTIPLE INDEPENDENT TIMEOUTS - at least one will fire
+      // Timeout 1: Very short (100ms) - shows content quickly if fonts are fast
+      setTimeout(showContent, 100);
       
-      // Try to wait for fonts, but don't block if they don't load
+      // Timeout 2: Medium (200ms) - backup if first fails
+      setTimeout(showContent, 200);
+      
+      // Timeout 3: Longer (300ms) - final safety net
+      setTimeout(showContent, 300);
+      
+      // Timeout 4: Maximum (500ms) - absolute guarantee
+      setTimeout(showContent, 500);
+      
+      // Try to wait for fonts, but don't rely on it
       if (document.fonts && document.fonts.ready) {
-        // Wait for fonts.ready with a race against the safety timeout
-        Promise.race([
-          document.fonts.ready,
-          new Promise(function(resolve) {
-            setTimeout(resolve, 400);
-          })
-        ]).then(function() {
-          clearTimeout(safetyTimeout);
-          showContent();
-        }).catch(function() {
-          clearTimeout(safetyTimeout);
-          showContent();
-        });
-      } else {
-        // No font API available, show immediately
-        clearTimeout(safetyTimeout);
-        setTimeout(showContent, 50);
+        try {
+          document.fonts.ready.then(function() {
+            showContent();
+          }).catch(function() {
+            // Ignore errors, timeouts will handle it
+          });
+        } catch (e) {
+          // Ignore errors, timeouts will handle it
+        }
       }
       
-      // Also show on DOMContentLoaded as additional safety
+      // DOMContentLoaded fallback
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-          setTimeout(showContent, 100);
-        });
+        document.addEventListener('DOMContentLoaded', showContent);
       } else {
-        // DOM already loaded, show after short delay
-        setTimeout(showContent, 100);
+        // DOM already loaded
+        showContent();
+      }
+      
+      // Window load fallback (last resort)
+      if (window.addEventListener) {
+        window.addEventListener('load', showContent);
       }
     })();
   `;

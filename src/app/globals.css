@@ -359,10 +359,23 @@ html.preset-admin h6 * {
 /* Hide admin content until fonts are loaded to prevent FOUT */
 html.preset-admin body {
   visibility: hidden;
+  /* CSS fallback: Show content after 600ms even if JavaScript fails */
+  animation: showContentFallback 0.01s 0.6s forwards;
 }
 
 html.preset-admin body.fonts-loaded {
   visibility: visible;
+  animation: none; /* Disable animation when JS sets the class */
+}
+
+/* CSS fallback animation */
+@keyframes showContentFallback {
+  0% {
+    visibility: hidden;
+  }
+  100% {
+    visibility: visible;
+  }
 }
 
 /* Sparkle animation for decorative elements */
