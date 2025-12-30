@@ -335,10 +335,16 @@
 /* Admin-specific font families - MUST be outside @layer to override Tailwind utilities */
 /* Use universal selector to ensure fonts apply to ALL elements including buttons, divs, spans, etc. */
 /* Always use geist-sans for admin (no dynamic font switching) */
+
+/* Ensure CSS variable is set - fallback to Inter if variable not available */
+html.preset-admin {
+  --font-geist-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
 html.preset-admin *,
 html.preset-admin *::before,
 html.preset-admin *::after {
-  font-family: var(--font-geist-sans), system-ui, sans-serif !important;
+  font-family: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif), system-ui, sans-serif !important;
 }
 
 html.preset-admin h1,
@@ -353,30 +359,9 @@ html.preset-admin h3 *,
 html.preset-admin h4 *,
 html.preset-admin h5 *,
 html.preset-admin h6 * {
-  font-family: var(--font-geist-sans), system-ui, sans-serif !important;
+  font-family: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif), system-ui, sans-serif !important;
 }
 
-/* Hide admin content until fonts are loaded to prevent FOUT */
-html.preset-admin body {
-  visibility: hidden;
-  /* CSS fallback: Show content after 600ms even if JavaScript fails */
-  animation: showContentFallback 0.01s 0.6s forwards;
-}
-
-html.preset-admin body.fonts-loaded {
-  visibility: visible;
-  animation: none; /* Disable animation when JS sets the class */
-}
-
-/* CSS fallback animation */
-@keyframes showContentFallback {
-  0% {
-    visibility: hidden;
-  }
-  100% {
-    visibility: visible;
-  }
-}
 
 /* Sparkle animation for decorative elements */
 @keyframes sparkle {
