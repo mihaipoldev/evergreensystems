@@ -7,3 +7,4 @@ ALTER TABLE public.social_platforms
 ALTER COLUMN base_url DROP NOT NULL;
 
 
+
