@@ -74,23 +74,53 @@ export function AppearanceSettings() {
     if (!color || typeof document === "undefined") return;
     const cssValue = hslToCssString(color.hsl.h, color.hsl.s, color.hsl.l);
     
-    // Remove existing injected style tags that might have !important
-    const existingStyles = [
-      document.getElementById("primary-color-inline"),
-      document.getElementById("primary-color-script"),
-      document.getElementById("primary-color-session"),
-      document.getElementById("primary-color-client"),
-      document.getElementById("primary-color-inline-server"),
-    ].filter(Boolean) as HTMLElement[];
+    // Use a function to apply the style, and ensure it runs after any pending DOM operations
+    const applyStyle = () => {
+      try {
+        // Create the style content with highest specificity
+        // Use :root and html.preset-admin for maximum coverage
+        const styleText = `html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl.h}!important;--brand-s:${color.hsl.s}!important;--brand-l:${color.hsl.l}!important;--primary:${cssValue}!important;}`;
+        
+        // Remove old primary-color-client if it exists (to avoid duplicates)
+        const oldStyle = document.getElementById("primary-color-client");
+        if (oldStyle) {
+          try {
+            if (oldStyle.parentNode) {
+              oldStyle.remove();
+            }
+          } catch (e) {
+            // Ignore removal errors
+          }
+        }
+        
+        // Create new style and add to END of head (ensures it comes after server styles)
+        const style = document.createElement("style");
+        style.id = "primary-color-client";
+        style.textContent = styleText;
+        
+        if (document.head) {
+          document.head.appendChild(style);
+          
+          // Also update primary-color-session if it exists (for InstantColorApply)
+          const sessionStyle = document.getElementById("primary-color-session");
+          if (sessionStyle) {
+            try {
+              sessionStyle.textContent = styleText;
+            } catch (e) {
+              // Ignore update errors
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error applying color to CSS:", error);
+      }
+    };
     
-    existingStyles.forEach((style) => style.remove());
+    // Apply immediately
+    applyStyle();
     
-    // Apply brand color variables ONLY to admin preset - NOT to :root
-    // This prevents affecting the landing page
-    const style = document.createElement("style");
-    style.id = "primary-color-client";
-    style.textContent = `.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl.h}!important;--brand-s:${color.hsl.s}!important;--brand-l:${color.hsl.l}!important;--primary:${cssValue}!important;}`;
-    document.head.appendChild(style);
+    // Also apply after a short delay to ensure it overrides any server styles that load late
+    setTimeout(applyStyle, 0);
     
     // Save to sessionStorage for InstantColorApply fallback
     try {

@@ -10,7 +10,7 @@ import { InstantFontApply } from "@/components/admin/styling/InstantFontApply";
 import { FontLoadingGuard } from "@/components/admin/styling/FontLoadingGuard";
 import { WebsiteColorStyle } from "@/components/admin/styling/WebsiteColorStyle";
 import { WebsiteFontStyle } from "@/components/admin/styling/WebsiteFontStyle";
-import { getSelectedFontVariables, getAllFontVariables, geistSans } from "@/lib/fonts";
+import { getSelectedFontVariables, getAllFontVariables, nunitoSans } from "@/lib/fonts";
 import { parseFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
 import { createClient } from "@/lib/supabase/server";
 import type { FontId } from "@/types/fonts";
@@ -101,7 +101,7 @@ export default async function RootLayout({
   try {
     const headersList = await headers();
     pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
-    isAdminPage = pathname.includes("/admin") && !pathname.includes("/admin/login");
+    isAdminPage = (pathname.includes("/admin") && !pathname.includes("/admin/login")) || pathname.includes("/intel");
     const headerDuration = getDuration(headerStartTime);
     debugServerTiming("Root Layout", "Header detection", headerDuration, { pathname, isAdminPage });
   } catch (error) {
@@ -120,10 +120,10 @@ export default async function RootLayout({
   const fontSelectionStartTime = getTimestamp();
   try {
     if (isAdminPage) {
-      // For admin pages: always load only geist-sans (no dynamic font switching)
-      fontsToLoad.push("geist-sans");
+      // For admin pages: always load only nunito-sans (no dynamic font switching)
+      fontsToLoad.push("nunito-sans");
       debugServerTiming("Root Layout", "Admin font load", getDuration(fontSelectionStartTime), {
-        font: "geist-sans"
+        font: "nunito-sans"
       });
     } else {
       // For public pages: ALWAYS get landing fonts from website_settings preset
@@ -235,9 +235,9 @@ export default async function RootLayout({
   const layoutTotalDuration = getDuration(layoutStartTime);
   debugServerTiming("Root Layout", "Total render", layoutTotalDuration, { isAdminPage });
 
-  // Ensure geistSans is included in the build for admin pages
+  // Ensure nunitoSans is included in the build for admin pages
   // Next.js needs to see the font object being used to include it
-  const adminFontClass = isAdminPage ? geistSans.variable : "";
+  const adminFontClass = isAdminPage ? nunitoSans.variable : "";
 
   return (
     <html 

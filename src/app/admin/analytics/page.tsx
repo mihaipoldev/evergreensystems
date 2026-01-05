@@ -14,7 +14,6 @@ const AnalyticsContent = dynamic(
     loading: () => (
       <PageSkeleton
         title="Analytics"
-        description="View your site analytics and performance metrics."
         rightSideContent={<DashboardTimeScope />}
         variant="analytics"
       />
@@ -24,7 +23,7 @@ const AnalyticsContent = dynamic(
 
 export default function AnalyticsPage() {
   return (
-    <>
+    <div>
       {/* Critical: Set font CSS variable immediately for analytics page */}
       {/* This runs before the page renders to prevent Times font flash */}
       <Script
@@ -50,6 +49,6 @@ export default function AnalyticsPage() {
         }}
       />
       <AnalyticsContent />
-    </>
+    </div>
   );
 }

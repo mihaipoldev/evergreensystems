@@ -16,7 +16,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" disabled>
+      <Button variant="ghost" size="icon" disabled className="rounded-full">
         <FontAwesomeIcon icon={faSun} className="h-4 w-4" />
       </Button>
     );
@@ -27,6 +27,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      className="rounded-full"
     >
       <FontAwesomeIcon
         icon={theme === "dark" ? faSun : faMoon}

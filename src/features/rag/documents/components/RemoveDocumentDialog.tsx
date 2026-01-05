@@ -33,7 +33,7 @@ export function RemoveDocumentDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Remove document?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently remove "{document.title || "Untitled document"}" and all its 
+            This will permanently remove &quot;{document.title || "Untitled document"}&quot; and all its 
             associated chunks and embeddings from the knowledge base. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

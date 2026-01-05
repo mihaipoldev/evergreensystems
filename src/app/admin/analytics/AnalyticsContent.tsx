@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { AnalyticsDashboard } from "@/features/analytics/components/AnalyticsDashboard";
@@ -33,12 +33,39 @@ type AnalyticsData = {
   topCountriesByFAQClick: Array<{ country: string; count: number }>;
 };
 
+// Helper to get scope from localStorage (same logic as DashboardTimeScope)
+function getStoredScope(): string {
+  if (typeof window === "undefined") return "30";
+  const stored = localStorage.getItem("admin-analytics-scope");
+  if (stored && ["1", "7", "30", "90", "365", "all"].includes(stored)) {
+    return stored;
+  }
+  return "30";
+}
+
 export function AnalyticsContent() {
   const searchParams = useSearchParams();
-  const scope = searchParams.get("scope") || "30";
+  const urlScope = searchParams.get("scope");
+  
+  // Use URL scope if available, otherwise localStorage, otherwise default
+  // This prevents re-fetching when URL syncs to the same value
+  const [scope, setScope] = useState<string>(() => {
+    return urlScope || getStoredScope();
+  });
+  
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isInitialLoadRef = useRef(true);
+  const lastFetchedScopeRef = useRef<string | null>(null);
+  
+  // Update scope only when URL scope actually changes (not just when searchParams object changes)
+  useEffect(() => {
+    const newScope = urlScope || getStoredScope();
+    if (newScope !== scope) {
+      setScope(newScope);
+    }
+  }, [urlScope, scope]);
 
   // Ensure preset-admin class is applied immediately
   // This is needed for dynamically imported components
@@ -62,9 +89,24 @@ export function AnalyticsContent() {
   }, []);
 
   useEffect(() => {
+    // Check if we've already fetched this exact scope (prevent duplicate fetches)
+    if (lastFetchedScopeRef.current === scope) {
+      return;
+    }
+
+    // Check if this is a scope change (not initial load)
+    const wasInitialLoad = isInitialLoadRef.current;
+
+    // Mark that we're fetching this scope BEFORE the async operation
+    // This prevents duplicate fetches if the effect runs again before fetch completes
+    lastFetchedScopeRef.current = scope;
+
     async function fetchData() {
       try {
-        setLoading(true);
+        // Only show loading skeleton on initial load, not on scope changes
+        if (wasInitialLoad) {
+          setLoading(true);
+        }
         setError(null);
         
         const response = await fetch(`/api/admin/analytics/stats?scope=${scope}`);
@@ -102,22 +144,33 @@ export function AnalyticsContent() {
         };
         
         setData(processedData);
+        // Mark initial load as complete after first successful fetch
+        if (wasInitialLoad) {
+          isInitialLoadRef.current = false;
+        }
       } catch (err) {
         console.error("Error fetching analytics data:", err);
         setError(err instanceof Error ? err.message : "An error occurred");
+        // Mark initial load as complete even on error
+        if (wasInitialLoad) {
+          isInitialLoadRef.current = false;
+        }
+        // Reset the ref on error so we can retry
+        lastFetchedScopeRef.current = null;
       } finally {
         setLoading(false);
       }
     }
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope]);
 
-  if (loading) {
+  // Only show full skeleton on initial load, not on scope changes
+  if (loading && isInitialLoadRef.current) {
     return (
       <PageSkeleton
         title="Analytics"
-        description="View your site analytics and performance metrics."
         rightSideContent={<DashboardTimeScope />}
         variant="analytics"
       />
@@ -126,28 +179,30 @@ export function AnalyticsContent() {
 
   if (error || !data) {
     return (
-      <>
-        <AdminPageTitle
-          title="Analytics"
-          description="View your site analytics and performance metrics."
-          rightSideContent={<DashboardTimeScope />}
-        />
+      <div className="w-full space-y-6">
+        <div className="">
+          <AdminPageTitle
+            title="Analytics"
+            rightSideContent={<DashboardTimeScope />}
+          />
+        </div>
         <div className="text-center py-12">
           <p className="text-destructive">{error || "Failed to load analytics"}</p>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <AdminPageTitle
-        title="Analytics"
-        description="View your site analytics and performance metrics."
-        rightSideContent={<DashboardTimeScope />}
-      />
+    <div className="w-full space-y-6">
+      <div className="">
+        <AdminPageTitle
+          title="Analytics"
+          rightSideContent={<DashboardTimeScope />}
+        />
+      </div>
       <AnalyticsDashboard data={data} />
-    </>
+    </div>
   );
 }
 

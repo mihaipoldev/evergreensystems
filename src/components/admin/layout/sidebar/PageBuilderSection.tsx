@@ -18,6 +18,8 @@ type PageBuilderSectionProps = {
   pathname: string;
   pendingPath: string | null;
   searchParams: URLSearchParams;
+  manuallyClosedPages: Set<string>;
+  clearManuallyClosed: (pageId: string) => void;
 };
 
 export function PageBuilderSection({
@@ -33,6 +35,8 @@ export function PageBuilderSection({
   pathname,
   pendingPath,
   searchParams,
+  manuallyClosedPages,
+  clearManuallyClosed,
 }: PageBuilderSectionProps) {
   const siteStructureItem = SIDEBAR_ITEMS.find((item) => item.section === 'pageBuilder');
 
@@ -63,6 +67,8 @@ export function PageBuilderSection({
             startNavigation={onNavigate}
             sections={sectionsByPage[page.id] || []}
             siteStructureInfo={[]}
+            manuallyClosedPages={manuallyClosedPages}
+            clearManuallyClosed={clearManuallyClosed}
           />
         ))
       )}

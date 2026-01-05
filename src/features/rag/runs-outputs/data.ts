@@ -54,7 +54,7 @@ export async function createRunOutput(payload: {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("rag_run_outputs")
-    // @ts-ignore - rag_run_outputs table type not fully recognized by TypeScript
+    // @ts-expect-error - rag_run_outputs table type not fully recognized by TypeScript
     .insert({
       run_id: payload.run_id,
       output_json: payload.output_json,

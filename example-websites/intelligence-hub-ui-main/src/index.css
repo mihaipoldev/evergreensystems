@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Enterprise SaaS Design System - Professional, Clean, Trustworthy */
+
+@layer base {
+  :root {
+    /* Neutral foundation */
+    --background: 0 0% 98%;
+    --foreground: 220 14% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 14% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 14% 10%;
+
+    /* Professional blue accent */
+    --primary: 220 80% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Subtle secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 14% 35%;
+
+    /* Muted elements */
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent for highlights */
+    --accent: 220 14% 93%;
+    --accent-foreground: 220 14% 10%;
+
+    /* Status colors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 72% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
+    --ring: 220 80% 50%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar - subtle distinction */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 10% 35%;
+    --sidebar-primary: 220 80% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 14% 10%;
+    --sidebar-border: 220 13% 92%;
+    --sidebar-ring: 220 80% 50%;
+
+    /* Enterprise spacing scale */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+  }
+
+  .dark {
+    --background: 220 16% 8%;
+    --foreground: 220 14% 96%;
+
+    --card: 220 16% 11%;
+    --card-foreground: 220 14% 96%;
+
+    --popover: 220 16% 11%;
+    --popover-foreground: 220 14% 96%;
+
+    --primary: 220 80% 60%;
+    --primary-foreground: 220 14% 5%;
+
+    --secondary: 220 14% 16%;
+    --secondary-foreground: 220 14% 75%;
+
+    --muted: 220 14% 18%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 220 14% 20%;
+    --accent-foreground: 220 14% 96%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 72% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 14% 18%;
+    --input: 220 14% 18%;
+    --ring: 220 80% 60%;
+
+    --sidebar-background: 220 16% 10%;
+    --sidebar-foreground: 220 10% 65%;
+    --sidebar-primary: 220 80% 60%;
+    --sidebar-primary-foreground: 220 14% 5%;
+    --sidebar-accent: 220 14% 16%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 220 14% 16%;
+    --sidebar-ring: 220 80% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Typography scale */
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  h2 {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-lg font-medium;
+  }
+
+  h4 {
+    @apply text-base font-medium;
+  }
+}
+
+@layer components {
+  /* Enterprise card styling */
+  .enterprise-card {
+    @apply bg-card border border-border rounded-lg shadow-sm transition-shadow hover:shadow-md;
+  }
+
+  /* Section container */
+  .section-container {
+    @apply space-y-4;
+  }
+
+  /* Action affordance */
+  .action-text {
+    @apply text-primary hover:text-primary/80 font-medium cursor-pointer transition-colors;
+  }
+}

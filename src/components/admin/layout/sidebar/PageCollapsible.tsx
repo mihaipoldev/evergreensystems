@@ -24,6 +24,8 @@ type PageCollapsibleProps = {
   startNavigation: (href: string) => void;
   sections: Array<any>;
   siteStructureInfo: Array<{ page_type: string; environment: 'production' | 'development' | 'both' }>;
+  manuallyClosedPages: Set<string>;
+  clearManuallyClosed: (pageId: string) => void;
 };
 
 export function PageCollapsible({
@@ -36,12 +38,16 @@ export function PageCollapsible({
   startNavigation,
   sections,
   siteStructureInfo,
+  manuallyClosedPages,
+  clearManuallyClosed,
 }: PageCollapsibleProps) {
   const sectionsLoading = false; // No longer loading separately
   
   // Auto-open page if we're on a route that belongs to this page
+  // But only if the page wasn't manually closed by the user
   useEffect(() => {
     if (isOpen) return; // Already open, no need to check
+    if (manuallyClosedPages.has(page.id)) return; // Don't auto-open if manually closed
     
     const currentPath = pendingPath || pathname;
     const queryPageId = searchParams.get("pageId");
@@ -87,7 +93,18 @@ export function PageCollapsible({
         }
       }
     }
-  }, [pathname, pendingPath, sections, isOpen, onToggle, page.id, searchParams]);
+  }, [pathname, pendingPath, sections, isOpen, onToggle, page.id, searchParams, manuallyClosedPages]);
+
+  // Clear manually closed flag when navigating away from this page's sections
+  // Use isPageActive to determine if we're still on this page (comprehensive check)
+  useEffect(() => {
+    const isOnThisPage = isPageActive(page, pathname, pendingPath, searchParams, sections);
+    
+    // If we're not on this page anymore, clear the manually closed flag
+    if (!isOnThisPage && manuallyClosedPages.has(page.id)) {
+      clearManuallyClosed(page.id);
+    }
+  }, [pathname, pendingPath, page, searchParams, sections, manuallyClosedPages, clearManuallyClosed]);
 
   // Check if we're on this page or any of its sections
   const isPageActiveState = useMemo(() => {

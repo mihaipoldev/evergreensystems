@@ -277,7 +277,7 @@ export function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
 
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8">
+    <div className="mx-auto w-full max-w-[1400px] space-y-8">
       <div
         className="rounded-xl overflow-hidden text-card-foreground dark:bg-card bg-card shadow-lg transition-all duration-300 hover:shadow-xl"
       >

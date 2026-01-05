@@ -72,8 +72,8 @@ export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: Kno
       const accessToken = sessionData?.session?.access_token;
 
       const url = isEdit && initialData
-        ? `/api/admin/knowledge-base/${initialData.id}`
-        : "/api/admin/knowledge-base";
+        ? `/api/intel/knowledge-base/${initialData.id}`
+        : "/api/intel/knowledge-base";
       const method = isEdit ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -94,10 +94,10 @@ export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: Kno
       toast.success(`Knowledge base ${isEdit ? "updated" : "created"} successfully`);
       
       if (isEdit) {
-        const redirectUrl = returnTo || `/admin/knowledge-base/${initialData?.id}` || "/admin/ai-knowledge";
+        const redirectUrl = returnTo || `/intel/knowledge-bases/${initialData?.id}` || "/intel/knowledge-bases";
         router.push(redirectUrl);
       } else {
-        router.push(`/admin/knowledge-base/${createdKnowledge.id}`);
+        router.push(`/intel/knowledge-bases/${createdKnowledge.id}`);
       }
       router.refresh();
     } catch (error: any) {
@@ -265,7 +265,7 @@ export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: Kno
             asChild
             disabled={isSubmitting}
           >
-            <Link href={returnTo || (isEdit && initialData ? `/admin/knowledge-base/${initialData.id}` : "/admin/ai-knowledge")}>Cancel</Link>
+            <Link href={returnTo || (isEdit && initialData ? `/intel/knowledge-bases/${initialData.id}` : "/intel/knowledge-bases")}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
             {isSubmitting ? "Saving..." : isEdit ? "Update Knowledge Base" : "Create Knowledge Base"}

@@ -18,7 +18,7 @@ export function StylePresetProvider() {
     htmlElement.classList.remove("preset-admin", "preset-landing-page");
     
     // Apply the appropriate preset based on the pathname
-    if (pathname?.startsWith("/admin")) {
+    if (pathname?.startsWith("/admin") || pathname?.startsWith("/intel")) {
       htmlElement.classList.add("preset-admin");
     } else {
       // Default to landing-page preset for all other routes

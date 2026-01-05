@@ -1,0 +1,48 @@
+"use client";
+
+import { Card } from "@/components/ui/card";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { KnowledgeBaseRow } from "./KnowledgeBaseRow";
+import type { KnowledgeBase } from "../types";
+
+type KnowledgeBaseWithCount = KnowledgeBase & { document_count?: number };
+
+interface KnowledgeBaseTableProps {
+  knowledgeBases: KnowledgeBaseWithCount[];
+  onDelete?: () => void;
+  onEdit?: (knowledgeBase: KnowledgeBase) => void;
+}
+
+export function KnowledgeBaseTable({
+  knowledgeBases,
+  onDelete,
+  onEdit,
+}: KnowledgeBaseTableProps) {
+  return (
+    <TooltipProvider delayDuration={100}>
+      <div className="space-y-2">
+      {/* Table Header */}
+      <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="flex-1 min-w-0">Name</div>
+        <div className="w-24 shrink-0">Type</div>
+        <div className="w-20 shrink-0">Docs</div>
+        <div className="w-20 shrink-0">Size</div>
+        <div className="w-28 shrink-0">Updated</div>
+        <div className="w-20 shrink-0 text-right">Actions</div>
+      </div>
+
+      {/* Rows */}
+      {knowledgeBases.map((kb) => (
+        <KnowledgeBaseRow
+          key={kb.id}
+          knowledge={kb}
+          documentCount={kb.document_count || 0}
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
+      ))}
+      </div>
+    </TooltipProvider>
+  );
+}
+

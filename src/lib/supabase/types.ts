@@ -740,6 +740,155 @@ export interface Database {
           created_at?: string;
         };
       };
+      rag_knowledge_bases: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          type: string;
+          is_active: boolean;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+          visibility: string | null;
+          owner_user_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          type?: string;
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          visibility?: string | null;
+          owner_user_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          type?: string;
+          is_active?: boolean;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          visibility?: string | null;
+          owner_user_id?: string | null;
+        };
+      };
+      rag_documents: {
+        Row: {
+          id: string;
+          knowledge_base_id: string;
+          title: string | null;
+          source_type: string;
+          source_url: string | null;
+          content: string;
+          content_type: string | null;
+          status: string;
+          metadata: Json;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          knowledge_base_id: string;
+          title?: string | null;
+          source_type: string;
+          source_url?: string | null;
+          content: string;
+          content_type?: string | null;
+          status?: string;
+          metadata?: Json;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          knowledge_base_id?: string;
+          title?: string | null;
+          source_type?: string;
+          source_url?: string | null;
+          content?: string;
+          content_type?: string | null;
+          status?: string;
+          metadata?: Json;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+      };
+      projects: {
+        Row: {
+          id: string;
+          name: string;
+          client_name: string;
+          status: string;
+          kb_id: string;
+          description: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+          archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          client_name: string;
+          status?: string;
+          kb_id: string;
+          description?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          archived_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          client_name?: string;
+          status?: string;
+          kb_id?: string;
+          description?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          archived_at?: string | null;
+        };
+      };
+      project_documents: {
+        Row: {
+          id: string;
+          project_id: string;
+          document_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          document_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          document_id?: string;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [key: string]: {

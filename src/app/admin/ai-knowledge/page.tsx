@@ -4,8 +4,6 @@ import { Suspense, useState, useEffect } from "react";
 import { AdminPageTitle } from "@/components/admin/ui/AdminPageTitle";
 import { KnowledgeBaseList } from "@/features/rag/knowledge-bases/components/KnowledgeBaseList";
 import { PageSkeleton } from "@/components/admin/ui/PageSkeleton";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBook } from "@fortawesome/free-solid-svg-icons";
 import type { KnowledgeBaseWithCount } from "@/features/rag/knowledge-bases/data";
 
 export default function AIKnowledgePage() {
@@ -19,7 +17,7 @@ export default function AIKnowledgePage() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch("/api/admin/knowledge-base");
+        const response = await fetch("/api/intel/knowledge-base");
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -43,7 +41,6 @@ export default function AIKnowledgePage() {
     return (
       <PageSkeleton
         title="AI Knowledge"
-        description="Manage your AI knowledge bases for intelligent responses"
         variant="list"
       />
     );
@@ -54,8 +51,6 @@ export default function AIKnowledgePage() {
       <div className="w-full space-y-6">
         <AdminPageTitle
           title="AI Knowledge"
-          description="Manage your AI knowledge bases for intelligent responses"
-          icon={faBook}
         />
         <div className="text-center py-12">
           <p className="text-destructive">{error}</p>
@@ -66,11 +61,9 @@ export default function AIKnowledgePage() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="mb-6 md:mb-8">
+      <div className="">
         <AdminPageTitle
           title="AI Knowledge"
-          description="Manage your AI knowledge bases for intelligent responses"
-          icon={faBook}
         />
       </div>
       <KnowledgeBaseList initialKnowledge={knowledge} />

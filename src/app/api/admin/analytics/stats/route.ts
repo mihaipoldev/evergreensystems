@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     if (scope === "all") {
       lookbackDays = 365; // "all" = 1 year
     } else {
-      lookbackDays = parseInt(scope, 10); // "7", "30", "90", "365"
+      lookbackDays = parseInt(scope, 10); // "1", "7", "30", "90", "365"
     }
 
     const now = new Date();

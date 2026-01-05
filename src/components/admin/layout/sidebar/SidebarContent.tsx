@@ -28,6 +28,8 @@ type SidebarContentProps = {
   pendingPath: string | null;
   searchParams: URLSearchParams;
   onHomeClick?: () => void;
+  manuallyClosedPages: Set<string>;
+  clearManuallyClosed: (pageId: string) => void;
 };
 
 export function SidebarContent({
@@ -47,6 +49,8 @@ export function SidebarContent({
   pendingPath,
   searchParams,
   onHomeClick,
+  manuallyClosedPages,
+  clearManuallyClosed,
 }: SidebarContentProps) {
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -123,6 +127,8 @@ export function SidebarContent({
               pathname={pathname}
               pendingPath={pendingPath}
               searchParams={searchParams}
+              manuallyClosedPages={manuallyClosedPages}
+              clearManuallyClosed={clearManuallyClosed}
             />
 
             {/* Settings Section */}
@@ -147,7 +153,9 @@ export function SidebarContent({
               isOpen={openSections.has('database')}
               onToggle={() => toggleSection('database')}
             >
-              {SIDEBAR_ITEMS.filter(item => item.section === 'database').map((item) => (
+              {SIDEBAR_ITEMS.filter(item => item.section === 'database')
+                .sort((a, b) => a.title.localeCompare(b.title))
+                .map((item) => (
                 <SidebarNavItem
                   key={item.href}
                   item={item}

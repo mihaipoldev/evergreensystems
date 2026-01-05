@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSync } from "@fortawesome/free-solid-svg-icons";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -13,12 +10,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type TimeScope = "7" | "30" | "90" | "365" | "all";
+type TimeScope = "1" | "7" | "30" | "90" | "365" | "all";
 
 const STORAGE_KEY = "admin-analytics-scope";
 const COOKIE_NAME = "admin-analytics-scope";
 
 const timeScopeOptions: { value: TimeScope; label: string }[] = [
+  { value: "1", label: "1 day" },
   { value: "7", label: "7 days" },
   { value: "30", label: "30 days" },
   { value: "90", label: "90 days" },
@@ -29,7 +27,7 @@ const timeScopeOptions: { value: TimeScope; label: string }[] = [
 function getStoredScope(): TimeScope {
   if (typeof window === "undefined") return "30";
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored && ["7", "30", "90", "365", "all"].includes(stored)) {
+  if (stored && ["1", "7", "30", "90", "365", "all"].includes(stored)) {
     return stored as TimeScope;
   }
   return "30";
@@ -48,7 +46,6 @@ export function DashboardTimeScope() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Get scope from URL param, or localStorage, or default to "30"
   const urlScope = searchParams.get("scope") as TimeScope | null;
@@ -89,36 +86,15 @@ export function DashboardTimeScope() {
     router.refresh(); // Force server component to re-fetch
   };
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    // Force a router refresh to fetch fresh data
-    router.refresh();
-    // Reset refreshing state after a short delay
-    setTimeout(() => setIsRefreshing(false), 500);
-  };
-
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleRefresh}
-        disabled={isRefreshing}
-        className="h-9 px-3"
-        title="Refresh data"
-      >
-        <FontAwesomeIcon 
-          icon={faSync} 
-          className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} 
-        />
-      </Button>
       <Select value={currentScope} onValueChange={handleScopeChange}>
-        <SelectTrigger className="w-[140px] h-9 bg-input-background dark:bg-input-background">
+        <SelectTrigger className="w-[140px] h-9 cursor-pointer">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {timeScopeOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value} className="cursor-pointer">
               {option.label}
             </SelectItem>
           ))}

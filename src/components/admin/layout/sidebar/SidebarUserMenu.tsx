@@ -39,7 +39,7 @@ export function SidebarUserMenu({ user }: SidebarUserMenuProps) {
     <div className="mt-auto p-3 border-t border-border/50 bg-sidebar/95 backdrop-blur-sm">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-sidebar-accent/60 transition-all duration-200 group">
+          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-sidebar-accent/60 transition-all duration-200 group cursor-pointer">
             <Avatar className="h-9 w-9 rounded-lg ring-2 ring-border/50 group-hover:ring-primary/30 transition-all">
               <AvatarImage src="" alt={user.name || user.email || "User"} />
               <AvatarFallback className="text-xs rounded-lg bg-primary/10 text-primary font-semibold">

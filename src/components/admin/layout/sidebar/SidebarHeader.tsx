@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 type SidebarHeaderProps = {
   isMobile?: boolean;
   onHomeClick?: () => void;
+  subtitle?: string;
 };
 
-export function SidebarHeader({ isMobile = false, onHomeClick }: SidebarHeaderProps) {
+export function SidebarHeader({ isMobile = false, onHomeClick, subtitle = "Admin Panel" }: SidebarHeaderProps) {
   return (
     <div className="flex items-center gap-3 px-6 py-5 border-b border-border/50 bg-sidebar/95 backdrop-blur-sm">
       <div className="flex flex-col flex-1 min-w-0">
@@ -18,14 +19,14 @@ export function SidebarHeader({ isMobile = false, onHomeClick }: SidebarHeaderPr
           Evergreen Sys.
         </h2>
         <p className="text-xs text-muted-foreground leading-tight mt-0.5 font-medium">
-          Admin Panel
+          {subtitle}
         </p>
       </div>
       <Link href="/" onClick={onHomeClick}>
         <Button 
           variant="ghost" 
           size="icon" 
-          className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
+          className="shrink-0 hover:bg-primary/10 hover:text-primary transition-colors rounded-full"
         >
           <FontAwesomeIcon icon={faHome} className="h-4 w-4" />
         </Button>

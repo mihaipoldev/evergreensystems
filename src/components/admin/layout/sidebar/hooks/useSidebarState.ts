@@ -10,6 +10,7 @@ export function useSidebarState(pages: Page[]) {
   const [openPages, setOpenPages] = useState<Set<string>>(new Set());
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(DEFAULT_OPEN_SECTIONS));
   const [isInitialized, setIsInitialized] = useState(false);
+  const [manuallyClosedPages, setManuallyClosedPages] = useState<Set<string>>(new Set());
 
   // Load persisted sidebar state from localStorage
   useEffect(() => {
@@ -48,9 +49,17 @@ export function useSidebarState(pages: Page[]) {
     setOpenPages((prev) => {
       const next = new Set(prev);
       if (next.has(pageId)) {
+        // User is closing the page - mark it as manually closed
         next.delete(pageId);
+        setManuallyClosedPages((prevClosed) => new Set([...prevClosed, pageId]));
       } else {
+        // User is opening the page - remove from manually closed set
         next.add(pageId);
+        setManuallyClosedPages((prevClosed) => {
+          const nextClosed = new Set(prevClosed);
+          nextClosed.delete(pageId);
+          return nextClosed;
+        });
       }
       // Persist to localStorage
       try {
@@ -81,8 +90,9 @@ export function useSidebarState(pages: Page[]) {
   };
 
   // Auto-open page if we're on a page route (but don't persist this)
+  // Only auto-open if the page wasn't manually closed by the user
   const autoOpenPage = (pageId: string | null) => {
-    if (isInitialized && pageId && !openPages.has(pageId)) {
+    if (isInitialized && pageId && !openPages.has(pageId) && !manuallyClosedPages.has(pageId)) {
       setOpenPages((prev) => {
         const next = new Set([...prev, pageId]);
         // Store updated state
@@ -96,6 +106,15 @@ export function useSidebarState(pages: Page[]) {
     }
   };
 
+  // Clear manually closed flag when navigating away from a page's sections
+  const clearManuallyClosed = (pageId: string) => {
+    setManuallyClosedPages((prev) => {
+      const next = new Set(prev);
+      next.delete(pageId);
+      return next;
+    });
+  };
+
   return {
     openPages,
     openSections,
@@ -103,6 +122,8 @@ export function useSidebarState(pages: Page[]) {
     togglePage,
     toggleSection,
     autoOpenPage,
+    manuallyClosedPages,
+    clearManuallyClosed,
   };
 }
 

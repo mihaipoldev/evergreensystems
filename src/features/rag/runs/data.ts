@@ -61,7 +61,7 @@ export async function createRun(payload: {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("rag_runs")
-    // @ts-ignore - rag_runs table type not fully recognized by TypeScript
+    // @ts-expect-error - rag_runs table type not fully recognized by TypeScript
     .insert({
       knowledge_base_id: payload.knowledge_base_id,
       run_type: payload.run_type,
@@ -93,7 +93,7 @@ export async function updateRunStatus(id: string, status: RunStatus, error?: str
 
   const { data, error: updateError } = await supabase
     .from("rag_runs")
-    // @ts-ignore - rag_runs table type not fully recognized by TypeScript
+    // @ts-expect-error - rag_runs table type not fully recognized by TypeScript
     .update(updateData)
     .eq("id", id)
     .select()

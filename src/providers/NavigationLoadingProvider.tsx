@@ -17,45 +17,68 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const [isNavigating, setIsNavigating] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
   const navigationStartTime = useRef<number | null>(null);
+  const lastClearedPathname = useRef<string | null>(null);
 
   const startNavigation = useCallback((path: string) => {
     navigationStartTime.current = getTimestamp();
     debugClientTiming("NavigationLoadingProvider", "Navigation start", 0, { path });
     setPendingPath(path);
     setIsNavigating(true);
+    // Reset last cleared pathname when starting new navigation
+    lastClearedPathname.current = null;
   }, []);
 
   // Clear navigation state when pathname changes
   // Compare pathname without query params to handle query param updates
+  // Prevent clearing multiple times for the same pathname to avoid double flash
   useEffect(() => {
+    const pathnameWithoutQuery = pathname.split('?')[0];
+    
+    // Prevent clearing if we've already cleared for this pathname
+    // This prevents double flash on pages with dynamic imports
+    if (lastClearedPathname.current === pathnameWithoutQuery && !pendingPath) {
+      return;
+    }
+
     if (pendingPath) {
-      // Remove query params from both for comparison
-      const pathnameWithoutQuery = pathname.split('?')[0];
       const pendingPathWithoutQuery = pendingPath.split('?')[0];
       
       if (pathnameWithoutQuery === pendingPathWithoutQuery) {
-        if (navigationStartTime.current) {
-          const navigationDuration = getDuration(navigationStartTime.current);
-          debugClientTiming("NavigationLoadingProvider", "Navigation complete", navigationDuration, {
-            from: pendingPath,
-            to: pathname
-          });
-          navigationStartTime.current = null;
-        }
-        setIsNavigating(false);
-        setPendingPath(null);
+        // Add a small delay to allow dynamic imports to complete
+        // This prevents the double flash on pages with dynamic imports
+        const timeoutId = setTimeout(() => {
+          if (navigationStartTime.current) {
+            const navigationDuration = getDuration(navigationStartTime.current);
+            debugClientTiming("NavigationLoadingProvider", "Navigation complete", navigationDuration, {
+              from: pendingPath,
+              to: pathname
+            });
+            navigationStartTime.current = null;
+          }
+          setIsNavigating(false);
+          setPendingPath(null);
+          lastClearedPathname.current = pathnameWithoutQuery;
+        }, 100); // Small delay to allow dynamic imports to settle
+
+        return () => clearTimeout(timeoutId);
       }
     }
     // Also clear if pathname changes but no pending path (handles query param-only updates)
     else if (isNavigating) {
-      if (navigationStartTime.current) {
-        const navigationDuration = getDuration(navigationStartTime.current);
-        debugClientTiming("NavigationLoadingProvider", "Navigation complete (no pending)", navigationDuration, {
-          pathname
-        });
-        navigationStartTime.current = null;
-      }
-      setIsNavigating(false);
+      // Add a small delay here too
+      const timeoutId = setTimeout(() => {
+        if (navigationStartTime.current) {
+          const navigationDuration = getDuration(navigationStartTime.current);
+          debugClientTiming("NavigationLoadingProvider", "Navigation complete (no pending)", navigationDuration, {
+            pathname
+          });
+          navigationStartTime.current = null;
+        }
+        setIsNavigating(false);
+        lastClearedPathname.current = pathnameWithoutQuery;
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [pathname, pendingPath, isNavigating]);
 

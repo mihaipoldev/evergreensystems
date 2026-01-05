@@ -82,7 +82,7 @@ export async function getAnalyticsData(scope: string = "30"): Promise<AnalyticsD
     if (scope === "all") {
       lookbackDays = 365; // "all" = 1 year
     } else {
-      lookbackDays = parseInt(scope, 10); // "7", "30", "90", "365"
+      lookbackDays = parseInt(scope, 10); // "1", "7", "30", "90", "365"
     }
 
     const now = new Date();

@@ -339,7 +339,7 @@ export function SectionContentTabs({
         {isEditTab ? (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -354,7 +354,7 @@ export function SectionContentTabs({
         ) : isMediaTab ? (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -369,7 +369,7 @@ export function SectionContentTabs({
         ) : (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -426,7 +426,7 @@ export function SectionContentTabs({
         {isEditTab ? (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -441,7 +441,7 @@ export function SectionContentTabs({
         ) : (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -498,7 +498,7 @@ export function SectionContentTabs({
         {isEditTab ? (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -513,7 +513,7 @@ export function SectionContentTabs({
         ) : (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -570,7 +570,7 @@ export function SectionContentTabs({
         {isEditTab ? (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -585,7 +585,7 @@ export function SectionContentTabs({
         ) : (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -642,7 +642,7 @@ export function SectionContentTabs({
         {isEditTab ? (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 
@@ -657,7 +657,7 @@ export function SectionContentTabs({
         ) : (
           <div className="relative">
             {showLoader && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-background animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3">
                   <FontAwesomeIcon 
                     icon={faSpinner} 

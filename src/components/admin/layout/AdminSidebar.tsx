@@ -64,14 +64,23 @@ export function AdminSidebar() {
     togglePage,
     toggleSection,
     autoOpenPage,
+    manuallyClosedPages,
+    clearManuallyClosed,
   } = useSidebarState(pages);
 
   // Auto-open page if we're on a page route
+  // Only auto-open when we're actually navigating TO a page route, not when navigating away
   useEffect(() => {
-    if (currentPageId) {
+    const currentPath = pendingPath || pathname;
+    // Only auto-open if we're actually on a page-related route
+    const isOnPageRoute = currentPath.startsWith('/admin/pages/') || 
+                         currentPath.startsWith('/admin/sections/') ||
+                         /\/admin\/(testimonials|faq|features|offer|cta)\/[^/]+\/edit/.test(currentPath);
+    
+    if (currentPageId && isOnPageRoute) {
       autoOpenPage(currentPageId);
     }
-  }, [currentPageId, autoOpenPage]);
+  }, [currentPageId, autoOpenPage, pathname, pendingPath]);
 
   // Track component mount and renders
   useEffect(() => {
@@ -109,7 +118,7 @@ export function AdminSidebar() {
   // Desktop: Fixed aside
   if (!isMobile) {
     return (
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-50 border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-[60] border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm">
         <SidebarContent
           isMobile={false}
           user={user}
@@ -127,6 +136,8 @@ export function AdminSidebar() {
           pendingPath={pendingPath}
           searchParams={searchParams}
           onHomeClick={handleHomeClick}
+          manuallyClosedPages={manuallyClosedPages}
+          clearManuallyClosed={clearManuallyClosed}
         />
       </aside>
     );
@@ -185,6 +196,8 @@ export function AdminSidebar() {
           pendingPath={pendingPath}
           searchParams={searchParams}
           onHomeClick={handleHomeClick}
+          manuallyClosedPages={manuallyClosedPages}
+          clearManuallyClosed={clearManuallyClosed}
         />
       </SheetContent>
     </Sheet>

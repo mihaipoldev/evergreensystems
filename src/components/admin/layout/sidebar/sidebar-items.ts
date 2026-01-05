@@ -1,6 +1,5 @@
 import {
   faChartLine,
-  faBook,
   faSitemap,
   faImages,
   faShareAlt,
@@ -13,6 +12,7 @@ import {
   faClock,
   faGear,
   faGlobe,
+  faRightLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import type { SidebarItem } from "./types";
 
@@ -21,12 +21,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     title: "Analytics",
     href: "/admin/analytics",
     icon: faChartLine,
-    section: "overview",
-  },
-  {
-    title: "AI Knowledge",
-    href: "/admin/ai-knowledge",
-    icon: faBook,
     section: "overview",
   },
   {
@@ -88,6 +82,12 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     href: "/admin/timeline",
     icon: faClock,
     section: "database",
+  },
+  {
+    title: "Intelligence",
+    href: "/intel",
+    icon: faRightLeft,
+    section: "settings",
   },
   {
     title: "Settings",
