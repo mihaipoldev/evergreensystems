@@ -246,3 +246,38 @@ export async function removeDocument(payload: {
   }
 }
 
+/**
+ * Link documents to a project via server-side API route
+ */
+export async function linkDocumentsToProject(
+  projectId: string,
+  documentIds: string[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/intel/projects/${projectId}/link-documents`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        document_ids: documentIds,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || `Link failed: ${response.statusText}`,
+      };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || "Failed to link documents",
+    };
+  }
+}
+

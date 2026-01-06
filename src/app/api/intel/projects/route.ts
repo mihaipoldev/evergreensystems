@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { client_name, status, description } = body;
+    const { client_name, status, type, description } = body;
 
     if (!client_name) {
       return NextResponse.json(
@@ -139,6 +139,7 @@ export async function POST(request: Request) {
         client_name,
         slug: finalSlug,
         status: status || "active",
+        type: type || "client",
         description: description || null,
         kb_id: kb.id, // Required - links to workspace KB
         created_by: user.id,

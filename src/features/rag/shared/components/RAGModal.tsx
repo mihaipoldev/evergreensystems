@@ -31,16 +31,28 @@ export function RAGModal({
 }: RAGModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("shadow-card border-0", maxWidth, className)}>
-        <DialogHeader className="pb-2">
+      <DialogContent 
+        className={cn(
+          "shadow-card border-0 max-h-[calc(100vh-2rem)] !flex !flex-col",
+          maxWidth, 
+          className
+        )}
+      >
+        <DialogHeader className="pb-2 shrink-0">
           <DialogTitle className="text-lg font-bold leading-none tracking-tight">
             {title}
           </DialogTitle>
         </DialogHeader>
 
-        {children}
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 -mb-6 pb-6">
+          {children}
+        </div>
 
-        {footer && <DialogFooter className="gap-2 sm:gap-0 pt-2">{footer}</DialogFooter>}
+        {footer && (
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 shrink-0">
+            {footer}
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

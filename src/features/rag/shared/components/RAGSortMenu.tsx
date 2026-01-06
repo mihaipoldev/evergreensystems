@@ -64,7 +64,7 @@ export function RAGSortMenu({
               <div
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
-                className="flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1 -mx-2 hover:bg-accent/30 group"
+                className="flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1 -mx-2 hover:bg-secondary group"
               >
                 <RadioGroupItem
                   value={option.value}

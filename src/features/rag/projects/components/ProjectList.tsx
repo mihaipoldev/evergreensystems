@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
 import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
@@ -9,9 +10,6 @@ import { ProjectGrid } from "./ProjectGrid";
 import { ProjectTable } from "./ProjectTable";
 import { ProjectModal } from "./ProjectModal";
 import type { Project } from "../types";
-import { Input } from "@/components/ui/input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 type ProjectWithCount = Project & { document_count?: number };
 
@@ -119,27 +117,9 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        {/* Left: Search */}
-        <div className="relative w-72">
-          <FontAwesomeIcon
-            icon={faSearch}
-            className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground"
-            style={{ fontSize: '12px', width: '12px', height: '12px' }}
-          />
-          <Input
-            type="text"
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-10 bg-muted/20 shadow-buttons border-0 border-foreground/70"
-          />
-        </div>
-
-        {/* Right: Filter + Sort + View Toggle + Primary Action */}
-        <Toolbar
-          searchPlaceholder=""
-          onSearch={undefined}
+      <Toolbar
+        searchPlaceholder="Search projects..."
+        onSearch={setSearchQuery}
           filterCategories={filterCategories}
           selectedFilters={selectedFilters}
           onFilterApply={handleFilterApply}
@@ -154,14 +134,18 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />
-      </div>
 
       {filteredAndSortedProjects.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground"
+        >
           {initialProjects.length === 0
             ? "No projects. Create one to get started."
             : "No projects found matching your search"}
-        </div>
+        </motion.div>
       ) : viewMode === "grid" ? (
         <ProjectGrid projects={filteredAndSortedProjects} onDelete={handleDelete} />
       ) : (

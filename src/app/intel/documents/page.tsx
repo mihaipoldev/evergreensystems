@@ -26,7 +26,8 @@ export default function DocumentsPage() {
         }
 
         const data = await response.json();
-        setDocuments(data || []);
+        // Handle both response formats: array of documents or { documents: [...] }
+        setDocuments(Array.isArray(data) ? data : (data.documents || []));
       } catch (err) {
         console.error("Error fetching documents:", err);
         setError(err instanceof Error ? err.message : "An error occurred");

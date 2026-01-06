@@ -3,6 +3,7 @@ export type Project = {
   client_name: string;
   slug: string;
   status: 'active' | 'onboarding' | 'delivered' | 'archived';
+  type: 'niche_research' | 'client' | 'internal';
   kb_id: string; // Required - links to workspace KB
   description: string | null;
   metadata: Record<string, any>;

@@ -43,6 +43,14 @@ type Color = {
   value: string; // CSS HSL string
 };
 
+type UserTheme = {
+  id: string;
+  name: string;
+  primary_color_id: string;
+  secondary_color_id: string;
+  accent_color_id: string;
+};
+
 export function AppearanceSettings() {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -53,6 +61,8 @@ export function AppearanceSettings() {
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userThemes, setUserThemes] = useState<UserTheme[]>([]);
+  const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
 
   // Convert database color to component color
   const dbColorToComponent = (dbColor: DatabaseColor): Color => {
@@ -176,6 +186,17 @@ export function AppearanceSettings() {
         const componentColors = (colors || []).map(dbColorToComponent);
         setUserColors(componentColors);
 
+        // Load all user themes
+        const { data: themes, error: themesError } = await (supabase
+          .from("user_themes") as any)
+          .select("id, name, primary_color_id, secondary_color_id, accent_color_id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (!themesError && themes) {
+          setUserThemes(themes);
+        }
+
         // Try to load selected color and fonts from user_settings
         const { data: settings } = await (supabase
           .from("user_settings") as any)
@@ -183,42 +204,107 @@ export function AppearanceSettings() {
           .eq("user_id", user.id)
           .single();
 
+        console.log('[COLOR DEBUG] AppearanceSettings - User settings:', {
+          hasSettings: !!settings,
+          activeThemeId: settings?.active_theme_id || null
+        });
+
         if (settings?.active_theme_id) {
+          console.log('[COLOR DEBUG] AppearanceSettings - Loading active theme:', settings.active_theme_id);
+          setActiveThemeId(settings.active_theme_id);
           const { data: theme } = await (supabase
             .from("user_themes") as any)
             .select("primary_color_id")
             .eq("id", settings.active_theme_id)
             .single();
 
+          console.log('[COLOR DEBUG] AppearanceSettings - Theme loaded:', {
+            hasTheme: !!theme,
+            primaryColorId: theme?.primary_color_id || null
+          });
+
           if (theme) {
             // Load color
             if (theme.primary_color_id) {
+            console.log('[COLOR DEBUG] AppearanceSettings - Loading color:', theme.primary_color_id);
             const { data: color } = await (supabase
               .from("user_colors") as any)
               .select("*")
               .eq("id", theme.primary_color_id)
               .single();
 
+            console.log('[COLOR DEBUG] AppearanceSettings - Color loaded:', {
+              hasColor: !!color,
+              hex: color?.hex || null,
+              name: color?.name || null
+            });
+
             if (color) {
               const selected = dbColorToComponent(color);
               setSelectedColor(selected);
               applyColorToCSS(selected);
-            } else if (componentColors.length > 0) {
-              // Fallback to first color
-              setSelectedColor(componentColors[0]);
-              applyColorToCSS(componentColors[0]);
-              }
-            } else if (componentColors.length > 0) {
-              setSelectedColor(componentColors[0]);
-              applyColorToCSS(componentColors[0]);
+              console.log('[COLOR DEBUG] AppearanceSettings - ✅ Applied color from active theme:', selected.hex);
+            } else {
+              console.log('[COLOR DEBUG] AppearanceSettings - ⚠️ Color not found for theme');
             }
-          } else if (componentColors.length > 0) {
-            setSelectedColor(componentColors[0]);
-            applyColorToCSS(componentColors[0]);
+            // Don't fallback to first color if color not found - let user select manually
+            }
           }
-        } else if (componentColors.length > 0) {
-          setSelectedColor(componentColors[0]);
-          applyColorToCSS(componentColors[0]);
+        } else {
+          console.log('[COLOR DEBUG] AppearanceSettings - No active theme, checking Default Theme...');
+          // No active theme - check if "Default Theme" exists
+          const { data: defaultTheme } = await (supabase
+            .from("user_themes") as any)
+            .select("id, primary_color_id")
+            .eq("user_id", user.id)
+            .eq("name", "Default Theme")
+            .maybeSingle();
+
+          console.log('[COLOR DEBUG] AppearanceSettings - Default Theme check:', {
+            hasDefaultTheme: !!defaultTheme,
+            defaultThemeId: defaultTheme?.id || null,
+            primaryColorId: defaultTheme?.primary_color_id || null
+          });
+
+          if (defaultTheme?.primary_color_id) {
+            console.log('[COLOR DEBUG] AppearanceSettings - Loading color from Default Theme:', defaultTheme.primary_color_id);
+            const { data: color } = await (supabase
+              .from("user_colors") as any)
+              .select("*")
+              .eq("id", defaultTheme.primary_color_id)
+              .single();
+
+            console.log('[COLOR DEBUG] AppearanceSettings - Color from Default Theme:', {
+              hasColor: !!color,
+              hex: color?.hex || null,
+              name: color?.name || null
+            });
+
+            if (color) {
+              const selected = dbColorToComponent(color);
+              setSelectedColor(selected);
+              applyColorToCSS(selected);
+              setActiveThemeId(defaultTheme.id);
+              console.log('[COLOR DEBUG] AppearanceSettings - ✅ Applied color from Default Theme:', selected.hex);
+              
+              // Set this theme as active since it exists
+              await (supabase
+                .from("user_settings") as any)
+                .upsert(
+                  {
+                    user_id: user.id,
+                    active_theme_id: defaultTheme.id,
+                  },
+                  {
+                    onConflict: "user_id",
+                  }
+                );
+              console.log('[COLOR DEBUG] AppearanceSettings - Set Default Theme as active');
+            }
+          } else {
+            console.log('[COLOR DEBUG] AppearanceSettings - ❌ No Default Theme found');
+          }
+          // Don't automatically apply first color - let user select manually
         }
       } catch (error) {
         console.error("Error loading colors:", error);
@@ -233,6 +319,72 @@ export function AppearanceSettings() {
 
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme);
+  };
+
+  const handlePresetChange = async (themeId: string) => {
+    if (!userId) return;
+
+    try {
+      const supabase = createClient();
+
+      // Get the theme to apply its colors
+      const { data: theme } = await (supabase
+        .from("user_themes") as any)
+        .select("primary_color_id, secondary_color_id, accent_color_id")
+        .eq("id", themeId)
+        .single();
+
+      if (!theme) {
+        toast({
+          title: "Theme not found",
+          description: "The selected theme could not be found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Load the primary color
+      const { data: color } = await (supabase
+        .from("user_colors") as any)
+        .select("*")
+        .eq("id", theme.primary_color_id)
+        .single();
+
+      if (color) {
+        const selected = dbColorToComponent(color);
+        setSelectedColor(selected);
+        applyColorToCSS(selected);
+      }
+
+      // Update user_settings with the new active_theme_id
+      const { error: settingsError } = await (supabase
+        .from("user_settings") as any)
+        .upsert(
+          {
+            user_id: userId,
+            active_theme_id: themeId,
+          },
+          {
+            onConflict: "user_id",
+          }
+        );
+
+      if (settingsError) throw settingsError;
+
+      setActiveThemeId(themeId);
+
+      toast({
+        title: "Preset applied",
+        description: "The preset has been successfully applied.",
+      });
+    } catch (error) {
+      console.error("Error switching preset:", error);
+      toast({
+        title: "Failed to switch preset",
+        description: "An error occurred while switching the preset. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleColorChange = async (color: Color) => {
@@ -299,6 +451,20 @@ export function AppearanceSettings() {
         );
 
       if (settingsError) throw settingsError;
+
+      // Update active theme ID state
+      setActiveThemeId(themeId);
+
+      // Reload themes list to ensure it's up to date
+      const { data: updatedThemes } = await (supabase
+        .from("user_themes") as any)
+        .select("id, name, primary_color_id, secondary_color_id, accent_color_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (updatedThemes) {
+        setUserThemes(updatedThemes);
+      }
     } catch (error) {
       console.error("Error saving color preference:", error);
       // Don't show alert for automatic saves, just log the error
@@ -558,6 +724,30 @@ export function AppearanceSettings() {
             </Select>
           </div>
 
+          {/* Preset Section */}
+          {userThemes.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="font-medium">Preset</div>
+                <div className="text-sm text-muted-foreground">Switch between your saved presets</div>
+              </div>
+              <Select value={activeThemeId || ""} onValueChange={handlePresetChange}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Select a preset">
+                    {userThemes.find(t => t.id === activeThemeId)?.name || "Select a preset"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {userThemes.map((theme) => (
+                    <SelectItem key={theme.id} value={theme.id}>
+                      {theme.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Brand Color Section */}
           <div>
             <div className="flex items-center justify-between mb-6">
@@ -602,7 +792,7 @@ export function AppearanceSettings() {
                     onClick={handleAddColor}
                     variant="outline"
                     className={cn(
-                      "relative overflow-hidden group/btn hover:border-primary/50 transition-all duration-300",
+                      "relative overflow-hidden group/btn hover:border-primary/50 hover:bg-secondary hover:text-foreground transition-all duration-300",
                       "w-full sm:w-auto"
                     )}
                   >

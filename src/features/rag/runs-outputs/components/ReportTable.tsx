@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { ReportRow } from "./ReportRow";
 import type { RunOutput } from "../types";
+import { AnimatedTable } from "@/features/rag/shared/components/AnimatedTable";
 
 type ReportWithRun = RunOutput & {
   run?: {
@@ -32,14 +33,19 @@ export function ReportTable({ reports, onView }: ReportTableProps) {
         <div className="w-20 shrink-0 text-right">Actions</div>
       </div>
 
-      {/* Rows */}
-      {reports.map((report) => (
-        <ReportRow
-          key={report.id}
-          report={report}
-          onView={onView ? () => onView(report) : undefined}
-        />
-      ))}
+      {/* Animated Rows */}
+      <AnimatedTable
+        getKey={(_, index) => reports[index]?.id || index}
+        staggerDelay={0.02}
+      >
+        {reports.map((report) => (
+          <ReportRow
+            key={report.id}
+            report={report}
+            onView={onView ? () => onView(report) : undefined}
+          />
+        ))}
+      </AnimatedTable>
     </div>
   );
 }

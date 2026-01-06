@@ -99,11 +99,12 @@ export function ProjectDocumentsList({ projectId, initialDocuments }: ProjectDoc
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredDocuments.map((document) => (
-              <DocumentCard
-                key={document.id}
-                document={document}
-                onDelete={() => handleRemove(document.id)}
-              />
+              <div key={document.id} className="group transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
+                <DocumentCard
+                  document={document}
+                  onDelete={() => handleRemove(document.id)}
+                />
+              </div>
             ))}
           </div>
         )}

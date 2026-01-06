@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileAlt, faDatabase, faClock } from "@fortawesome/free-solid-svg-icons";
+import { faFileAlt, faDatabase, faClock, faExternalLink } from "@fortawesome/free-solid-svg-icons";
 import type { RunOutput } from "../types";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +46,7 @@ export function ReportRow({ report, onView }: ReportRowProps) {
     <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20">
       {/* Icon + Name */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
+        <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
           <FontAwesomeIcon icon={faFileAlt} className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0 flex flex-col h-full justify-center">
@@ -93,8 +93,16 @@ export function ReportRow({ report, onView }: ReportRowProps) {
       </div>
 
       {/* Actions */}
-      <div className="w-20 shrink-0 flex items-center justify-end">
-        {/* Actions menu can be added here if needed */}
+      <div className="w-20 shrink-0 flex items-center justify-end gap-2">
+        <a
+          href={`/reports/${report.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          title="Open standalone report in new tab"
+        >
+          <FontAwesomeIcon icon={faExternalLink} className="h-4 w-4" />
+        </a>
       </div>
     </Card>
   );

@@ -1,78 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import Link from "next/link";
-import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  RAGInput,
+  RAGTextarea,
+  RAGSelect,
+  RAGSelectTrigger,
+  RAGSelectContent,
+  RAGSelectItem,
+  RAGSelectValue,
+} from "@/features/rag/shared/components";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { InputShadow } from "@/components/admin/forms/InputShadow";
-import { TextareaShadow } from "@/components/admin/forms/TextareaShadow";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faBook } from "@fortawesome/free-solid-svg-icons";
+import { faLock, faGlobe } from "@fortawesome/free-solid-svg-icons";
 import type { KnowledgeBase } from "../types";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  kb_type: z.string().optional(),
-  visibility: z.enum(["public", "private"]),
-  is_active: z.boolean(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-type KnowledgeBaseFormProps = {
+interface KnowledgeBaseFormProps {
+  isEdit: boolean;
   initialData?: KnowledgeBase | null;
-  isEdit?: boolean;
   returnTo?: string;
-};
+}
 
-export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: KnowledgeBaseFormProps) {
+export function KnowledgeBaseForm({ isEdit, initialData, returnTo }: KnowledgeBaseFormProps) {
   const router = useRouter();
+  const [name, setName] = useState("");
+  const [type, setType] = useState("");
+  const [description, setDescription] = useState("");
+  const [visibility, setVisibility] = useState<"private" | "public">("private");
+  const [isActive, setIsActive] = useState(true);
+  const [errors, setErrors] = useState<{ name?: string; type?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      description: initialData?.description || "",
-      kb_type: initialData?.kb_type || "",
-      visibility: initialData?.visibility || "private",
-      is_active: initialData?.is_active ?? true,
-    },
-  });
+  // Initialize form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name || "");
+      setType(initialData.kb_type || initialData.type || "");
+      setDescription(initialData.description || "");
+      setVisibility(initialData.visibility || "private");
+      setIsActive(initialData.is_active ?? true);
+    } else {
+      // Reset to defaults for create mode
+      setName("");
+      setType("");
+      setDescription("");
+      setVisibility("private");
+      setIsActive(true);
+    }
+    setErrors({});
+  }, [initialData?.id]);
 
-  const onSubmit = async (values: FormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newErrors: { name?: string; type?: string } = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Knowledge base name is required";
+    }
+    if (!type) {
+      newErrors.type = "Please select a type";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
 
-      const url = isEdit && initialData
-        ? `/api/intel/knowledge-base/${initialData.id}`
+      const url = isEdit
+        ? `/api/intel/knowledge-base/${initialData!.id}`
         : "/api/intel/knowledge-base";
       const method = isEdit ? "PUT" : "POST";
 
@@ -82,7 +90,13 @@ export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: Kno
           "Content-Type": "application/json",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          name,
+          description: description || null,
+          kb_type: type,
+          visibility,
+          is_active: isActive,
+        }),
       });
 
       if (!response.ok) {
@@ -90,18 +104,19 @@ export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: Kno
         throw new Error(error.error || `Failed to ${isEdit ? "update" : "create"} knowledge base`);
       }
 
-      const createdKnowledge = await response.json();
+      const result = await response.json();
       toast.success(`Knowledge base ${isEdit ? "updated" : "created"} successfully`);
       
-      if (isEdit) {
-        const redirectUrl = returnTo || `/intel/knowledge-bases/${initialData?.id}` || "/intel/knowledge-bases";
-        router.push(redirectUrl);
+      if (returnTo) {
+        router.push(returnTo);
+      } else if (isEdit) {
+        router.refresh();
       } else {
-        router.push(`/intel/knowledge-bases/${createdKnowledge.id}`);
+        router.push(`/admin/kb/${result.id}`);
       }
       router.refresh();
     } catch (error: any) {
-      console.error("Error saving knowledge base:", error);
+      console.error(`Error ${isEdit ? "updating" : "creating"} knowledge base:`, error);
       toast.error(error.message || `Failed to ${isEdit ? "update" : "create"} knowledge base`);
     } finally {
       setIsSubmitting(false);
@@ -109,170 +124,133 @@ export function KnowledgeBaseForm({ initialData, isEdit = false, returnTo }: Kno
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-        <div className="rounded-xl bg-card text-card-foreground shadow-lg p-6 md:p-8">
-          <div className="pb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
-                  <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-primary" />
-                </div>
-                <div className="font-medium text-lg">Admin Settings</div>
-              </div>
-              <div className="text-sm text-muted-foreground">Configuration</div>
-            </div>
-
-            <div className="space-y-6">
-              <FormField
-                control={form.control}
-                name="kb_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Knowledge Base Type</FormLabel>
-                    <Select 
-                      onValueChange={(val) => field.onChange(val === "__none__" ? "" : val)} 
-                      value={field.value || "__none__"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">None</SelectItem>
-                        <SelectItem value="support">Support</SelectItem>
-                        <SelectItem value="internal">Internal</SelectItem>
-                        <SelectItem value="workflow">Workflow</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Categorize this knowledge base (e.g., support, internal, workflow)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="visibility"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Visibility <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select visibility" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="private">Private</SelectItem>
-                        <SelectItem value="public">Public</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Control who can access this knowledge base
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="is_active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Active Status</FormLabel>
-                      <FormDescription>
-                        Enable or disable this knowledge base
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="pt-8">
-            <Separator className="mb-8" />
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10 border border-primary/20 w-9 h-9 flex items-center justify-center">
-                  <FontAwesomeIcon icon={faBook} className="h-4 w-4 text-primary" />
-                </div>
-                <div className="font-medium text-lg">Knowledge Base Content</div>
-              </div>
-              <div className="text-sm text-muted-foreground">Basic information</div>
-            </div>
-
-            <div className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Name <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <InputShadow
-                        placeholder="e.g., Product Documentation, Support Knowledge Base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <TextareaShadow
-                        placeholder="Describe what this knowledge base contains..."
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Section: Basic Information */}
+      <div className="space-y-4">
+        {/* Name Field */}
+        <div className="space-y-2">
+          <Label htmlFor="kb-name">
+            Name <span className="text-destructive">*</span>
+          </Label>
+          <RAGInput
+            id="kb-name"
+            placeholder="e.g., Product Documentation"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (errors.name) setErrors({ ...errors, name: undefined });
+            }}
+            error={!!errors.name}
+          />
+          {errors.name && (
+            <p className="text-xs text-destructive">{errors.name}</p>
+          )}
         </div>
 
-        <div className="flex items-center justify-end gap-4 mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-card hover:bg-card/80 h-11 px-6 md:h-10 md:px-4"
-            asChild
-            disabled={isSubmitting}
+        {/* Type Field */}
+        <div className="space-y-2">
+          <Label htmlFor="kb-type">
+            Type <span className="text-destructive">*</span>
+          </Label>
+          <RAGSelect
+            value={type}
+            onValueChange={(value) => {
+              setType(value);
+              if (errors.type) setErrors({ ...errors, type: undefined });
+            }}
           >
-            <Link href={returnTo || (isEdit && initialData ? `/intel/knowledge-bases/${initialData.id}` : "/intel/knowledge-bases")}>Cancel</Link>
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="h-11 px-6 md:h-10 md:px-4">
-            {isSubmitting ? "Saving..." : isEdit ? "Update Knowledge Base" : "Create Knowledge Base"}
-          </Button>
+            <RAGSelectTrigger
+              id="kb-type"
+              error={!!errors.type}
+            >
+              <RAGSelectValue placeholder="Select knowledge base type" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="niche_intelligence">Niche Intelligence</RAGSelectItem>
+              <RAGSelectItem value="support">Contact Support</RAGSelectItem>
+              <RAGSelectItem value="internal">Internal Operations</RAGSelectItem>
+              <RAGSelectItem value="project">Project</RAGSelectItem>
+              <RAGSelectItem value="client">Client</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+          {errors.type && (
+            <p className="text-xs text-destructive">{errors.type}</p>
+          )}
         </div>
-      </form>
-    </Form>
+
+        {/* Description Field */}
+        <div className="space-y-2">
+          <Label htmlFor="kb-description">Description</Label>
+          <RAGTextarea
+            id="kb-description"
+            placeholder="Describe the purpose and contents of this knowledge base..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={6}
+          />
+        </div>
+      </div>
+
+      {/* Section: Access & Status */}
+      <div className="space-y-4">
+        {/* Visibility Field */}
+        <div className="space-y-3 pb-2">
+          <Label>Visibility</Label>
+          <RadioGroup value={visibility} onValueChange={(value) => setVisibility(value as "private" | "public")}>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem className="shadow-icon" value="private" id="visibility-private" />
+              <Label htmlFor="visibility-private" className="font-normal cursor-pointer flex items-center gap-2">
+                <FontAwesomeIcon icon={faLock} className="h-3.5 w-3.5 text-muted-foreground" />
+                Private — Only team members can access
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem className="shadow-icon" value="public" id="visibility-public" />
+              <Label htmlFor="visibility-public" className="font-normal cursor-pointer flex items-center gap-2">
+                <FontAwesomeIcon icon={faGlobe} className="h-3.5 w-3.5 text-muted-foreground" />
+                Public — Anyone with the link can access
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* Active Status Toggle */}
+        <div className="flex items-center justify-between bg-card/80 rounded-lg border border-none shadow-card p-4">
+          <div className="space-y-0.5">
+            <Label htmlFor="kb-active" className="cursor-pointer">Active Status</Label>
+            <p className="text-xs text-muted-foreground">
+              Enable to allow indexing and queries
+            </p>
+          </div>
+          <Switch
+            id="kb-active"
+            checked={isActive}
+            onCheckedChange={setIsActive}
+          />
+        </div>
+      </div>
+
+      {/* Form Actions */}
+      <div className="flex items-center justify-end gap-4 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting
+            ? isEdit
+              ? "Updating..."
+              : "Creating..."
+            : isEdit
+              ? "Update Knowledge Base"
+              : "Create Knowledge Base"}
+        </Button>
+      </div>
+    </form>
   );
 }
 

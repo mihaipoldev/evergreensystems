@@ -124,23 +124,23 @@
     --brand-s: 0;
     --brand-l: 9;
 
-    --background: 0 0% 100%;
+    --background: 0 0% 95%;
     --foreground: 0 0% 4%;
 
-    --card: 0 0% 98%;
+    --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
 
-    --popover: 0 0% 99%;
+    --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
 
-    --muted: 0 0% 94%;
+    --muted: 0 0% 88%;
     --muted-foreground: 0 0% 45.1%;
 
-    --accent: 0 0% 90%;
+    --accent: 0 0% 40%;
     --accent-foreground: 0 0% 9%;
 
     --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --input: 0 0% 80%;
     --input-background: 0 0% 100%;
     --ring: 0 0% 40%;
     --radius: 0.75rem;
@@ -148,16 +148,18 @@
     --primary: var(--brand-h) var(--brand-s) var(--brand-l);
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 9%;
+    --accent: 0 0% 40%;
+    --accent-foreground: 0 0% 9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --sidebar-background: var(--brand-h) 0% 97.5%;
+    --sidebar-background: var(--brand-h) 0% 100%;
     --sidebar-foreground: 0 0% 5%;
     --sidebar-accent:  0 0% 98%;
     --sidebar-accent-foreground: var(--primary);
+    --sidebar-primary: var(--primary);
+    --sidebar-border: var(--border);
 
     --table-background: 0 0% 100%;
     --table-head-background: 0 0% 100%;
@@ -200,8 +202,8 @@
     --primary: var(--brand-h) var(--brand-s) var(--brand-l);
     --primary-foreground: 0 0% 9%;
 
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 96%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 65.8% 50%;
     --destructive-foreground: 0 0% 96%;
@@ -210,6 +212,8 @@
     --sidebar-foreground: 0 0% 96%;
     --sidebar-accent: 0 0% 6%;
     --sidebar-accent-foreground: var(--primary);
+    --sidebar-primary: var(--primary);
+    --sidebar-border: var(--border);
 
     --table-background: 0 0% 8%;
     --table-head-background: 0 0% 8%;
@@ -492,6 +496,15 @@ table tbody tr:hover {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
 @keyframes glow-pulse-small {
   0%, 100% {
     box-shadow: 0 0 15px hsl(var(--primary) / 0.2);
@@ -514,9 +527,9 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px hsl(var(--input-background)) inset !important;
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
   -webkit-text-fill-color: hsl(var(--foreground)) !important;
-  box-shadow: 0 0 0 30px hsl(var(--input-background)) inset !important;
+  box-shadow: 0 0 0 30px transparent inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -524,9 +537,9 @@ input[type="password"]:-webkit-autofill,
 input[type="password"]:-webkit-autofill:hover,
 input[type="password"]:-webkit-autofill:focus,
 input[type="password"]:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px hsl(var(--input-background)) inset !important;
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
   -webkit-text-fill-color: hsl(var(--foreground)) !important;
-  box-shadow: 0 0 0 30px hsl(var(--input-background)) inset !important;
+  box-shadow: 0 0 0 30px transparent inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -866,5 +879,261 @@ input[type="password"]:-webkit-autofill:active {
 
   .shadow-menu {
     box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px;
+  }
+
+  html.preset-admin .font-mono-code,
+  html.preset-admin .font-mono-code * {
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+  }
+
+  /* RAG Drawer z-index override - must appear above modals (z-[100]) */
+  [data-radix-dialog-content].rag-drawer-content[data-state="open"] {
+    z-index: 110 !important;
+  }
+  
+  /* Target the overlay that's a sibling of the drawer content in the same portal */
+  [data-radix-portal]:has([data-radix-dialog-content].rag-drawer-content) [data-radix-dialog-overlay] {
+    z-index: 110 !important;
+  }
+
+  /* Report page utilities */
+  .report-shadow {
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 
+                0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  }
+
+  .report-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 
+                0 4px 6px -4px rgba(15, 23, 42, 0.05);
+  }
+
+  .section-divider {
+    @apply relative;
+  }
+
+  .section-divider::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-16 h-0.5 bg-accent;
+  }
+
+  /* Standalone Report Page - Original Design System */
+  /* Override body font when standalone-report is present - must be very specific */
+  body:has(.standalone-report),
+  body:has(.standalone-report) * {
+    font-family: "Source Sans 3", system-ui, sans-serif !important;
+  }
+
+  .standalone-report {
+    /* Override brand color to match primary (navy) - prevents blue #2263aa from showing */
+    /* Must override BEFORE primary since primary uses brand variables */
+    --brand-h: 222 !important;
+    --brand-s: 47 !important;
+    --brand-l: 11 !important;
+
+    /* Override with original report colors - exact match from example */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Navy Primary - #0f1729 - override computed value directly */
+    --primary: 222 47% 11% !important;
+    --primary-foreground: 210 40% 98% !important;
+
+    /* Warm Gold Accent */
+    --accent: 43 65% 47%;
+    --accent-foreground: 222 47% 11%;
+
+    /* Subtle Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted for subtle backgrounds */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 43 65% 47%;
+
+    /* Smaller border radius for standalone report */
+    --radius: 0.25rem; /* 4px - smaller than example's 0.375rem */
+
+    /* Custom Report Variables - exact from example */
+    --navy-deep: 222 47% 8%;
+    --navy: 222 47% 11%;
+    --navy-light: 222 30% 20%;
+    --gold: 43 65% 47%;
+    --gold-light: 43 50% 65%;
+    --gold-dark: 43 70% 35%;
+    --cream: 40 33% 97%;
+    --slate: 220 9% 46%;
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 43 65% 47%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 222 30% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 43 65% 47%;
+
+    /* Original report fonts - override landing page fonts */
+    --font-display: "Playfair Display", Georgia, serif !important;
+    --font-body: "Source Sans 3", system-ui, sans-serif !important;
+
+    /* Apply body font to the entire container - use double quotes to match Google Fonts */
+    font-family: "Source Sans 3", system-ui, sans-serif !important;
+  }
+
+  /* Override Tailwind rounded utilities for smaller radius */
+  .standalone-report .rounded-sm {
+    border-radius: 0.125rem !important; /* 2px */
+  }
+
+  .standalone-report .rounded {
+    border-radius: 0.1rem !important; /* 4px */
+  }
+
+  .standalone-report .rounded-md {
+    border-radius: 0.25rem !important; /* 6px */
+  }
+
+  .standalone-report .rounded-lg {
+    border-radius: 0.375rem !important; /* 8px */
+  }
+
+  .standalone-report .rounded-xl {
+    border-radius: 0.625rem !important; /* 10px */
+  }
+
+  .standalone-report .rounded-2xl {
+    border-radius: 0.75rem !important; /* 12px */
+  }
+
+  .standalone-report .rounded-3xl {
+    border-radius: 0.875rem !important; /* 14px */
+  }
+
+  /* Keep rounded-full as is for circles */
+  .standalone-report .rounded-full {
+    border-radius: 9999px !important;
+  }
+
+  /* Force primary color overrides - directly override any blue #2263aa with navy #0f1729 */
+  /* Use simple class selectors only to avoid Tailwind processing issues */
+  .standalone-report .bg-primary {
+    background-color: hsl(222 47% 11%) !important;
+    background: hsl(222 47% 11%) !important;
+  }
+
+  /* Override primary text color - single selector to avoid Tailwind processing issues */
+  .standalone-report .text-primary {
+    color: hsl(222 47% 11%) !important;
+  }
+
+  .standalone-report .text-primary-foreground {
+    color: hsl(210 40% 98%) !important;
+  }
+
+  .standalone-report .border-primary {
+    border-color: hsl(222 47% 11%) !important;
+  }
+
+  /* Apply display font to all headings */
+  .standalone-report h1,
+  .standalone-report h2,
+  .standalone-report h3,
+  .standalone-report h4,
+  .standalone-report h5,
+  .standalone-report h6,
+  .standalone-report .font-display {
+    font-family: 'Playfair Display', Georgia, serif !important;
+  }
+
+  /* Apply body font to all text elements - override landing page fonts and Tailwind utilities */
+  /* Override Tailwind font utilities - use double quotes to match Google Fonts exactly */
+  .standalone-report .font-sans,
+  .standalone-report [class*="font-"]:not(.font-display) {
+    font-family: ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji" !important;
+  }
+
+  /* Use universal selector to catch everything, then override specific elements */
+  .standalone-report *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(.font-display) {
+    font-family: ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji" !important;
+  }
+
+  /* Specific overrides for common elements - use double quotes */
+  .standalone-report p,
+  .standalone-report span,
+  .standalone-report div,
+  .standalone-report li,
+  .standalone-report td,
+  .standalone-report th,
+  .standalone-report button,
+  .standalone-report a,
+  .standalone-report label,
+  .standalone-report input,
+  .standalone-report textarea,
+  .standalone-report select,
+  .standalone-report .font-body,
+  .standalone-report main,
+  .standalone-report aside,
+  .standalone-report section,
+  .standalone-report article,
+  .standalone-report header,
+  .standalone-report footer,
+  .standalone-report small,
+  .standalone-report strong,
+  .standalone-report em,
+  .standalone-report b,
+  .standalone-report i,
+  .standalone-report u {
+    font-family: ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji" !important;
+  }
+
+  .standalone-report.dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 96%;
+    --primary: 210 40% 96%;
+    --primary-foreground: 222 47% 11%;
+    --accent: 43 65% 47%;
+    --secondary: 222 30% 15%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 222 30% 15%;
+    --muted-foreground: 220 9% 60%;
+    --border: 222 30% 18%;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-accent: 222 30% 12%;
+  }
+
+  /* Print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    .print-break {
+      page-break-before: always;
+    }
+
+    body {
+      font-size: 11pt;
+    }
+
+    .sidebar {
+      display: none;
+    }
   }
 }

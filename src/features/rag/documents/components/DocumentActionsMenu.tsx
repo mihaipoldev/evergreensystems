@@ -3,7 +3,7 @@
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faEllipsisVertical,
+  faEllipsis,
   faEye,
   faDownload,
   faTrash,
@@ -58,11 +58,11 @@ export function DocumentActionsMenu({
       trigger={
         <button
           onClick={(e) => e.stopPropagation()}
-          className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:shadow-icon transition-all cursor-pointer"
+          className="h-9 w-9 rounded-full hover:text-primary flex items-center justify-center shrink-0 cursor-pointer transition-all"
         >
           <FontAwesomeIcon
-            icon={faEllipsisVertical}
-            className="h-4 w-4 text-foreground"
+            icon={faEllipsis}
+            className="h-4 w-4"
           />
         </button>
       }

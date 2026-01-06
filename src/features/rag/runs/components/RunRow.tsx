@@ -9,7 +9,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faDatabase, faClock } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faDatabase, faClock, faExternalLink } from "@fortawesome/free-solid-svg-icons";
+import { Button } from "@/components/ui/button";
 import type { Run } from "../types";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,7 @@ export function RunRow({ run, onView }: RunRowProps) {
     <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20">
       {/* Icon + Name */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
+        <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
           <FontAwesomeIcon icon={faPlay} className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0 flex flex-col h-full justify-center">
@@ -101,7 +102,23 @@ export function RunRow({ run, onView }: RunRowProps) {
 
       {/* Actions */}
       <div className="w-20 shrink-0 flex items-center justify-end">
-        {/* Actions menu can be added here if needed */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 hover:bg-accent hover:scale-105 transition-all"
+              onClick={() => {
+                window.open(`/intel/runs/${run.id}/result`, '_blank');
+              }}
+            >
+              <FontAwesomeIcon icon={faExternalLink} className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>See result</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </Card>
   );

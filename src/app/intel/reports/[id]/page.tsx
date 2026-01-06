@@ -1,11 +1,20 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { createServiceRoleClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { ReportHeader } from "@/features/rag/reports/components/layout/ReportHeader";
+import { ReportLayout } from "@/features/rag/reports/components/layout/ReportLayout";
+import { NicheReport } from "@/features/rag/reports/components/niche/NicheReport";
+import { getReportData } from "@/features/rag/reports/data/getReportData";
 
-export const dynamic = "force-dynamic";
+const sections = [
+  { id: "niche-profile", number: "01", title: "Niche Profile" },
+  { id: "buyer-psychology", number: "02", title: "Buyer Psychology" },
+  { id: "value-dynamics", number: "03", title: "Value Dynamics" },
+  { id: "lead-gen-strategy", number: "04", title: "Lead Gen Strategy" },
+  { id: "targeting-strategy", number: "05", title: "Targeting Strategy" },
+  { id: "offer-angles", number: "06", title: "Offer Angles" },
+  { id: "outbound-approach", number: "07", title: "Outbound Approach" },
+  { id: "positioning-intel", number: "08", title: "Positioning Intel" },
+  { id: "messaging-inputs", number: "09", title: "Messaging Inputs" },
+];
 
 type ReportPageProps = {
   params: Promise<{ id: string }>;
@@ -13,62 +22,51 @@ type ReportPageProps = {
 
 export default async function ReportPage({ params }: ReportPageProps) {
   const { id } = await params;
-  const supabase = createServiceRoleClient();
+  const { data: reportData, error } = await getReportData(id);
 
-  const { data: runOutput, error } = await supabase
-    .from("rag_run_outputs")
-    .select("*")
-    .eq("id", id)
-    .single();
+  if (error === "Unauthorized") {
+    return (
+      <ReportLayout sections={sections} showTableOfContents={false} reportId={id}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <p className="text-destructive font-body text-lg mb-2">Unauthorized</p>
+            <p className="text-muted-foreground font-body">Please log in to view this report</p>
+          </div>
+        </div>
+      </ReportLayout>
+    );
+  }
 
-  if (error || !runOutput) {
+  if (error || !reportData) {
     notFound();
   }
 
-  // Parse output JSON if it's a string
-  let outputData: any = (runOutput as any).output_json || {};
+  // Build sections array dynamically to include research_links if present
+  const allSections = reportData.data.research_links
+    ? [...sections, { id: "research-links", number: "10", title: "Research Links" }]
+    : sections;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <Button variant="ghost" asChild>
-            <Link href="/intel/dashboard">
-              <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        </div>
+    <ReportLayout sections={allSections} showTableOfContents={false} reportId={id}>
+      <ReportHeader
+        nicheName={reportData.meta.input.niche_name}
+        geo={reportData.meta.input.geo}
+        generatedAt={reportData.meta.generated_at}
+        confidence={reportData.meta.confidence}
+      />
 
-        <div className="rounded-xl bg-card border border-border shadow-lg p-6 md:p-8">
-          <h1 className="text-3xl font-bold text-foreground mb-6">Report Output</h1>
+      <NicheReport data={reportData} />
           
-          {(runOutput as any).markdown_storage_path ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
-              <p className="text-muted-foreground">
-                Markdown content available at: {(runOutput as any).markdown_storage_path}
-              </p>
-              {/* TODO: Fetch and display markdown content if available */}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                {JSON.stringify(outputData, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          <div className="mt-6 pt-6 border-t border-border flex items-center gap-4">
-            <Button variant="outline" asChild>
-              <a href="#" onClick={(e) => { e.preventDefault(); window.print(); }}>
-                Print
-              </a>
-            </Button>
-            {/* TODO: Add PDF download functionality */}
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Footer */}
+      <footer className="mt-16 pt-8 border-t border-border text-center">
+        <p className="text-sm text-muted-foreground font-body">
+          Generated on {reportData.meta.generated_at} • Confidence:{" "}
+          {(reportData.meta.confidence * 100).toFixed(0)}%
+        </p>
+        <p className="text-xs text-muted-foreground/60 font-body mt-2">
+          Niche Intelligence Report • Lead Generation Targeting Mode
+        </p>
+      </footer>
+    </ReportLayout>
   );
 }
-

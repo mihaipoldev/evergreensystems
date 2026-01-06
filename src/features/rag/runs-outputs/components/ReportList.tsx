@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
 import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
 import { ReportTable } from "./ReportTable";
@@ -53,11 +54,16 @@ export function ReportList({ initialReports }: ReportListProps) {
       />
 
       {filteredReports.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground"
+        >
           {initialReports.length === 0
             ? "No reports found."
             : "No reports found matching your search"}
-        </div>
+        </motion.div>
       ) : (
         <ReportTable reports={filteredReports} />
       )}

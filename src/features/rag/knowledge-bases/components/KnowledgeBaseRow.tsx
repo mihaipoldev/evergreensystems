@@ -53,7 +53,7 @@ export function KnowledgeBaseRow({
     <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20">
       {/* Icon + Name */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
+        <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
           <FontAwesomeIcon
             icon={faDatabase}
             className="h-4 w-4 text-primary"

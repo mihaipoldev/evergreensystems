@@ -5,6 +5,8 @@ export type RunStatus = "queued" | "collecting" | "ingesting" | "generating" | "
 export type Run = {
   id: string;
   knowledge_base_id: string;
+  workflow_id?: string | null;
+  subject_id?: string | null;
   run_type: RunType;
   input: Record<string, any>; // JSONB - stores { niche_name, geo, notes } and other inputs
   status: RunStatus;

@@ -22,16 +22,19 @@ import {
   RAGSelectItem,
   RAGSelectValue,
   RAGModal,
+  LockedInput,
 } from "@/features/rag/shared/components";
-import { uploadDocument } from "../document-api";
+import { uploadDocument, linkDocumentsToProject } from "../document-api";
 import { cn } from "@/lib/utils";
 import type { RAGDocument } from "../document-types";
+import { LinkDocumentsList } from "./LinkDocumentsList";
 
 type DocumentModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   knowledgeBaseId?: string;
   knowledgeBaseName?: string;
+  projectId?: string; // New: required when sourceType is "link"
   onSuccess: (document: RAGDocument) => void;
 };
 
@@ -45,9 +48,10 @@ export function DocumentModal({
   onOpenChange,
   knowledgeBaseId,
   knowledgeBaseName,
+  projectId,
   onSuccess,
 }: DocumentModalProps) {
-  const [sourceType, setSourceType] = useState<"file" | "url" | "text">("file");
+  const [sourceType, setSourceType] = useState<"file" | "url" | "text" | "link">("file");
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [textContent, setTextContent] = useState("");
@@ -56,6 +60,7 @@ export function DocumentModal({
   const [selectedKBId, setSelectedKBId] = useState<string>(knowledgeBaseId || "");
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [loadingKBs, setLoadingKBs] = useState(false);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [errors, setErrors] = useState<{
     source?: string;
     kb?: string;
@@ -203,6 +208,13 @@ export function DocumentModal({
       newErrors.source = "Please enter some text content";
       console.log("[DEBUG] DocumentModal: Validation error - no text content");
     }
+    if (sourceType === "link") {
+      if (!projectId) {
+        newErrors.source = "Project ID is required for linking documents";
+      } else if (selectedDocumentIds.length === 0) {
+        newErrors.source = "Please select at least one document to link";
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       console.log("[DEBUG] DocumentModal: Validation failed", { newErrors });
@@ -210,9 +222,34 @@ export function DocumentModal({
       return;
     }
 
-    console.log("[DEBUG] DocumentModal: Starting upload...");
+    console.log("[DEBUG] DocumentModal: Starting submit...");
     setIsSubmitting(true);
     try {
+      // Handle linking documents
+      if (sourceType === "link" && projectId && selectedDocumentIds.length > 0) {
+        console.log("[DEBUG] DocumentModal: Linking documents", {
+          projectId,
+          documentIds: selectedDocumentIds,
+        });
+        
+        const result = await linkDocumentsToProject(projectId, selectedDocumentIds);
+        
+        if (!result.success) {
+          throw new Error(result.error || "Failed to link documents");
+        }
+
+        console.log("[DEBUG] DocumentModal: ✅ Link successful");
+        toast.success(
+          `Successfully linked ${selectedDocumentIds.length} ${selectedDocumentIds.length === 1 ? "document" : "documents"}`
+        );
+        handleClose();
+        // Call onSuccess with a dummy document for compatibility
+        // The actual documents will be updated via real-time subscription
+        onSuccess({} as RAGDocument);
+        return;
+      }
+
+      // Handle upload (file, url, text)
       // Use knowledgeBaseId if provided, otherwise use selectedKBId
       const kbId = knowledgeBaseId || selectedKBId;
       console.log("[DEBUG] DocumentModal: Uploading document", {
@@ -269,8 +306,8 @@ export function DocumentModal({
       handleClose();
       onSuccess(result.document);
     } catch (error: any) {
-      console.error("[DEBUG] DocumentModal: ❌ Error uploading document:", error);
-      toast.error(error.message || "Failed to upload document");
+      console.error("[DEBUG] DocumentModal: ❌ Error:", error);
+      toast.error(error.message || "Failed to process request");
     } finally {
       setIsSubmitting(false);
     }
@@ -282,6 +319,7 @@ export function DocumentModal({
     setUrl("");
     setTextContent("");
     setShouldChunk(true);
+    setSelectedDocumentIds([]);
     setErrors({});
     setIsDragging(false);
     // Reset selectedKBId only if not provided via prop (when opened from documents page)
@@ -309,9 +347,15 @@ export function DocumentModal({
           <Button
             className="shadow-buttons border-none"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (sourceType === "link" && selectedDocumentIds.length === 0)}
           >
-            {isSubmitting ? "Uploading..." : "Upload Document"}
+            {isSubmitting
+              ? sourceType === "link"
+                ? "Linking..."
+                : "Uploading..."
+              : sourceType === "link"
+              ? "Link Documents"
+              : "Upload Document"}
           </Button>
         </>
       }
@@ -319,15 +363,10 @@ export function DocumentModal({
       <div className="space-y-6">
         {/* Knowledge Base */}
         {knowledgeBaseId ? (
-          <div className="space-y-2">
-            <Label className="text-muted-foreground">Knowledge Base</Label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
-              <span className="text-sm font-medium">{currentKBName}</span>
-              <Badge variant="secondary" className="ml-auto text-xs">
-                Locked
-              </Badge>
-            </div>
-          </div>
+          <LockedInput
+            label="Knowledge Base"
+            value={currentKBName}
+          />
         ) : (
           <div className="space-y-2">
             <Label htmlFor="kb-select">
@@ -368,9 +407,13 @@ export function DocumentModal({
           </Label>
           <RadioGroup
             value={sourceType}
-            onValueChange={(value: "file" | "url" | "text") => {
+            onValueChange={(value: "file" | "url" | "text" | "link") => {
               setSourceType(value);
               setIsDragging(false);
+              // Clear selected documents when switching away from link
+              if (value !== "link") {
+                setSelectedDocumentIds([]);
+              }
               if (errors.source) setErrors({ ...errors, source: undefined });
             }}
             className="flex gap-4"
@@ -387,6 +430,14 @@ export function DocumentModal({
                 Text
               </Label>
             </div>
+            {projectId && (
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="link" id="source-link" />
+                <Label htmlFor="source-link" className="font-normal cursor-pointer">
+                  Link Document
+                </Label>
+              </div>
+            )}
           </RadioGroup>
 
           {/* File Upload Area */}
@@ -494,32 +545,46 @@ export function DocumentModal({
             </div>
           )}
 
+          {/* Link Documents List */}
+          {sourceType === "link" && projectId && knowledgeBaseId && (
+            <div className="space-y-2">
+              <LinkDocumentsList
+                projectId={projectId}
+                kbId={knowledgeBaseId}
+                onSelectionChange={setSelectedDocumentIds}
+                selectedDocumentIds={selectedDocumentIds}
+              />
+            </div>
+          )}
+
           {errors.source && (
             <p className="text-xs text-destructive">{errors.source}</p>
           )}
         </div>
 
-        {/* Should Chunk */}
-        <div className="space-y-3 pb-2">
-          <Label>Should Chunk</Label>
-          <RadioGroup
-            value={shouldChunk ? "yes" : "no"}
-            onValueChange={(value) => setShouldChunk(value === "yes")}
-          >
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem className="shadow-icon" value="yes" id="should-chunk-yes" />
-              <Label htmlFor="should-chunk-yes" className="font-normal cursor-pointer">
-                Yes — Document will be chunked for better retrieval
-              </Label>
-            </div>
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem className="shadow-icon" value="no" id="should-chunk-no" />
-              <Label htmlFor="should-chunk-no" className="font-normal cursor-pointer">
-                No — Document will not be chunked
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
+        {/* Should Chunk - Hide when linking documents */}
+        {sourceType !== "link" && (
+          <div className="space-y-3 pb-2">
+            <Label>Should Chunk</Label>
+            <RadioGroup
+              value={shouldChunk ? "yes" : "no"}
+              onValueChange={(value) => setShouldChunk(value === "yes")}
+            >
+              <div className="flex items-center space-x-3">
+                <RadioGroupItem className="shadow-icon" value="yes" id="should-chunk-yes" />
+                <Label htmlFor="should-chunk-yes" className="font-normal cursor-pointer">
+                  Yes — Document will be chunked for better retrieval
+                </Label>
+              </div>
+              <div className="flex items-center space-x-3">
+                <RadioGroupItem className="shadow-icon" value="no" id="should-chunk-no" />
+                <Label htmlFor="should-chunk-no" className="font-normal cursor-pointer">
+                  No — Document will not be chunked
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+        )}
 
       </div>
     </RAGModal>

@@ -170,9 +170,14 @@ export async function proxy(request: NextRequest) {
             .eq("user_id", user.id)
             .maybeSingle();
           settings = result.data;
+          console.log('[COLOR DEBUG] User settings loaded:', {
+            hasSettings: !!settings,
+            activeThemeId: settings?.active_theme_id || null
+          });
         } catch (error) {
           // If query fails, continue without settings
           settings = null;
+          console.error('[COLOR DEBUG] Error loading user settings:', error);
         }
 
         let colorInjection = "";
@@ -182,6 +187,7 @@ export async function proxy(request: NextRequest) {
         let colorHslValues: { h: string; s: string; l: string; primary: string } | null = null;
 
         if (settings?.active_theme_id) {
+          console.log('[COLOR DEBUG] Active theme ID found:', settings.active_theme_id);
           // Get theme with primary color and fonts - with error handling
           let theme = null;
           try {
@@ -191,13 +197,20 @@ export async function proxy(request: NextRequest) {
               .eq("id", settings.active_theme_id)
               .single();
             theme = result.data;
+            console.log('[COLOR DEBUG] Theme loaded:', {
+              hasTheme: !!theme,
+              primaryColorId: theme?.primary_color_id || null
+            });
           } catch (error) {
             // If query fails, continue without theme
             theme = null;
+            console.error('[COLOR DEBUG] Error loading theme:', error);
           }
 
           // Handle color
+          let colorApplied = false;
           if (theme?.primary_color_id) {
+            console.log('[COLOR DEBUG] Loading color from theme:', theme.primary_color_id);
             // Get color details - with error handling
             let color = null;
             try {
@@ -207,12 +220,20 @@ export async function proxy(request: NextRequest) {
                 .eq("id", theme.primary_color_id)
                 .single();
               color = result.data;
+              console.log('[COLOR DEBUG] Color loaded from theme:', {
+                hasColor: !!color,
+                hex: color?.hex || null,
+                hsl: color ? `${color.hsl_h} ${color.hsl_s}% ${color.hsl_l}%` : null
+              });
             } catch (error) {
               // If query fails, continue without color
               color = null;
+              console.error('[COLOR DEBUG] Error loading color from theme:', error);
             }
 
             if (color) {
+              colorApplied = true;
+              console.log('[COLOR DEBUG] ✅ Applying color from active theme');
               const primaryValue = `${color.hsl_h} ${color.hsl_s}% ${color.hsl_l}%`;
               
               // Set cookie for instant access on next page load
@@ -261,8 +282,12 @@ export async function proxy(request: NextRequest) {
               const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
               const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;
+              colorApplied = true;
             }
           }
+          
+          // If active theme doesn't exist or color not found, fallback to Default Theme
+          if (!colorApplied) {
 
           // Handle fonts - always use geist-sans for admin (static font)
           // No need to check theme?.font_family since we always use the same font
@@ -278,80 +303,343 @@ export async function proxy(request: NextRequest) {
           } catch {
             // Silently ignore font injection errors
           }
-        } else {
-          // No active theme - check if user has colors and auto-create default theme
-          let userColor = null;
-          try {
-            // Get the most recent color for the user
-            const result = await (supabase
-              .from("user_colors") as any)
-              .select("id, hsl_h, hsl_s, hsl_l, hex")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            userColor = result.data;
-          } catch (error) {
-            // If query fails, continue without color
-            userColor = null;
-          }
-
-          if (userColor) {
-            // Create a default theme with this color
+          
+          // If active theme doesn't exist or color not found, fallback to Default Theme
+          if (!colorApplied) {
+            console.log('[COLOR DEBUG] ⚠️ Active theme color not applied, checking fallbacks...');
+            // Check if "Default Theme" exists
+            let defaultTheme = null;
+            let userColor = null;
+            
             try {
-              const defaultFontJson = serializeFontFamily(getDefaultFontFamily());
-              
-              // Check if default theme already exists
-              const { data: existingTheme } = await (supabase
+              // Check if "Default Theme" exists
+              const themeResult = await (supabase
                 .from("user_themes") as any)
-                .select("id")
+                .select("id, primary_color_id")
                 .eq("user_id", user.id)
                 .eq("name", "Default Theme")
                 .maybeSingle();
+              defaultTheme = themeResult.data;
+              console.log('[COLOR DEBUG] Default Theme check:', {
+                hasDefaultTheme: !!defaultTheme,
+                defaultThemeId: defaultTheme?.id || null,
+                primaryColorId: defaultTheme?.primary_color_id || null
+              });
+            } catch (error) {
+              // If query fails, continue without theme
+              defaultTheme = null;
+              console.error('[COLOR DEBUG] Error checking Default Theme:', error);
+            }
 
-              let themeId: string;
-              if (existingTheme) {
-                // Update existing theme
-                const { error: updateError } = await (supabase
-                  .from("user_themes") as any)
-                  .update({
-                    primary_color_id: userColor.id,
-                    secondary_color_id: userColor.id,
-                    accent_color_id: userColor.id,
-                  })
-                  .eq("id", existingTheme.id);
-                if (updateError) throw updateError;
-                themeId = existingTheme.id;
-              } else {
-                // Create new default theme
-                const { data: newTheme, error: themeError } = await (supabase
-                  .from("user_themes") as any)
-                  .insert({
-                    user_id: user.id,
-                    name: "Default Theme",
-                    primary_color_id: userColor.id,
-                    secondary_color_id: userColor.id,
-                    accent_color_id: userColor.id,
-                    font_family: defaultFontJson,
-                  })
-                  .select("id")
+            // If Default Theme exists, use its primary color
+            if (defaultTheme?.primary_color_id) {
+              console.log('[COLOR DEBUG] Loading color from Default Theme:', defaultTheme.primary_color_id);
+              try {
+                const colorResult = await (supabase
+                  .from("user_colors") as any)
+                  .select("id, hsl_h, hsl_s, hsl_l, hex")
+                  .eq("id", defaultTheme.primary_color_id)
                   .single();
-                if (themeError) throw themeError;
-                themeId = newTheme.id;
+                userColor = colorResult.data;
+                console.log('[COLOR DEBUG] Color loaded from Default Theme:', {
+                  hasColor: !!userColor,
+                  hex: userColor?.hex || null,
+                  hsl: userColor ? `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%` : null
+                });
+                
+                // Also set this theme as active since it exists
+                try {
+                  await (supabase
+                    .from("user_settings") as any)
+                    .upsert(
+                      {
+                        user_id: user.id,
+                        active_theme_id: defaultTheme.id,
+                      },
+                      {
+                        onConflict: "user_id",
+                      }
+                    );
+                  console.log('[COLOR DEBUG] Set Default Theme as active');
+                } catch {
+                  // Silently ignore if update fails
+                  console.error('[COLOR DEBUG] Failed to set Default Theme as active');
+                }
+              } catch (error) {
+                // If color query fails, continue without color
+                userColor = null;
+                console.error('[COLOR DEBUG] Error loading color from Default Theme:', error);
               }
-
-              // Update user_settings to set active theme
-              await (supabase
-                .from("user_settings") as any)
-                .upsert(
-                  {
-                    user_id: user.id,
-                    active_theme_id: themeId,
-                  },
-                  {
-                    onConflict: "user_id",
+            }
+            
+            // If no Default Theme or its color not found, check cookies for last applied color
+            if (!userColor) {
+              console.log('[COLOR DEBUG] No Default Theme color, checking cookies...');
+              try {
+                // Check if we have a color saved in cookies (from previous page load)
+                const cookieColorHsl = request.cookies.get('primary-color-hsl')?.value;
+                console.log('[COLOR DEBUG] Cookie value:', cookieColorHsl || 'not found');
+                if (cookieColorHsl) {
+                  // Parse HSL from cookie (format: "H S% L%")
+                  const hslMatch = cookieColorHsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+                  if (hslMatch) {
+                    const [, h, s, l] = hslMatch;
+                    console.log('[COLOR DEBUG] Parsed HSL from cookie:', { h, s, l });
+                    // Find the color in database that matches this HSL
+                    const result = await (supabase
+                      .from("user_colors") as any)
+                      .select("id, hsl_h, hsl_s, hsl_l, hex")
+                      .eq("user_id", user.id)
+                      .eq("hsl_h", parseInt(h))
+                      .eq("hsl_s", parseInt(s))
+                      .eq("hsl_l", parseInt(l))
+                      .maybeSingle();
+                    userColor = result.data;
+                    console.log('[COLOR DEBUG] Color from cookie:', {
+                      hasColor: !!userColor,
+                      hex: userColor?.hex || null
+                    });
                   }
-                );
+                }
+              } catch (error) {
+                // If cookie check fails, continue without color
+                userColor = null;
+                console.error('[COLOR DEBUG] Error checking cookies:', error);
+              }
+            }
+            
+            // Only as absolute last resort, don't fallback to first color
+            // Let the user select a color manually instead
+            if (!userColor) {
+              console.log('[COLOR DEBUG] ❌ No color found - user must select manually');
+            }
+
+            if (userColor) {
+              console.log('[COLOR DEBUG] ✅ Applying fallback color:', {
+                hex: userColor.hex,
+                hsl: `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%`,
+                source: defaultTheme ? 'Default Theme' : 'Cookie'
+              });
+              const primaryValue = `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%`;
+              
+              // Set cookie for instant access on next page load
+              try {
+                const expires = new Date();
+                expires.setFullYear(expires.getFullYear() + 1);
+                supabaseResponse.cookies.set('primary-color-hsl', primaryValue, {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                // Also set brand color variables in cookie
+                supabaseResponse.cookies.set('brand-color-h', userColor.hsl_h.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-s', userColor.hsl_s.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                supabaseResponse.cookies.set('brand-color-l', userColor.hsl_l.toString(), {
+                  expires: expires,
+                  path: '/',
+                  sameSite: 'lax',
+                });
+                console.log('[COLOR DEBUG] Cookie set for next page load');
+              } catch {
+                // Silently ignore cookie setting errors - non-critical
+                console.error('[COLOR DEBUG] Failed to set cookie');
+              }
+              
+              // Inject style tag AND blocking script as the ABSOLUTE FIRST thing in head
+              const hslH = String(userColor.hsl_h);
+              const hslS = String(userColor.hsl_s);
+              const hslL = String(userColor.hsl_l);
+              
+              // Store values for inline HTML injection
+              colorHslValues = { h: hslH, s: hslS, l: hslL, primary: primaryValue };
+              htmlInlineStyle = ` style="--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;"`;
+              
+              // Build CSS string safely
+              const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
+              // Use immediate execution - set colors before any CSS loads
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
+              const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
+              colorInjection = blockingScript + styleTag;
+            }
+          }
+        } else {
+          console.log('[COLOR DEBUG] ⚠️ No active theme ID in settings');
+          // No active theme - first check if "Default Theme" exists (even if not set as active)
+          let defaultTheme = null;
+          let userColor = null;
+          
+          try {
+            // Check if "Default Theme" exists
+            const themeResult = await (supabase
+              .from("user_themes") as any)
+              .select("id, primary_color_id")
+              .eq("user_id", user.id)
+              .eq("name", "Default Theme")
+              .maybeSingle();
+            defaultTheme = themeResult.data;
+            console.log('[COLOR DEBUG] Default Theme check (no active theme):', {
+              hasDefaultTheme: !!defaultTheme,
+              defaultThemeId: defaultTheme?.id || null,
+              primaryColorId: defaultTheme?.primary_color_id || null
+            });
+          } catch (error) {
+            // If query fails, continue without theme
+            defaultTheme = null;
+            console.error('[COLOR DEBUG] Error checking Default Theme:', error);
+          }
+
+          // If Default Theme exists, use its primary color
+          if (defaultTheme?.primary_color_id) {
+            console.log('[COLOR DEBUG] Loading color from Default Theme:', defaultTheme.primary_color_id);
+            try {
+              const colorResult = await (supabase
+                .from("user_colors") as any)
+                .select("id, hsl_h, hsl_s, hsl_l, hex")
+                .eq("id", defaultTheme.primary_color_id)
+                .single();
+              userColor = colorResult.data;
+              console.log('[COLOR DEBUG] Color loaded from Default Theme:', {
+                hasColor: !!userColor,
+                hex: userColor?.hex || null,
+                hsl: userColor ? `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%` : null
+              });
+              
+              // Also set this theme as active since it exists
+              try {
+                await (supabase
+                  .from("user_settings") as any)
+                  .upsert(
+                    {
+                      user_id: user.id,
+                      active_theme_id: defaultTheme.id,
+                    },
+                    {
+                      onConflict: "user_id",
+                    }
+                  );
+                console.log('[COLOR DEBUG] Set Default Theme as active');
+              } catch {
+                // Silently ignore if update fails
+                console.error('[COLOR DEBUG] Failed to set Default Theme as active');
+              }
+            } catch (error) {
+              // If color query fails, continue without color
+              userColor = null;
+              console.error('[COLOR DEBUG] Error loading color from Default Theme:', error);
+            }
+          }
+          
+          // If no Default Theme or its color not found, check cookies for last applied color
+          if (!userColor) {
+            console.log('[COLOR DEBUG] No Default Theme color, checking cookies...');
+            try {
+              // Check if we have a color saved in cookies (from previous page load)
+              const cookieColorHsl = request.cookies.get('primary-color-hsl')?.value;
+              console.log('[COLOR DEBUG] Cookie value:', cookieColorHsl || 'not found');
+              if (cookieColorHsl) {
+                // Parse HSL from cookie (format: "H S% L%")
+                const hslMatch = cookieColorHsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+                if (hslMatch) {
+                  const [, h, s, l] = hslMatch;
+                  console.log('[COLOR DEBUG] Parsed HSL from cookie:', { h, s, l });
+                  // Find the color in database that matches this HSL
+                  const result = await (supabase
+                    .from("user_colors") as any)
+                    .select("id, hsl_h, hsl_s, hsl_l, hex")
+                    .eq("user_id", user.id)
+                    .eq("hsl_h", parseInt(h))
+                    .eq("hsl_s", parseInt(s))
+                    .eq("hsl_l", parseInt(l))
+                    .maybeSingle();
+                  userColor = result.data;
+                  console.log('[COLOR DEBUG] Color from cookie:', {
+                    hasColor: !!userColor,
+                    hex: userColor?.hex || null
+                  });
+                }
+              }
+            } catch (error) {
+              // If cookie check fails, continue without color
+              userColor = null;
+              console.error('[COLOR DEBUG] Error checking cookies:', error);
+            }
+          }
+          
+          // Only as absolute last resort, don't fallback to first color
+          // Let the user select a color manually instead
+          if (!userColor) {
+            console.log('[COLOR DEBUG] ❌ No color found - user must select manually');
+          }
+
+          if (userColor) {
+            // Only create/update default theme if we didn't already find one
+            if (!defaultTheme) {
+              try {
+                const defaultFontJson = serializeFontFamily(getDefaultFontFamily());
+                
+                // Check if default theme already exists
+                const { data: existingTheme } = await (supabase
+                  .from("user_themes") as any)
+                  .select("id")
+                  .eq("user_id", user.id)
+                  .eq("name", "Default Theme")
+                  .maybeSingle();
+
+                let themeId: string;
+                if (existingTheme) {
+                  // Update existing theme
+                  const { error: updateError } = await (supabase
+                    .from("user_themes") as any)
+                    .update({
+                      primary_color_id: userColor.id,
+                      secondary_color_id: userColor.id,
+                      accent_color_id: userColor.id,
+                    })
+                    .eq("id", existingTheme.id);
+                  if (updateError) throw updateError;
+                  themeId = existingTheme.id;
+                } else {
+                  // Create new default theme
+                  const { data: newTheme, error: themeError } = await (supabase
+                    .from("user_themes") as any)
+                    .insert({
+                      user_id: user.id,
+                      name: "Default Theme",
+                      primary_color_id: userColor.id,
+                      secondary_color_id: userColor.id,
+                      accent_color_id: userColor.id,
+                      font_family: defaultFontJson,
+                    })
+                    .select("id")
+                    .single();
+                  if (themeError) throw themeError;
+                  themeId = newTheme.id;
+                }
+
+                // Update user_settings to set active theme
+                await (supabase
+                  .from("user_settings") as any)
+                  .upsert(
+                    {
+                      user_id: user.id,
+                      active_theme_id: themeId,
+                    },
+                    {
+                      onConflict: "user_id",
+                    }
+                  );
+              } catch {
+                // Silently ignore theme creation errors
+              }
+            }
 
               // Apply the color
               const primaryValue = `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%`;
@@ -397,52 +685,6 @@ export async function proxy(request: NextRequest) {
               // Build CSS string safely
               const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
               // Use immediate execution - set colors before any CSS loads
-              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
-              const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
-              colorInjection = blockingScript + styleTag;
-            } catch (error) {
-              // If theme creation fails, still try to apply the color without creating theme
-              // This ensures colors are visible even if database operations fail
-              const primaryValue = `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%`;
-              
-              // Set cookie for instant access on next page load
-              try {
-                const expires = new Date();
-                expires.setFullYear(expires.getFullYear() + 1);
-                supabaseResponse.cookies.set('primary-color-hsl', primaryValue, {
-                  expires: expires,
-                  path: '/',
-                  sameSite: 'lax',
-                });
-                supabaseResponse.cookies.set('brand-color-h', userColor.hsl_h.toString(), {
-                  expires: expires,
-                  path: '/',
-                  sameSite: 'lax',
-                });
-                supabaseResponse.cookies.set('brand-color-s', userColor.hsl_s.toString(), {
-                  expires: expires,
-                  path: '/',
-                  sameSite: 'lax',
-                });
-                supabaseResponse.cookies.set('brand-color-l', userColor.hsl_l.toString(), {
-                  expires: expires,
-                  path: '/',
-                  sameSite: 'lax',
-                });
-              } catch {
-                // Silently ignore cookie setting errors - non-critical
-              }
-              
-              // Inject style tag AND blocking script
-              const hslH = String(userColor.hsl_h);
-              const hslS = String(userColor.hsl_s);
-              const hslL = String(userColor.hsl_l);
-              
-              // Store values for inline HTML injection
-              colorHslValues = { h: hslH, s: hslS, l: hslL, primary: primaryValue };
-              htmlInlineStyle = ` style="--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;"`;
-              
-              const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
               const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
               const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;

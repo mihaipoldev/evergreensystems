@@ -2,19 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ActionMenu } from "@/components/shared/ActionMenu";
+import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsisVertical, faPencil, faTrash, faCog } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { KnowledgeBase } from "../types";
@@ -63,6 +54,7 @@ export function KnowledgeBaseActionsMenu({
       if (onDelete) {
         onDelete();
       } else {
+        router.push("/intel/knowledge-bases");
         router.refresh();
       }
     } catch (error: any) {
@@ -81,13 +73,10 @@ export function KnowledgeBaseActionsMenu({
         e?.stopPropagation();
         if (onEdit) {
           onEdit(knowledgeBase);
+        } else {
+          router.push(`/intel/knowledge-bases/${knowledgeBase.id}/edit`);
         }
       },
-    },
-    {
-      label: "Settings",
-      icon: <FontAwesomeIcon icon={faCog} className="h-4 w-4" />,
-      href: `/intel/knowledge-bases/${knowledgeBase.id}/edit`,
     },
     { separator: true },
     {
@@ -107,11 +96,11 @@ export function KnowledgeBaseActionsMenu({
         trigger={
           <button
             onClick={(e) => e.stopPropagation()}
-            className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-primary/10 hover:shadow-icon transition-all shrink-0 cursor-pointer"
+            className="h-9 w-9 rounded-full hover:text-primary flex items-center justify-center shrink-0 cursor-pointer transition-all"
           >
             <FontAwesomeIcon
-              icon={faEllipsisVertical}
-              className="h-4 w-4 text-foreground"
+              icon={faEllipsis}
+              className="h-4 w-4"
             />
           </button>
         }
@@ -119,26 +108,14 @@ export function KnowledgeBaseActionsMenu({
         align="end"
       />
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the knowledge base &quot;{knowledgeBaseName}&quot;.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        entityName={knowledgeBaseName}
+        entityType="knowledge base"
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

@@ -7,6 +7,7 @@ import { SidebarHeader } from "@/components/admin/layout/sidebar/SidebarHeader";
 import { SidebarUserMenu } from "@/components/admin/layout/sidebar/SidebarUserMenu";
 import { SidebarNavSection, SidebarNavItem } from "@/components/admin/layout/sidebar/SidebarNav";
 import { INTEL_SIDEBAR_ITEMS } from "./intel-sidebar-items";
+import { KnowledgeBaseCollapsible } from "./KnowledgeBaseCollapsible";
 import type { SidebarUser } from "@/components/admin/layout/sidebar/types";
 
 type IntelSidebarContentProps = {
@@ -79,6 +80,9 @@ export function IntelSidebarContent({
     });
   };
 
+  // State for knowledge bases expandable (like pages in admin)
+  const [isKnowledgeBasesOpen, setIsKnowledgeBasesOpen] = useState(false);
+
   return (
     <div className="flex flex-col h-full">
       {/* Header Section - only for desktop */}
@@ -89,22 +93,38 @@ export function IntelSidebarContent({
         ref={scrollAreaRef}
         className={cn("relative overflow-hidden flex-1 sidebar-scroll-area", isScrolling && "scrolling")}
       >
-        <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
-          <nav className="px-4 py-4 space-y-2 min-w-0">
+        <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] overflow-x-hidden">
+          <nav className="px-4 py-4 space-y-2 min-w-0 overflow-x-hidden">
             {/* Overview Section */}
             <SidebarNavSection
               title="Overview"
               isOpen={openSections.has('overview')}
               onToggle={() => toggleSection('overview')}
             >
-              {INTEL_SIDEBAR_ITEMS.filter(item => item.section === 'overview').map((item) => (
-                <SidebarNavItem
-                  key={item.href}
-                  item={item}
-                  isActive={getIsActive(item.href)}
-                  onNavigate={onNavigate}
-                />
-              ))}
+              {INTEL_SIDEBAR_ITEMS.filter(item => item.section === 'overview').map((item) => {
+                // Replace Knowledge Bases item with expandable collapsible
+                if (item.href === "/intel/knowledge-bases") {
+                  return (
+                    <KnowledgeBaseCollapsible
+                      key={item.href}
+                      isOpen={isKnowledgeBasesOpen}
+                      onToggle={() => setIsKnowledgeBasesOpen(!isKnowledgeBasesOpen)}
+                      pathname={pathname}
+                      pendingPath={pendingPath}
+                      onNavigate={onNavigate}
+                      getIsActive={getIsActive}
+                    />
+                  );
+                }
+                return (
+                  <SidebarNavItem
+                    key={item.href}
+                    item={item}
+                    isActive={getIsActive(item.href)}
+                    onNavigate={onNavigate}
+                  />
+                );
+              })}
             </SidebarNavSection>
 
             {/* Settings Section */}

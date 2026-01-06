@@ -32,10 +32,10 @@ export function RunCardCompact({ run }: RunCardCompactProps) {
   const runTypeLabel = runTypeLabels[run.run_type] || run.run_type;
 
   return (
-    <Card className="h-full">
+    <Card className="h-full border-0">
       <CardHeader className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
             <FontAwesomeIcon
               icon={faPlay}
               className="h-4 w-4 text-primary"

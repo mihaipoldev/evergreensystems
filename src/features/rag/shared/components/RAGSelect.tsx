@@ -29,7 +29,7 @@ export const RAGSelectTrigger = forwardRef<
       className={cn(
         error
           ? "border-destructive focus:ring-0 focus-visible:ring-0"
-          : "shadow-buttons !border-0 bg-muted/20 focus:ring-0 focus-visible:ring-0 focus:outline-none focus:bg-muted/20 focus:!border-0 focus:shadow-buttons hover:bg-muted/20 hover:!border-0 hover:shadow-buttons active:bg-muted/20 active:!border-0 active:shadow-buttons data-[state=open]:bg-muted/20 data-[state=open]:!border-0 data-[state=open]:shadow-buttons",
+          : "shadow-buttons !border-0 bg-input-background/80 focus:ring-0 focus-visible:ring-0 focus:outline-none focus:bg-input-background/50 focus:!border-0 focus:shadow-buttons hover:bg-input-background/50 hover:!border-0 hover:shadow-buttons active:bg-input-background/50 active:!border-0 active:shadow-buttons data-[state=open]:bg-input-background/50 data-[state=open]:!border-0 data-[state=open]:shadow-buttons",
         className
       )}
       {...props}

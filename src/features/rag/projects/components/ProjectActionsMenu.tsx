@@ -2,32 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ActionMenu } from "@/components/shared/ActionMenu";
+import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsisVertical, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import type { Project } from "../types";
 
 interface ProjectActionsMenuProps {
-  projectId: string;
-  projectName: string;
+  project: Project;
   onDelete?: () => void;
+  onEdit?: (project: Project) => void;
 }
 
 export function ProjectActionsMenu({
-  projectId,
-  projectName,
+  project,
   onDelete,
+  onEdit,
 }: ProjectActionsMenuProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -42,7 +34,7 @@ export function ProjectActionsMenu({
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
 
-      const response = await fetch(`/api/intel/projects/${projectId}`, {
+      const response = await fetch(`/api/intel/projects/${project.id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -60,6 +52,7 @@ export function ProjectActionsMenu({
       if (onDelete) {
         onDelete();
       } else {
+        router.push("/intel/projects");
         router.refresh();
       }
     } catch (error: any) {
@@ -74,7 +67,14 @@ export function ProjectActionsMenu({
     {
       label: "Edit",
       icon: <FontAwesomeIcon icon={faPencil} className="h-4 w-4" />,
-      href: `/intel/projects/${projectId}/edit`,
+      onClick: (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (onEdit) {
+          onEdit(project);
+        } else {
+          router.push(`/intel/projects/${project.id}/edit`);
+        }
+      },
     },
     { separator: true },
     {
@@ -94,11 +94,11 @@ export function ProjectActionsMenu({
         trigger={
           <button
             onClick={(e) => e.stopPropagation()}
-            className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 hover:shadow-icon transition-all shrink-0 cursor-pointer"
+            className="h-9 w-9 rounded-full hover:text-primary flex items-center justify-center shrink-0 cursor-pointer transition-all"
           >
             <FontAwesomeIcon
-              icon={faEllipsisVertical}
-              className="h-4 w-4 text-foreground"
+              icon={faEllipsis}
+              className="h-4 w-4"
             />
           </button>
         }
@@ -106,26 +106,14 @@ export function ProjectActionsMenu({
         align="end"
       />
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the project &quot;{projectName}&quot;.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        entityName={project.client_name}
+        entityType="project"
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

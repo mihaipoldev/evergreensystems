@@ -2,10 +2,10 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Run, RunStatus } from "./types";
 
 /**
- * Get all runs, optionally filtered by knowledge base
+ * Get all runs, optionally filtered by knowledge base or subject
  * Uses service role client to bypass RLS for admin operations
  */
-export async function getAllRuns(knowledgeBaseId?: string): Promise<Run[]> {
+export async function getAllRuns(knowledgeBaseId?: string, subjectId?: string): Promise<Run[]> {
   const supabase = createServiceRoleClient();
   let query = supabase
     .from("rag_runs")
@@ -14,6 +14,10 @@ export async function getAllRuns(knowledgeBaseId?: string): Promise<Run[]> {
 
   if (knowledgeBaseId) {
     query = query.eq("knowledge_base_id", knowledgeBaseId);
+  }
+
+  if (subjectId) {
+    query = query.eq("subject_id", subjectId);
   }
 
   const { data, error } = await query;
@@ -57,6 +61,8 @@ export async function createRun(payload: {
   input: Record<string, any>;
   metadata?: Record<string, any>;
   created_by?: string | null;
+  workflow_id?: string | null;
+  subject_id?: string | null;
 }): Promise<Run> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
@@ -68,6 +74,8 @@ export async function createRun(payload: {
       input: payload.input,
       metadata: payload.metadata || {},
       created_by: payload.created_by || null,
+      workflow_id: payload.workflow_id || null,
+      subject_id: payload.subject_id || null,
       status: "queued",
     })
     .select()

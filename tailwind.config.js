@@ -16,6 +16,8 @@ module.exports = {
   			'admin-body': ['var(--font-family-admin-body)', 'system-ui', 'sans-serif'],
   			'public-heading': ['var(--font-family-public-heading)', 'system-ui', 'sans-serif'],
   			'public-body': ['var(--font-family-public-body)', 'system-ui', 'sans-serif'],
+			display: ['var(--font-family-public-heading)', 'Georgia', 'serif'],
+			body: ['var(--font-family-public-body)', 'system-ui', 'sans-serif'],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -53,7 +55,9 @@ module.exports = {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',
   				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))'
+				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+				primary: 'hsl(var(--sidebar-primary))',
+				border: 'hsl(var(--sidebar-border))'
   			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',

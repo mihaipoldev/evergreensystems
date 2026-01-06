@@ -150,7 +150,7 @@ export function KnowledgeBaseModal({
       const result = await response.json();
       toast.success(`Knowledge base ${isEdit ? "updated" : "created"} successfully`);
       
-      if (isEdit && onSuccess) {
+      if (onSuccess) {
         // Pass the updated data back to the parent
         onSuccess(result);
       }
@@ -160,7 +160,11 @@ export function KnowledgeBaseModal({
       if (isEdit) {
         router.refresh();
       } else {
-        router.push(`/intel/knowledge-bases/${result.id}`);
+        // Only navigate if onSuccess callback is not provided
+        // This allows parent components to handle navigation/refresh themselves
+        if (!onSuccess) {
+          router.push(`/intel/knowledge-bases/${result.id}`);
+        }
         router.refresh();
       }
     } catch (error: any) {
@@ -293,7 +297,7 @@ export function KnowledgeBaseModal({
             </div>
 
             {/* Active Status Toggle */}
-            <div className="flex items-center justify-between rounded-lg border border-none shadow-card p-4">
+            <div className="flex items-center justify-between bg-card/80 rounded-lg border border-none shadow-card p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="kb-active" className="cursor-pointer">Active Status</Label>
                 <p className="text-xs text-muted-foreground">

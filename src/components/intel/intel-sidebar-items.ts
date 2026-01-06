@@ -7,6 +7,9 @@ import {
   faFileAlt,
   faGear,
   faRightLeft,
+  faSearch,
+  faSitemap,
+  faTag,
 } from "@fortawesome/free-solid-svg-icons";
 import type { SidebarItem } from "@/components/admin/layout/sidebar/types";
 
@@ -33,6 +36,24 @@ export const INTEL_SIDEBAR_ITEMS: SidebarItem[] = [
     title: "Documents",
     href: "/intel/documents",
     icon: faFileText,
+    section: "overview",
+  },
+  {
+    title: "Research",
+    href: "/intel/research",
+    icon: faSearch,
+    section: "overview",
+  },
+  {
+    title: "Subject Types",
+    href: "/intel/subject-types",
+    icon: faTag,
+    section: "overview",
+  },
+  {
+    title: "Workflows",
+    href: "/intel/workflows",
+    icon: faSitemap,
     section: "overview",
   },
   {

@@ -3,8 +3,9 @@
 import { ReactNode } from "react";
 import { AccountSettings } from "./AccountSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
+import { AppearanceSettingsV2 } from "./AppearanceSettingsV2";
 
-type Section = "account" | "appearance";
+type Section = "account" | "appearance" | "appearance-v2";
 
 interface SettingsContentProps {
   activeSection: Section;
@@ -17,6 +18,8 @@ export function SettingsContent({ activeSection }: SettingsContentProps) {
         return <AccountSettings />;
       case "appearance":
         return <AppearanceSettings />;
+      case "appearance-v2":
+        return <AppearanceSettingsV2 />;
       default:
         return <AccountSettings />;
     }

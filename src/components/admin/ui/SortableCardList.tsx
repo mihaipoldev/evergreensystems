@@ -52,6 +52,7 @@ function SortableCard<T extends SortableItemBase>({ item, children, renderAction
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? "transform 0s" : transition,
     zIndex: isDragging ? 50 : "auto",
+    position: "relative" as const,
   };
 
   return (

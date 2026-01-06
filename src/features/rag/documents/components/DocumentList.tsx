@@ -1,31 +1,42 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
 import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { DocumentGrid } from "./DocumentGrid";
 import { DocumentTable } from "./DocumentTable";
+import { DocumentRow } from "./DocumentRow";
 import { DocumentModal } from "./DocumentModal";
-import { RemoveDocumentDialog } from "./RemoveDocumentDialog";
+import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { MarkdownContentModal } from "./MarkdownContentModal";
-import { removeDocument, getDocumentUrl, downloadDocument } from "../document-api";
+import { GenerateReportModal } from "@/features/rag/workflows/components/GenerateReportModal";
+import { removeDocument, downloadDocument } from "../document-api";
 import type { RAGDocument } from "../document-types";
+import { cn } from "@/lib/utils";
 
-type DocumentWithKB = RAGDocument & { knowledge_base_name?: string | null };
+type DocumentWithKB = RAGDocument & { 
+  knowledge_base_name?: string | null;
+  is_workspace_document?: boolean;
+};
 
 type DocumentListProps = {
   initialDocuments: DocumentWithKB[];
   knowledgeBaseId?: string;
   knowledgeBaseName?: string;
+  projectId?: string; // New: for linking documents
+  researchSubjectId?: string; // For research context - show only Generate button
+  researchSubjectType?: string | null; // Research subject type for filtering workflows
 };
 
-export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseName }: DocumentListProps) {
+export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseName, projectId, researchSubjectId, researchSubjectType }: DocumentListProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useViewMode("table");
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,9 +48,29 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
   });
   const [selectedSort, setSelectedSort] = useState<string>("Recent");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [deleteDocument, setDeleteDocument] = useState<RAGDocument | null>(null);
   const [markdownModalOpen, setMarkdownModalOpen] = useState(false);
   const [markdownContent, setMarkdownContent] = useState<{ title: string; content: string } | null>(null);
+  const [groupBySource, setGroupBySource] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const hasInitializedExpansion = useRef(false);
+
+  // Check if we have documents with is_workspace_document flag (project context)
+  const hasSourceInfo = useMemo(() => {
+    return initialDocuments.some(doc => (doc as DocumentWithKB).is_workspace_document !== undefined);
+  }, [initialDocuments]);
+
+  // Expand all groups by default when grouping is first enabled
+  useEffect(() => {
+    if (groupBySource && hasSourceInfo && !hasInitializedExpansion.current) {
+      setExpandedGroups(new Set(["workspace", "linked"]));
+      hasInitializedExpansion.current = true;
+    }
+    if (!groupBySource) {
+      hasInitializedExpansion.current = false;
+    }
+  }, [groupBySource, hasSourceInfo]);
 
   // Get unique values for filters
   const uniqueSourceTypes = useMemo(() => {
@@ -160,6 +191,41 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
     return sorted;
   }, [initialDocuments, searchQuery, selectedFilters, selectedSort]);
 
+  // Group documents by workspace/linked when grouping is enabled
+  const groupedDocuments = useMemo(() => {
+    if (!groupBySource || !hasSourceInfo) {
+      return null;
+    }
+
+    const groups: { workspace: DocumentWithKB[]; linked: DocumentWithKB[] } = {
+      workspace: [],
+      linked: [],
+    };
+
+    filteredAndSortedDocuments.forEach((doc) => {
+      const docWithSource = doc as DocumentWithKB;
+      if (docWithSource.is_workspace_document === true) {
+        groups.workspace.push(docWithSource);
+      } else if (docWithSource.is_workspace_document === false) {
+        groups.linked.push(docWithSource);
+      }
+    });
+
+    return groups;
+  }, [filteredAndSortedDocuments, groupBySource, hasSourceInfo]);
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
+
   const handleFilterApply = (filters: Record<string, string[]>) => {
     setSelectedFilters(filters);
   };
@@ -173,32 +239,13 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
     });
   };
 
-  const handleView = async (doc: RAGDocument) => {
-    try {
-      const result = await getDocumentUrl(doc.id);
-      
-      if (!result.success) {
-        toast.error(result.error || "Failed to get document URL");
-        return;
-      }
-
-      if (result.isPastedText) {
-        // Show markdown modal for pasted text
-        setMarkdownContent({
-          title: doc.title || "Document Content",
-          content: doc.content || "",
-        });
-        setMarkdownModalOpen(true);
-      } else if (result.url) {
-        // Open URL in new tab for uploaded files
-        window.open(result.url, "_blank", "noopener,noreferrer");
-      } else {
-        toast.error("Document URL not available");
-      }
-    } catch (error: any) {
-      console.error("Error viewing document:", error);
-      toast.error(error.message || "Failed to view document");
-    }
+  const handleView = (doc: RAGDocument) => {
+    // Always open markdown modal
+    setMarkdownContent({
+      title: doc.title || "Document Content",
+      content: doc.content || "No content available for this document.",
+    });
+    setMarkdownModalOpen(true);
   };
 
   const handleDownload = async (doc: RAGDocument) => {
@@ -250,63 +297,226 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
   return (
     <>
       <div className="w-full space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          {/* Left: Search */}
-          <div className="relative w-72">
-            <FontAwesomeIcon
-              icon={faSearch}
-              className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground"
-              style={{ fontSize: '12px', width: '12px', height: '12px' }}
-            />
-            <Input
-              type="text"
-              placeholder="Search documents..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-muted/20 shadow-buttons border-0 border-foreground/70"
-            />
-          </div>
-
-          {/* Right: Filter + Sort + View Toggle + Primary Action */}
-          <Toolbar
-            searchPlaceholder=""
-            onSearch={undefined}
-            filterCategories={filterCategories}
-            selectedFilters={selectedFilters}
-            onFilterApply={handleFilterApply}
-            onFilterClear={handleFilterClear}
-            sortOptions={["Recent", "Title", "Chunk Count", "File Size"]}
-            selectedSort={selectedSort}
-            onSortChange={setSelectedSort}
-            primaryAction={{
-              label: "New",
-              onClick: () => setIsAddModalOpen(true),
-            }}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
-        </div>
+        <Toolbar
+          searchPlaceholder="Search documents..."
+          onSearch={setSearchQuery}
+          filterCategories={filterCategories}
+          selectedFilters={selectedFilters}
+          onFilterApply={handleFilterApply}
+          onFilterClear={handleFilterClear}
+          sortOptions={["Recent", "Title", "Chunk Count", "File Size"]}
+          selectedSort={selectedSort}
+          onSortChange={setSelectedSort}
+          primaryAction={researchSubjectId ? undefined : {
+            label: "New",
+            onClick: () => setIsAddModalOpen(true),
+          }}
+          secondaryAction={undefined}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          groupBySource={hasSourceInfo ? {
+            enabled: groupBySource,
+            onToggle: setGroupBySource,
+          } : undefined}
+        />
 
         {filteredAndSortedDocuments.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground"
+          >
             {initialDocuments.length === 0
               ? "No documents found."
               : "No documents found matching your search"}
-          </div>
+          </motion.div>
         ) : viewMode === "grid" ? (
-          <DocumentGrid
-            documents={filteredAndSortedDocuments}
-            onView={handleView}
-            onDownload={handleDownload}
-            onDelete={handleDelete}
-          />
+          groupBySource && groupedDocuments ? (
+            <div className="space-y-2">
+              {/* Workspace Group */}
+              {groupedDocuments.workspace.length > 0 && (
+                <Collapsible
+                  open={expandedGroups.has("workspace")}
+                  onOpenChange={() => toggleGroup("workspace")}
+                >
+                  <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                    <FontAwesomeIcon
+                      icon={expandedGroups.has("workspace") ? faChevronDown : faChevronRight}
+                      className="h-4 w-4 text-muted-foreground shrink-0"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="h-2 w-2 rounded-full bg-primary"></span>
+                      <h3 className="text-sm font-semibold text-foreground">Workspace Documents</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {groupedDocuments.workspace.length} {groupedDocuments.workspace.length === 1 ? "document" : "documents"}
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="pt-2">
+                      <DocumentGrid
+                        documents={groupedDocuments.workspace}
+                        knowledgeBaseName={knowledgeBaseName}
+                        hideKnowledgeBase={!!knowledgeBaseId}
+                        onView={handleView}
+                        onDownload={handleDownload}
+                        onDelete={handleDelete}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
+              {/* Linked Group */}
+              {groupedDocuments.linked.length > 0 && (
+                <Collapsible
+                  open={expandedGroups.has("linked")}
+                  onOpenChange={() => toggleGroup("linked")}
+                >
+                  <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                    <FontAwesomeIcon
+                      icon={expandedGroups.has("linked") ? faChevronDown : faChevronRight}
+                      className="h-4 w-4 text-muted-foreground shrink-0"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="h-2 w-2 rounded-full bg-muted-foreground/30"></span>
+                      <h3 className="text-sm font-semibold text-foreground">Linked Documents</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {groupedDocuments.linked.length} {groupedDocuments.linked.length === 1 ? "document" : "documents"}
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="pt-2">
+                      <DocumentGrid
+                        documents={groupedDocuments.linked}
+                        knowledgeBaseName={knowledgeBaseName}
+                        hideKnowledgeBase={!!knowledgeBaseId}
+                        onView={handleView}
+                        onDownload={handleDownload}
+                        onDelete={handleDelete}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </div>
+          ) : (
+            <DocumentGrid
+              documents={filteredAndSortedDocuments}
+              knowledgeBaseName={knowledgeBaseName}
+              hideKnowledgeBase={!!knowledgeBaseId}
+              onView={handleView}
+              onDownload={handleDownload}
+              onDelete={handleDelete}
+            />
+          )
         ) : (
-          <DocumentTable
-            documents={filteredAndSortedDocuments}
-            onView={handleView}
-            onDownload={handleDownload}
-            onDelete={handleDelete}
-          />
+          groupBySource && groupedDocuments ? (
+            <TooltipProvider delayDuration={100}>
+              <div className="space-y-2">
+                {/* Table Header */}
+                <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="flex-1 min-w-0">Name</div>
+                  <div className="w-20 shrink-0">Size</div>
+                  <div className="w-24 shrink-0">Status</div>
+                  {(!knowledgeBaseId || filteredAndSortedDocuments.some(doc => (doc as any).knowledge_base_name)) && (
+                    <div className="w-32 shrink-0">Knowledge Base</div>
+                  )}
+                  <div className="w-28 shrink-0">Uploaded</div>
+                  <div className="w-20 shrink-0 text-right">Actions</div>
+                </div>
+
+                {/* Workspace Group */}
+                {groupedDocuments.workspace.length > 0 && (
+                  <Collapsible
+                    open={expandedGroups.has("workspace")}
+                    onOpenChange={() => toggleGroup("workspace")}
+                  >
+                    <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                      <FontAwesomeIcon
+                        icon={expandedGroups.has("workspace") ? faChevronDown : faChevronRight}
+                        className="h-4 w-4 text-muted-foreground shrink-0"
+                      />
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="h-2 w-2 rounded-full bg-primary"></span>
+                        <h3 className="text-sm font-semibold text-foreground">Workspace Documents</h3>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {groupedDocuments.workspace.length} {groupedDocuments.workspace.length === 1 ? "document" : "documents"}
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="space-y-2 pt-2">
+                        {groupedDocuments.workspace.map((doc) => {
+                          const docWithKB = doc as DocumentWithKB;
+                          return (
+                            <DocumentRow
+                              key={doc.id}
+                              document={doc}
+                              knowledgeBaseName={knowledgeBaseId && !docWithKB.knowledge_base_name ? undefined : (docWithKB.knowledge_base_name || knowledgeBaseName)}
+                              onView={handleView ? () => handleView(doc) : undefined}
+                              onDownload={handleDownload ? () => handleDownload(doc) : undefined}
+                              onDelete={handleDelete ? () => handleDelete(doc) : undefined}
+                            />
+                          );
+                        })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+
+                {/* Linked Group */}
+                {groupedDocuments.linked.length > 0 && (
+                  <Collapsible
+                    open={expandedGroups.has("linked")}
+                    onOpenChange={() => toggleGroup("linked")}
+                  >
+                    <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                      <FontAwesomeIcon
+                        icon={expandedGroups.has("linked") ? faChevronDown : faChevronRight}
+                        className="h-4 w-4 text-muted-foreground shrink-0"
+                      />
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground/30"></span>
+                        <h3 className="text-sm font-semibold text-foreground">Linked Documents</h3>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {groupedDocuments.linked.length} {groupedDocuments.linked.length === 1 ? "document" : "documents"}
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="space-y-2 pt-2">
+                        {groupedDocuments.linked.map((doc) => {
+                          const docWithKB = doc as DocumentWithKB;
+                          return (
+                            <DocumentRow
+                              key={doc.id}
+                              document={doc}
+                              knowledgeBaseName={knowledgeBaseId && !docWithKB.knowledge_base_name ? undefined : (docWithKB.knowledge_base_name || knowledgeBaseName)}
+                              onView={handleView ? () => handleView(doc) : undefined}
+                              onDownload={handleDownload ? () => handleDownload(doc) : undefined}
+                              onDelete={handleDelete ? () => handleDelete(doc) : undefined}
+                            />
+                          );
+                        })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
+            </TooltipProvider>
+          ) : (
+            <DocumentTable
+              documents={filteredAndSortedDocuments}
+              knowledgeBaseName={knowledgeBaseName}
+              hideKnowledgeBase={!!knowledgeBaseId}
+              onView={handleView}
+              onDownload={handleDownload}
+              onDelete={handleDelete}
+            />
+          )
         )}
       </div>
 
@@ -315,18 +525,27 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
         onOpenChange={setIsAddModalOpen}
         knowledgeBaseId={knowledgeBaseId}
         knowledgeBaseName={knowledgeBaseName}
+        projectId={projectId}
         onSuccess={() => {
           router.refresh();
         }}
       />
 
-      <RemoveDocumentDialog
+      <DeleteConfirmationDialog
         open={!!deleteDocument}
         onOpenChange={(open) => {
           if (!open) setDeleteDocument(null);
         }}
-        document={deleteDocument}
+        title="Remove document?"
+        description={
+          deleteDocument
+            ? `This will permanently remove "${deleteDocument.title || "Untitled document"}" and all its associated chunks and embeddings from the knowledge base. This action cannot be undone.`
+            : undefined
+        }
+        entityName={deleteDocument?.title || "Untitled document"}
+        entityType="document"
         onConfirm={handleDeleteConfirm}
+        confirmLabel="Remove"
       />
 
       {markdownContent && (
@@ -335,6 +554,15 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
           onOpenChange={setMarkdownModalOpen}
           title={markdownContent.title}
           content={markdownContent.content}
+        />
+      )}
+
+      {researchSubjectId && (
+        <GenerateReportModal
+          open={isGenerateModalOpen}
+          onOpenChange={setIsGenerateModalOpen}
+          subjectType={researchSubjectType || null}
+          researchSubjectId={researchSubjectId}
         />
       )}
     </>

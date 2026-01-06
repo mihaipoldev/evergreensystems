@@ -47,7 +47,7 @@ export function IntelSidebar() {
   // Desktop: Fixed aside
   if (!isMobile) {
     return (
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-[60] border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-[60] border-r border-border/50 bg-sidebar shadow-lg backdrop-blur-sm overflow-x-hidden">
         <IntelSidebarContent
           isMobile={false}
           user={user}

@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
 import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { RunTable } from "./RunTable";
 import type { Run } from "../types";
+import { createClient } from "@/lib/supabase/client";
 
-type RunWithKB = Run & { knowledge_base_name?: string | null };
+type RunWithKB = Run & { 
+  knowledge_base_name?: string | null;
+  workflow_name?: string | null;
+  workflow_label?: string | null;
+};
 
 type RunListProps = {
   initialRuns: RunWithKB[];
@@ -19,6 +22,7 @@ type RunListProps = {
 
 export function RunList({ initialRuns }: RunListProps) {
   const router = useRouter();
+  const [runs, setRuns] = useState<RunWithKB[]>(initialRuns);
   const [viewMode, setViewMode] = useViewMode("table");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
@@ -49,8 +53,145 @@ export function RunList({ initialRuns }: RunListProps) {
     },
   ];
 
+  // Sync initialRuns when they change
+  useEffect(() => {
+    setRuns(initialRuns);
+  }, [initialRuns]);
+
+  // Set up Supabase real-time subscription for all runs with polling fallback
+  useEffect(() => {
+    const supabase = createClient();
+    let pollInterval: NodeJS.Timeout | null = null;
+    
+    // Function to refresh runs list
+    const refreshRuns = async () => {
+      try {
+        const response = await fetch("/api/intel/runs");
+        if (response.ok) {
+          const data = await response.json();
+          setRuns((prev) => {
+            // Only update if the data actually changed (check by comparing first run's updated_at)
+            const newFirstRun = data[0];
+            const prevFirstRun = prev[0];
+            
+            if (newFirstRun && prevFirstRun && newFirstRun.updated_at === prevFirstRun.updated_at && 
+                newFirstRun.id === prevFirstRun.id && data.length === prev.length) {
+              return prev; // No changes
+            }
+            
+            return data || [];
+          });
+        }
+      } catch (error) {
+        // Silently handle errors
+      }
+    };
+    
+    // Set up polling as fallback (every 3 seconds)
+    pollInterval = setInterval(refreshRuns, 3000);
+    
+    const channel = supabase
+      .channel('rag_runs_all_changes', {
+        config: {
+          broadcast: { self: true },
+        },
+      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rag_runs',
+        },
+        async (payload) => {
+          console.log('[RunList] Received real-time event:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
+          
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newRun = payload.new as any;
+            console.log('[RunList] New run inserted:', newRun.id);
+            
+            // Fetch the run with its knowledge base and workflow via API
+            try {
+              const response = await fetch(`/api/intel/runs/${newRun.id}`);
+              if (response.ok) {
+                const runData = await response.json();
+                console.log('[RunList] Fetched new run data:', runData.id);
+                setRuns((prev) => {
+                  const exists = prev.some((run) => run.id === newRun.id);
+                  if (exists) {
+                    console.log('[RunList] Run already exists, skipping');
+                    return prev;
+                  }
+                  
+                  console.log('[RunList] Adding new run to list');
+                  const updated = [runData, ...prev];
+                  return updated.sort((a, b) => 
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                  );
+                });
+              } else {
+                console.error('[RunList] Failed to fetch new run:', response.status, response.statusText);
+                // Fallback: refresh the entire list
+                refreshRuns();
+              }
+            } catch (error) {
+              console.error('[RunList] Error fetching new run:', error);
+              // Fallback: refresh the entire list
+              refreshRuns();
+            }
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            const updatedRun = payload.new as any;
+            
+            // Fetch updated run with KB and workflow info via API
+            try {
+              const response = await fetch(`/api/intel/runs/${updatedRun.id}`);
+              if (response.ok) {
+                const runData = await response.json();
+                setRuns((prev) => {
+                  return prev.map((run) =>
+                    run.id === updatedRun.id ? runData : run
+                  );
+                });
+              } else {
+                // Fallback: refresh the entire list
+                refreshRuns();
+              }
+            } catch (error) {
+              console.error('[RunList] Error fetching updated run:', error);
+              // Fallback: refresh the entire list
+              refreshRuns();
+            }
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            const deletedRun = payload.old as any;
+            
+            // Remove from list
+            setRuns((prev) => {
+              return prev.filter((run) => run.id !== deletedRun.id);
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[RunList] ✅ Successfully subscribed to rag_runs changes');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[RunList] ❌ Channel error - subscription failed');
+        } else if (status === 'TIMED_OUT') {
+          console.error('[RunList] ❌ Subscription timed out');
+        }
+      });
+
+    return () => {
+      console.log('[RunList] Cleaning up subscription and polling');
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const filteredAndSortedRuns = useMemo(() => {
-    let filtered = initialRuns;
+    let filtered = runs;
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -102,7 +243,7 @@ export function RunList({ initialRuns }: RunListProps) {
     }
 
     return sorted;
-  }, [initialRuns, searchQuery, selectedFilters, selectedSort]);
+  }, [runs, searchQuery, selectedFilters, selectedSort]);
 
   const handleFilterApply = (filters: Record<string, string[]>) => {
     setSelectedFilters(filters);
@@ -119,45 +260,31 @@ export function RunList({ initialRuns }: RunListProps) {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        {/* Left: Search */}
-        <div className="relative w-72">
-          <FontAwesomeIcon
-            icon={faSearch}
-            className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground"
-            style={{ fontSize: '12px', width: '12px', height: '12px' }}
-          />
-          <Input
-            type="text"
-            placeholder="Search runs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-10 bg-muted/20 shadow-buttons border-0 border-foreground/70"
-          />
-        </div>
-
-        {/* Right: Filter + Sort + View Toggle */}
-        <Toolbar
-          searchPlaceholder=""
-          onSearch={undefined}
-          filterCategories={filterCategories}
-          selectedFilters={selectedFilters}
-          onFilterApply={handleFilterApply}
-          onFilterClear={handleFilterClear}
-          sortOptions={sortOptions}
-          selectedSort={selectedSort}
-          onSortChange={setSelectedSort}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
-      </div>
+      <Toolbar
+        searchPlaceholder="Search runs..."
+        onSearch={setSearchQuery}
+        filterCategories={filterCategories}
+        selectedFilters={selectedFilters}
+        onFilterApply={handleFilterApply}
+        onFilterClear={handleFilterClear}
+        sortOptions={sortOptions}
+        selectedSort={selectedSort}
+        onSortChange={setSelectedSort}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
       {filteredAndSortedRuns.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
-          {initialRuns.length === 0
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground"
+        >
+          {runs.length === 0
             ? "No runs found."
             : "No runs found matching your search"}
-        </div>
+        </motion.div>
       ) : (
         <RunTable runs={filteredAndSortedRuns} />
       )}

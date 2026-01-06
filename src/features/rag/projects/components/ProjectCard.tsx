@@ -48,7 +48,7 @@ export function ProjectCard({
   const statusColorClass = statusColors[project.status] || statusColors.draft;
 
   return (
-    <Card className="flex flex-col h-full border-none shadow-card-light hover:shadow-card hover:bg-accent/20 transition-all duration-300 overflow-hidden">
+    <Card className="flex flex-col h-full border-none shadow-card-light hover:shadow-card hover:bg-card/70 transition-all duration-300 overflow-hidden">
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-4 py-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -73,8 +73,7 @@ export function ProjectCard({
         </div>
         <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <ProjectActionsMenu
-            projectId={project.id}
-            projectName={project.client_name}
+            project={project}
             onDelete={onDelete}
           />
         </div>
@@ -104,7 +103,7 @@ export function ProjectCard({
 
       {/* Footer */}
       <CardFooter className="flex items-center p-4 bg-muted/50">
-        <div className="flex items-center h-6 gap-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center h-2 gap-1.5 text-xs text-muted-foreground">
           <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
           <span>{formattedDate}</span>
         </div>

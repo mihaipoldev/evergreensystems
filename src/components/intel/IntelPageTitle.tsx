@@ -5,13 +5,15 @@ import { usePathname } from "next/navigation";
 
 // Map route segments to display names
 const staticRouteMap: Record<string, string> = {
-  "": "Intel Dashboard",
-  dashboard: "Intel Dashboard",
+  "": "Dashboard",
+  dashboard: "Dashboard",
   "knowledge-bases": "Knowledge Bases",
   projects: "Projects",
   documents: "Documents",
   runs: "Runs",
   reports: "Reports",
+  research: "Research",
+  workflows: "Workflows",
   new: "Create Project",
 };
 
@@ -43,6 +45,34 @@ async function fetchProjectName(id: string): Promise<string | null> {
   }
 }
 
+async function fetchResearchSubjectName(id: string): Promise<string | null> {
+  try {
+    const response = await fetch(`/api/intel/research/${id}`);
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.name || null;
+  } catch (error) {
+    console.error("Error fetching research subject name:", error);
+    return null;
+  }
+}
+
+async function fetchWorkflowName(id: string): Promise<string | null> {
+  try {
+    const response = await fetch(`/api/intel/workflows/${id}`);
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.label || null;
+  } catch (error) {
+    console.error("Error fetching workflow name:", error);
+    return null;
+  }
+}
+
 export function IntelPageTitle() {
   const pathname = usePathname();
   const [dynamicTitle, setDynamicTitle] = useState<string | null>(null);
@@ -61,6 +91,12 @@ export function IntelPageTitle() {
 
   const isProjectDetail = relevantSegments[0] === "projects" && relevantSegments.length >= 2 && relevantSegments[1] !== "new";
   const projectId = isProjectDetail ? relevantSegments[1] : null;
+
+  const isResearchDetail = relevantSegments[0] === "research" && relevantSegments.length >= 2;
+  const researchId = isResearchDetail ? relevantSegments[1] : null;
+
+  const isWorkflowDetail = relevantSegments[0] === "workflows" && relevantSegments.length >= 2;
+  const workflowId = isWorkflowDetail ? relevantSegments[1] : null;
 
   // Fetch dynamic titles
   useEffect(() => {
@@ -84,15 +120,37 @@ export function IntelPageTitle() {
         .catch(() => {
           setIsLoading(false);
         });
+    } else if (researchId) {
+      setIsLoading(true);
+      fetchResearchSubjectName(researchId)
+        .then((name) => {
+          setDynamicTitle(name);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
+    } else if (workflowId) {
+      setIsLoading(true);
+      fetchWorkflowName(workflowId)
+        .then((name) => {
+          setDynamicTitle(name);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
     } else {
       setDynamicTitle(null);
     }
-  }, [knowledgeBaseId, projectId]);
+  }, [knowledgeBaseId, projectId, researchId, workflowId]);
 
   // Get static title or dynamic title
   let title: string;
-  if (isKnowledgeBaseDetail || isProjectDetail) {
-    title = isLoading ? "Loading..." : (dynamicTitle || (isKnowledgeBaseDetail ? "Knowledge Base" : "Project"));
+  if (isKnowledgeBaseDetail || isProjectDetail || isResearchDetail || isWorkflowDetail) {
+    title = isLoading 
+      ? "Loading..." 
+      : (dynamicTitle || (isKnowledgeBaseDetail ? "Knowledge Base" : isProjectDetail ? "Project" : isResearchDetail ? "Research" : "Workflow"));
   } else {
     const firstSegment = relevantSegments[0] || "";
     const secondSegment = relevantSegments[1] || "";

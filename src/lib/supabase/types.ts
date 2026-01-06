@@ -657,6 +657,8 @@ export interface Database {
         Row: {
           id: string;
           knowledge_base_id: string;
+          workflow_id: string | null;
+          subject_id: string | null;
           run_type: string;
           input: Record<string, any>;
           status: string;
@@ -669,6 +671,8 @@ export interface Database {
         Insert: {
           id?: string;
           knowledge_base_id: string;
+          workflow_id?: string | null;
+          subject_id?: string | null;
           run_type: string;
           input?: Record<string, any>;
           status?: string;
@@ -681,6 +685,8 @@ export interface Database {
         Update: {
           id?: string;
           knowledge_base_id?: string;
+          workflow_id?: string | null;
+          subject_id?: string | null;
           run_type?: string;
           input?: Record<string, any>;
           status?: string;

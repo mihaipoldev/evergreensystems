@@ -21,7 +21,7 @@ export function SectionHeader({
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
             <FontAwesomeIcon
               icon={icon}
               className="h-4 w-4 text-primary"

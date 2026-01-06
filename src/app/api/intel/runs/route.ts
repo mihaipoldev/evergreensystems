@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     const status = searchParams.get("status");
     const runType = searchParams.get("run_type");
     const search = searchParams.get("search");
+    const subjectId = searchParams.get("subject_id");
 
     let query = adminSupabase
       .from("rag_runs")
@@ -23,6 +24,11 @@ export async function GET(request: Request) {
         rag_knowledge_bases (
           id,
           name
+        ),
+        workflows (
+          id,
+          name,
+          label
         )
       `);
 
@@ -32,6 +38,10 @@ export async function GET(request: Request) {
 
     if (runType && runType !== "All") {
       query = query.eq("run_type", runType);
+    }
+
+    if (subjectId) {
+      query = query.eq("subject_id", subjectId);
     }
 
     if (search && search.trim() !== "") {
@@ -47,10 +57,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform data to include knowledge base name
+    // Transform data to include knowledge base name and workflow info
     const runsWithKB = (data || []).map((run: any) => ({
       ...run,
       knowledge_base_name: run.rag_knowledge_bases?.name || null,
+      workflow_name: run.workflows?.name || null,
+      workflow_label: run.workflows?.label || null,
     }));
 
     return NextResponse.json(runsWithKB, { status: 200 });

@@ -35,8 +35,9 @@ export function ProjectModal({
   const isEdit = !!initialData;
   const [clientName, setClientName] = useState("");
   const [status, setStatus] = useState<"active" | "onboarding" | "delivered" | "archived">("active");
+  const [type, setType] = useState<"niche_research" | "client" | "internal">("client");
   const [description, setDescription] = useState("");
-  const [errors, setErrors] = useState<{ clientName?: string; status?: string }>({});
+  const [errors, setErrors] = useState<{ clientName?: string; status?: string; type?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form when initialData changes or modal opens
@@ -60,11 +61,13 @@ export function ProjectModal({
               const latestData = await response.json();
               setClientName(latestData.client_name || "");
               setStatus(latestData.status || "active");
+              setType(latestData.type || "client");
               setDescription(latestData.description || "");
             } else {
               // Fallback to initialData if fetch fails
               setClientName(initialData.client_name || "");
               setStatus(initialData.status || "active");
+              setType(initialData.type || "client");
               setDescription(initialData.description || "");
             }
           } catch (error) {
@@ -72,6 +75,7 @@ export function ProjectModal({
             // Fallback to initialData if fetch fails
             setClientName(initialData.client_name || "");
             setStatus(initialData.status || "active");
+            setType(initialData.type || "client");
             setDescription(initialData.description || "");
           }
         };
@@ -81,6 +85,7 @@ export function ProjectModal({
         // Reset to defaults for create mode
         setClientName("");
         setStatus("active");
+        setType("client");
         setDescription("");
       }
       setErrors({});
@@ -88,13 +93,16 @@ export function ProjectModal({
   }, [initialData?.id, open]);
 
   const handleSubmit = async () => {
-    const newErrors: { clientName?: string; status?: string } = {};
+    const newErrors: { clientName?: string; status?: string; type?: string } = {};
 
     if (!clientName.trim()) {
       newErrors.clientName = "Client name is required";
     }
     if (!status) {
       newErrors.status = "Please select a status";
+    }
+    if (!type) {
+      newErrors.type = "Please select a type";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -122,6 +130,7 @@ export function ProjectModal({
         body: JSON.stringify({
           client_name: clientName,
           status,
+          type,
           description: description || null,
         }),
       });
@@ -134,7 +143,7 @@ export function ProjectModal({
       const result = await response.json();
       toast.success(`Project ${isEdit ? "updated" : "created"} successfully`);
       
-      if (isEdit && onSuccess) {
+      if (onSuccess) {
         onSuccess(result);
       }
       
@@ -143,7 +152,11 @@ export function ProjectModal({
       if (isEdit) {
         router.refresh();
       } else {
-        router.push(`/intel/projects/${result.id}`);
+        // Only navigate if onSuccess callback is not provided
+        // This allows parent components to handle navigation/refresh themselves
+        if (!onSuccess) {
+          router.push(`/intel/projects/${result.id}`);
+        }
         router.refresh();
       }
     } catch (error: any) {
@@ -157,6 +170,7 @@ export function ProjectModal({
   const handleClose = () => {
     setClientName("");
     setStatus("active");
+    setType("client");
     setDescription("");
     setErrors({});
     onOpenChange(false);
@@ -194,6 +208,35 @@ export function ProjectModal({
       }
     >
       <div className="space-y-5">
+        {/* Project Type */}
+        <div className="space-y-2">
+          <Label htmlFor="project-type">
+            Project Type <span className="text-destructive">*</span>
+          </Label>
+          <RAGSelect
+            value={type}
+            onValueChange={(value) => {
+              setType(value as "niche_research" | "client" | "internal");
+              if (errors.type) setErrors({ ...errors, type: undefined });
+            }}
+          >
+            <RAGSelectTrigger
+              id="project-type"
+              error={!!errors.type}
+            >
+              <RAGSelectValue placeholder="Select project type" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="client">Client</RAGSelectItem>
+              <RAGSelectItem value="niche_research">Niche Research</RAGSelectItem>
+              <RAGSelectItem value="internal">Internal</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+          {errors.type && (
+            <p className="text-xs text-destructive">{errors.type}</p>
+          )}
+        </div>
+
         {/* Client Name */}
         <div className="space-y-2">
           <Label htmlFor="client-name">

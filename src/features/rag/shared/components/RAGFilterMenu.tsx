@@ -106,7 +106,7 @@ export function RAGFilterMenu({
                     <div
                       key={option.value}
                       onClick={() => handleToggle(category.label, option.value)}
-                      className="flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1 -mx-2 hover:bg-accent/30 group"
+                      className="flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1 -mx-2 hover:bg-secondary group"
                     >
                       <Checkbox
                         id={`${category.label}-${option.value}`}

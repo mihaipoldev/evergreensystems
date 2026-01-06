@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faFilter, faUpDown, faPlus, faTh, faList } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faFilter, faUpDown, faPlus, faTh, faList, faFolder, faLayerGroup, faWandMagicSparkles } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 import { RAGFilterMenu, type FilterCategory } from "./RAGFilterMenu";
 import { RAGSortMenu } from "./RAGSortMenu";
@@ -24,10 +24,24 @@ interface ToolbarProps {
   primaryAction?: {
     label: string;
     onClick: () => void;
+    disabled?: boolean;
+  };
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
   };
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
   viewModeStorageKey?: string;
+  showProjectsToggle?: {
+    show: boolean;
+    onToggle: (show: boolean) => void;
+  };
+  groupBySource?: {
+    enabled: boolean;
+    onToggle: (enabled: boolean) => void;
+  };
 }
 
 export function Toolbar({
@@ -41,9 +55,12 @@ export function Toolbar({
   onSortChange,
   selectedSort: controlledSelectedSort,
   primaryAction,
+  secondaryAction,
   viewMode: controlledViewMode,
   onViewModeChange,
   viewModeStorageKey = "intel-view-mode",
+  showProjectsToggle,
+  groupBySource,
 }: ToolbarProps) {
   const [searchValue, setSearchValue] = useState("");
   const [internalSelectedSort, setInternalSelectedSort] = useState(sortOptions[0] || "Recent");
@@ -102,23 +119,52 @@ export function Toolbar({
     <div className="flex items-center justify-between gap-4">
       {/* Left: Search */}
       {onSearch && (
-        <div className="relative w-72">
+        <div className="relative w-72 bg-card/90 shadow-buttons rounded-md transition-all duration-300 focus-within:bg-card/100 focus-within:shadow-card">
           <FontAwesomeIcon
             icon={faSearch}
-            className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground"
+            className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground z-10"
             style={{ fontSize: '12px', width: '12px', height: '12px' }}
           />
           <Input
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 h-10 bg-muted/20 shadow-buttons border-0 border-foreground/70"
+            className="pl-9 h-10 bg-transparent border-0 text-foreground/80 focus:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
       )}
 
       {/* Right: Filter + Sort + View Toggle + Primary Action */}
       <div className="flex items-center gap-2">
+
+        {/* Secondary Action (Generate) */}
+        {secondaryAction && !secondaryAction.disabled && (
+            <Button
+              onClick={secondaryAction.onClick} 
+              className="relative h-10 w-10 p-0 overflow-hidden border-0 shadow-none transition-all duration-300 hover:scale-105 bg-accent hover:bg-accent text-foreground"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 5px 6px -2px hsl(var(--accent) / 0.1), 0 3px 3px -2px hsl(var(--accent) / 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 3px 5px -2px hsl(var(--accent) / 0.0), 0 4px 6px -2px hsl(var(--accent) / 0.0)';
+              }}
+              title={secondaryAction.label}
+            >
+            {/* Animated shimmer effect */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full" 
+              style={{
+                animation: 'shimmer 8s infinite'
+              }}
+            />
+            <FontAwesomeIcon 
+              icon={faWandMagicSparkles} 
+              className="relative z-10 !h-5 !w-5 drop-shadow-lg text-foreground" 
+              style={{ fontSize: '20px', width: '20px', height: '20px' }} 
+            />
+          </Button>
+        )}
+        
         {/* Filter Button */}
         {filterCategories && filterCategories.length > 0 && (
           <RAGFilterMenu
@@ -126,7 +172,7 @@ export function Toolbar({
               <Button
                 variant="outline"
                 className={cn(
-                  "h-10 gap-2 px-3 bg-muted/20 shadow-buttons border-0 border-foreground/70 text-muted-foreground hover:text-foreground hover:bg-accent/30",
+                  "h-10 gap-2 px-3 bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card transition-all duration-300",
                   hasActiveFilters && "text-foreground"
                 )}
               >
@@ -148,7 +194,7 @@ export function Toolbar({
             trigger={
               <Button
                 variant="outline"
-                className="h-10 gap-2 px-3 bg-muted/20 shadow-buttons border-0 border-foreground/70 text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                className="h-10 gap-2 px-3 bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card transition-all duration-300"
               >
                 <FontAwesomeIcon icon={faUpDown} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
                 Sort {selectedSort && `(${selectedSort})`}
@@ -161,16 +207,52 @@ export function Toolbar({
           />
         )}
 
+        {/* Show Projects Toggle */}
+        {showProjectsToggle && (
+          <Button
+            variant="outline"
+            onClick={() => showProjectsToggle.onToggle(!showProjectsToggle.show)}
+            className={cn(
+              "h-10 gap-2 px-3 transition-all duration-300",
+              showProjectsToggle.show
+                ? "bg-primary/100 text-background shadow-card border-0 hover:bg-primary/90 hover:text-background"
+                : "bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card"
+            )}
+            title={showProjectsToggle.show ? "Hide project knowledge bases" : "Show project knowledge bases"}
+          >
+            <FontAwesomeIcon icon={faFolder} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
+            Projects
+          </Button>
+        )}
+
+        {/* Group By Source Toggle */}
+        {groupBySource && (
+          <Button
+            variant="outline"
+            onClick={() => groupBySource.onToggle(!groupBySource.enabled)}
+            className={cn(
+              "h-10 gap-2 px-3 transition-all duration-300",
+              groupBySource.enabled
+                ? "bg-primary/100 text-background shadow-card border-0 hover:bg-primary/90 hover:text-background"
+                : "bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card"
+            )}
+            title={groupBySource.enabled ? "Ungroup documents" : "Group by workspace/linked"}
+          >
+            <FontAwesomeIcon icon={faLayerGroup} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
+            Group
+          </Button>
+        )}
+
         {/* View Mode Toggle */}
         {(controlledViewMode !== undefined || onViewModeChange) && (
-          <div className="flex shadow-buttons bg-muted/20 items-center gap-0 border-0 border-foreground/70 rounded-md p-0 overflow-hidden">
+          <div className="flex shadow-buttons bg-card/90 items-center gap-0 border-0 rounded-md p-0 overflow-hidden">
             <button
               onClick={() => handleViewModeChange("grid")}
               className={cn(
-                "px-4 h-10 text-sm rounded-none transition-colors flex items-center justify-center",
+                "px-4 h-10 text-sm rounded-none transition-all duration-300 flex items-center justify-center",
                 viewMode === "grid"
-                  ? "bg-primary/30 text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary/100 text-background shadow-card"
+                  : "text-foreground/80 hover:text-foreground shadow-buttons bg-card/80 hover:bg-card/100 hover:shadow-card"
               )}
               title="Grid view"
             >
@@ -179,10 +261,10 @@ export function Toolbar({
             <button
               onClick={() => handleViewModeChange("table")}
               className={cn(
-                "px-4 h-10 text-sm rounded-none transition-colors flex items-center justify-center",
+                "px-4 h-10 text-sm rounded-none transition-all duration-300 flex items-center justify-center",
                 viewMode === "table"
-                  ? "bg-primary/30 text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary/100 text-background shadow-card"
+                  : "text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card"
               )}
               title="Table view"
             >
@@ -192,8 +274,11 @@ export function Toolbar({
         )}
 
         {/* Primary Action */}
-        {primaryAction && (
-          <Button onClick={primaryAction.onClick} className="shadow-buttons h-10 gap-2 px-3">
+        {primaryAction && !primaryAction.disabled && (
+          <Button 
+            onClick={primaryAction.onClick} 
+            className="shadow-buttons h-10 gap-2 px-3"
+          >
             <FontAwesomeIcon icon={faPlus} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
             {primaryAction.label}
           </Button>

@@ -1,11 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getProjectByIdWithKB } from "@/features/rag/projects/data";
-import { ProjectDocumentsList } from "@/features/rag/projects/components/ProjectDocumentsList";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencil } from "@fortawesome/free-solid-svg-icons";
+import { ProjectDetailClient } from "./ProjectDetailClient";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { RAGDocument } from "@/features/rag/documents/document-types";
 
@@ -15,19 +10,9 @@ type ProjectDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case "active":
-      return "default";
-    case "onboarding":
-      return "secondary";
-    case "delivered":
-      return "outline";
-    case "archived":
-      return "secondary";
-    default:
-      return "outline";
-  }
+type DocumentWithKB = RAGDocument & { 
+  knowledge_base_name?: string | null;
+  is_workspace_document?: boolean;
 };
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
@@ -46,7 +31,10 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     .from("project_documents")
     .select(`
       document_id,
-      rag_documents (*)
+      rag_documents (
+        *,
+        rag_knowledge_bases (name)
+      )
     `)
     .eq("project_id", id);
 
@@ -59,51 +47,41 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     .order("created_at", { ascending: false });
 
   // Combine linked documents (extract from junction table structure)
-  const linkedDocs: RAGDocument[] = (linkedDocsData || [])
+  const linkedDocs: (RAGDocument & { rag_knowledge_bases?: { name: string } | null })[] = (linkedDocsData || [])
     .map((item: any) => item.rag_documents)
     .filter((doc: any) => doc && !doc.deleted_at);
 
-  // Combine all documents (workspace + linked)
-  const allDocuments = [...(workspaceDocs || []), ...linkedDocs]
+  // Combine all documents (workspace + linked) and add knowledge_base_name and is_workspace_document flag
+  const kbName = project.rag_knowledge_bases?.name || null;
+  
+  // Mark workspace documents
+  const workspaceDocsWithFlag: DocumentWithKB[] = (workspaceDocs || []).map((doc: any) => ({
+    ...(doc as RAGDocument),
+    knowledge_base_name: kbName,
+    is_workspace_document: true,
+  }));
+
+  // Mark linked documents
+  const linkedDocsWithFlag: DocumentWithKB[] = linkedDocs.map((doc: any) => ({
+    ...doc,
+    knowledge_base_name: doc.rag_knowledge_bases?.name || null,
+    is_workspace_document: false,
+  }));
+
+  // Combine and deduplicate (workspace docs take precedence if duplicate)
+  const allDocuments: DocumentWithKB[] = [...workspaceDocsWithFlag, ...linkedDocsWithFlag]
     .filter((doc, index, self) => 
       index === self.findIndex((d) => d.id === doc.id)
-    ) // Remove duplicates
+    )
     .sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">{project.client_name}</h1>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={getStatusVariant(project.status)} className="text-xs capitalize">
-              {project.status}
-            </Badge>
-            {project.rag_knowledge_bases && (
-              <Badge variant="outline" className="text-xs">
-                KB: {project.rag_knowledge_bases.name}
-              </Badge>
-            )}
-          </div>
-          {project.description && (
-            <p className="text-muted-foreground mt-3">{project.description}</p>
-          )}
-        </div>
-        <Button asChild>
-          <Link href={`/intel/projects/${project.id}/edit`}>
-            <FontAwesomeIcon icon={faPencil} className="h-4 w-4 mr-2" />
-            Edit
-          </Link>
-        </Button>
-      </div>
-
-      <div>
-        <h2 className="text-2xl font-semibold text-foreground mb-6">Documents</h2>
-        <ProjectDocumentsList projectId={id} initialDocuments={allDocuments} />
-      </div>
-    </div>
+    <ProjectDetailClient
+      project={project}
+      initialDocuments={allDocuments}
+    />
   );
 }
 
