@@ -1,6 +1,7 @@
 import type { ReportData } from "../../types";
 import {
   NicheProfileSection,
+  MarketIntelligenceSection,
   BuyerPsychologySection,
   ValueDynamicsSection,
   LeadGenStrategySection,
@@ -15,13 +16,15 @@ import {
 
 interface NicheReportProps {
   data: ReportData;
+  reportId: string;
 }
 
-export const NicheReport = ({ data }: NicheReportProps) => {
+export const NicheReport = ({ data, reportId }: NicheReportProps) => {
 
   return (
     <>
       <NicheProfileSection profile={data.data.niche_profile} />
+      <MarketIntelligenceSection profile={data.data.niche_profile} />
       <BuyerPsychologySection buyer={data.data.buyer_psychology} />
       <ValueDynamicsSection value={data.data.value_dynamics} />
       <LeadGenStrategySection strategy={data.data.lead_gen_strategy} />
@@ -31,10 +34,10 @@ export const NicheReport = ({ data }: NicheReportProps) => {
       <PositioningIntelSection positioning={data.data.positioning_intel} />
       <MessagingInputsSection messaging={data.data.messaging_inputs} />
       {data.data.research_links && (
-        <ResearchLinksSection researchLinks={data.data.research_links} />
+        <ResearchLinksSection researchLinks={data.data.research_links} reportId={reportId} />
       )}
       {data.meta.sources_used && data.meta.sources_used.length > 0 && (
-        <SourcesUsedSection sources={data.meta.sources_used} />
+        <SourcesUsedSection sources={data.meta.sources_used} reportId={reportId} />
       )}
     </>
   );

@@ -8,6 +8,8 @@ export type Workflow = {
   estimated_time_minutes: number | null;
   input_schema: Record<string, any> | null;
   enabled: boolean;
+  knowledge_base_target: string;
+  target_knowledge_base_id: string | null;
   created_at: string;
   updated_at: string;
 };

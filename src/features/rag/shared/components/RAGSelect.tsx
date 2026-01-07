@@ -70,7 +70,7 @@ export const RAGSelectItem = forwardRef<
     <BaseSelectItem
       ref={ref}
       className={cn(
-        "focus:bg-accent/60 focus:text-foreground cursor-pointer",
+        "hover:bg-muted/50 focus:bg-muted/50 focus:text-foreground cursor-pointer",
         className
       )}
       {...props}

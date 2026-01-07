@@ -89,7 +89,10 @@ export function WorkflowModal({
   const [estimatedTimeMinutes, setEstimatedTimeMinutes] = useState("");
   const [inputSchema, setInputSchema] = useState("");
   const [enabled, setEnabled] = useState(true);
-  const [errors, setErrors] = useState<{ name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string }>({});
+  const [knowledgeBaseTarget, setKnowledgeBaseTarget] = useState<string>("knowledgebase");
+  const [targetKnowledgeBaseId, setTargetKnowledgeBaseId] = useState<string>("");
+  const [knowledgeBases, setKnowledgeBases] = useState<Array<{ id: string; name: string }>>([]);
+  const [errors, setErrors] = useState<{ name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Secrets state
@@ -101,6 +104,60 @@ export function WorkflowModal({
   
   // Store the original JSON string to preserve key order
   const originalInputSchemaRef = useRef<string>("");
+
+  // Fetch knowledge bases on mount (excluding those linked to projects)
+  useEffect(() => {
+    const fetchKnowledgeBases = async () => {
+      try {
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        // Fetch knowledge bases
+        const kbResponse = await fetch("/api/intel/knowledge-base", {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        // Fetch projects to get linked_kb_id values
+        const projectsResponse = await fetch("/api/intel/projects", {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        if (kbResponse.ok && projectsResponse.ok) {
+          const knowledgeBasesData = await kbResponse.json();
+          const projectsData = await projectsResponse.json();
+          
+          // Get all knowledge base IDs that are linked to projects
+          const linkedKbIds = new Set(
+            (projectsData || [])
+              .map((project: any) => project.linked_kb_id)
+              .filter((id: string | null) => id !== null)
+          );
+          
+          // Filter out knowledge bases that are linked to projects
+          const filteredKbs = (knowledgeBasesData || []).filter(
+            (kb: { id: string }) => !linkedKbIds.has(kb.id)
+          );
+          
+          setKnowledgeBases(filteredKbs);
+        } else if (kbResponse.ok) {
+          // Fallback: if projects fetch fails, just use all knowledge bases
+          const data = await kbResponse.json();
+          setKnowledgeBases(data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching knowledge bases:", error);
+      }
+    };
+
+    if (open) {
+      fetchKnowledgeBases();
+    }
+  }, [open]);
 
   // Initialize form when initialData changes or modal opens
   useEffect(() => {
@@ -132,6 +189,8 @@ export function WorkflowModal({
               setInputSchema(schemaString);
               originalInputSchemaRef.current = schemaString;
               setEnabled(latestData.enabled !== undefined ? latestData.enabled : true);
+              setKnowledgeBaseTarget(latestData.knowledge_base_target || "knowledgebase");
+              setTargetKnowledgeBaseId(latestData.target_knowledge_base_id || "");
               
               // Check if secrets exist (but don't fetch them)
               const secretsResponse = await fetch(`/api/intel/workflows/${initialData.id}/secrets`, {
@@ -157,6 +216,8 @@ export function WorkflowModal({
               setInputSchema(schemaString);
               originalInputSchemaRef.current = schemaString;
               setEnabled(initialData.enabled !== undefined ? initialData.enabled : true);
+              setKnowledgeBaseTarget(initialData.knowledge_base_target || "knowledgebase");
+              setTargetKnowledgeBaseId(initialData.target_knowledge_base_id || "");
             }
           } catch (error) {
             console.error("Error fetching latest workflow data:", error);
@@ -172,6 +233,8 @@ export function WorkflowModal({
             setInputSchema(schemaString);
             originalInputSchemaRef.current = schemaString;
             setEnabled(initialData.enabled !== undefined ? initialData.enabled : true);
+            setKnowledgeBaseTarget(initialData.knowledge_base_target || "knowledgebase");
+            setTargetKnowledgeBaseId(initialData.target_knowledge_base_id || "");
           }
         };
 
@@ -187,6 +250,8 @@ export function WorkflowModal({
         setInputSchema("");
         originalInputSchemaRef.current = "";
         setEnabled(true);
+        setKnowledgeBaseTarget("knowledgebase");
+        setTargetKnowledgeBaseId("");
         setWebhookUrl("");
         setApiKey("");
         setConfig("");
@@ -198,13 +263,20 @@ export function WorkflowModal({
   }, [initialData?.id, open]);
 
   const handleSubmit = async () => {
-    const newErrors: { name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string } = {};
+    const newErrors: { name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string } = {};
 
     if (!name.trim()) {
       newErrors.name = "Name is required";
     }
     if (!label.trim()) {
       newErrors.label = "Label is required";
+    }
+    if (!knowledgeBaseTarget || !['knowledgebase', 'client', 'project'].includes(knowledgeBaseTarget)) {
+      newErrors.knowledgeBaseTarget = "Knowledge base target is required and must be one of: knowledgebase, client, project";
+    }
+    // Validate target_knowledge_base_id when knowledge_base_target is 'knowledgebase'
+    if (knowledgeBaseTarget === 'knowledgebase' && !targetKnowledgeBaseId.trim()) {
+      newErrors.targetKnowledgeBaseId = "Knowledge base is required when target is 'knowledgebase'";
     }
 
     // Validate input_schema JSON if provided
@@ -272,6 +344,8 @@ export function WorkflowModal({
           estimated_time_minutes: estimatedTimeMinutes.trim() ? parseInt(estimatedTimeMinutes, 10) : null,
           input_schema: parsedInputSchema,
           enabled,
+          knowledge_base_target: knowledgeBaseTarget,
+          target_knowledge_base_id: targetKnowledgeBaseId.trim() || null,
         }),
       });
 
@@ -343,6 +417,8 @@ export function WorkflowModal({
     setInputSchema("");
     originalInputSchemaRef.current = "";
     setEnabled(true);
+    setKnowledgeBaseTarget("knowledgebase");
+    setTargetKnowledgeBaseId("");
     setWebhookUrl("");
     setApiKey("");
     setConfig("");
@@ -360,7 +436,7 @@ export function WorkflowModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:bg-accent/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -512,6 +588,72 @@ export function WorkflowModal({
             </RAGSelectContent>
           </RAGSelect>
         </div>
+
+        {/* Knowledge Base Target */}
+        <div className="space-y-2">
+          <Label htmlFor="workflow-knowledge-base-target">
+            Knowledge Base Target <span className="text-destructive">*</span>
+          </Label>
+          <RAGSelect
+            value={knowledgeBaseTarget}
+            onValueChange={(value) => {
+              setKnowledgeBaseTarget(value);
+              // Clear target_knowledge_base_id if not 'knowledgebase'
+              if (value !== 'knowledgebase') {
+                setTargetKnowledgeBaseId("");
+              }
+              if (errors.knowledgeBaseTarget) setErrors({ ...errors, knowledgeBaseTarget: undefined });
+            }}
+          >
+            <RAGSelectTrigger id="workflow-knowledge-base-target" error={!!errors.knowledgeBaseTarget}>
+              <RAGSelectValue placeholder="Select target type" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="knowledgebase">Knowledge Base</RAGSelectItem>
+              <RAGSelectItem value="client">Client</RAGSelectItem>
+              <RAGSelectItem value="project">Project</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+          {errors.knowledgeBaseTarget && (
+            <p className="text-xs text-destructive">{errors.knowledgeBaseTarget}</p>
+          )}
+        </div>
+
+        {/* Target Knowledge Base ID - Only show when target is 'knowledgebase' */}
+        {knowledgeBaseTarget === 'knowledgebase' && (
+          <div className="space-y-2">
+            <Label htmlFor="workflow-target-knowledge-base-id">
+              Target Knowledge Base {knowledgeBaseTarget === 'knowledgebase' && <span className="text-destructive">*</span>}
+            </Label>
+            <RAGSelect
+              value={targetKnowledgeBaseId}
+              onValueChange={(value) => {
+                setTargetKnowledgeBaseId(value);
+                if (errors.targetKnowledgeBaseId) setErrors({ ...errors, targetKnowledgeBaseId: undefined });
+              }}
+            >
+              <RAGSelectTrigger id="workflow-target-knowledge-base-id" error={!!errors.targetKnowledgeBaseId}>
+                <RAGSelectValue placeholder="Select knowledge base" />
+              </RAGSelectTrigger>
+              <RAGSelectContent>
+                {knowledgeBases.length === 0 ? (
+                  <div className="py-2 px-3 text-sm text-muted-foreground">
+                    No knowledge bases available
+                  </div>
+                ) : (
+                  knowledgeBases.map((kb) => (
+                    <RAGSelectItem key={kb.id} value={kb.id}>
+                      {kb.name}
+                    </RAGSelectItem>
+                  ))
+                )}
+              </RAGSelectContent>
+            </RAGSelect>
+            {errors.targetKnowledgeBaseId && (
+              <p className="text-xs text-destructive">{errors.targetKnowledgeBaseId}</p>
+            )}
+          </div>
+        )}
 
         {/* Secrets Section - Collapsible */}
         <div className="border-t border-border/50 pt-5">

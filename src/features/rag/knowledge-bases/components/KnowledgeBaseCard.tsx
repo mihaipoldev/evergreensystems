@@ -55,7 +55,7 @@ export function KnowledgeBaseCard({
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-4 py-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 shadow-icon">
+          <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 shadow-icon">
             <FontAwesomeIcon
               icon={faDatabase}
               className="h-4 w-4 text-primary"

@@ -21,4 +21,5 @@ export { AnimatedList } from "./AnimatedList";
 export { AnimatedGrid } from "./AnimatedGrid";
 export { AnimatedTable } from "./AnimatedTable";
 export { LockedInput } from "./LockedInput";
+export { StatusBadge } from "./StatusBadge";
 

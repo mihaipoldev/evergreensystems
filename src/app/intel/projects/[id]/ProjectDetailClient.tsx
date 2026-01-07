@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileText,
@@ -9,17 +12,34 @@ import {
   faPlay,
   faSpinner,
   faExclamationTriangle,
+  faWandMagicSparkles,
+  faCalendar,
+  faClock,
+  faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 import { ProjectActionsMenu } from "@/features/rag/projects/components/ProjectActionsMenu";
 import { ProjectModal } from "@/features/rag/projects/components/ProjectModal";
+import { GenerateReportModal } from "@/features/rag/workflows/components/GenerateReportModal";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { ProjectDocumentsClient } from "./ProjectDocumentsClient";
+import { ProjectRunsClient } from "@/features/rag/projects/components/ProjectRunsClient";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
+import { getProjectTypeConfig } from "@/features/rag/projects/config/ProjectTypeConfig";
 import type { Project, ProjectWithKB } from "@/features/rag/projects/types";
 import type { RAGDocument } from "@/features/rag/documents/document-types";
+import type { RunWithExtras } from "@/features/rag/projects/config/ProjectTypeConfig";
 
 type ProjectDetailClientProps = {
   project: ProjectWithKB;
   initialDocuments: RAGDocument[];
+  initialRuns: RunWithExtras[];
+  projectTypeName?: string | null;
+  projectType?: { name: string; label: string; icon: string | null } | null;
 };
 
 const getStatusVariant = (status: string) => {
@@ -40,11 +60,39 @@ const getStatusVariant = (status: string) => {
 export function ProjectDetailClient({
   project: initialProject,
   initialDocuments,
+  initialRuns,
+  projectTypeName: initialProjectTypeName,
+  projectType: initialProjectType,
 }: ProjectDetailClientProps) {
   const [project, setProject] = useState(initialProject);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [runsCount, setRunsCount] = useState(0);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [projectTypeName, setProjectTypeName] = useState<string | null>(initialProjectTypeName || null);
+  const [runsCount, setRunsCount] = useState(initialRuns.length);
+  const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Get project type configuration
+  const projectTypeConfig = getProjectTypeConfig(projectTypeName);
+  
+  // Get default tab from localStorage or use "documents" as fallback
+  const getDefaultTab = () => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`project-tab-${project.id}`);
+      if (saved && projectTypeConfig.tabs.some(tab => tab.id === saved)) {
+        return saved;
+      }
+    }
+    return "documents";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getDefaultTab);
+
+  // Save active tab to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`project-tab-${project.id}`, activeTab);
+    }
+  }, [activeTab, project.id]);
 
   // Calculate stats from documents
   const documentsCount = initialDocuments.length;
@@ -52,28 +100,10 @@ export function ProjectDetailClient({
   const processingDocuments = initialDocuments.filter((doc) => doc.status === "processing").length;
   const failedDocuments = initialDocuments.filter((doc) => doc.status === "failed").length;
 
-  // Fetch runs count for this project's knowledge base
+  // Update runs count when initialRuns changes
   useEffect(() => {
-    async function fetchRunsCount() {
-      try {
-        const response = await fetch(`/api/intel/runs`);
-        if (response.ok) {
-          const runsData = await response.json();
-          // Filter runs for this project's KB
-          const projectRuns = (runsData || []).filter(
-            (run: any) => run.knowledge_base_id === project.kb_id
-          );
-          setRunsCount(projectRuns.length);
-        }
-      } catch (error) {
-        console.error("Error fetching runs count:", error);
-      } finally {
-        setLoadingStats(false);
-      }
-    }
-
-    fetchRunsCount();
-  }, [project.kb_id]);
+    setRunsCount(initialRuns.length);
+  }, [initialRuns]);
 
   const handleEdit = () => {
     setIsEditModalOpen(true);
@@ -89,88 +119,258 @@ export function ProjectDetailClient({
     setIsEditModalOpen(false);
   };
 
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const isNicheProject = projectTypeName === "niche";
+  const displayName = isNicheProject ? project.name : (project.client_name || project.name || "");
+
   return (
     <>
       <div className="w-full space-y-6">
         <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Manage documents for this project.</p>
+          <div className="flex-1">
+            <TooltipProvider delayDuration={100}>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
+                  {initialProjectType?.icon && <span>{initialProjectType.icon}</span>}
+                  {displayName}
+                </h1>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Project information"
+                    >
+                      <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="max-w-md" 
+                    side="bottom"
+                    sideOffset={8}
+                  >
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Name</p>
+                        <p className="text-foreground font-medium">{displayName}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Status</p>
+                        <p className="text-foreground font-medium capitalize">{project.status}</p>
+                      </div>
+                      {project.category && (
+                        <div>
+                          <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
+                          <p className="text-foreground font-medium">{project.category}</p>
+                        </div>
+                      )}
+                      {project.geography && (
+                        <div>
+                          <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
+                          <p className="text-foreground font-medium">{project.geography}</p>
+                        </div>
+                      )}
+                      {project.description && (
+                        <div>
+                          <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
+                          <p className="text-foreground font-medium">{project.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+            
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge
-                variant={getStatusVariant(project.status)}
-                className="text-xs capitalize"
-              >
-                {project.status}
-              </Badge>
               {project.rag_knowledge_bases && (
-                <Badge variant="outline" className="text-xs">
-                  KB: {project.rag_knowledge_bases.name}
-                </Badge>
+                <Link href={`/intel/knowledge-bases/${project.kb_id}`}>
+                  <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer transition-colors">
+                    KB: {project.rag_knowledge_bases.name}
+                  </Badge>
+                </Link>
               )}
             </div>
+            
+            {/* Research Dates (for niche projects) */}
+            {isNicheProject && (project.first_researched_at || project.last_researched_at) && (
+              <div className="flex flex-wrap items-center gap-4 mb-3 text-xs text-muted-foreground">
+                {project.first_researched_at && (
+                  <div className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faCalendar} className="h-3 w-3" />
+                    <span className="font-medium">First Researched:</span>
+                    <span>{formatDate(project.first_researched_at)}</span>
+                  </div>
+                )}
+                {project.last_researched_at && (
+                  <div className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faClock} className="h-3 w-3" />
+                    <span className="font-medium">Last Researched:</span>
+                    <span>{formatDate(project.last_researched_at)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <ProjectActionsMenu
-            project={project}
-            onEdit={handleEdit}
-          />
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setIsGenerateModalOpen(true)}
+              className="relative h-10 w-10 p-0 overflow-hidden border-0 shadow-none transition-all duration-300 hover:scale-105 bg-primary hover:bg-primary text-accent-foreground"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 5px 6px -2px hsl(var(--accent) / 0.1), 0 3px 3px -2px hsl(var(--accent) / 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 3px 5px -2px hsl(var(--accent) / 0.0), 0 4px 6px -2px hsl(var(--accent) / 0.0)';
+              }}
+              title="Generate Report"
+            >
+              {/* Animated shimmer effect */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full" 
+                style={{
+                  animation: 'shimmer 8s infinite'
+                }}
+              />
+              <FontAwesomeIcon 
+                icon={faWandMagicSparkles} 
+                className="relative z-10 !h-5 !w-5 drop-shadow-lg" 
+                style={{ 
+                  fontSize: '20px', 
+                  width: '20px', 
+                  height: '20px',
+                  color: ''
+                }} 
+              />
+            </Button>
+            <ProjectActionsMenu
+              project={project}
+              onEdit={handleEdit}
+            />
+          </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Tabs */}
         <section className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard
-              title="Total Documents"
-              value={documentsCount}
-              icon={faFileText}
-              index={0}
-            />
-            <StatCard
-              title="Total Chunks"
-              value={totalChunks}
-              icon={faLayerGroup}
-              index={1}
-            />
-            <StatCard
-              title="Total Runs"
-              value={loadingStats ? "..." : runsCount}
-              icon={faPlay}
-              index={2}
-            />
-          </div>
-        </section>
-
-        {/* Additional Status Cards */}
-        {(processingDocuments > 0 || failedDocuments > 0) && (
-          <section className="relative">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {processingDocuments > 0 && (
-                <StatCard
-                  title="Processing"
-                  value={processingDocuments}
-                  icon={faSpinner}
-                  index={3}
-                />
-              )}
-              {failedDocuments > 0 && (
-                <StatCard
-                  title="Failed"
-                  value={failedDocuments}
-                  icon={faExclamationTriangle}
-                  changeType="negative"
-                  index={4}
-                />
-              )}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex justify-start mb-4 -mt-4 border-b border-border/100">
+              <TabsList className="bg-transparent h-auto p-0 gap-6 border-none">
+                {projectTypeConfig.tabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground border-b-2 border-transparent data-[state=active]:border-foreground rounded-none transition-colors hover:text-foreground -mb-[1px]"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
             </div>
-          </section>
-        )}
-
-        <ProjectDocumentsClient
-          initialDocuments={initialDocuments}
-          projectId={project.id}
-          projectName={project.client_name}
-          kbId={project.kb_id}
-          kbName={project.rag_knowledge_bases?.name || null}
-        />
+            {projectTypeConfig.tabs.map((tab) => (
+              <TabsContent key={tab.id} value={tab.id} className="mt-0">
+                {tab.id === "documents" && (
+                  <div className="space-y-6">
+                    {/* Document Stats - Always 4 cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <StatCard
+                        title="Total Documents"
+                        value={documentsCount}
+                        icon={faFileText}
+                        index={0}
+                      />
+                      <StatCard
+                        title="Total Chunks"
+                        value={totalChunks}
+                        icon={faLayerGroup}
+                        index={1}
+                      />
+                      <StatCard
+                        title="Processing"
+                        value={processingDocuments}
+                        icon={faSpinner}
+                        index={2}
+                      />
+                      <StatCard
+                        title="Failed"
+                        value={failedDocuments}
+                        icon={faExclamationTriangle}
+                        changeType={failedDocuments > 0 ? "negative" : undefined}
+                        index={3}
+                      />
+                    </div>
+                    <ProjectDocumentsClient
+                      initialDocuments={initialDocuments}
+                      projectId={project.id}
+                      projectName={project.client_name || project.name || ""}
+                      kbId={project.kb_id}
+                      kbName={project.rag_knowledge_bases?.name || null}
+                    />
+                  </div>
+                )}
+                {tab.id === "runs" && (
+                  <div className="space-y-6">
+                    {/* Research Stats - Always 3-4 cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <StatCard
+                        title="Total Researches"
+                        value={runsCount}
+                        icon={faPlay}
+                        index={0}
+                      />
+                      {isNicheProject ? (
+                        <>
+                          <StatCard
+                            title="First Researched"
+                            value={project.first_researched_at ? formatDate(project.first_researched_at) : "Never"}
+                            icon={faCalendar}
+                            index={1}
+                          />
+                          <StatCard
+                            title="Last Researched"
+                            value={project.last_researched_at ? formatDate(project.last_researched_at) : "Never"}
+                            icon={faClock}
+                            index={2}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <StatCard
+                            title="Completed"
+                            value={initialRuns.filter(run => run.status === "complete").length}
+                            icon={faPlay}
+                            index={1}
+                          />
+                          <StatCard
+                            title="In Progress"
+                            value={initialRuns.filter(run => 
+                              run.status === "queued" || 
+                              run.status === "collecting" || 
+                              run.status === "ingesting" || 
+                              run.status === "generating"
+                            ).length}
+                            icon={faSpinner}
+                            index={2}
+                          />
+                        </>
+                      )}
+                    </div>
+                    <ProjectRunsClient
+                      initialRuns={initialRuns}
+                      projectId={project.id}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </section>
       </div>
 
       <ProjectModal
@@ -178,6 +378,18 @@ export function ProjectDetailClient({
         onOpenChange={setIsEditModalOpen}
         initialData={project}
         onSuccess={handleEditSuccess}
+      />
+
+      <GenerateReportModal
+        open={isGenerateModalOpen}
+        onOpenChange={setIsGenerateModalOpen}
+        projectType={projectTypeName || null}
+        projectTypeId={project.project_type_id || null}
+        researchSubjectId={project.id}
+        researchSubjectName={project.name || project.client_name || ""}
+        researchSubjectGeography={project.geography || null}
+        researchSubjectDescription={project.description || null}
+        researchSubjectCategory={project.category || null}
       />
     </>
   );

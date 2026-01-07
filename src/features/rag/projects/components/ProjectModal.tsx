@@ -17,6 +17,7 @@ import {
   RAGModal,
 } from "@/features/rag/shared/components";
 import type { Project } from "../types";
+import type { ProjectType } from "@/features/rag/project-type/types";
 
 interface ProjectModalProps {
   open: boolean;
@@ -33,12 +34,58 @@ export function ProjectModal({
 }: ProjectModalProps) {
   const router = useRouter();
   const isEdit = !!initialData;
+  
+  // Project type selection
+  const [projectTypeId, setProjectTypeId] = useState<string>("");
+  const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
+  const [loadingProjectTypes, setLoadingProjectTypes] = useState(true);
+  
+  // Client project fields
   const [clientName, setClientName] = useState("");
   const [status, setStatus] = useState<"active" | "onboarding" | "delivered" | "archived">("active");
-  const [type, setType] = useState<"niche_research" | "client" | "internal">("client");
+  
+  // Niche research fields
+  const [name, setName] = useState("");
+  const [geography, setGeography] = useState("");
+  const [category, setCategory] = useState("");
+  
+  // Common fields
   const [description, setDescription] = useState("");
-  const [errors, setErrors] = useState<{ clientName?: string; status?: string; type?: string }>({});
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get selected project type name
+  const selectedProjectType = projectTypes.find(pt => pt.id === projectTypeId);
+  const isClientType = selectedProjectType?.name === "client";
+  const isNicheType = selectedProjectType?.name === "niche";
+
+  // Load project types on mount
+  useEffect(() => {
+    const loadProjectTypes = async () => {
+      try {
+        setLoadingProjectTypes(true);
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("project_types")
+          .select("*")
+          .eq("enabled", true)
+          .order("name", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        setProjectTypes((data || []) as ProjectType[]);
+      } catch (error) {
+        console.error("Error loading project types:", error);
+        toast.error("Failed to load project types");
+      } finally {
+        setLoadingProjectTypes(false);
+      }
+    };
+    loadProjectTypes();
+  }, []);
 
   // Initialize form when initialData changes or modal opens
   useEffect(() => {
@@ -59,23 +106,32 @@ export function ProjectModal({
 
             if (response.ok) {
               const latestData = await response.json();
+              setProjectTypeId(latestData.project_type_id || "");
               setClientName(latestData.client_name || "");
+              setName(latestData.name || "");
               setStatus(latestData.status || "active");
-              setType(latestData.type || "client");
+              setGeography(latestData.geography || "");
+              setCategory(latestData.category || "");
               setDescription(latestData.description || "");
             } else {
               // Fallback to initialData if fetch fails
+              setProjectTypeId(initialData.project_type_id || "");
               setClientName(initialData.client_name || "");
+              setName(initialData.name || "");
               setStatus(initialData.status || "active");
-              setType(initialData.type || "client");
+              setGeography(initialData.geography || "");
+              setCategory(initialData.category || "");
               setDescription(initialData.description || "");
             }
           } catch (error) {
             console.error("Error fetching latest project data:", error);
             // Fallback to initialData if fetch fails
+            setProjectTypeId(initialData.project_type_id || "");
             setClientName(initialData.client_name || "");
+            setName(initialData.name || "");
             setStatus(initialData.status || "active");
-            setType(initialData.type || "client");
+            setGeography(initialData.geography || "");
+            setCategory(initialData.category || "");
             setDescription(initialData.description || "");
           }
         };
@@ -83,9 +139,12 @@ export function ProjectModal({
         fetchLatestData();
       } else {
         // Reset to defaults for create mode
+        setProjectTypeId("");
         setClientName("");
+        setName("");
         setStatus("active");
-        setType("client");
+        setGeography("");
+        setCategory("");
         setDescription("");
       }
       setErrors({});
@@ -93,16 +152,28 @@ export function ProjectModal({
   }, [initialData?.id, open]);
 
   const handleSubmit = async () => {
-    const newErrors: { clientName?: string; status?: string; type?: string } = {};
+    const newErrors: Record<string, string> = {};
 
-    if (!clientName.trim()) {
-      newErrors.clientName = "Client name is required";
+    // Validate project type
+    if (!projectTypeId) {
+      newErrors.projectTypeId = "Project type is required";
     }
-    if (!status) {
-      newErrors.status = "Please select a status";
-    }
-    if (!type) {
-      newErrors.type = "Please select a type";
+
+    // Validate based on project type
+    if (isClientType) {
+      if (!clientName.trim()) {
+        newErrors.clientName = "Client name is required";
+      }
+      if (!status) {
+        newErrors.status = "Please select a status";
+      }
+    } else if (isNicheType) {
+      if (!name.trim()) {
+        newErrors.name = "Name is required";
+      }
+      if (!projectTypeId) {
+        newErrors.projectTypeId = "Project type is required";
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -121,18 +192,31 @@ export function ProjectModal({
         : "/api/intel/projects";
       const method = isEdit ? "PUT" : "POST";
 
+      // Prepare payload based on project type
+      const payload: any = {
+        project_type_id: projectTypeId,
+        description: description || null,
+      };
+
+      if (isClientType) {
+        payload.client_name = clientName.trim();
+        payload.status = status;
+        payload.type = "client";
+      } else if (isNicheType) {
+        payload.name = name.trim();
+        payload.geography = geography?.trim() || null;
+        payload.category = category?.trim() || null;
+        payload.type = "niche_research";
+        payload.status = "active"; // Default for niche research
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({
-          client_name: clientName,
-          status,
-          type,
-          description: description || null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -168,9 +252,12 @@ export function ProjectModal({
   };
 
   const handleClose = () => {
+    setProjectTypeId("");
     setClientName("");
+    setName("");
     setStatus("active");
-    setType("client");
+    setGeography("");
+    setCategory("");
     setDescription("");
     setErrors({});
     onOpenChange(false);
@@ -184,7 +271,7 @@ export function ProjectModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:bg-accent/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -214,78 +301,149 @@ export function ProjectModal({
             Project Type <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
-            value={type}
+            value={projectTypeId}
             onValueChange={(value) => {
-              setType(value as "niche_research" | "client" | "internal");
-              if (errors.type) setErrors({ ...errors, type: undefined });
+              setProjectTypeId(value);
+              if (errors.projectTypeId) {
+                const { projectTypeId: _, ...rest } = errors;
+                setErrors(rest);
+              }
             }}
+            disabled={loadingProjectTypes || isEdit}
           >
             <RAGSelectTrigger
               id="project-type"
-              error={!!errors.type}
+              error={!!errors.projectTypeId}
             >
-              <RAGSelectValue placeholder="Select project type" />
+              <RAGSelectValue placeholder={loadingProjectTypes ? "Loading..." : "Select project type"} />
             </RAGSelectTrigger>
             <RAGSelectContent>
-              <RAGSelectItem value="client">Client</RAGSelectItem>
-              <RAGSelectItem value="niche_research">Niche Research</RAGSelectItem>
-              <RAGSelectItem value="internal">Internal</RAGSelectItem>
+              {projectTypes.map((pt) => (
+                <RAGSelectItem key={pt.id} value={pt.id}>
+                  {pt.icon ? `${pt.icon} ` : ""}{pt.label}
+                </RAGSelectItem>
+              ))}
             </RAGSelectContent>
           </RAGSelect>
-          {errors.type && (
-            <p className="text-xs text-destructive">{errors.type}</p>
+          {errors.projectTypeId && (
+            <p className="text-xs text-destructive">{errors.projectTypeId}</p>
           )}
         </div>
 
-        {/* Client Name */}
-        <div className="space-y-2">
-          <Label htmlFor="client-name">
-            Client Name <span className="text-destructive">*</span>
-          </Label>
-          <RAGInput
-            id="client-name"
-            placeholder="e.g., Acme Corporation"
-            value={clientName}
-            onChange={(e) => {
-              setClientName(e.target.value);
-              if (errors.clientName) setErrors({ ...errors, clientName: undefined });
-            }}
-            error={!!errors.clientName}
-          />
-          {errors.clientName && (
-            <p className="text-xs text-destructive">{errors.clientName}</p>
-          )}
-        </div>
+        {/* Client Type Fields */}
+        {isClientType && (
+          <>
+            {/* Client Name */}
+            <div className="space-y-2">
+              <Label htmlFor="client-name">
+                Client Name <span className="text-destructive">*</span>
+              </Label>
+              <RAGInput
+                id="client-name"
+                placeholder="e.g., Acme Corporation"
+                value={clientName}
+                onChange={(e) => {
+                  setClientName(e.target.value);
+                  if (errors.clientName) {
+                    const { clientName: _, ...rest } = errors;
+                    setErrors(rest);
+                  }
+                }}
+                error={!!errors.clientName}
+                autoComplete="off"
+              />
+              {errors.clientName && (
+                <p className="text-xs text-destructive">{errors.clientName}</p>
+              )}
+            </div>
 
-        {/* Project Status */}
-        <div className="space-y-2">
-          <Label htmlFor="project-status">
-            Project Status <span className="text-destructive">*</span>
-          </Label>
-          <RAGSelect
-            value={status}
-            onValueChange={(value) => {
-              setStatus(value as "active" | "onboarding" | "delivered" | "archived");
-              if (errors.status) setErrors({ ...errors, status: undefined });
-            }}
-          >
-            <RAGSelectTrigger
-              id="project-status"
-              error={!!errors.status}
-            >
-              <RAGSelectValue placeholder="Select initial status" />
-            </RAGSelectTrigger>
-            <RAGSelectContent>
-              <RAGSelectItem value="active">Active</RAGSelectItem>
-              <RAGSelectItem value="onboarding">Onboarding</RAGSelectItem>
-              <RAGSelectItem value="delivered">Delivered</RAGSelectItem>
-              <RAGSelectItem value="archived">Archived</RAGSelectItem>
-            </RAGSelectContent>
-          </RAGSelect>
-          {errors.status && (
-            <p className="text-xs text-destructive">{errors.status}</p>
-          )}
-        </div>
+            {/* Project Status */}
+            <div className="space-y-2">
+              <Label htmlFor="project-status">
+                Project Status <span className="text-destructive">*</span>
+              </Label>
+              <RAGSelect
+                value={status}
+                onValueChange={(value) => {
+                  setStatus(value as "active" | "onboarding" | "delivered" | "archived");
+                  if (errors.status) {
+                    const { status: _, ...rest } = errors;
+                    setErrors(rest);
+                  }
+                }}
+              >
+                <RAGSelectTrigger
+                  id="project-status"
+                  error={!!errors.status}
+                >
+                  <RAGSelectValue placeholder="Select initial status" />
+                </RAGSelectTrigger>
+                <RAGSelectContent>
+                  <RAGSelectItem value="active">Active</RAGSelectItem>
+                  <RAGSelectItem value="onboarding">Onboarding</RAGSelectItem>
+                  <RAGSelectItem value="delivered">Delivered</RAGSelectItem>
+                  <RAGSelectItem value="archived">Archived</RAGSelectItem>
+                </RAGSelectContent>
+              </RAGSelect>
+              {errors.status && (
+                <p className="text-xs text-destructive">{errors.status}</p>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Niche Research Type Fields */}
+        {isNicheType && (
+          <>
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <RAGInput
+                id="name"
+                placeholder="e.g., 3PL Providers"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) {
+                    const { name: _, ...rest } = errors;
+                    setErrors(rest);
+                  }
+                }}
+                error={!!errors.name}
+                autoComplete="off"
+              />
+              {errors.name && (
+                <p className="text-xs text-destructive">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Geography */}
+            <div className="space-y-2">
+              <Label htmlFor="geography">Geography</Label>
+              <RAGInput
+                id="geography"
+                placeholder="e.g., United States"
+                value={geography}
+                onChange={(e) => setGeography(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <RAGInput
+                id="category"
+                placeholder="e.g., Logistics"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          </>
+        )}
 
         {/* Description */}
         <div className="space-y-2">

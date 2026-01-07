@@ -6,13 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faDatabase, faClock, faExternalLink } from "@fortawesome/free-solid-svg-icons";
 import type { RunOutput } from "../types";
+import { getRunLabel } from "@/features/rag/runs/types";
 import { cn } from "@/lib/utils";
 
 type ReportRowProps = {
   report: RunOutput & {
     run?: {
       id: string;
-      run_type: string;
+      workflow_id?: string | null;
+      workflow_name?: string | null;
+      workflow_label?: string | null;
       status: string;
       knowledge_base_name?: string | null;
       created_at: string;
@@ -30,14 +33,15 @@ export function ReportRow({ report, onView }: ReportRowProps) {
     minute: "2-digit",
   });
 
-  const runTypeLabels: Record<string, string> = {
-    niche_intelligence: "Niche Intelligence",
-    kb_query: "KB Query",
-    doc_ingest: "Document Ingest",
-  };
-
-  const runTypeLabel = report.run?.run_type
-    ? runTypeLabels[report.run.run_type] || report.run.run_type
+  // Use workflow label if available
+  const runLabel = report.run
+    ? (report.run.workflow_label || 
+       (report.run.workflow_name
+         ? report.run.workflow_name
+             .split('_')
+             .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+             .join(' ')
+         : "Unknown"))
     : "Unknown";
 
   const hasPDF = !!report.pdf_storage_path;
@@ -51,10 +55,10 @@ export function ReportRow({ report, onView }: ReportRowProps) {
         </div>
         <div className="min-w-0 flex flex-col h-full justify-center">
           <Link 
-            href={`/intel/reports/${report.id}`}
+            href={report.run?.id ? `/intel/research-reports/${report.run.id}/result` : `/intel/reports/${report.id}`}
             className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
           >
-            {runTypeLabel} Report
+            {runLabel} Report
           </Link>
           <p className="text-xs text-muted-foreground truncate mt-0.5">
             {report.run?.knowledge_base_name || "Unknown KB"}
@@ -65,7 +69,7 @@ export function ReportRow({ report, onView }: ReportRowProps) {
       {/* Type */}
       <div className="w-32 shrink-0">
         <Badge variant="outline" className="w-fit capitalize">
-          {runTypeLabel}
+          {runLabel}
         </Badge>
       </div>
 

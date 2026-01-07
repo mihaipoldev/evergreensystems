@@ -11,7 +11,7 @@ export const OfferAnglesSection = ({ angles }: OfferAnglesSectionProps) => {
     return (
       <SectionWrapper
         id="offer-angles"
-        number="06"
+        number="07"
         title="Offer Angles"
         subtitle="Strategic positioning frameworks for lead generation services"
       >
@@ -29,7 +29,7 @@ export const OfferAnglesSection = ({ angles }: OfferAnglesSectionProps) => {
       title="Offer Angles"
       subtitle="Strategic positioning frameworks for lead generation services"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {angles.map((angle, index) => (
           <OfferAngleCard key={index} angle={angle} index={index} />
         ))}

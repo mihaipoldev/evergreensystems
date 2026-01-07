@@ -37,7 +37,7 @@ export function ProjectCardCompact({
               className="h-4 w-4 text-primary"
             />
           </div>
-          <Link href={`/intel/projects/${project.id}`}>
+          <Link href={`/intel/projects/${project.id}`} className="min-w-0 flex-1">
             <h3 className="font-medium text-foreground truncate hover:text-primary transition-colors">
               {project.client_name}
             </h3>

@@ -20,12 +20,15 @@ export const LeadGenStrategySection = ({ strategy }: LeadGenStrategySectionProps
   return (
     <SectionWrapper
       id="lead-gen-strategy"
-      number="04"
+      number="05"
       title="Lead Generation Strategy"
       subtitle="Fit evaluation, strategic verdict, and the best market entry wedge"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <FitScoreGauge score={strategy.lead_gen_fit_score} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
+        <FitScoreGauge 
+          score={strategy.lead_gen_fit_score} 
+          verdict={strategy.verdict as "pursue" | "test" | "avoid"}
+        />
         <div className="lg:col-span-2">
           <VerdictBadge
             verdict={strategy.verdict as "pursue" | "test" | "avoid"}

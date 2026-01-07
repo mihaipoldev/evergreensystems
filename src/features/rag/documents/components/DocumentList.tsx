@@ -36,25 +36,112 @@ type DocumentListProps = {
   researchSubjectType?: string | null; // Research subject type for filtering workflows
 };
 
+const STORAGE_KEY_PREFIX = "documents-";
+const STORAGE_KEY_SEARCH = `${STORAGE_KEY_PREFIX}search`;
+const STORAGE_KEY_FILTERS = `${STORAGE_KEY_PREFIX}filters`;
+const STORAGE_KEY_SORT = `${STORAGE_KEY_PREFIX}sort`;
+const STORAGE_KEY_GROUP_BY_SOURCE = `${STORAGE_KEY_PREFIX}group-by-source`;
+
+// Helper functions for localStorage persistence
+function getStoredSearch(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SEARCH) || "";
+  } catch {
+    return "";
+  }
+}
+
+function setStoredSearch(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SEARCH, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredFilters(): Record<string, string[]> {
+  if (typeof window === "undefined") return { "Source Type": [], "Content Type": [], Status: [], "Should Chunk": [] };
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_FILTERS);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === "object" ? parsed : { "Source Type": [], "Content Type": [], Status: [], "Should Chunk": [] };
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { "Source Type": [], "Content Type": [], Status: [], "Should Chunk": [] };
+}
+
+function setStoredFilters(filters: Record<string, string[]>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredSort(): string {
+  if (typeof window === "undefined") return "Recent";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SORT) || "Recent";
+  } catch {
+    return "Recent";
+  }
+}
+
+function setStoredSort(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SORT, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredGroupBySource(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_GROUP_BY_SOURCE);
+    return saved === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredGroupBySource(value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_GROUP_BY_SOURCE, String(value));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseName, projectId, researchSubjectId, researchSubjectType }: DocumentListProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useViewMode("table");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
-    "Source Type": [],
-    "Content Type": [],
-    Status: [],
-    "Should Chunk": [],
-  });
-  const [selectedSort, setSelectedSort] = useState<string>("Recent");
+  // Initialize state from localStorage directly to avoid flash of default values
+  const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
+  const [selectedSort, setSelectedSort] = useState<string>(() => getStoredSort());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [deleteDocument, setDeleteDocument] = useState<RAGDocument | null>(null);
   const [markdownModalOpen, setMarkdownModalOpen] = useState(false);
   const [markdownContent, setMarkdownContent] = useState<{ title: string; content: string } | null>(null);
-  const [groupBySource, setGroupBySource] = useState(false);
+  const [groupBySource, setGroupBySource] = useState(() => getStoredGroupBySource());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const hasInitializedExpansion = useRef(false);
+  const hasLoadedFromStorage = useRef(false);
+
+  // Mark as loaded after first render
+  useEffect(() => {
+    hasLoadedFromStorage.current = true;
+  }, []);
 
   // Check if we have documents with is_workspace_document flag (project context)
   const hasSourceInfo = useMemo(() => {
@@ -226,17 +313,46 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
     });
   };
 
+  // Persist search query changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSearch(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Persist filter changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredFilters(selectedFilters);
+    }
+  }, [selectedFilters]);
+
+  // Persist sort changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSort(selectedSort);
+    }
+  }, [selectedSort]);
+
+  // Persist groupBySource changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredGroupBySource(groupBySource);
+    }
+  }, [groupBySource]);
+
   const handleFilterApply = (filters: Record<string, string[]>) => {
     setSelectedFilters(filters);
   };
 
   const handleFilterClear = () => {
-    setSelectedFilters({
+    const clearedFilters = {
       "Source Type": [],
       "Content Type": [],
       Status: [],
       "Should Chunk": [],
-    });
+    };
+    setSelectedFilters(clearedFilters);
   };
 
   const handleView = (doc: RAGDocument) => {
@@ -299,6 +415,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
       <div className="w-full space-y-6">
         <Toolbar
           searchPlaceholder="Search documents..."
+          searchValue={searchQuery}
           onSearch={setSearchQuery}
           filterCategories={filterCategories}
           selectedFilters={selectedFilters}
@@ -561,6 +678,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
         <GenerateReportModal
           open={isGenerateModalOpen}
           onOpenChange={setIsGenerateModalOpen}
+          projectType={researchSubjectType || null}
           subjectType={researchSubjectType || null}
           researchSubjectId={researchSubjectId}
         />

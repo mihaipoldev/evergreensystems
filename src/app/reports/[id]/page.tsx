@@ -55,7 +55,7 @@ export default async function StandaloneReportPage({ params }: ReportPageProps) 
         confidence={reportData.meta.confidence}
       />
 
-      <NicheReport data={reportData} />
+      <NicheReport data={reportData} reportId={id} />
 
       {/* Footer */}
       <footer className="mt-16 pt-8 border-t border-border text-center">

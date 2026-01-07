@@ -6,12 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -96,6 +94,7 @@ export function AppearanceSettingsV2() {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renamePresetName, setRenamePresetName] = useState("");
   const [presetToRename, setPresetToRename] = useState<string | null>(null);
+  const [isThemePopoverOpen, setIsThemePopoverOpen] = useState(false);
 
   // Convert database color to component color
   const dbColorToComponent = (dbColor: DatabaseColor): Color => {
@@ -442,6 +441,7 @@ export function AppearanceSettingsV2() {
 
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme);
+    setIsThemePopoverOpen(false);
   };
 
   const handleColorChange = (hex: string, type?: 'primary' | 'secondary' | 'accent') => {
@@ -527,8 +527,8 @@ export function AppearanceSettingsV2() {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
 
-      // Call AI API to generate preset
-      const response = await fetch("/api/admin/ai/generate-admin-preset", {
+      // Call AI API to generate webapp preset (primary + accent)
+      const response = await fetch("/api/admin/ai/generate-webapp-preset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -543,16 +543,25 @@ export function AppearanceSettingsV2() {
 
       const presetData = await response.json();
 
+      if (!presetData.primary_color || !presetData.accent_color) {
+        throw new Error("Invalid preset data received");
+      }
+
+      // Verify colors are different
+      if (presetData.primary_color === presetData.accent_color) {
+        throw new Error("Primary and accent colors cannot be the same. Please try generating again.");
+      }
+
       // Convert hex colors to HSL
       const primaryHsl = hexToHsl(presetData.primary_color);
-      const secondaryHsl = hexToHsl(presetData.secondary_color);
+      const accentHsl = hexToHsl(presetData.accent_color);
 
       // Create primary color in database
       const { data: newPrimaryColor, error: primaryError } = await (supabase
         .from("user_colors") as any)
         .insert({
           user_id: userId,
-          name: `Primary ${presetData.name}`,
+          name: `${presetData.name || "AI Generated"} - Primary`,
           hex: presetData.primary_color,
           hsl_h: primaryHsl.h,
           hsl_s: primaryHsl.s,
@@ -563,41 +572,66 @@ export function AppearanceSettingsV2() {
 
       if (primaryError) throw primaryError;
 
-      // Create secondary color in database
+      // Create accent color in database
+      const { data: newAccentColor, error: accentError } = await (supabase
+        .from("user_colors") as any)
+        .insert({
+          user_id: userId,
+          name: `${presetData.name || "AI Generated"} - Accent`,
+          hex: presetData.accent_color,
+          hsl_h: accentHsl.h,
+          hsl_s: accentHsl.s,
+          hsl_l: accentHsl.l,
+        })
+        .select("id")
+        .single();
+
+      if (accentError) throw accentError;
+
+      // Verify IDs are different
+      if (newPrimaryColor.id === newAccentColor.id) {
+        throw new Error("Color IDs are the same. This should not happen.");
+      }
+
+      // Create gray secondary color (neutral gray for webapps)
+      const grayHex = "#9ca3af"; // Neutral gray (similar to gray-400 in Tailwind)
+      const grayHsl = hexToHsl(grayHex);
       const { data: newSecondaryColor, error: secondaryError } = await (supabase
         .from("user_colors") as any)
         .insert({
           user_id: userId,
-          name: `Secondary ${presetData.name}`,
-          hex: presetData.secondary_color,
-          hsl_h: secondaryHsl.h,
-          hsl_s: secondaryHsl.s,
-          hsl_l: secondaryHsl.l,
+          name: `${presetData.name || "AI Generated"} - Secondary`,
+          hex: grayHex,
+          hsl_h: grayHsl.h,
+          hsl_s: grayHsl.s,
+          hsl_l: grayHsl.l,
         })
         .select("id")
         .single();
 
       if (secondaryError) throw secondaryError;
 
-      // Use primary color as accent for now
-      const accentColorId = newPrimaryColor.id;
-
-      // Create theme
+      // Create theme with primary, gray secondary, and accent colors
       const defaultFontJson = serializeFontFamily(getDefaultFontFamily());
       const { data: newTheme, error: themeError } = await (supabase
         .from("user_themes") as any)
         .insert({
           user_id: userId,
-          name: presetData.name,
+          name: presetData.name || "AI Generated Preset",
           primary_color_id: newPrimaryColor.id,
-          secondary_color_id: newSecondaryColor.id,
-          accent_color_id: accentColorId,
+          secondary_color_id: newSecondaryColor.id, // Gray secondary
+          accent_color_id: newAccentColor.id,
           font_family: defaultFontJson,
         })
         .select("id, name, primary_color_id, secondary_color_id, accent_color_id")
         .single();
 
       if (themeError) throw themeError;
+
+      // Verify the saved theme has correct colors
+      if (newTheme.primary_color_id === newTheme.accent_color_id) {
+        console.error('[PRESET DEBUG] CRITICAL: Saved theme has same primary and accent color IDs!');
+      }
 
       // Update user_settings to set this as active theme
       await (supabase
@@ -618,7 +652,7 @@ export function AppearanceSettingsV2() {
       // Set colors in picker
       const primaryColorComponent: Color = {
         id: newPrimaryColor.id,
-        name: `Primary ${presetData.name}`,
+        name: `${presetData.name || "AI Generated"} - Primary`,
         hex: presetData.primary_color,
         hsl: {
           h: primaryHsl.h,
@@ -627,28 +661,39 @@ export function AppearanceSettingsV2() {
         },
       };
 
+      const accentColorComponent: Color = {
+        id: newAccentColor.id,
+        name: `${presetData.name || "AI Generated"} - Accent`,
+        hex: presetData.accent_color,
+        hsl: {
+          h: accentHsl.h,
+          s: accentHsl.s,
+          l: accentHsl.l,
+        },
+      };
+
       const secondaryColorComponent: Color = {
         id: newSecondaryColor.id,
-        name: `Secondary ${presetData.name}`,
-        hex: presetData.secondary_color,
+        name: `${presetData.name || "AI Generated"} - Secondary`,
+        hex: grayHex,
         hsl: {
-          h: secondaryHsl.h,
-          s: secondaryHsl.s,
-          l: secondaryHsl.l,
+          h: grayHsl.h,
+          s: grayHsl.s,
+          l: grayHsl.l,
         },
       };
 
       setPrimaryColor(primaryColorComponent);
+      setAccentColor(accentColorComponent);
       setSecondaryColor(secondaryColorComponent);
       applyPrimaryColorToCSS(primaryColorComponent);
-      // Secondary color is not applied dynamically - it comes from CSS defaults
 
       setSelectedPresetId(newTheme.id);
       setIsEditingPreset(true);
 
       toast({
         title: "Preset generated",
-        description: `"${presetData.name}" has been created with AI-generated Pantone-inspired colors.`,
+        description: `"${presetData.name || "AI Generated Preset"}" has been created with primary and accent colors optimized for webapps.`,
       });
     } catch (error) {
       console.error("Error generating preset:", error);
@@ -1089,9 +1134,12 @@ export function AppearanceSettingsV2() {
               <div className="font-medium">Theme</div>
               <div className="text-sm text-muted-foreground">Choose your interface theme</div>
             </div>
-            <Select value={currentTheme} onValueChange={handleThemeChange}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <div className="flex items-center gap-2">
+            <Popover open={isThemePopoverOpen} onOpenChange={setIsThemePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-10 gap-2 px-3 bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card transition-all duration-300 w-full sm:w-auto"
+                >
                   {currentTheme === "dark" ? (
                     <Moon className="h-4 w-4" />
                   ) : currentTheme === "light" ? (
@@ -1099,32 +1147,60 @@ export function AppearanceSettingsV2() {
                   ) : (
                     <Monitor className="h-4 w-4" />
                   )}
-                  <SelectValue>
-                    {currentTheme === "dark" ? "Dark" : currentTheme === "light" ? "Light" : "System"}
-                  </SelectValue>
+                  <span>{currentTheme === "dark" ? "Dark" : currentTheme === "light" ? "Light" : "System"}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                sideOffset={4}
+                className="w-48 px-0 py-2 border-0"
+                style={{
+                  boxShadow:
+                    "rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px",
+                }}
+              >
+                <div className="px-4 py-2">
+                  <div className="space-y-0">
+                    <button
+                      onClick={() => handleThemeChange("light")}
+                      className={cn(
+                        "flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1.5 -mx-2 w-full hover:bg-secondary group",
+                        currentTheme === "light" && "bg-secondary"
+                      )}
+                    >
+                      <Sun className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                      <span className="text-sm text-muted-foreground group-hover:text-foreground font-normal">
+                        Light
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleThemeChange("dark")}
+                      className={cn(
+                        "flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1.5 -mx-2 w-full hover:bg-secondary group",
+                        currentTheme === "dark" && "bg-secondary"
+                      )}
+                    >
+                      <Moon className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                      <span className="text-sm text-muted-foreground group-hover:text-foreground font-normal">
+                        Dark
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleThemeChange("system")}
+                      className={cn(
+                        "flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1.5 -mx-2 w-full hover:bg-secondary group",
+                        currentTheme === "system" && "bg-secondary"
+                      )}
+                    >
+                      <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                      <span className="text-sm text-muted-foreground group-hover:text-foreground font-normal">
+                        System
+                      </span>
+                    </button>
+                  </div>
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">
-                  <div className="flex items-center gap-2">
-                    <Sun className="h-4 w-4" />
-                    <span>Light</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="dark">
-                  <div className="flex items-center gap-2">
-                    <Moon className="h-4 w-4" />
-                    <span>Dark</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="system">
-                  <div className="flex items-center gap-2">
-                    <Monitor className="h-4 w-4" />
-                    <span>System</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Brand Color Section */}

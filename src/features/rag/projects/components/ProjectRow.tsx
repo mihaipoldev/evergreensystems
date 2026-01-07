@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -12,22 +11,27 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolder,
   faDatabase,
-  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import { ProjectActionsMenu } from "./ProjectActionsMenu";
+import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
+import { statusColorMap } from "@/features/rag/shared/config/statusColors";
 import type { Project } from "../types";
 import { cn } from "@/lib/utils";
 
 type ProjectRowProps = {
   project: Project & { document_count?: number };
   linkedKBName?: string | null;
+  projectTypeIcon?: string | null;
   onDelete?: () => void;
+  onEdit?: (project: Project) => void;
 };
 
 export function ProjectRow({
   project,
   linkedKBName,
+  projectTypeIcon,
   onDelete,
+  onEdit,
 }: ProjectRowProps) {
   const formattedDate = new Date(project.updated_at).toLocaleDateString("en-US", {
     month: "short",
@@ -35,25 +39,26 @@ export function ProjectRow({
     year: "numeric",
   });
 
-  const statusColors: Record<string, string> = {
-    active: "bg-green-600/10 text-green-600 dark:text-green-400 border-green-600/20",
-    draft: "bg-muted text-muted-foreground border-border",
-    archived: "bg-muted text-muted-foreground border-border",
-    delivered: "bg-primary/10 text-primary border-primary/20",
-    onboarding: "bg-yellow-600/10 text-yellow-600 dark:text-yellow-400 border-yellow-600/20",
-  };
+  // Map status to color using the shared config
+  function getStatusColor(status: string): string {
+    return statusColorMap[status] || "muted";
+  }
 
-  const statusColorClass = statusColors[project.status] || statusColors.draft;
+  const statusColor = getStatusColor(project.status);
 
   return (
     <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20">
       {/* Icon + Name */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-          <FontAwesomeIcon
-            icon={faFolder}
-            className="h-4 w-4 text-primary"
-          />
+          {projectTypeIcon ? (
+            <span className="text-lg">{projectTypeIcon}</span>
+          ) : (
+            <FontAwesomeIcon
+              icon={faFolder}
+              className="h-4 w-4 text-primary"
+            />
+          )}
         </div>
         <div className={cn(
           "min-w-0 flex flex-col h-full",
@@ -80,9 +85,11 @@ export function ProjectRow({
 
       {/* Status */}
       <div className="w-24 shrink-0">
-        <Badge variant="outline" className={cn("w-fit capitalize", statusColorClass)}>
+        <StatusBadge 
+          color={statusColor}
+        >
           {project.status}
-        </Badge>
+        </StatusBadge>
       </div>
 
       {/* Linked KB */}
@@ -113,6 +120,7 @@ export function ProjectRow({
           <ProjectActionsMenu
             project={project}
             onDelete={onDelete}
+            onEdit={onEdit}
           />
         </div>
       </div>

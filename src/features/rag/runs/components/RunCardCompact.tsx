@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import type { Run } from "../types";
+import { getRunLabel } from "../types";
 import { cn } from "@/lib/utils";
 
 type RunCardCompactProps = {
@@ -23,13 +24,8 @@ export function RunCardCompact({ run }: RunCardCompactProps) {
 
   const statusColorClass = statusColors[run.status] || statusColors.queued;
 
-  const runTypeLabels: Record<string, string> = {
-    niche_intelligence: "Niche Intelligence",
-    kb_query: "KB Query",
-    doc_ingest: "Document Ingest",
-  };
-
-  const runTypeLabel = runTypeLabels[run.run_type] || run.run_type;
+  // Use workflow label if available
+  const runLabel = getRunLabel(run);
 
   return (
     <Card className="h-full border-0">
@@ -41,8 +37,8 @@ export function RunCardCompact({ run }: RunCardCompactProps) {
               className="h-4 w-4 text-primary"
             />
           </div>
-          <h3 className="font-medium text-foreground truncate">
-            {runTypeLabel}
+          <h3 className="font-medium text-foreground truncate min-w-0 flex-1">
+            {runLabel}
           </h3>
         </div>
       </CardHeader>

@@ -42,11 +42,6 @@ export const OfferAngleCard = ({ angle, index }: OfferAngleCardProps) => {
         <h3 className="text-xl font-display font-semibold text-primary-foreground">
           {angle.angle_name}
         </h3>
-        {angle.description && (
-          <p className="text-sm text-primary-foreground/80 font-body mt-2">
-            {angle.description}
-          </p>
-        )}
       </div>
 
       {/* Content */}

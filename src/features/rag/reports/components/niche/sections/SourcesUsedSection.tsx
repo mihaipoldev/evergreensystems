@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown,
@@ -9,13 +9,27 @@ import {
   faExternalLink,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  getStoredCollapsibleState,
+  setStoredCollapsibleState,
+  getReportGroupId,
+} from "@/lib/collapsible-persistence";
 
 interface SourcesUsedSectionProps {
   sources: string[];
+  reportId: string;
 }
 
-export const SourcesUsedSection = ({ sources }: SourcesUsedSectionProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+export const SourcesUsedSection = ({ sources, reportId }: SourcesUsedSectionProps) => {
+  const groupId = getReportGroupId(reportId, "sources-used");
+  const [isExpanded, setIsExpanded] = useState(() =>
+    getStoredCollapsibleState(groupId, false)
+  );
+
+  // Update localStorage when state changes
+  useEffect(() => {
+    setStoredCollapsibleState(groupId, isExpanded);
+  }, [groupId, isExpanded]);
 
   if (!sources || sources.length === 0) {
     return null;

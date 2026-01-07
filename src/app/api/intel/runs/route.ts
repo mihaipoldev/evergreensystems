@@ -1,5 +1,6 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { createRun } from "@/features/rag/runs/data";
 
 export async function GET(request: Request) {
   try {
@@ -13,9 +14,10 @@ export async function GET(request: Request) {
     const adminSupabase = createServiceRoleClient();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
-    const runType = searchParams.get("run_type");
     const search = searchParams.get("search");
-    const subjectId = searchParams.get("subject_id");
+    const projectId = searchParams.get("project_id");
+    const subjectId = searchParams.get("subject_id"); // Backward compatibility
+    const workflowId = searchParams.get("workflow_id");
 
     let query = adminSupabase
       .from("rag_runs")
@@ -29,6 +31,13 @@ export async function GET(request: Request) {
           id,
           name,
           label
+        ),
+        projects (
+          id,
+          name
+        ),
+        rag_run_outputs (
+          id
         )
       `);
 
@@ -36,12 +45,15 @@ export async function GET(request: Request) {
       query = query.eq("status", status.toLowerCase());
     }
 
-    if (runType && runType !== "All") {
-      query = query.eq("run_type", runType);
+    // Filter by workflow_id
+    if (workflowId) {
+      query = query.eq("workflow_id", workflowId);
     }
 
-    if (subjectId) {
-      query = query.eq("subject_id", subjectId);
+    // Use project_id (new) or subject_id (backward compat)
+    const effectiveProjectId = projectId || subjectId;
+    if (effectiveProjectId) {
+      query = query.eq("project_id", effectiveProjectId);
     }
 
     if (search && search.trim() !== "") {
@@ -57,15 +69,108 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform data to include knowledge base name and workflow info
-    const runsWithKB = (data || []).map((run: any) => ({
-      ...run,
-      knowledge_base_name: run.rag_knowledge_bases?.name || null,
-      workflow_name: run.workflows?.name || null,
-      workflow_label: run.workflows?.label || null,
-    }));
+    // Transform data to include knowledge base name, workflow info, and report ID
+    const typedData = (data || []) as any[];
+    const runsWithKB = typedData.map((run: any) => {
+      // Handle rag_run_outputs - it might be an array or single object
+      const runOutputs = run.rag_run_outputs;
+      
+      // Debug: log first run to see structure
+      if (typedData && typedData.length > 0 && run.id === typedData[0].id) {
+        console.log("First run structure:", { 
+          runId: run.id, 
+          project_id: run.project_id,
+          projects: run.projects,
+          projects_name: run.projects?.name 
+        });
+      }
+      
+      const reportId = Array.isArray(runOutputs) && runOutputs.length > 0
+        ? runOutputs[0].id
+        : runOutputs?.id || null;
+
+      // Handle projects - it might be null, an object, or an array
+      let projectName = null;
+      if (run.projects) {
+        if (Array.isArray(run.projects)) {
+          projectName = run.projects[0]?.name || null;
+        } else {
+          projectName = run.projects.name || null;
+        }
+      }
+
+      return {
+        ...run,
+        knowledge_base_name: run.rag_knowledge_bases?.name || null,
+        project_name: projectName,
+        workflow_name: run.workflows?.name || null,
+        workflow_label: run.workflows?.label || null,
+        report_id: reportId,
+      };
+    });
 
     return NextResponse.json(runsWithKB, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      knowledge_base_id,
+      input,
+      metadata,
+      workflow_id, // Required
+      project_id,
+      subject_id, // Backward compatibility
+    } = body;
+
+    // Validate required fields
+    if (!knowledge_base_id) {
+      return NextResponse.json(
+        { error: "knowledge_base_id is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!workflow_id) {
+      return NextResponse.json(
+        { error: "workflow_id is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!input) {
+      return NextResponse.json(
+        { error: "input is required" },
+        { status: 400 }
+      );
+    }
+
+    // Create the run using the data layer function
+    const run = await createRun({
+      knowledge_base_id,
+      input,
+      metadata,
+      workflow_id,
+      project_id: project_id || null,
+      subject_id: subject_id || null, // Backward compatibility
+      created_by: user.id,
+    });
+
+    return NextResponse.json(run, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

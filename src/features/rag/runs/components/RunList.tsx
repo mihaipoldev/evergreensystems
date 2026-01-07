@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
 import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { RunTable } from "./RunTable";
 import type { Run } from "../types";
 import { createClient } from "@/lib/supabase/client";
@@ -20,25 +24,117 @@ type RunListProps = {
   initialRuns: RunWithKB[];
 };
 
+const STORAGE_KEY_PREFIX = "research-reports-";
+const STORAGE_KEY_SEARCH = `${STORAGE_KEY_PREFIX}search`;
+const STORAGE_KEY_FILTERS = `${STORAGE_KEY_PREFIX}filters`;
+const STORAGE_KEY_SORT = `${STORAGE_KEY_PREFIX}sort`;
+const STORAGE_KEY_GROUP_BY_STATUS = "runs-group-by-status";
+
+// Helper functions for localStorage persistence
+function getStoredSearch(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SEARCH) || "";
+  } catch {
+    return "";
+  }
+}
+
+function setStoredSearch(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SEARCH, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredFilters(): Record<string, string[]> {
+  if (typeof window === "undefined") return { "Workflow": [], "Status": [] };
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_FILTERS);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === "object" ? parsed : { "Workflow": [], "Status": [] };
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { "Workflow": [], "Status": [] };
+}
+
+function setStoredFilters(filters: Record<string, string[]>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredSort(): string {
+  if (typeof window === "undefined") return "Recent";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SORT) || "Recent";
+  } catch {
+    return "Recent";
+  }
+}
+
+function setStoredSort(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SORT, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredGroupByStatus(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_GROUP_BY_STATUS);
+    return saved === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredGroupByStatus(value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_GROUP_BY_STATUS, String(value));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function RunList({ initialRuns }: RunListProps) {
   const router = useRouter();
   const [runs, setRuns] = useState<RunWithKB[]>(initialRuns);
   const [viewMode, setViewMode] = useViewMode("table");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
-    "Run Type": [],
-    "Status": [],
-  });
-  const [selectedSort, setSelectedSort] = useState<string>("Recent");
+  // Initialize state from localStorage directly to avoid flash of default values
+  const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
+  const [workflows, setWorkflows] = useState<Array<{ id: string; name: string; label: string }>>([]);
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
+  const [selectedSort, setSelectedSort] = useState<string>(() => getStoredSort());
+  const [groupByStatus, setGroupByStatus] = useState(() => getStoredGroupByStatus());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const hasInitializedExpansion = useRef(false);
+  const hasLoadedFromStorage = useRef(false);
+
+  // Mark as loaded after first render
+  useEffect(() => {
+    hasLoadedFromStorage.current = true;
+  }, []);
 
   const filterCategories: FilterCategory[] = [
     {
-      label: "Run Type",
-      options: [
-        { value: "niche_intelligence", label: "Niche Intelligence" },
-        { value: "kb_query", label: "KB Query" },
-        { value: "doc_ingest", label: "Document Ingest" },
-      ],
+      label: "Workflow",
+      options: workflows.map((workflow) => ({
+        value: workflow.id,
+        label: workflow.label || workflow.name,
+      })),
     },
     {
       label: "Status",
@@ -52,6 +148,32 @@ export function RunList({ initialRuns }: RunListProps) {
       ],
     },
   ];
+
+  // Fetch workflows for filtering
+  useEffect(() => {
+    const fetchWorkflows = async () => {
+      try {
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        const response = await fetch("/api/intel/workflows?enabled=true", {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setWorkflows(data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching workflows:", error);
+      }
+    };
+
+    fetchWorkflows();
+  }, []);
 
   // Sync initialRuns when they change
   useEffect(() => {
@@ -199,16 +321,19 @@ export function RunList({ initialRuns }: RunListProps) {
       filtered = filtered.filter(
         (run) =>
           run.knowledge_base_name?.toLowerCase().includes(query) ||
-          run.run_type.toLowerCase().includes(query) ||
-          run.status.toLowerCase().includes(query)
+          run.status.toLowerCase().includes(query) ||
+          run.workflow_label?.toLowerCase().includes(query) ||
+          run.workflow_name?.toLowerCase().includes(query)
       );
     }
 
-    // Apply run type filter
-    const selectedRunTypes = selectedFilters["Run Type"] || [];
-    if (selectedRunTypes.length > 0) {
+    // Apply workflow filter (prefer workflow_id, fallback to workflow_name for backward compatibility)
+    const selectedWorkflows = selectedFilters["Workflow"] || [];
+    if (selectedWorkflows.length > 0) {
       filtered = filtered.filter((run) => {
-        return selectedRunTypes.includes(run.run_type);
+        // Match by workflow_id (primary) or workflow_name (fallback)
+        return run.workflow_id && selectedWorkflows.includes(run.workflow_id) ||
+               (run.workflow_name && selectedWorkflows.includes(run.workflow_name));
       });
     }
 
@@ -245,15 +370,106 @@ export function RunList({ initialRuns }: RunListProps) {
     return sorted;
   }, [runs, searchQuery, selectedFilters, selectedSort]);
 
+  // Expand all groups by default when grouping is first enabled
+  useEffect(() => {
+    if (groupByStatus && !hasInitializedExpansion.current) {
+      const statuses = ["complete", "generating", "ingesting", "collecting", "queued", "failed"];
+      setExpandedGroups(new Set(statuses));
+      hasInitializedExpansion.current = true;
+    }
+    if (!groupByStatus) {
+      hasInitializedExpansion.current = false;
+    }
+  }, [groupByStatus]);
+
+  // Group runs by status when grouping is enabled
+  const groupedRuns = useMemo(() => {
+    if (!groupByStatus) {
+      return null;
+    }
+
+    const groups: Record<string, RunWithKB[]> = {
+      complete: [],
+      generating: [],
+      ingesting: [],
+      collecting: [],
+      queued: [],
+      failed: [],
+    };
+
+    filteredAndSortedRuns.forEach((run) => {
+      const status = run.status;
+      if (groups[status]) {
+        groups[status].push(run);
+      } else {
+        // Handle unknown statuses
+        if (!groups.other) {
+          groups.other = [];
+        }
+        groups.other.push(run);
+      }
+    });
+
+    // Remove empty groups
+    Object.keys(groups).forEach((key) => {
+      if (groups[key].length === 0) {
+        delete groups[key];
+      }
+    });
+
+    return groups;
+  }, [filteredAndSortedRuns, groupByStatus]);
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupName)) {
+        newSet.delete(groupName);
+      } else {
+        newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
+
+  // Persist search query changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSearch(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Persist filter changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredFilters(selectedFilters);
+    }
+  }, [selectedFilters]);
+
+  // Persist sort changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSort(selectedSort);
+    }
+  }, [selectedSort]);
+
+  // Persist groupByStatus changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredGroupByStatus(groupByStatus);
+    }
+  }, [groupByStatus]);
+
   const handleFilterApply = (filters: Record<string, string[]>) => {
     setSelectedFilters(filters);
   };
 
   const handleFilterClear = () => {
-    setSelectedFilters({
-      "Run Type": [],
+    const clearedFilters = {
+      "Workflow": [],
       "Status": [],
-    });
+    };
+    setSelectedFilters(clearedFilters);
   };
 
   const sortOptions = ["Recent", "Knowledge Base"];
@@ -262,6 +478,7 @@ export function RunList({ initialRuns }: RunListProps) {
     <div className="w-full space-y-6">
       <Toolbar
         searchPlaceholder="Search runs..."
+        searchValue={searchQuery}
         onSearch={setSearchQuery}
         filterCategories={filterCategories}
         selectedFilters={selectedFilters}
@@ -272,6 +489,13 @@ export function RunList({ initialRuns }: RunListProps) {
         onSortChange={setSelectedSort}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
+        showViewModeToggle={false}
+        groupByStatus={{
+          enabled: groupByStatus,
+          onToggle: (enabled: boolean) => {
+            setGroupByStatus(enabled);
+          },
+        }}
       />
 
       {filteredAndSortedRuns.length === 0 ? (
@@ -285,8 +509,99 @@ export function RunList({ initialRuns }: RunListProps) {
             ? "No runs found."
             : "No runs found matching your search"}
         </motion.div>
+      ) : groupByStatus && groupedRuns ? (
+        <TooltipProvider delayDuration={100}>
+          <div className="space-y-2">
+            {/* Table Header */}
+            <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="flex-1 min-w-0">Run</div>
+              <div className="w-28 shrink-0">Status</div>
+              <div className="w-44 shrink-0">Progress</div>
+              <div className="w-40 shrink-0">Created</div>
+              <div className="w-20 shrink-0 text-right">Actions</div>
+            </div>
+
+            {/* Status Groups */}
+            {Object.entries(groupedRuns)
+            .sort(([a], [b]) => {
+              // Order: complete, generating, ingesting, collecting, queued, failed, other
+              const order: Record<string, number> = {
+                complete: 0,
+                generating: 1,
+                ingesting: 2,
+                collecting: 3,
+                queued: 4,
+                failed: 5,
+                other: 6,
+              };
+              return (order[a] ?? 99) - (order[b] ?? 99);
+            })
+            .map(([status, statusRuns]) => {
+              const statusLabels: Record<string, string> = {
+                complete: "Complete",
+                generating: "Generating",
+                ingesting: "Ingesting",
+                collecting: "Collecting",
+                queued: "Queued",
+                failed: "Failed",
+                other: "Other",
+              };
+              const statusLabel = statusLabels[status] || status;
+
+              const statusColors: Record<string, string> = {
+                complete: "bg-green-600/10 text-green-600 dark:text-green-400",
+                generating: "bg-purple-600/10 text-purple-600 dark:text-purple-400",
+                ingesting: "bg-blue-600/10 text-blue-600 dark:text-blue-400",
+                collecting: "bg-yellow-600/10 text-yellow-600 dark:text-yellow-400",
+                queued: "bg-muted text-muted-foreground",
+                failed: "bg-destructive/10 text-destructive",
+                other: "bg-muted text-muted-foreground",
+              };
+              const statusColor = statusColors[status] || statusColors.other;
+
+              return (
+                <Collapsible
+                  key={status}
+                  open={expandedGroups.has(status)}
+                  onOpenChange={() => toggleGroup(status)}
+                >
+                  <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
+                    <FontAwesomeIcon
+                      icon={expandedGroups.has(status) ? faChevronDown : faChevronRight}
+                      className="h-4 w-4 text-muted-foreground shrink-0"
+                    />
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className={`h-2 w-2 rounded-full ${statusColor.split(' ')[0]}`}></span>
+                      <h3 className="text-sm font-semibold text-foreground capitalize">{statusLabel}</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {statusRuns.length} {statusRuns.length === 1 ? "run" : "runs"}
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="pt-2">
+                      <RunTable
+                        runs={statusRuns}
+                        onDelete={() => {
+                          router.refresh();
+                        }}
+                        hideHeader={true}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+          </div>
+        </TooltipProvider>
       ) : (
-        <RunTable runs={filteredAndSortedRuns} />
+        <RunTable 
+          runs={filteredAndSortedRuns} 
+          onDelete={() => {
+            // Refresh runs list after deletion
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );

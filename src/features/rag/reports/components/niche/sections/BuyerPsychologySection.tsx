@@ -24,7 +24,7 @@ export const BuyerPsychologySection = ({ buyer }: BuyerPsychologySectionProps) =
   return (
     <SectionWrapper
       id="buyer-psychology"
-      number="02"
+      number="03"
       title="Buyer Psychology"
       subtitle="Decision-making dynamics, triggers, objections, and sales cycle insights"
     >

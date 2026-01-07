@@ -29,10 +29,26 @@ export type ReportData = {
         typical_sales_approach: string;
       };
       market_maturity: string;
-      lead_gen_seasonality: string;
+      timing_intelligence?: {
+        lead_gen_seasonality: string;
+        best_months_to_launch: string[];
+        budget_approval_cycle: string;
+      };
+      // Backward compatibility - keep for old data
+      lead_gen_seasonality?: string;
+      deal_economics?: {
+        typical_client_value_annually: string;
+        average_deal_size: string;
+        contract_length_months: number;
+        retention_rate_percent: number;
+      };
       existing_solutions: {
         operational_tools: string[];
         client_acquisition_methods: string[];
+      };
+      lead_gen_competitive_landscape?: {
+        existing_lead_gen_providers: string[];
+        typical_pricing_benchmarks: string;
       };
       lead_gen_risks: string[];
     };

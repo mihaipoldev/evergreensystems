@@ -1,11 +1,11 @@
 "use client";
 
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileText } from "@fortawesome/free-solid-svg-icons";
+import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
+import { statusColorMap } from "@/features/rag/shared/config/statusColors";
 import type { RAGDocument } from "../document-types";
-import { cn } from "@/lib/utils";
 
 type DocumentCardCompactProps = {
   document: RAGDocument;
@@ -14,13 +14,12 @@ type DocumentCardCompactProps = {
 export function DocumentCardCompact({
   document,
 }: DocumentCardCompactProps) {
-  const statusColors: Record<string, string> = {
-    ready: "bg-green-600/10 text-green-600 dark:text-green-400",
-    processing: "bg-yellow-600/10 text-yellow-600 dark:text-yellow-400",
-    failed: "bg-destructive/10 text-destructive",
-  };
+  // Map status to color using the shared config
+  function getStatusColor(status: string): string {
+    return statusColorMap[status] || "muted";
+  }
 
-  const statusColorClass = statusColors[document.status] || statusColors.ready;
+  const statusColor = getStatusColor(document.status);
 
   const getFileTypeLabel = (): string => {
     if (document.file_type) {
@@ -43,15 +42,17 @@ export function DocumentCardCompact({
               className="h-4 w-4 text-primary"
             />
           </div>
-          <h3 className="font-medium text-foreground truncate">
+          <h3 className="font-medium text-foreground truncate min-w-0 flex-1">
             {document.title || "Untitled Document"}
           </h3>
         </div>
       </CardHeader>
       <CardContent className="p-4 space-y-2">
-        <Badge variant="secondary" className={cn("w-fit capitalize", statusColorClass)}>
+        <StatusBadge 
+          color={statusColor}
+        >
           {document.status}
-        </Badge>
+        </StatusBadge>
         <div className="text-sm text-muted-foreground">
           <span>{getFileTypeLabel()}</span>
         </div>

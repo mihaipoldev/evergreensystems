@@ -47,6 +47,7 @@ export function KnowledgeBaseDetailClient({
       <div className="w-full space-y-6">
         <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
           <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{knowledge.name}</h1>
             <p className="text-sm text-muted-foreground mb-2">Manage documents for this knowledge base.</p>
             <div className="flex items-center gap-2 flex-wrap">
               {knowledge.kb_type && (

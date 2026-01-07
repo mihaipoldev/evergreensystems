@@ -72,11 +72,67 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { client_name, status, description } = body;
+    const { 
+      project_type_id,
+      client_name, 
+      name,
+      status, 
+      description,
+      geography,
+      category
+    } = body;
 
-    const updateData: Database["public"]["Tables"]["projects"]["Update"] = {};
-    if (client_name !== undefined) updateData.client_name = client_name;
-    if (status !== undefined) updateData.status = status;
+    // Get current project to determine type
+    const { data: currentProject } = await adminSupabase
+      .from("projects")
+      .select("project_type_id")
+      .eq("id", id)
+      .single();
+
+    if (!currentProject) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // Get project type
+    const typedCurrentProject = currentProject as { project_type_id: string | null } | null;
+    const effectiveProjectTypeId = project_type_id || typedCurrentProject?.project_type_id;
+    const { data: projectType } = await adminSupabase
+      .from("project_types")
+      .select("name")
+      .eq("id", effectiveProjectTypeId)
+      .single();
+
+    const typedProjectType = projectType as { name: string } | null;
+    const isClientType = typedProjectType?.name === "client";
+    const isNicheType = typedProjectType?.name === "niche";
+
+    const updateData: Database["public"]["Tables"]["projects"]["Update"] & {
+      project_type_id?: string;
+      geography?: string | null;
+      category?: string | null;
+    } = {};
+    
+    // Update project_type_id if provided
+    if (project_type_id !== undefined) updateData.project_type_id = project_type_id;
+    
+    // Update type-specific fields
+    if (isClientType) {
+      if (client_name !== undefined) {
+        updateData.client_name = client_name;
+        updateData.name = client_name; // Keep name in sync
+      }
+      if (status !== undefined) updateData.status = status;
+    } else if (isNicheType) {
+      if (name !== undefined) {
+        updateData.name = name;
+        updateData.client_name = name; // Keep client_name for backward compatibility
+      }
+      if (geography !== undefined) updateData.geography = geography || null;
+      if (category !== undefined) updateData.category = category || null;
+      // Niche research projects default to "active" status
+      if (status !== undefined) updateData.status = status;
+    }
+    
     if (description !== undefined) updateData.description = description || null;
     // Note: kb_id is not updatable - workspace KB is immutable
 

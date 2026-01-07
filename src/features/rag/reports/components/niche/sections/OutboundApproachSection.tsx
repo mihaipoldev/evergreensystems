@@ -19,7 +19,7 @@ export const OutboundApproachSection = ({ outbound }: OutboundApproachSectionPro
   return (
     <SectionWrapper
       id="outbound-approach"
-      number="07"
+      number="08"
       title="Outbound Approach"
       subtitle="Messaging framework, hooks, proof requirements, and objection handling"
     >
@@ -59,7 +59,7 @@ export const OutboundApproachSection = ({ outbound }: OutboundApproachSectionPro
 
       <div className="mb-8">
         <h4 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-          <FontAwesomeIcon icon={faUser} className="w-5 h-5 text-accent" />
+          <FontAwesomeIcon icon={faUser} className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           Personalization Vectors
         </h4>
         <InsightList items={outbound.personalization_vectors} type="info" />

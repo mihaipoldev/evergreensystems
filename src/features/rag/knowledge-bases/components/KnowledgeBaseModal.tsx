@@ -192,7 +192,7 @@ export function KnowledgeBaseModal({
       title={isEdit ? "Edit Knowledge Base" : "Create Knowledge Base"}
       footer={
         <>
-          <Button className="shadow-buttons border-none bg-muted/20 hover:bg-accent/30" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+          <Button className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30" variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button className="shadow-buttons border-none" onClick={handleSubmit} disabled={isSubmitting}>

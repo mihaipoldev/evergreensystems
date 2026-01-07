@@ -19,7 +19,7 @@ export const PositioningIntelSection = ({ positioning }: PositioningIntelSection
   return (
     <SectionWrapper
       id="positioning-intel"
-      number="08"
+      number="09"
       title="Positioning Intelligence"
       subtitle="How companies in this niche position themselves to their customers"
     >

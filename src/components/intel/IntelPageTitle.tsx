@@ -12,7 +12,6 @@ const staticRouteMap: Record<string, string> = {
   documents: "Documents",
   runs: "Runs",
   reports: "Reports",
-  research: "Research",
   workflows: "Workflows",
   new: "Create Project",
 };
@@ -45,19 +44,36 @@ async function fetchProjectName(id: string): Promise<string | null> {
   }
 }
 
-async function fetchResearchSubjectName(id: string): Promise<string | null> {
+async function fetchProjectType(id: string): Promise<{ label: string; name: string } | null> {
   try {
-    const response = await fetch(`/api/intel/research/${id}`);
+    const response = await fetch(`/api/intel/projects/${id}`);
     if (!response.ok) {
       return null;
     }
     const data = await response.json();
-    return data.name || null;
+    if (data.project_type_id) {
+      // Fetch project type details
+      try {
+        const typeResponse = await fetch(`/api/intel/project-types/${data.project_type_id}`);
+        if (typeResponse.ok) {
+          const typeData = await typeResponse.json();
+          return {
+            label: typeData.label || typeData.name,
+            name: typeData.name,
+          };
+        }
+      } catch (typeError) {
+        // If project-types endpoint doesn't exist or fails, return null
+        console.error("Error fetching project type:", typeError);
+      }
+    }
+    return null;
   } catch (error) {
-    console.error("Error fetching research subject name:", error);
+    console.error("Error fetching project type:", error);
     return null;
   }
 }
+
 
 async function fetchWorkflowName(id: string): Promise<string | null> {
   try {
@@ -76,8 +92,8 @@ async function fetchWorkflowName(id: string): Promise<string | null> {
 export function IntelPageTitle() {
   const pathname = usePathname();
   const [dynamicTitle, setDynamicTitle] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
+  const [projectType, setProjectType] = useState<{ label: string; name: string } | null>(null);
+  
   // Parse the pathname
   const segments = pathname.split("/").filter(Boolean);
 
@@ -92,11 +108,11 @@ export function IntelPageTitle() {
   const isProjectDetail = relevantSegments[0] === "projects" && relevantSegments.length >= 2 && relevantSegments[1] !== "new";
   const projectId = isProjectDetail ? relevantSegments[1] : null;
 
-  const isResearchDetail = relevantSegments[0] === "research" && relevantSegments.length >= 2;
-  const researchId = isResearchDetail ? relevantSegments[1] : null;
-
   const isWorkflowDetail = relevantSegments[0] === "workflows" && relevantSegments.length >= 2;
   const workflowId = isWorkflowDetail ? relevantSegments[1] : null;
+  
+  // Set loading state immediately if we're on a detail page that needs fetching
+  const [isLoading, setIsLoading] = useState(isProjectDetail || isKnowledgeBaseDetail || isWorkflowDetail);
 
   // Fetch dynamic titles
   useEffect(() => {
@@ -112,19 +128,13 @@ export function IntelPageTitle() {
         });
     } else if (projectId) {
       setIsLoading(true);
-      fetchProjectName(projectId)
-        .then((name) => {
+      Promise.all([
+        fetchProjectName(projectId),
+        fetchProjectType(projectId)
+      ])
+        .then(([name, type]) => {
           setDynamicTitle(name);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setIsLoading(false);
-        });
-    } else if (researchId) {
-      setIsLoading(true);
-      fetchResearchSubjectName(researchId)
-        .then((name) => {
-          setDynamicTitle(name);
+          setProjectType(type);
           setIsLoading(false);
         })
         .catch(() => {
@@ -143,14 +153,19 @@ export function IntelPageTitle() {
     } else {
       setDynamicTitle(null);
     }
-  }, [knowledgeBaseId, projectId, researchId, workflowId]);
+  }, [knowledgeBaseId, projectId, workflowId]);
 
   // Get static title or dynamic title
   let title: string;
-  if (isKnowledgeBaseDetail || isProjectDetail || isResearchDetail || isWorkflowDetail) {
-    title = isLoading 
-      ? "Loading..." 
-      : (dynamicTitle || (isKnowledgeBaseDetail ? "Knowledge Base" : isProjectDetail ? "Project" : isResearchDetail ? "Research" : "Workflow"));
+  if (isKnowledgeBaseDetail || isProjectDetail || isWorkflowDetail) {
+    // For detail pages, show the parent page name (e.g., "Projects", "Knowledge Bases")
+    // For project detail pages, just show "Project"
+    if (isProjectDetail) {
+      title = "Project";
+    } else {
+      const parentSegment = relevantSegments[0] || "";
+      title = staticRouteMap[parentSegment] || parentSegment.charAt(0).toUpperCase() + parentSegment.slice(1);
+    }
   } else {
     const firstSegment = relevantSegments[0] || "";
     const secondSegment = relevantSegments[1] || "";

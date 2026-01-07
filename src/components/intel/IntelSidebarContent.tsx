@@ -8,6 +8,7 @@ import { SidebarUserMenu } from "@/components/admin/layout/sidebar/SidebarUserMe
 import { SidebarNavSection, SidebarNavItem } from "@/components/admin/layout/sidebar/SidebarNav";
 import { INTEL_SIDEBAR_ITEMS } from "./intel-sidebar-items";
 import { KnowledgeBaseCollapsible } from "./KnowledgeBaseCollapsible";
+import { ProjectCollapsible } from "./ProjectCollapsible";
 import type { SidebarUser } from "@/components/admin/layout/sidebar/types";
 
 type IntelSidebarContentProps = {
@@ -66,8 +67,8 @@ export function IntelSidebarContent({
     };
   }, []);
 
-  // Simple state for sections (overview and settings for Intel)
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['overview', 'settings']));
+  // Simple state for sections (overview, admin, and settings for Intel)
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['overview', 'admin', 'settings']));
   const toggleSection = (section: string) => {
     setOpenSections((prev) => {
       const next = new Set(prev);
@@ -82,6 +83,19 @@ export function IntelSidebarContent({
 
   // State for knowledge bases expandable (like pages in admin)
   const [isKnowledgeBasesOpen, setIsKnowledgeBasesOpen] = useState(false);
+  // State for projects expandable - persisted in localStorage
+  const [isProjectsOpen, setIsProjectsOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("intel-sidebar-projects-open");
+    return stored === "true";
+  });
+
+  // Persist projects open state to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("intel-sidebar-projects-open", String(isProjectsOpen));
+    }
+  }, [isProjectsOpen]);
 
   return (
     <div className="flex flex-col h-full">
@@ -102,6 +116,39 @@ export function IntelSidebarContent({
               onToggle={() => toggleSection('overview')}
             >
               {INTEL_SIDEBAR_ITEMS.filter(item => item.section === 'overview').map((item) => {
+                // Replace Projects item with expandable collapsible
+                if (item.href === "/intel/projects") {
+                  return (
+                    <ProjectCollapsible
+                      key={item.href}
+                      isOpen={isProjectsOpen}
+                      onToggle={() => setIsProjectsOpen(!isProjectsOpen)}
+                      pathname={pathname}
+                      pendingPath={pendingPath}
+                      searchParams={searchParams}
+                      onNavigate={onNavigate}
+                      getIsActive={getIsActive}
+                    />
+                  );
+                }
+                return (
+                  <SidebarNavItem
+                    key={item.href}
+                    item={item}
+                    isActive={getIsActive(item.href)}
+                    onNavigate={onNavigate}
+                  />
+                );
+              })}
+            </SidebarNavSection>
+
+            {/* Admin Section */}
+            <SidebarNavSection
+              title="Admin"
+              isOpen={openSections.has('admin')}
+              onToggle={() => toggleSection('admin')}
+            >
+              {INTEL_SIDEBAR_ITEMS.filter(item => item.section === 'admin').map((item) => {
                 // Replace Knowledge Bases item with expandable collapsible
                 if (item.href === "/intel/knowledge-bases") {
                   return (

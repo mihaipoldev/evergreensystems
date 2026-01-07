@@ -109,7 +109,7 @@ export function ProjectActionsMenu({
       <DeleteConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        entityName={project.client_name}
+        entityName={project.client_name ?? undefined}
         entityType="project"
         onConfirm={handleDelete}
         isDeleting={isDeleting}

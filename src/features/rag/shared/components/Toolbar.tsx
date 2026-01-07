@@ -13,6 +13,7 @@ export type ViewMode = "grid" | "table";
 
 interface ToolbarProps {
   searchPlaceholder?: string;
+  searchValue?: string;
   onSearch?: (value: string) => void;
   filterCategories?: FilterCategory[];
   selectedFilters?: Record<string, string[]>;
@@ -34,6 +35,7 @@ interface ToolbarProps {
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
   viewModeStorageKey?: string;
+  showViewModeToggle?: boolean;
   showProjectsToggle?: {
     show: boolean;
     onToggle: (show: boolean) => void;
@@ -42,10 +44,15 @@ interface ToolbarProps {
     enabled: boolean;
     onToggle: (enabled: boolean) => void;
   };
+  groupByStatus?: {
+    enabled: boolean;
+    onToggle: (enabled: boolean) => void;
+  };
 }
 
 export function Toolbar({
   searchPlaceholder = "Search...",
+  searchValue: controlledSearchValue,
   onSearch,
   filterCategories,
   selectedFilters = {},
@@ -59,13 +66,25 @@ export function Toolbar({
   viewMode: controlledViewMode,
   onViewModeChange,
   viewModeStorageKey = "intel-view-mode",
+  showViewModeToggle = true,
   showProjectsToggle,
   groupBySource,
+  groupByStatus,
 }: ToolbarProps) {
-  const [searchValue, setSearchValue] = useState("");
+  const [internalSearchValue, setInternalSearchValue] = useState("");
   const [internalSelectedSort, setInternalSelectedSort] = useState(sortOptions[0] || "Recent");
   const [internalViewMode, setInternalViewMode] = useState<ViewMode>("grid");
   
+  // Use controlled or uncontrolled search
+  const searchValue = controlledSearchValue ?? internalSearchValue;
+
+  // Sync internal search value when controlled value changes
+  useEffect(() => {
+    if (controlledSearchValue !== undefined) {
+      setInternalSearchValue(controlledSearchValue);
+    }
+  }, [controlledSearchValue]);
+
   // Use controlled or uncontrolled sort
   const selectedSort = controlledSelectedSort ?? internalSelectedSort;
 
@@ -92,7 +111,9 @@ export function Toolbar({
   };
 
   const handleSearchChange = (value: string) => {
-    setSearchValue(value);
+    if (!controlledSearchValue) {
+      setInternalSearchValue(value);
+    }
     onSearch?.(value);
   };
 
@@ -243,8 +264,26 @@ export function Toolbar({
           </Button>
         )}
 
+        {/* Group By Status Toggle */}
+        {groupByStatus && (
+          <Button
+            variant="outline"
+            onClick={() => groupByStatus.onToggle(!groupByStatus.enabled)}
+            className={cn(
+              "h-10 gap-2 px-3 transition-all duration-300",
+              groupByStatus.enabled
+                ? "bg-primary/100 text-background shadow-card border-0 hover:bg-primary/90 hover:text-background"
+                : "bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card"
+            )}
+            title={groupByStatus.enabled ? "Ungroup runs" : "Group by status"}
+          >
+            <FontAwesomeIcon icon={faLayerGroup} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
+            Group
+          </Button>
+        )}
+
         {/* View Mode Toggle */}
-        {(controlledViewMode !== undefined || onViewModeChange) && (
+        {showViewModeToggle && (controlledViewMode !== undefined || onViewModeChange) && (
           <div className="flex shadow-buttons bg-card/90 items-center gap-0 border-0 rounded-md p-0 overflow-hidden">
             <button
               onClick={() => handleViewModeChange("grid")}

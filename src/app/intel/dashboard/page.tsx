@@ -349,7 +349,7 @@ export default function IntelDashboardPage() {
             icon={faPlay}
             action={
               <Button variant="ghost" size="sm" asChild className="hover:bg-transparent hover:text-primary transition-colors">
-                <Link href="/intel/runs">View all</Link>
+                <Link href="/intel/research-reports">View all</Link>
               </Button>
             }
           />

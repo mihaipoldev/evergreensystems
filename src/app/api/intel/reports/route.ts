@@ -20,13 +20,18 @@ export async function GET(request: Request) {
         *,
         rag_runs (
           id,
-          run_type,
+          workflow_id,
           status,
           knowledge_base_id,
           created_at,
           rag_knowledge_bases (
             id,
             name
+          ),
+          workflows (
+            id,
+            name,
+            label
           )
         )
       `);
@@ -48,6 +53,8 @@ export async function GET(request: Request) {
       run: report.rag_runs ? {
         ...report.rag_runs,
         knowledge_base_name: report.rag_runs.rag_knowledge_bases?.name || null,
+        workflow_name: report.rag_runs.workflows?.name || null,
+        workflow_label: report.rag_runs.workflows?.label || null,
       } : null,
     }));
 

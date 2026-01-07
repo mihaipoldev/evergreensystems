@@ -2,10 +2,10 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Run, RunStatus } from "./types";
 
 /**
- * Get all runs, optionally filtered by knowledge base or subject
+ * Get all runs, optionally filtered by knowledge base or project/subject
  * Uses service role client to bypass RLS for admin operations
  */
-export async function getAllRuns(knowledgeBaseId?: string, subjectId?: string): Promise<Run[]> {
+export async function getAllRuns(knowledgeBaseId?: string, subjectId?: string, projectId?: string): Promise<Run[]> {
   const supabase = createServiceRoleClient();
   let query = supabase
     .from("rag_runs")
@@ -16,8 +16,10 @@ export async function getAllRuns(knowledgeBaseId?: string, subjectId?: string): 
     query = query.eq("knowledge_base_id", knowledgeBaseId);
   }
 
-  if (subjectId) {
-    query = query.eq("subject_id", subjectId);
+  // Use project_id (new) or subject_id (backward compat)
+  const effectiveProjectId = projectId || subjectId;
+  if (effectiveProjectId) {
+    query = query.eq("project_id", effectiveProjectId);
   }
 
   const { data, error } = await query;
@@ -57,25 +59,27 @@ export async function getRunById(id: string): Promise<Run | null> {
  */
 export async function createRun(payload: {
   knowledge_base_id: string;
-  run_type: Run["run_type"];
   input: Record<string, any>;
   metadata?: Record<string, any>;
   created_by?: string | null;
-  workflow_id?: string | null;
-  subject_id?: string | null;
+  workflow_id: string; // Required - primary identifier
+  project_id?: string | null;
+  subject_id?: string | null; // Backward compatibility
 }): Promise<Run> {
   const supabase = createServiceRoleClient();
+  // Use project_id (new) or subject_id (backward compat)
+  const effectiveProjectId = payload.project_id || payload.subject_id;
+  
   const { data, error } = await supabase
     .from("rag_runs")
     // @ts-expect-error - rag_runs table type not fully recognized by TypeScript
     .insert({
       knowledge_base_id: payload.knowledge_base_id,
-      run_type: payload.run_type,
       input: payload.input,
       metadata: payload.metadata || {},
       created_by: payload.created_by || null,
-      workflow_id: payload.workflow_id || null,
-      subject_id: payload.subject_id || null,
+      workflow_id: payload.workflow_id, // Required
+      project_id: effectiveProjectId || null,
       status: "queued",
     })
     .select()

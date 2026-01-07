@@ -6,8 +6,6 @@ import {
   faPlay,
   faFileAlt,
   faGear,
-  faRightLeft,
-  faSearch,
   faSitemap,
   faTag,
 } from "@fortawesome/free-solid-svg-icons";
@@ -21,16 +19,16 @@ export const INTEL_SIDEBAR_ITEMS: SidebarItem[] = [
     section: "overview",
   },
   {
-    title: "Knowledge Bases",
-    href: "/intel/knowledge-bases",
-    icon: faBook,
-    section: "overview",
-  },
-  {
     title: "Projects",
     href: "/intel/projects",
     icon: faFolder,
     section: "overview",
+  },
+  {
+    title: "Knowledge Bases",
+    href: "/intel/knowledge-bases",
+    icon: faBook,
+    section: "admin",
   },
   {
     title: "Documents",
@@ -39,40 +37,22 @@ export const INTEL_SIDEBAR_ITEMS: SidebarItem[] = [
     section: "overview",
   },
   {
-    title: "Research",
-    href: "/intel/research",
-    icon: faSearch,
-    section: "overview",
-  },
-  {
-    title: "Subject Types",
-    href: "/intel/subject-types",
+    title: "Project Types",
+    href: "/intel/project-types",
     icon: faTag,
-    section: "overview",
+    section: "admin",
   },
   {
     title: "Workflows",
     href: "/intel/workflows",
     icon: faSitemap,
-    section: "overview",
+    section: "admin",
   },
   {
-    title: "Runs",
-    href: "/intel/runs",
-    icon: faPlay,
-    section: "overview",
-  },
-  {
-    title: "Reports",
-    href: "/intel/reports",
+    title: "Research Reports",
+    href: "/intel/research-reports",
     icon: faFileAlt,
     section: "overview",
-  },
-  {
-    title: "Admin",
-    href: "/admin",
-    icon: faRightLeft,
-    section: "settings",
   },
   {
     title: "Settings",

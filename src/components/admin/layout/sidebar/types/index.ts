@@ -1,6 +1,6 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
-export type SidebarSection = 'overview' | 'pageBuilder' | 'settings' | 'database';
+export type SidebarSection = 'overview' | 'pageBuilder' | 'settings' | 'database' | 'admin';
 
 export type SidebarItem = {
   title: string;

@@ -25,13 +25,18 @@ export async function getReportData(id: string): Promise<{
         *,
         rag_runs (
           id,
-          run_type,
+          workflow_id,
           status,
           knowledge_base_id,
           created_at,
           rag_knowledge_bases (
             id,
             name
+          ),
+          workflows (
+            id,
+            name,
+            label
           )
         )
       `)
@@ -46,13 +51,18 @@ export async function getReportData(id: string): Promise<{
           *,
           rag_runs (
             id,
-            run_type,
+            workflow_id,
             status,
             knowledge_base_id,
             created_at,
             rag_knowledge_bases (
               id,
               name
+            ),
+            workflows (
+              id,
+              name,
+              label
             )
           )
         `)
@@ -73,13 +83,18 @@ export async function getReportData(id: string): Promise<{
           *,
           rag_runs (
             id,
-            run_type,
+            workflow_id,
             status,
             knowledge_base_id,
             created_at,
             rag_knowledge_bases (
               id,
               name
+            ),
+            workflows (
+              id,
+              name,
+              label
             )
           )
         `)
@@ -93,13 +108,18 @@ export async function getReportData(id: string): Promise<{
             *,
             rag_runs (
               id,
-              run_type,
+              workflow_id,
               status,
               knowledge_base_id,
               created_at,
               rag_knowledge_bases (
                 id,
                 name
+              ),
+              workflows (
+                id,
+                name,
+                label
               )
             )
           `)

@@ -337,7 +337,7 @@ export function DocumentModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:bg-accent/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}

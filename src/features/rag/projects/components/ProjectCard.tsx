@@ -23,13 +23,17 @@ import { cn } from "@/lib/utils";
 type ProjectCardProps = {
   project: Project & { document_count?: number };
   linkedKBName?: string | null;
+  projectTypeIcon?: string | null;
   onDelete?: () => void;
+  onEdit?: (project: Project) => void;
 };
 
 export function ProjectCard({
   project,
   linkedKBName,
+  projectTypeIcon,
   onDelete,
+  onEdit,
 }: ProjectCardProps) {
   const formattedDate = new Date(project.updated_at).toLocaleDateString("en-US", {
     month: "short",
@@ -52,17 +56,23 @@ export function ProjectCard({
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-4 py-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 shadow-icon">
-            <FontAwesomeIcon
-              icon={faFolder}
-              className="h-4 w-4 text-primary"
-            />
+          <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 shadow-icon">
+            {projectTypeIcon ? (
+              <span className="text-lg">{projectTypeIcon}</span>
+            ) : (
+              <FontAwesomeIcon
+                icon={faFolder}
+                className="h-4 w-4 text-primary"
+              />
+            )}
           </div>
           <Link href={`/intel/projects/${project.id}`} className="flex-1 min-w-0">
             <TooltipProvider delayDuration={100}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <h3 className="font-bold text-foreground truncate hover:text-primary transition-colors cursor-pointer">{project.client_name}</h3>
+                  <h3 className="font-bold text-foreground truncate hover:text-primary transition-colors cursor-pointer">
+                    {project.client_name}
+                  </h3>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{project.client_name}</p>
@@ -75,6 +85,7 @@ export function ProjectCard({
           <ProjectActionsMenu
             project={project}
             onDelete={onDelete}
+            onEdit={onEdit}
           />
         </div>
       </CardHeader>

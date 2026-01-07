@@ -18,7 +18,7 @@ export const ValueDynamicsSection = ({ value }: ValueDynamicsSectionProps) => {
   return (
     <SectionWrapper
       id="value-dynamics"
-      number="03"
+      number="04"
       title="Value Dynamics"
       subtitle="Core pain points, desired outcomes, KPIs, and proof requirements"
     >

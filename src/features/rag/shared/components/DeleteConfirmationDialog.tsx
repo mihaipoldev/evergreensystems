@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,6 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 type DeleteConfirmationDialogProps = {
   open: boolean;
@@ -18,10 +21,12 @@ type DeleteConfirmationDialogProps = {
   description?: string;
   entityName?: string;
   entityType?: string; // e.g., "document", "knowledge base", "project"
-  onConfirm: () => void;
+  onConfirm: (deleteDocuments?: boolean) => void;
   isDeleting?: boolean;
   confirmLabel?: string;
   cancelLabel?: string;
+  showDeleteDocumentsOption?: boolean;
+  deleteDocumentsLabel?: string;
 };
 
 export function DeleteConfirmationDialog({
@@ -35,7 +40,19 @@ export function DeleteConfirmationDialog({
   isDeleting = false,
   confirmLabel,
   cancelLabel = "Cancel",
+  showDeleteDocumentsOption = false,
+  deleteDocumentsLabel = "Also delete associated documents",
 }: DeleteConfirmationDialogProps) {
+  const [deleteDocuments, setDeleteDocuments] = useState(false);
+
+  // Reset checkbox when dialog closes
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setDeleteDocuments(false);
+    }
+    onOpenChange(newOpen);
+  };
+
   // Generate default title if not provided
   const dialogTitle = title || `Delete ${entityType}?`;
 
@@ -48,17 +65,42 @@ export function DeleteConfirmationDialog({
 
   const confirmButtonLabel = confirmLabel || (isDeleting ? "Deleting..." : "Delete");
 
+  const handleConfirm = () => {
+    onConfirm(showDeleteDocumentsOption ? deleteDocuments : undefined);
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
           <AlertDialogDescription>{dialogDescription}</AlertDialogDescription>
         </AlertDialogHeader>
+        {showDeleteDocumentsOption && (
+          <div className="flex items-center space-x-2 py-4">
+            <Checkbox
+              id="delete-documents"
+              checked={deleteDocuments}
+              onCheckedChange={(checked) => setDeleteDocuments(checked === true)}
+              disabled={isDeleting}
+            />
+            <Label
+              htmlFor="delete-documents"
+              className="text-sm font-normal cursor-pointer"
+            >
+              {deleteDocumentsLabel}
+            </Label>
+          </div>
+        )}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel 
+            disabled={isDeleting}
+            className="hover:bg-secondary hover:text-secondary-foreground"
+          >
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >

@@ -659,7 +659,6 @@ export interface Database {
           knowledge_base_id: string;
           workflow_id: string | null;
           subject_id: string | null;
-          run_type: string;
           input: Record<string, any>;
           status: string;
           error: string | null;
@@ -673,7 +672,6 @@ export interface Database {
           knowledge_base_id: string;
           workflow_id?: string | null;
           subject_id?: string | null;
-          run_type: string;
           input?: Record<string, any>;
           status?: string;
           error?: string | null;
@@ -687,7 +685,6 @@ export interface Database {
           knowledge_base_id?: string;
           workflow_id?: string | null;
           subject_id?: string | null;
-          run_type?: string;
           input?: Record<string, any>;
           status?: string;
           error?: string | null;
@@ -893,6 +890,79 @@ export interface Database {
           project_id?: string;
           document_id?: string;
           created_at?: string;
+        };
+      };
+      research_subjects: {
+        Row: {
+          id: string;
+          name: string;
+          geography: string | null;
+          category: string | null;
+          subject_type_id: string;
+          description: string | null;
+          first_researched_at: string | null;
+          last_researched_at: string | null;
+          run_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          geography?: string | null;
+          category?: string | null;
+          subject_type_id: string;
+          description?: string | null;
+          first_researched_at?: string | null;
+          last_researched_at?: string | null;
+          run_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          geography?: string | null;
+          category?: string | null;
+          subject_type_id?: string;
+          description?: string | null;
+          first_researched_at?: string | null;
+          last_researched_at?: string | null;
+          run_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      subject_types: {
+        Row: {
+          id: string;
+          name: string;
+          label: string;
+          description: string | null;
+          icon: string | null;
+          enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          label: string;
+          description?: string | null;
+          icon?: string | null;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          label?: string;
+          description?: string | null;
+          icon?: string | null;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

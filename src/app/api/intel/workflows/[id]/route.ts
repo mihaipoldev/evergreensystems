@@ -58,7 +58,15 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, label, description, icon, estimated_cost, estimated_time_minutes, input_schema, enabled } = body;
+    const { name, label, description, icon, estimated_cost, estimated_time_minutes, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
+
+    // Validate knowledge_base_target if provided
+    if (knowledge_base_target !== undefined && !['knowledgebase', 'client', 'project'].includes(knowledge_base_target)) {
+      return NextResponse.json(
+        { error: "knowledge_base_target must be one of: knowledgebase, client, project" },
+        { status: 400 }
+      );
+    }
 
     const updateData: Record<string, any> = {};
     if (name !== undefined) updateData.name = name;
@@ -69,6 +77,8 @@ export async function PUT(
     if (estimated_time_minutes !== undefined) updateData.estimated_time_minutes = estimated_time_minutes !== null ? estimated_time_minutes : null;
     if (input_schema !== undefined) updateData.input_schema = input_schema || null;
     if (enabled !== undefined) updateData.enabled = enabled;
+    if (knowledge_base_target !== undefined) updateData.knowledge_base_target = knowledge_base_target;
+    if (target_knowledge_base_id !== undefined) updateData.target_knowledge_base_id = target_knowledge_base_id || null;
 
     // If name is being updated, check for uniqueness
     if (name !== undefined) {

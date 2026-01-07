@@ -36,7 +36,10 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
         notes: meta.input?.notes,
         ai_model: meta.input?.ai_model,
       },
-    },
+      // Preserve additional meta fields that may exist in the JSON
+      focus: meta.focus,
+      market_value: meta.market_value,
+    } as any,
     data: {
       niche_profile: {
         confidence: typeof data.niche_profile?.confidence === 'number' ? data.niche_profile.confidence : 0,
@@ -60,7 +63,32 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
           typical_sales_approach: data.niche_profile?.client_acquisition_dynamics?.typical_sales_approach || "",
         },
         market_maturity: data.niche_profile?.market_maturity || "",
-        lead_gen_seasonality: data.niche_profile?.lead_gen_seasonality || "",
+        // Handle timing_intelligence (new structure) with backward compatibility
+        timing_intelligence: data.niche_profile?.timing_intelligence
+          ? {
+              lead_gen_seasonality: data.niche_profile.timing_intelligence.lead_gen_seasonality || "",
+              best_months_to_launch: Array.isArray(data.niche_profile.timing_intelligence.best_months_to_launch)
+                ? data.niche_profile.timing_intelligence.best_months_to_launch
+                : [],
+              budget_approval_cycle: data.niche_profile.timing_intelligence.budget_approval_cycle || "",
+            }
+          : undefined,
+        // Backward compatibility: if timing_intelligence doesn't exist, use old lead_gen_seasonality
+        lead_gen_seasonality: data.niche_profile?.timing_intelligence
+          ? undefined
+          : (data.niche_profile?.lead_gen_seasonality || ""),
+        deal_economics: data.niche_profile?.deal_economics
+          ? {
+              typical_client_value_annually: data.niche_profile.deal_economics.typical_client_value_annually || "",
+              average_deal_size: data.niche_profile.deal_economics.average_deal_size || "",
+              contract_length_months: typeof data.niche_profile.deal_economics.contract_length_months === 'number'
+                ? data.niche_profile.deal_economics.contract_length_months
+                : 0,
+              retention_rate_percent: typeof data.niche_profile.deal_economics.retention_rate_percent === 'number'
+                ? data.niche_profile.deal_economics.retention_rate_percent
+                : 0,
+            }
+          : undefined,
         existing_solutions: {
           operational_tools: Array.isArray(data.niche_profile?.existing_solutions?.operational_tools)
             ? data.niche_profile.existing_solutions.operational_tools
@@ -69,10 +97,20 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
             ? data.niche_profile.existing_solutions.client_acquisition_methods
             : [],
         },
+        lead_gen_competitive_landscape: data.niche_profile?.lead_gen_competitive_landscape
+          ? {
+              existing_lead_gen_providers: Array.isArray(data.niche_profile.lead_gen_competitive_landscape.existing_lead_gen_providers)
+                ? data.niche_profile.lead_gen_competitive_landscape.existing_lead_gen_providers
+                : [],
+              typical_pricing_benchmarks: data.niche_profile.lead_gen_competitive_landscape.typical_pricing_benchmarks || "",
+            }
+          : undefined,
         lead_gen_risks: Array.isArray(data.niche_profile?.lead_gen_risks)
           ? data.niche_profile.lead_gen_risks
           : [],
-      },
+        // Preserve tam_analysis if it exists
+        tam_analysis: data.niche_profile?.tam_analysis,
+      } as any,
       buyer_psychology: {
         confidence: typeof data.buyer_psychology?.confidence === 'number' ? data.buyer_psychology.confidence : 0,
         sources_used: Array.isArray(data.buyer_psychology?.sources_used) ? data.buyer_psychology.sources_used : undefined,

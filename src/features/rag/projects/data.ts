@@ -29,7 +29,7 @@ export async function getAllProjectsWithCounts(): Promise<(Project & { document_
 
   const projectsWithCounts = await Promise.all(
     projects.map(async (project) => {
-      // Count linked documents (from junction table - research documents)
+      // Count linked documents (from junction table - project documents)
       const { count: linkedCount } = await supabase
         .from("project_documents")
         .select("*", { count: "exact", head: true })

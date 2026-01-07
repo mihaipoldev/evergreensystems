@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
@@ -15,16 +15,86 @@ type WorkflowListProps = {
   initialWorkflows: Workflow[];
 };
 
+const STORAGE_KEY_PREFIX = "workflows-";
+const STORAGE_KEY_SEARCH = `${STORAGE_KEY_PREFIX}search`;
+const STORAGE_KEY_FILTERS = `${STORAGE_KEY_PREFIX}filters`;
+const STORAGE_KEY_SORT = `${STORAGE_KEY_PREFIX}sort`;
+
+// Helper functions for localStorage persistence
+function getStoredSearch(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SEARCH) || "";
+  } catch {
+    return "";
+  }
+}
+
+function setStoredSearch(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SEARCH, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredFilters(): Record<string, string[]> {
+  if (typeof window === "undefined") return { Status: [] };
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_FILTERS);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === "object" ? parsed : { Status: [] };
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { Status: [] };
+}
+
+function setStoredFilters(filters: Record<string, string[]>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredSort(): string {
+  if (typeof window === "undefined") return "Recent";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SORT) || "Recent";
+  } catch {
+    return "Recent";
+  }
+}
+
+function setStoredSort(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SORT, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useViewMode("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
-    Status: [],
-  });
-  const [selectedSort, setSelectedSort] = useState("Recent");
+  // Initialize state from localStorage directly to avoid flash of default values
+  const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
+  const [selectedSort, setSelectedSort] = useState(() => getStoredSort());
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
+  const hasLoadedFromStorage = useRef(false);
+
+  // Mark as loaded after first render
+  useEffect(() => {
+    hasLoadedFromStorage.current = true;
+  }, []);
 
   const filterCategories: FilterCategory[] = [
     {
@@ -93,20 +163,43 @@ export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
     router.refresh();
   };
 
+  // Persist search query changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSearch(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Persist filter changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredFilters(selectedFilters);
+    }
+  }, [selectedFilters]);
+
+  // Persist sort changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSort(selectedSort);
+    }
+  }, [selectedSort]);
+
   const handleFilterApply = (filters: Record<string, string[]>) => {
     setSelectedFilters(filters);
   };
 
   const handleFilterClear = () => {
-    setSelectedFilters({
+    const clearedFilters = {
       Status: [],
-    });
+    };
+    setSelectedFilters(clearedFilters);
   };
 
   return (
     <div className="w-full space-y-6">
       <Toolbar
         searchPlaceholder="Search workflows..."
+        searchValue={searchQuery}
         onSearch={setSearchQuery}
         filterCategories={filterCategories}
         selectedFilters={selectedFilters}

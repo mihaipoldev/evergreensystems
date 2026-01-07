@@ -7,7 +7,8 @@ import type { RunOutput } from "@/features/rag/runs-outputs/types";
 type ReportWithRun = RunOutput & {
   run?: {
     id: string;
-    run_type: string;
+    workflow_name?: string | null;
+    workflow_label?: string | null;
     status: string;
     knowledge_base_name?: string | null;
     created_at: string;

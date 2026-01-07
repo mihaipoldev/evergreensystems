@@ -1,0 +1,716 @@
+[
+    {
+      "meta": {
+        "knowledge_base": "niche_intelligence",
+        "mode": "lead_gen_targeting",
+        "confidence": 0.81,
+        "sources_used": [
+          "https://www.carv.com/blog/staffing-industry-benchmarks",
+          "https://pgcgroup.com/blog/us-staffing-industry-2023-in-review-and-trends-to-watch-in-2024",
+          "https://www.ibisworld.com/united-states/industry/employment-recruiting-agencies/1463/",
+          "https://americanstaffing.net/research/fact-sheets-analysis-staffing-industry-trends/staffing-industry-statistics/",
+          "https://ossmbrands.com/blog/7-client-acquisition-tactics-staffing-agencies/",
+          "https://themarketingjunction.com/client-acquisition-through-strategic-marketing-a-guide-for-recruitment-agencies/",
+          "https://recruitcrm.io/blogs/how-to-get-clients-for-a-staffing-agency/",
+          "https://employnet.com/metrics-that-prove-the-worth-of-staffing-agencies/",
+          "https://www.ascen.com/blog/pricing-staffing-agency-expanding-us-into",
+          "https://saleshive.com/blog/lead-generation-services-what-should-they-cost/",
+          "https://belkins.io/blog/lead-generation-pricing",
+          "https://www.cognism.com/blog/lead-generation-cost",
+          "https://www.tempositions.com/blog/what-are-the-peak-hiring-months/",
+          "https://murrayresources.com/what-is-the-best-time-of-year-to-hire-a-guide-for-employers/",
+          "https://www.egrabber.com/blog/best-staffing-agency-software/",
+          "https://www.bullhorn.com",
+          "https://www.herohunt.ai/blog/the-state-of-recruitment-agencies-in-full-report-2024",
+          "https://www.labourly.ca/staffing-industry-challenges-2024-and-solutions/",
+          "https://martal.ca/buying-leads-lb/",
+          "https://www.rainmakers.co/blog/top-cities-recruiting/",
+          "https://www.clearlyrated.com/blog/service-quality-in-staffing-firms",
+          "https://greatrecruiters.com/client-experience/customer-retention-rate-and-why-it-matters-for-staffing-agencies/",
+          "https://www.ringover.com/blog/types-of-staffing-companies",
+          "https://altline.sobanco.com/how-staffing-agencies-make-money/",
+          "https://staffinghub.com/state-of-staffing/the-1-challenge-staffing-firms-face-in-2025-and-how-to-solve-it/",
+          "https://www.haleymarketing.com/2024/03/07/staffing-agency-sales-challenges-strategies/",
+          "https://callingagency.com/lead-generation-services/recruitment-and-staffing-agency-leads/",
+          "https://belkins.io/industries/recruitment-staffing",
+          "https://zaphyrpro.com/recruitment-and-staffing",
+          "https://thinkincircles.com/the-roi-of-recruitment-marketing-in-sme-agencies/",
+          "https://gigradar.io/blog/how-to-get-clients-for-staffing-agency",
+          "https://databox.com/b2b-sales-cycle-length",
+          "https://www.ashbyhq.com/talent-trends-report/reports/referrals",
+          "https://centredexcellence.co.uk/challenges-scaling-a-recruitment-business/",
+          "https://topechelon.com/owner-issues/business-development-for-recruiting-firms-strategies-for-growth-and-success/",
+          "https://altline.sobanco.com/staffing-agency-kpis/",
+          "https://www.tracker-rms.com/blog/business-development-for-staffing-agencies/",
+          "https://newburypartners.com/maximizing-roi-with-hubspot-how-staffing-firms-can-track-marketing-effectiveness-and-streamline-client-acquisition/",
+          "https://americanstaffing.net/asa/asa-member-directory/",
+          "https://www.careerbee.io/the-best-recruitment-agencies-in-the-us-for-2026/",
+          "https://asanify.com/blog/employer-of-record-usa/staffing-agencies-usa-2026/",
+          "https://www.randstadusa.com",
+          "https://www.hirewithnear.com/blog/best-staffing-agencies",
+          "https://www.conwaymarketinggroup.com/6-marketing-strategies-healthcare-staffing-agencies-can-take-advantage-of-today/",
+          "https://maineventdigital.com/blogs/news/digital-mktg-staffing-agency",
+          "https://www.employbridge.com/find-workers/staffing-case-studies",
+          "https://www.sloane-staffing.com/case-studies",
+          "https://staffedup.com/case-studies/",
+          "https://www.gsgtalentsolutions.com/services/case-studies/",
+          "https://www.doherty.com/talent-acquisition-services/case-studies/",
+          "https://www.kellyservices.us/outcomes-impact/case-studies/",
+          "https://murrayresources.com/houston-recruiting-firm/staffing-case-studies/",
+          "https://www.avionte.com/glossary/",
+          "https://www.4cornerresources.com/resources/glossary/",
+          "https://www.macslist.org/for-employers/recruiting-terms-glossary-learn-the-language-to-land-the-job",
+          "https://staffingscale.com/blog/how-to-differentiate-staffing-agency/",
+          "https://www.varshealth.com/post/mastering-staffing-agency-differentiation-unique-strategies-for-industry-leadership",
+          "https://www.haleymarketing.com/2025/04/23/staffing-firm-differentiation-strategies/",
+          "https://sjhemleymarketing.com/blog/how-to-craft-a-winning-value-proposition-for-your-staffing-business/",
+          "https://www.trigyn.com/services/staffing-and-consulting-services/staffing-value-proposition",
+          "https://www.teksystems.com/en/workforce-development",
+          "https://www.teksystems.com/en/talent-solutions",
+          "https://www.teksystems.com/en/who-we-are",
+          "https://www.oceansmedstaff.com/key-indicators-of-legitimate-healthcare-recruiters",
+          "https://primusworkforce.com/blog/how-to-measure-staffing-agency-success-kpis-metrics/",
+          "https://www.paycor.com/resource-center/articles/5-pain-points-for-recruiters/",
+          "https://www.nescoresource.com/resources/3-pain-points-of-staffing-and-their-solutions",
+          "https://www.manatal.com/blog/7-pain-points-for-hiring-teams-and-how-to-solve-them",
+          "https://portercap.com/top-challenges-for-staffing-agencies/",
+          "https://www.careerprofiles.com/hiring-advice/staffing-agencies-competitive-advantage/",
+          "https://www.youremploymentsolutions.com/blog/benefits-of-staffing-agency/",
+          "https://staffinghub.com/guest-posts/redefining-competitive-advantage-how-leading-staffing-firms-are-building-moats-through-talent-networks/",
+          "https://www.hays.com/recruitment-services/temporary-contract-staffing",
+          "https://insightglobal.com/locations/colorado/staffing-agency-colorado-springs-co/",
+          "https://www.instawork.com/local-staffing/colorado-springs"
+        ],
+        "generated_at": "2026-01-06",
+        "input": {
+          "niche_name": "Recruitment & Staffing Agencies",
+          "geo": "US",
+          "notes": "",
+          "ai_model": "anthropic/claude-sonnet-4.5"
+        },
+        "focus": "Broad B2B Clients",
+        "market_value": "$184-217B"
+      },
+      "data": {
+        "niche_profile": {
+          "confidence": 0.82,
+          "sources_used": [
+            "https://www.carv.com/blog/staffing-industry-benchmarks",
+            "https://pgcgroup.com/blog/us-staffing-industry-2023-in-review-and-trends-to-watch-in-2024",
+            "https://www.ibisworld.com/united-states/industry/employment-recruiting-agencies/1463/",
+            "https://americanstaffing.net/research/fact-sheets-analysis-staffing-industry-trends/staffing-industry-statistics/",
+            "https://ossmbrands.com/blog/7-client-acquisition-tactics-staffing-agencies/",
+            "https://themarketingjunction.com/client-acquisition-through-strategic-marketing-a-guide-for-recruitment-agencies/",
+            "https://recruitcrm.io/blogs/how-to-get-clients-for-a-staffing-agency/",
+            "https://employnet.com/metrics-that-prove-the-worth-of-staffing-agencies/",
+            "https://www.ascen.com/blog/pricing-staffing-agency-expanding-us-into",
+            "https://saleshive.com/blog/lead-generation-services-what-should-they-cost/",
+            "https://belkins.io/blog/lead-generation-pricing",
+            "https://www.cognism.com/blog/lead-generation-cost",
+            "https://www.tempositions.com/blog/what-are-the-peak-hiring-months/",
+            "https://murrayresources.com/what-is-the-best-time-of-year-to-hire-a-guide-for-employers/",
+            "https://www.egrabber.com/blog/best-staffing-agency-software/",
+            "https://www.bullhorn.com",
+            "https://www.herohunt.ai/blog/the-state-of-recruitment-agencies-in-full-report-2024",
+            "https://www.labourly.ca/staffing-industry-challenges-2024-and-solutions/",
+            "https://martal.ca/buying-leads-lb/",
+            "https://www.rainmakers.co/blog/top-cities-recruiting/",
+            "https://www.clearlyrated.com/blog/service-quality-in-staffing-firms",
+            "https://greatrecruiters.com/client-experience/customer-retention-rate-and-why-it-matters-for-staffing-agencies/",
+            "https://www.ringover.com/blog/types-of-staffing-companies",
+            "https://altline.sobanco.com/how-staffing-agencies-make-money/"
+          ],
+          "description": "Factual snapshot of the niche: what they sell, how the market looks, and what solutions they already use.",
+          "name": "Recruitment & Staffing Agencies in the US",
+          "category": "Professional Services / Human Resources",
+          "summary": "The US recruitment and staffing industry is a $184-217B market serving temporary, contract, and permanent placement needs across all sectors. With approximately 19,783-27,000 agencies operating 54,000+ offices nationwide, the industry places 2.5 million temporary workers weekly and serves as a critical workforce intermediary for companies seeking flexible staffing solutions.",
+          "tam_analysis": {
+            "total_companies_in_geography": 23000,
+            "addressable_by_segment": {
+              "Temporary & Contract Staffing (General)": "12,000-14,000",
+              "Specialized Niche Agencies (IT, Healthcare, Executive)": "5,000-7,000",
+              "Permanent Placement/Executive Search": "3,000-4,000",
+              "Small Independent/Solo Recruiters": "2,000-3,000",
+              "RPO & Managed Service Providers": "800-1,200",
+              "Emerging/Boutique Agencies": "1,000-2,000"
+            },
+            "market_concentration": "moderately concentrated",
+            "geographic_clusters": [
+              "New York, NY",
+              "Los Angeles, CA",
+              "Chicago, IL",
+              "Atlanta, GA",
+              "Austin, TX"
+            ],
+            "regional_differences": "Mid-Atlantic (NY/NJ) has highest concentration of agencies. West Coast focuses on tech/startup staffing. Midwest serves manufacturing and industrial. Sun Belt markets (TX, FL, GA) show high growth in diverse sectors. Major metros concentrate professional/executive search while smaller markets focus on temp/industrial staffing."
+          },
+          "what_they_sell": "Staffing agencies provide workforce solutions including temporary staffing, contract placements, permanent direct hires, temp-to-hire arrangements, and specialized recruitment across industries. They handle sourcing, screening, payroll, benefits administration, and compliance for client companies seeking flexible or permanent talent.",
+          "common_service_lines": [
+            "Temporary and contract staffing (short-term and project-based placements)",
+            "Permanent placement and direct hire recruitment",
+            "Temp-to-hire and contract-to-permanent arrangements",
+            "Executive search and headhunting services",
+            "Specialized niche recruitment (IT, healthcare, engineering, finance)"
+          ],
+          "typical_customer_types": [
+            "Corporate enterprises across all industries needing flexible workforce solutions",
+            "Healthcare facilities requiring nurses, technicians, and clinical staff",
+            "Technology companies seeking IT professionals and software developers",
+            "Manufacturing and industrial companies needing production and warehouse workers",
+            "Professional services firms hiring for finance, accounting, and administrative roles"
+          ],
+          "deal_economics": {
+            "typical_client_value_annually": "$20K-$100K+ annually depending on placement volume and type. Small clients with occasional placements may spend $20K-40K/year. Mid-market clients with ongoing temporary staffing needs spend $50K-150K/year. Large enterprise clients with multiple ongoing temps and permanent placements can spend $200K-$1M+ annually.",
+            "average_deal_size": "$15K-$25K per permanent placement (15-30% of first-year salary). Temporary placements generate $15K-$30K annually per ongoing worker (based on 50-60% markup on hourly rates). Contract placements range $30K-$80K for project-based roles.",
+            "contract_length_months": 6,
+            "retention_rate_percent": 79
+          },
+          "client_acquisition_dynamics": {
+            "how_they_currently_get_clients": [
+              "Referrals from existing clients and candidates (primary source for most agencies)",
+              "Cold outreach via LinkedIn, email, and phone targeting HR directors and hiring managers",
+              "Niche-specific thought leadership through content marketing, salary guides, and industry reports",
+              "Networking at industry events, trade shows, and professional associations",
+              "Account-based marketing (ABM) targeting high-value prospect companies",
+              "Paid advertising on LinkedIn, Google, and industry job boards"
+            ],
+            "competitive_intensity": "high",
+            "typical_sales_approach": "Consultative sales with personalized outreach highlighting niche expertise and candidate quality. Sales cycles range 1-6 months depending on client size, with heavy emphasis on relationship building, proof of placement success, and demonstrating ROI through faster time-to-hire and reduced recruiting costs."
+          },
+          "market_maturity": "unknown",
+          "timing_intelligence": {
+            "lead_gen_seasonality": "Most receptive Q1 (January-March) and Q3 (September-October) when companies set budgets and ramp hiring for year-end goals. Q1 is peak as companies execute annual hiring plans with fresh budgets. September-October sees secondary spike as businesses push to meet year-end targets. Less responsive June-August (vacation season) and November-December (holiday slowdown and budget freezes).",
+            "best_months_to_launch": [
+              "January",
+              "February",
+              "March",
+              "September",
+              "October"
+            ],
+            "budget_approval_cycle": "Most staffing agencies operate on calendar fiscal years with budgets set in Q4 (October-December) for the following year. Marketing and sales service purchases typically approved in Q4 planning or Q1 execution. Mid-year budget adjustments possible in June-July for agencies exceeding growth targets. Decision-making can be faster (30-90 days) for agencies seeing immediate ROI potential."
+          },
+          "existing_solutions": {
+            "operational_tools": [
+              "Applicant Tracking Systems (ATS) like Bullhorn, Zoho Recruit, JobAdder",
+              "CRM platforms like TempWorks, Recruiterflow, TrackerRMS for client/candidate relationship management",
+              "Job board integrations (Indeed, LinkedIn, Monster, CareerBuilder)",
+              "Background check and compliance software",
+              "Payroll and back-office management systems"
+            ],
+            "client_acquisition_methods": [
+              "In-house business development teams with cold calling and LinkedIn outreach",
+              "Referral programs offering discounts or incentives to existing clients",
+              "SEO and content marketing (blogs, salary guides, industry reports)",
+              "LinkedIn Sales Navigator for prospecting and relationship building",
+              "Email marketing campaigns with segmented databases",
+              "Industry directory listings (Clutch, Staffing Industry Analysts)"
+            ]
+          },
+          "lead_gen_competitive_landscape": {
+            "existing_lead_gen_providers": [
+              "Apollo.io and ZoomInfo (self-service B2B contact databases)",
+              "SalesHive and Belkins (B2B lead gen agencies serving professional services)",
+              "JobGrabber and eGrabber (staffing-specific lead generation from job boards)",
+              "LinkedIn Sales Navigator and Recruiter (self-service prospecting tools)",
+              "Generic B2B marketing agencies offering lead gen for recruitment sector"
+            ],
+            "typical_pricing_benchmarks": "$497 average cost per lead for recruitment/staffing sector. Monthly retainers range $2,000-$5,000 for small agencies, $5,000-$15,000 for mid-market. Cost per qualified appointment ranges $200-$500. Self-service tools like ZoomInfo cost $1,500-$3,000/month for data access."
+          },
+          "lead_gen_risks": [
+            "High price sensitivity and low margins (5-10% net profit) limit budget for lead gen services, making ROI justification difficult",
+            "Strong preference for referral-based business - 79% generate 50%+ revenue from repeat clients, creating resistance to paid lead generation",
+            "Crowded market with 23,000+ competitors makes differentiation challenging; leads may be shopped to multiple agencies simultaneously",
+            "Sales cycles of 1-6 months mean lead gen ROI metrics take longer to prove value, increasing churn risk during ramp period",
+            "Data quality concerns critical - staffing agencies need highly targeted leads (specific industries, hiring manager contacts) and generic B2B leads convert poorly",
+            "Economic sensitivity and industry consolidation trends may reduce total addressable market over time"
+          ]
+        },
+        "buyer_psychology": {
+          "confidence": 0.78,
+          "sources_used": [
+            "https://staffinghub.com/state-of-staffing/the-1-challenge-staffing-firms-face-in-2025-and-how-to-solve-it/",
+            "https://www.haleymarketing.com/2024/03/07/staffing-agency-sales-challenges-strategies/",
+            "https://callingagency.com/lead-generation-services/recruitment-and-staffing-agency-leads/",
+            "https://belkins.io/industries/recruitment-staffing",
+            "https://zaphyrpro.com/recruitment-and-staffing",
+            "https://thinkincircles.com/the-roi-of-recruitment-marketing-in-sme-agencies/",
+            "https://gigradar.io/blog/how-to-get-clients-for-staffing-agency",
+            "https://databox.com/b2b-sales-cycle-length",
+            "https://www.ashbyhq.com/talent-trends-report/reports/referrals",
+            "https://centredexcellence.co.uk/challenges-scaling-a-recruitment-business/"
+          ],
+          "description": "How decisions get made in this niche: roles involved, triggers, objections, urgency/budget reality, and sales cycle notes.",
+          "decision_makers": [
+            "CEO/Founder/Owner (especially small-to-mid sized agencies)",
+            "VP of Business Development or VP of Sales",
+            "Director of Sales or Director of Business Development",
+            "Head of Marketing or Marketing Director",
+            "VP of Operations (at larger agencies with P&L authority)"
+          ],
+          "buying_triggers": [
+            "Client acquisition becomes #1 challenge (23% of agencies in 2025, up from 16% in 2024)",
+            "Lost major client creating urgent revenue gap to replace",
+            "Agency expansion into new geography or industry vertical requiring pipeline quickly",
+            "Sales team struggling with prospecting and low pipeline velocity",
+            "Market downturn reducing job orders and client hiring activity",
+            "New sales leadership hired tasked with aggressive growth targets"
+          ],
+          "common_objections": [
+            "We get most clients from referrals already - they're higher quality and lower cost",
+            "Concerned about lead quality - won't be decision-makers or companies actually hiring",
+            "Long sales cycles (6-12 months) mean ROI from leads takes too long to prove",
+            "Cost per lead too high relative to our tight marketing budgets (5-10% of revenue)",
+            "Skeptical that outsourced lead gen understands our niche specialization",
+            "Sales team already too busy with existing pipeline to follow up on new leads effectively"
+          ],
+          "budget_signal": "medium",
+          "urgency_level": "medium",
+          "sales_cycle_notes": "Typically 1-3 months for small staffing agencies ($1,500-$3,000/month commitments) to close lead gen deals. Initial call with BD/Sales leader or owner, followed by proof of lead quality review (sample leads or qualification criteria), proposal with pricing tiers, then 30-60 day pilot/test period before scaling commitment. Larger agencies or those with formal marketing departments may extend to 3-4 months with multiple stakeholder reviews. Decision accelerates when there's urgent client loss or new sales leadership with growth mandate. Agencies want to see results (qualified appointments, client meetings booked) within first 30-45 days of engagement to continue."
+        },
+        "value_dynamics": {
+          "confidence": 0.75,
+          "sources_used": [
+            "https://staffinghub.com/state-of-staffing/the-1-challenge-staffing-firms-face-in-2025-and-how-to-solve-it/",
+            "https://www.haleymarketing.com/2024/03/07/staffing-agency-sales-challenges-strategies/",
+            "https://centredexcellence.co.uk/challenges-scaling-a-recruitment-business/",
+            "https://topechelon.com/owner-issues/business-development-for-recruiting-firms-strategies-for-growth-and-success/",
+            "https://thinkincircles.com/the-roi-of-recruitment-marketing-in-sme-agencies/",
+            "https://altline.sobanco.com/staffing-agency-kpis/",
+            "https://www.tracker-rms.com/blog/business-development-for-staffing-agencies/",
+            "https://newburypartners.com/maximizing-roi-with-hubspot-how-staffing-firms-can-track-marketing-effectiveness-and-streamline-client-acquisition/"
+          ],
+          "description": "What they want (outcomes), what hurts (pains), what they measure (KPIs), what proof they require, and constraints/risks.",
+          "core_pain_points": [
+            "Client acquisition is now harder than finding talent - 23% cite it as #1 challenge (up from 16% in 2024)",
+            "Heavy dependence on referrals limits scalability and creates unpredictable revenue",
+            "Sales team struggles with effective prospecting - it remains the hardest part of the job",
+            "Long sales cycles (6-12 months average) create cash flow pressure and pipeline anxiety",
+            "Declining job orders and market softness mean fewer opportunities to compete for",
+            "Lack of structured business development process - 76% of recruiters have no formal BD plan"
+          ],
+          "desired_outcomes": [
+            "Predictable pipeline of qualified client prospects actively hiring or expanding",
+            "Faster sales cycles by engaging decision-makers earlier in their buying journey",
+            "Reduced dependence on referrals to create scalable, repeatable client acquisition",
+            "Higher quality leads that match their niche specialization and ideal client profile",
+            "More revenue per sales rep without adding headcount or overhead costs"
+          ],
+          "kpis_that_matter": [
+            "Number of qualified appointments or meetings booked per month",
+            "Lead-to-client conversion rate (percentage of leads that become paying clients)",
+            "Cost per qualified lead (CPL) and Customer Acquisition Cost (CAC)",
+            "Sales cycle length from first contact to signed contract",
+            "Revenue per client or client lifetime value (LTV) from lead gen sources",
+            "Marketing ROI: (Revenue from placements - Marketing costs) / Marketing costs"
+          ],
+          "kpis_that_matter_description": "The business/operational metrics they care about and will use to judge success.",
+          "must_have_proof": [
+            "Case studies from other staffing/recruitment agencies showing client wins and placement volume",
+            "Sample leads or examples of qualified prospects before commitment",
+            "Transparent qualification criteria proving leads are HR/hiring decision-makers at target companies",
+            "Clear ROI metrics from past campaigns (e.g., appointments booked, clients closed, average deal size)",
+            "Testimonials from agencies in similar niches (healthcare staffing, IT staffing, etc.)"
+          ],
+          "must_have_proof_description": "Evidence they expect before trusting a lead gen provider (benchmarks, samples, process proof).",
+          "constraints_and_risks": [
+            "Limited marketing budgets - high performers spend 5-10% of revenue, underperformers spend <2%",
+            "Risk-averse culture preferring proven referral model over unproven paid lead generation",
+            "Owner/sales leader bandwidth already stretched with operational tasks limiting follow-up capacity",
+            "Skepticism about lead gen ROI given long 6-12 month sales cycles before seeing results",
+            "Sales team may lack training or process discipline to effectively work purchased leads",
+            "Need approval from ownership/executive team for any marketing investment over $2,000-$3,000/month"
+          ]
+        },
+        "lead_gen_strategy": {
+          "confidence": 0.81,
+          "sources_used": [
+            "https://americanstaffing.net/asa/asa-member-directory/"
+          ],
+          "description": "Lead gen evaluation: fit score, rationale, red flags, wedge, verdict, and targeting strategy.",
+          "lead_gen_fit_score": 72,
+          "fit_score_description": "0-100 score for lead gen viability based on market accessibility, buyer behavior, and pain severity.",
+          "fit_rationale": [
+            "Large addressable market: $185-217B industry with 19,783 agencies in the US, providing substantial TAM for lead gen services",
+            "Severe and validated pain: Client acquisition is now the #1 challenge for 23% of agencies (up from 16% in 2024), indicating growing urgency",
+            "Medium budget signal: High-performing agencies allocate 5-10% of revenue to marketing ($50K-500K annual client value creates $2,500-$50,000 potential marketing budgets), fitting typical lead gen pricing of $1,500-$5,000/month",
+            "Reasonable sales cycles: 1-3 months for small agencies to close lead gen deals allows for faster ROI validation compared to their own 6-12 month enterprise sales cycles",
+            "Existing provider validation: Multiple established lead gen providers (CallingAgency, Agency Leads, Belkins, ZaphyrPro) prove market viability and willingness to pay",
+            "Geographic concentration: Clear clusters in NY, CA, IL, TX, and GA enable efficient targeted outreach campaigns"
+          ],
+          "fit_rationale_description": "Why this score? What makes this niche good/bad for lead generation?",
+          "red_flags": [
+            "Strong cultural preference for referrals (41-44% of new business, 79% get 50%+ revenue from existing clients) creates resistance to paid acquisition and potential low conversion rates",
+            "Market experiencing revenue decline (-8% YoY in Q1 2025) creates budget constraints and risk-averse buying behavior, may lead to heavy price negotiation or delayed decisions",
+            "Lead gen vendor fatigue likely high due to saturated market and multiple existing providers already pitching same agencies, requiring stronger differentiation",
+            "Long client sales cycles (6-12 months for enterprise) make ROI attribution difficult and may cause clients to churn before seeing results from your leads, creating retention challenges"
+          ],
+          "red_flags_description": "Deal-breakers or concerns for lead gen companies targeting this niche.",
+          "best_wedge": {
+            "confidence": 0.81,
+            "sources_used": [],
+            "description": "The sharpest entry point for a lead gen company to win attention fast in this niche.",
+            "wedge_type": "qualification",
+            "wedge_statement": "Pre-qualified companies with active hiring needs in [your niche: healthcare/IT/industrial] that match your ideal client profile and are actively evaluating staffing partners",
+            "why_it_works": [
+              "Directly addresses their core pain: client acquisition being harder than finding talent (23% cite as #1 challenge)",
+              "Qualification criteria (active hiring needs + niche match) overcomes their primary objection about lead quality and decision-maker access",
+              "Reduces their long 6-12 month sales cycles by targeting companies already in evaluation mode, accelerating ROI and proving value within their 30-45 day test window"
+            ]
+          },
+          "verdict": "test",
+          "verdict_description": "Generic recommendation for lead gen companies: pursue, test, or avoid.",
+          "next_step_if_test": "Run 60-day pilot targeting 50 specialized staffing agencies ($5M-$50M revenue) in healthcare, IT, or industrial niches during Q1 (January-March 2026) when new budgets are active. Test two segments: niche specialists expanding geographically and general agencies diversifying into specialized verticals. Track appointments booked, client meetings conducted, and early-stage pipeline created within 30 days to validate conversion rates before scaling.",
+          "targeting_strategy": {
+            "confidence": 0.81,
+            "sources_used": [],
+            "description": "How a lead gen company would target and reach companies in this niche.",
+            "segments_to_prioritize": [
+              "Healthcare & Medical Staffing Agencies ($5M-$50M revenue) specializing in nurses, allied health, or locum tenens - highest growth sector with urgent hiring demands",
+              "IT & Technology Staffing Agencies ($5M-$50M revenue) focusing on software, cloud, cybersecurity placements - high-value deals and willingness to invest in client acquisition",
+              "Niche Specialist Agencies (finance, legal, creative, engineering) expanding into new geographic markets - clear growth intent and need for pipeline quickly",
+              "General Staffing Agencies ($10M-$100M revenue) diversifying from commodity temp staffing into specialized verticals - strategic initiative requiring targeted lead generation",
+              "Regional/Mid-Market Agencies with recent sales/BD leadership hires or team expansion - indicates growth mandate and budget allocation for client acquisition tools"
+            ],
+            "segments_to_prioritize_description": "Sub-slices of the niche most likely to buy lead gen services.",
+            "targeting_filters": [
+              "Revenue $5M-$50M (sweet spot for lead gen investment - above underperformers with <2% marketing budgets, below large enterprises with in-house BD teams)",
+              "Active job postings for Business Development, Sales, or Marketing roles indicating growth intent and capacity to follow up on leads",
+              "LinkedIn presence showing VP of Sales, Director of BD, or dedicated sales team (minimum 3-5 sales/BD professionals) - ensures infrastructure to convert leads",
+              "Niche specialization visible in company description or services (healthcare, IT, industrial, finance) rather than general temp staffing - higher margins and sophistication",
+              "Geographic presence in high-density staffing markets (NY, CA, IL, TX, GA, FL) or signs of multi-state expansion",
+              "Active content marketing or thought leadership (blog, case studies, salary guides) indicating marketing sophistication above 5-10% budget allocation"
+            ],
+            "targeting_filters_description": "Rules defining an ideal account for lead gen outreach.",
+            "disqualifiers": [
+              "Revenue <$3M (insufficient budget and likely <2% marketing spend, too price-sensitive for $1,500-$5,000/month commitments)",
+              "100% referral-dependent with no digital presence or sales team structure - cultural misfit for paid lead generation",
+              "Recent layoffs, office closures, or negative reviews indicating financial distress or operational challenges in declining market",
+              "Exclusively executive search or retained search model - different sales motion with very long cycles and low volume needs"
+            ],
+            "disqualifiers_description": "Rules that remove bad-fit accounts.",
+            "best_channels_ranked": [
+              "cold_email",
+              "linkedin",
+              "partners",
+              "events",
+              "paid_search"
+            ],
+            "best_list_sources": [
+              "American Staffing Association (ASA) Member Directory - searchable by location, service type, and occupational specialty (validated industry association directory)",
+              "LinkedIn Sales Navigator: filter for 'staffing agency' OR 'recruitment agency' + $5M-$50M revenue + title filters for 'VP Sales' OR 'Director Business Development' OR 'CEO' + US geography",
+              "Apollo.io: Professional Services > Staffing & Recruiting industry filter + employee count 25-250 + revenue $5M-$50M + technology signals (Bullhorn, LinkedIn Recruiter usage)",
+              "ZoomInfo: Staffing/Employment Placement industry + scoops for recent funding, expansion, or leadership hires + department headcount filters for sales team size",
+              "Clutch.co and Staffing Industry Analysts directories - agencies with visible online presence and case studies indicate marketing sophistication above baseline"
+            ],
+            "best_list_sources_description": "Where to find high-quality lead lists for this niche."
+          }
+        },
+        "generic_offer_angles": [
+          {
+            "confidence": 0.85,
+            "description": "Generic offer/positioning angles for lead gen companies.",
+            "angle_name": "Qualified Hiring Pipeline",
+            "who_it_targets": "Healthcare, IT, and specialized niche staffing agencies ($5M-$50M revenue) struggling with unpredictable client acquisition and heavy referral dependence",
+            "core_promise": "Pre-qualified companies with active hiring needs in your niche, delivered weekly with transparent qualification criteria and 60-day performance guarantee",
+            "why_this_resonates": [
+              "Directly addresses their #1 pain: client acquisition being harder than finding talent (23% cite as top challenge, up from 16% in 2024)",
+              "Solves their scalability problem: referrals create 41-44% of business but aren't predictable or repeatable for growth planning",
+              "Matches their desired outcome: predictable pipeline of prospects actively hiring or expanding, reducing the 6-12 month sales cycle by targeting companies already in evaluation mode",
+              "Overcomes their primary objection about lead quality through transparent qualification criteria proving prospects are HR/hiring decision-makers at target companies"
+            ],
+            "constraints": []
+          },
+          {
+            "confidence": 0.85,
+            "description": "Generic offer/positioning angles for lead gen companies.",
+            "angle_name": "Niche Expansion Accelerator",
+            "who_it_targets": "Regional staffing agencies expanding to new states or general agencies diversifying from commodity temp staffing into specialized verticals (healthcare, IT, industrial)",
+            "core_promise": "Targeted prospect lists and qualified appointments in your new geographic market or vertical specialty, delivering 8-12 qualified meetings monthly to build pipeline 3x faster than cold outreach",
+            "why_this_resonates": [
+              "Addresses expansion pain: 76% of recruiters have no formal business development plan, making new market entry especially difficult without established networks",
+              "Solves their time-to-revenue problem: expansion requires pipeline quickly, but their sales team lacks contacts and credibility in new markets",
+              "Matches their strategic initiative: agencies diversifying into specialized verticals need targeted lead generation to compete with established niche players",
+              "Reduces dependence on referrals in new markets where they have zero relationship capital to leverage"
+            ],
+            "constraints": []
+          },
+          {
+            "confidence": 0.85,
+            "description": "Generic offer/positioning angles for lead gen companies.",
+            "angle_name": "Sales Velocity Multiplier",
+            "who_it_targets": "Mid-market staffing agencies ($10M-$100M revenue) with established sales teams struggling with prospecting effectiveness and long enterprise sales cycles creating cash flow pressure",
+            "core_promise": "Shorten your 6-12 month sales cycles by 40% through pre-qualified decision-maker appointments with companies demonstrating active hiring signals and budget authority",
+            "why_this_resonates": [
+              "Addresses their sales team pain: prospecting remains the hardest part of the job, and 6-12 month cycles create pipeline anxiety and revenue unpredictability",
+              "Solves their efficiency problem: enables sales reps to focus on closing and relationship building instead of cold prospecting, increasing revenue per rep without adding headcount",
+              "Matches their desired outcome: faster sales cycles by engaging decision-makers earlier in their buying journey with companies showing hiring intent signals",
+              "Proves ROI within their 30-45 day test window by delivering qualified appointments that enter pipeline immediately, addressing their concern about long attribution cycles"
+            ],
+            "constraints": []
+          },
+          {
+            "confidence": 0.85,
+            "description": "Generic offer/positioning angles for lead gen companies.",
+            "angle_name": "Recession-Proof Pipeline",
+            "who_it_targets": "All staffing agencies experiencing the current market contraction (-8% YoY revenue decline in Q1 2025) and declining job orders from existing clients",
+            "core_promise": "Maintain consistent client acquisition during market downturns through data-driven targeting of companies still hiring in recession-resistant sectors and high-growth verticals",
+            "why_this_resonates": [],
+            "constraints": []
+          }
+        ],
+        "outbound_approach": {
+          "confidence": 0.83,
+          "description": "Strategic framework for outbound messaging to this niche.",
+          "primary_pain_to_hit": "Client acquisition is now harder than finding talent, with 23% citing it as their #1 challenge (up from 16% in 2024), while heavy referral dependence (41-44% of new business) creates unpredictable revenue and limits scalability",
+          "hook_themes": [
+            "referral dependency risk and unpredictability",
+            "client acquisition harder than talent acquisition reversal",
+            "6-12 month sales cycle compression",
+            "active hiring signal identification",
+            "niche expansion market entry speed",
+            "revenue gap from lost major client replacement"
+          ],
+          "proof_requirements": [
+            "Case studies from similar staffing agencies (healthcare, IT, industrial niches) showing specific metrics: appointments booked per month, lead-to-client conversion rates, and average placement volume generated",
+            "Sample qualified leads matching their exact ICP before any financial commitment, demonstrating access to decision-makers with active hiring needs",
+            "Transparent lead qualification criteria and scoring methodology proving leads are HR directors, VPs of Operations, or hiring managers at companies with verified hiring signals (job postings, expansion news, funding announcements)",
+            "ROI projections based on their typical deal economics ($50K-$500K annual client value, $9K-$45K per placement) with clear payback period calculations within 60-90 days",
+            "References from non-competing agencies in different geographic markets or adjacent niches willing to speak to results and lead quality"
+          ],
+          "personalization_vectors": [
+            "Recent business development or sales role job postings on LinkedIn/job boards indicating growth mandate and capacity to follow up on leads",
+            "Specific niche specialization visible on website or LinkedIn (healthcare staffing, IT/tech, industrial, finance, legal, creative) to tailor prospect targeting criteria",
+            "Geographic expansion signals: new office announcements, press releases about entering new states/markets, or multi-location presence indicating expansion intent",
+            "Recent leadership changes: new VP of Sales, Director of BD, or Head of Marketing hires suggesting fresh growth initiatives and budget allocation",
+            "Content marketing sophistication: presence of blog posts, salary guides, case studies, or thought leadership indicating marketing budget above baseline 5-10% and openness to paid acquisition",
+            "Technology stack mentions on website or G2/Capterra reviews (Bullhorn, Recruit CRM, LinkedIn Recruiter) showing operational maturity and ability to manage lead flow"
+          ],
+          "objection_themes": [
+            {
+              "objection": "We get most clients from referrals already - they're higher quality and lower cost",
+              "positioning": "Position as complement, not replacement: 'Referrals are excellent—our clients use us to augment referrals with predictable flow. When your top 3 clients reduce hiring 30% like many did in Q1 2025, referrals dry up. We provide the consistent pipeline so you're not caught off-guard during market softness or seasonal dips.' Emphasize scalability limitation of referrals."
+            },
+            {
+              "objection": "Concerned about lead quality - won't be decision-makers or companies actually hiring",
+              "positioning": "Lead with qualification transparency and proof: 'We only deliver prospects with verified hiring signals—active job postings in your niche, recent expansion announcements, or funding rounds indicating growth. You review 5-10 sample leads matching your exact ICP before any commitment. Our qualification criteria: [specific title, company size, hiring signal]. If quality doesn't match within first 30 days, you don't continue.' Offer pilot with performance guarantee."
+            },
+            {
+              "objection": "Long sales cycles (6-12 months) mean ROI from leads takes too long to prove",
+              "positioning": "Reframe success metrics to early-stage pipeline: 'You're right that client conversion takes 6-12 months—but qualified appointments and first meetings happen within 30 days. We measure success by meetings booked with decision-makers, not closed deals in month one. Our [healthcare/IT] staffing clients see 8-12 qualified appointments monthly, with 25-30% advancing to proposal stage within 60 days. That early pipeline velocity proves value before full sales cycle completes.' Focus on leading indicators."
+            },
+            {
+              "objection": "Cost per lead too high relative to our tight marketing budgets (5-10% of revenue)",
+              "positioning": "Anchor to client lifetime value and CAC reduction: 'At $50K-$500K annual client value, acquiring one client pays for 10-100 months of lead gen. High-performing agencies spend 5-10% on marketing—if you're doing $10M revenue, that's $500K-$1M budget. Our $3K/month investment is 0.36% of revenue but could generate $200K-$500K in new client revenue annually. Compare that to hiring a BD rep at $80K+ base plus commission.' Reframe as revenue investment, not marketing cost."
+            },
+            {
+              "objection": "Skeptical that outsourced lead gen understands our niche specialization",
+              "positioning": "Demonstrate niche research upfront: 'We exclusively target [their specific niche]. For healthcare staffing, that means hospitals with 200+ beds expanding services, home health agencies in states with favorable Medicaid reimbursement, or ASCs opening new locations. We don't send generic leads—our targeting filters include [specific criteria relevant to their niche]. Here are 10 example companies we'd target for you based on your ICP.' Prove niche knowledge before asking for commitment."
+            }
+          ]
+        },
+        "positioning_intel": {
+          "confidence": 0.83,
+          "sources_used": [
+            "https://www.careerbee.io/the-best-recruitment-agencies-in-the-us-for-2026/",
+            "https://asanify.com/blog/employer-of-record-usa/staffing-agencies-usa-2026/",
+            "https://www.randstadusa.com",
+            "https://www.employbridge.com/find-workers/staffing-case-studies",
+            "https://www.sloane-staffing.com/case-studies",
+            "https://staffedup.com/case-studies/",
+            "https://www.kellyservices.us/outcomes-impact/case-studies/",
+            "https://staffingscale.com/blog/how-to-differentiate-staffing-agency/",
+            "https://www.varshealth.com/post/mastering-staffing-agency-differentiation-unique-strategies-for-industry-leadership",
+            "https://www.teksystems.com/en/talent-solutions",
+            "https://www.teksystems.com/en/who-we-are",
+            "https://sjhemleymarketing.com/blog/how-to-craft-a-winning-value-proposition-for-your-staffing-business/",
+            "https://www.trigyn.com/services/staffing-and-consulting-services/staffing-value-proposition",
+            "https://www.careerprofiles.com/hiring-advice/staffing-agencies-competitive-advantage/",
+            "https://staffinghub.com/guest-posts/redefining-competitive-advantage-how-leading-staffing-firms-are-building-moats-through-talent-networks/",
+            "https://www.hays.com/recruitment-services/temporary-contract-staffing",
+            "https://insightglobal.com/locations/colorado/staffing-agency-colorado-springs-co/"
+          ],
+          "description": "How companies in this niche position and sell their services to their customers.",
+          "their_offer_angles": [
+            {
+              "angle_name": "Speed & Rapid Deployment",
+              "who_it_targets": "Employers facing urgent hiring needs, seasonal peaks, project launches, or unexpected absences requiring immediate workforce solutions",
+              "promise": "Access to pre-screened, qualified talent deployed within 24-48 hours to minimize operational downtime and maintain productivity",
+              "proof_points": [
+                "48-hour average time-to-submit qualified candidates",
+                "Pre-vetted talent pools ready for immediate placement",
+                "Nationwide network enabling local responsiveness",
+                "Case studies showing same-week placements during peak seasons"
+              ],
+              "keywords_to_use": [
+                "rapid response",
+                "quick turnaround",
+                "immediate availability",
+                "fast placements",
+                "time-to-fill"
+              ]
+            },
+            {
+              "angle_name": "Industry Specialization & Expertise",
+              "who_it_targets": "Companies in specialized sectors (healthcare, IT, finance, engineering) seeking candidates with niche skills and industry knowledge",
+              "promise": "Deep industry expertise with exclusive access to specialized talent pools that understand your sector's unique requirements and compliance needs",
+              "proof_points": [
+                "37% higher inbound lead conversion for specialized agencies vs. generalists",
+                "Industry-certified recruiters with 10+ years sector experience",
+                "Proprietary talent databases in niche verticals (e.g., 500+ Spanish-speaking warehouse workers)",
+                "Compliance expertise (healthcare credentialing, IT security clearances)"
+              ],
+              "keywords_to_use": [
+                "niche expertise",
+                "industry-specific",
+                "specialized talent",
+                "vertical focus",
+                "subject matter experts"
+              ]
+            },
+            {
+              "angle_name": "Strategic Partnership & Workforce Solutions",
+              "who_it_targets": "Enterprise clients and mid-market companies seeking long-term talent strategy partners beyond transactional staffing",
+              "promise": "Comprehensive workforce solutions including RPO, managed services, workforce development, and strategic talent planning that align with business transformation goals",
+              "proof_points": [
+                "80%+ Fortune 500 companies as clients (TEKsystems example)",
+                "Customized training programs and reskilling initiatives",
+                "Data-driven recruitment with AI/ML matching technology",
+                "Multi-year partnerships with dedicated account teams"
+              ],
+              "keywords_to_use": [
+                "strategic partner",
+                "in it with you",
+                "workforce transformation",
+                "scalable solutions",
+                "business alignment"
+              ]
+            },
+            {
+              "angle_name": "Quality & Cultural Fit Guarantee",
+              "who_it_targets": "Employers struggling with high turnover, poor retention, or mismatched hires who need candidates that align with company culture",
+              "promise": "Rigorous vetting processes and cultural compatibility assessments with performance guarantees to reduce turnover and improve long-term retention",
+              "proof_points": [
+                "3:1 submittal-to-hire ratios demonstrating candidate quality",
+                "Free replacement within 7-30 days if hire doesn't work out",
+                "25-30% turnover reduction through cultural fit screening",
+                "97% client retention rates due to quality focus"
+              ],
+              "keywords_to_use": [
+                "cultural fit",
+                "quality over quantity",
+                "retention-focused",
+                "proven track record",
+                "satisfaction guaranteed"
+              ]
+            }
+          ],
+          "value_propositions": [
+            "Reduced time-to-hire through access to pre-screened, ready talent pools",
+            "Lower recruiting costs by eliminating advertising, screening, and administrative overhead",
+            "Workforce flexibility and scalability without long-term employment commitments",
+            "Risk mitigation through temp-to-hire trials and performance guarantees",
+            "Compliance management for payroll, taxes, benefits, and industry regulations",
+            "Access to passive candidates and specialized talent not available on job boards",
+            "Improved retention rates through better cultural and skill matching"
+          ],
+          "common_differentiators": [
+            "Niche vertical specialization (healthcare, IT, industrial, finance) vs. generalist approach",
+            "Proprietary technology platforms (AI matching, ATS integration, real-time dashboards)",
+            "Geographic coverage and local market expertise in specific regions",
+            "Exclusive talent networks and proprietary candidate databases",
+            "Service guarantees (free replacements, performance warranties)",
+            "Speed of delivery (24-48 hour placements vs. industry average)",
+            "Relationship-driven model with dedicated account managers vs. transactional service",
+            "Comprehensive workforce solutions (RPO, MSP, training) beyond basic staffing"
+          ]
+        },
+        "messaging_inputs": {
+          "confidence": 0.87,
+          "sources_used": [
+            "https://www.avionte.com/glossary/",
+            "https://www.4cornerresources.com/resources/glossary/",
+            "https://www.macslist.org/for-employers/recruiting-terms-glossary-learn-the-language-to-land-the-job",
+            "https://www.employbridge.com/find-workers/staffing-case-studies",
+            "https://www.kellyservices.us/outcomes-impact/case-studies/",
+            "https://www.paycor.com/resource-center/articles/5-pain-points-for-recruiters/",
+            "https://www.nescoresource.com/resources/3-pain-points-of-staffing-and-their-solutions",
+            "https://www.manatal.com/blog/7-pain-points-for-hiring-teams-and-how-to-solve-them",
+            "https://portercap.com/top-challenges-for-staffing-agencies/",
+            "https://sjhemleymarketing.com/blog/how-to-craft-a-winning-value-proposition-for-your-staffing-business/",
+            "https://www.trigyn.com/services/staffing-and-consulting-services/staffing-value-proposition",
+            "https://www.careerprofiles.com/hiring-advice/staffing-agencies-competitive-advantage/",
+            "https://altline.sobanco.com/staffing-agency-kpis/",
+            "https://primusworkforce.com/blog/how-to-measure-staffing-agency-success-kpis-metrics/",
+            "https://www.hays.com/recruitment-services/temporary-contract-staffing",
+            "https://www.instawork.com/local-staffing/colorado-springs"
+          ],
+          "description": "Language and vocabulary this niche uses when selling to their customers.",
+          "industry_jargon": [
+            "Direct hire / Permanent placement",
+            "Temp-to-hire / Contract-to-hire",
+            "RPO (Recruitment Process Outsourcing)",
+            "MSP (Managed Service Provider)",
+            "Time-to-fill / Time-to-hire",
+            "Submittal ratio / Submit-to-hire ratio",
+            "Bill rate and pay rate (spread)",
+            "Job order",
+            "Talent acquisition",
+            "ATS (Applicant Tracking System)",
+            "Contingent workforce",
+            "SOW (Statement of Work)"
+          ],
+          "pain_language": [
+            "High turnover and retention challenges impacting productivity",
+            "Talent shortages and difficulty finding qualified candidates",
+            "Slow time-to-hire creating operational bottlenecks",
+            "Poor candidate quality and mismatched skill sets",
+            "Inconsistent workforce availability during seasonal peaks",
+            "Administrative burden of payroll, benefits, and compliance management",
+            "Candidate ghosting and no-shows disrupting operations",
+            "Lack of access to specialized or niche talent pools"
+          ],
+          "benefit_language": [
+            "Streamlined hiring process reducing time-to-productivity",
+            "Cost-effective workforce solutions that fit your budget",
+            "Scalable staffing model that flexes with business demands",
+            "Improved employee retention through better cultural fit",
+            "Access to top-tier talent and passive candidates",
+            "Reduced administrative overhead and compliance risk",
+            "Faster ROI on recruitment investments",
+            "Enhanced operational efficiency and steady production outputs"
+          ],
+          "proof_language": [
+            "Proven track record with Fortune 500 clients",
+            "Industry-leading retention rates and client satisfaction scores",
+            "Award-winning recruitment services and recognized expertise",
+            "Certified recruiters with deep industry knowledge",
+            "Trusted partner for 20+ years in your industry",
+            "97% client retention demonstrating long-term value",
+            "Measurable results with documented case studies and metrics",
+            "Reputable affiliations with American Staffing Association (ASA)"
+          ]
+        },
+        "research_links": {
+          "confidence": 1,
+          "description": "Auto-generated research and discovery links for this niche",
+          "google_search_links": [
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+pain+points",
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+lead+generation+strategies",
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+companies+US",
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+case+studies",
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+industry+association"
+          ],
+          "linkedin_job_search_links": [
+            "https://www.linkedin.com/jobs/search/?keywords=Recruitment%20%26%20Staffing%20Agencies",
+            "https://www.linkedin.com/jobs/search/?keywords=Recruitment%20%26%20Staffing%20Agencies+sales+director",
+            "https://www.linkedin.com/jobs/search/?keywords=Recruitment%20%26%20Staffing%20Agencies+business+development"
+          ],
+          "funding_search_links": [
+            "https://www.crunchbase.com/discover/organization.companies/q=Recruitment%20%26%20Staffing%20Agencies",
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+funding+rounds+US",
+            "https://www.google.com/search?q=Recruitment%20%26%20Staffing%20Agencies+venture+capital+investments"
+          ]
+        }
+      }
+    }
+  ]

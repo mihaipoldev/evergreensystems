@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
+    const projectTypeId = searchParams.get("project_type_id");
 
     let query = adminSupabase
       .from("projects")
@@ -23,6 +24,10 @@ export async function GET(request: Request) {
 
     if (status) {
       query = query.eq("status", status);
+    }
+
+    if (projectTypeId) {
+      query = query.eq("project_type_id", projectTypeId);
     }
 
     if (search && search.trim() !== "") {
@@ -39,7 +44,7 @@ export async function GET(request: Request) {
     // Get document counts for each project
     const projectsWithCounts = await Promise.all(
       (data || []).map(async (project: any) => {
-        // Count linked documents (from junction table - research documents)
+        // Count linked documents (from junction table - project documents)
         const { count: linkedCount } = await adminSupabase
           .from("project_documents")
           .select("*", { count: "exact", head: true })
@@ -80,41 +85,72 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { client_name, status, type, description } = body;
+    const { 
+      project_type_id, 
+      client_name, 
+      name, 
+      status, 
+      description, 
+      geography, 
+      category 
+    } = body;
 
-    if (!client_name) {
+    // Validate project_type_id
+    if (!project_type_id) {
       return NextResponse.json(
-        { error: "client_name is required" },
+        { error: "project_type_id is required" },
         { status: 400 }
       );
     }
 
-    // Generate slug from client_name
-    const slug = client_name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    // Check if slug already exists
-    const { data: existing } = await adminSupabase
-      .from("projects")
-      .select("id")
-      .eq("slug", slug)
+    // Get project type to determine which fields are required
+    const { data: projectType } = await adminSupabase
+      .from("project_types")
+      .select("name")
+      .eq("id", project_type_id)
       .single();
 
-    let finalSlug = slug;
-    if (existing) {
-      // Add timestamp to make it unique
-      finalSlug = `${slug}-${Date.now()}`;
+    if (!projectType) {
+      return NextResponse.json(
+        { error: "Invalid project_type_id" },
+        { status: 400 }
+      );
     }
 
+    const typedProjectType = projectType as { name: string };
+    const isClientType = typedProjectType.name === "client";
+    const isNicheType = typedProjectType.name === "niche";
+
+    // Validate based on project type
+    if (isClientType && !client_name) {
+      return NextResponse.json(
+        { error: "client_name is required for client projects" },
+        { status: 400 }
+      );
+    }
+
+    if (isNicheType && !name) {
+      return NextResponse.json(
+        { error: "name is required for niche research projects" },
+        { status: 400 }
+      );
+    }
+
+    // Determine display name for KB
+    const displayName = isClientType ? client_name : name;
+
     // Step 1: Create workspace KB for this project
+    const kbName = isClientType 
+      ? `${client_name} Knowledge Base`
+      : `${name} Knowledge Base`;
+    
     const { data: kb, error: kbError } = await (adminSupabase
       .from("rag_knowledge_bases") as any)
       .insert({
-        name: `${client_name} Workspace`,
-        description: `Workspace for ${client_name} project`,
+        name: kbName,
+        description: `Knowledge Base for ${displayName} project`,
         type: "project",
+        kb_type: isClientType ? "client" : "project",
         is_active: true,
         created_by: user.id,
       })
@@ -133,17 +169,28 @@ export async function POST(request: Request) {
     }
 
     // Step 2: Create project with reference to workspace KB
+    const projectData: any = {
+      project_type_id,
+      status: status || "active",
+      description: description || null,
+      kb_id: kb.id, // Required - links to workspace KB
+      created_by: user.id,
+    };
+
+    // Add type-specific fields
+    if (isClientType) {
+      projectData.client_name = client_name;
+      projectData.name = client_name; // Set name to client_name for consistency
+    } else if (isNicheType) {
+      projectData.name = name;
+      projectData.geography = geography || null;
+      projectData.category = category || null;
+      projectData.client_name = name; // Set client_name to name for backward compatibility
+    }
+
     const { data, error } = await (adminSupabase
       .from("projects") as any)
-      .insert({
-        client_name,
-        slug: finalSlug,
-        status: status || "active",
-        type: type || "client",
-        description: description || null,
-        kb_id: kb.id, // Required - links to workspace KB
-        created_by: user.id,
-      })
+      .insert(projectData)
       .select()
       .single();
 

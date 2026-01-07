@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
@@ -17,21 +17,109 @@ type KnowledgeBaseListProps = {
   initialKnowledge: KnowledgeBaseWithCount[];
 };
 
+const STORAGE_KEY_PREFIX = "knowledge-bases-";
+const STORAGE_KEY_SEARCH = `${STORAGE_KEY_PREFIX}search`;
+const STORAGE_KEY_FILTERS = `${STORAGE_KEY_PREFIX}filters`;
+const STORAGE_KEY_SORT = `${STORAGE_KEY_PREFIX}sort`;
+const STORAGE_KEY_SHOW_PROJECTS = "kb-show-projects";
+
+// Helper functions for localStorage persistence
+function getStoredSearch(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SEARCH) || "";
+  } catch {
+    return "";
+  }
+}
+
+function setStoredSearch(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SEARCH, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredFilters(): Record<string, string[]> {
+  if (typeof window === "undefined") return { Type: [], "Active Status": [], Visibility: [] };
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_FILTERS);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === "object" ? parsed : { Type: [], "Active Status": [], Visibility: [] };
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { Type: [], "Active Status": [], Visibility: [] };
+}
+
+function setStoredFilters(filters: Record<string, string[]>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredSort(): string {
+  if (typeof window === "undefined") return "Recent";
+  try {
+    return localStorage.getItem(STORAGE_KEY_SORT) || "Recent";
+  } catch {
+    return "Recent";
+  }
+}
+
+function setStoredSort(value: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SORT, value);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getStoredShowProjects(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_SHOW_PROJECTS);
+    return saved === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredShowProjects(value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_SHOW_PROJECTS, String(value));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useViewMode("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
-    Type: [],
-    "Active Status": [],
-    Visibility: [],
-  });
-  const [selectedSort, setSelectedSort] = useState("Recent");
+  // Initialize state from localStorage directly to avoid flash of default values
+  const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
+  const [selectedSort, setSelectedSort] = useState(() => getStoredSort());
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedKnowledgeBase, setSelectedKnowledgeBase] = useState<KnowledgeBase | null>(null);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBaseWithCount[]>(initialKnowledge);
-  const [showProjects, setShowProjects] = useState(false);
+  const [showProjects, setShowProjects] = useState(() => getStoredShowProjects());
+  const hasLoadedFromStorage = useRef(false);
+
+  // Mark as loaded after first render
+  useEffect(() => {
+    hasLoadedFromStorage.current = true;
+  }, []);
 
   const filterCategories: FilterCategory[] = [
     {
@@ -175,13 +263,6 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
     };
   }, []);
 
-  // Load showProjects preference from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("kb-show-projects");
-    if (saved !== null) {
-      setShowProjects(saved === "true");
-    }
-  }, []);
 
   // Update knowledgeBases when initialKnowledge changes (from server refresh)
   useEffect(() => {
@@ -271,21 +352,49 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
     setSelectedKnowledgeBase(updatedKnowledgeBase);
   };
 
+  // Persist search query changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSearch(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Persist filter changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredFilters(selectedFilters);
+    }
+  }, [selectedFilters]);
+
+  // Persist sort changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredSort(selectedSort);
+    }
+  }, [selectedSort]);
+
+  // Persist showProjects changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredShowProjects(showProjects);
+    }
+  }, [showProjects]);
+
   const handleFilterApply = (filters: Record<string, string[]>) => {
     setSelectedFilters(filters);
   };
 
   const handleFilterClear = () => {
-    setSelectedFilters({
+    const clearedFilters = {
       Type: [],
       "Active Status": [],
       Visibility: [],
-    });
+    };
+    setSelectedFilters(clearedFilters);
   };
 
   const handleToggleProjects = (show: boolean) => {
     setShowProjects(show);
-    localStorage.setItem("kb-show-projects", String(show));
   };
 
   return (
@@ -293,6 +402,7 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
       <div className="w-full space-y-6">
         <Toolbar
           searchPlaceholder="Search knowledge bases..."
+          searchValue={searchQuery}
           onSearch={setSearchQuery}
           filterCategories={filterCategories}
           selectedFilters={selectedFilters}

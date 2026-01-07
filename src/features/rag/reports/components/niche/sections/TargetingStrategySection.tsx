@@ -1,12 +1,16 @@
 import { SectionWrapper } from "../../shared/SectionWrapper";
 import { InsightList } from "../../shared/InsightList";
-import { ChannelRanking } from "../../shared/ChannelRanking";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheckCircle,
   faXmarkCircle,
   faDatabase,
+  faEnvelope,
+  faCalendar,
+  faUsers,
+  faPhone,
 } from "@fortawesome/free-solid-svg-icons";
+import { faLinkedin } from "@fortawesome/free-brands-svg-icons";
 import type { ReportData } from "../../../types";
 
 interface TargetingStrategySectionProps {
@@ -17,7 +21,7 @@ export const TargetingStrategySection = ({ targeting }: TargetingStrategySection
   return (
     <SectionWrapper
       id="targeting-strategy"
-      number="05"
+      number="06"
       title="Targeting Strategy"
       subtitle="Priority segments, qualification filters, channels, and data sources"
     >
@@ -64,8 +68,63 @@ export const TargetingStrategySection = ({ targeting }: TargetingStrategySection
         <h4 className="text-lg font-display font-semibold text-foreground mb-4">
           Best Channels (Ranked)
         </h4>
-        <div className="bg-card rounded-xl p-6 border border-border report-shadow">
-          <ChannelRanking channels={targeting.best_channels_ranked} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {targeting.best_channels_ranked.map((channel, index) => {
+            const channelValue = typeof channel === "string" 
+              ? channel 
+              : (channel as any)?.name || (channel as any)?.channel || (channel as any)?.value || String(channel);
+            
+            const channelIcons: Record<string, any> = {
+              cold_email: faEnvelope,
+              linkedin: faLinkedin,
+              events: faCalendar,
+              partners: faUsers,
+              cold_call: faPhone,
+            };
+            
+            const channelLabels: Record<string, string> = {
+              cold_email: "Cold Email",
+              linkedin: "LinkedIn",
+              events: "Events",
+              partners: "Partners",
+              cold_call: "Cold Call",
+            };
+            
+            const icon = channelIcons[channelValue] || faEnvelope;
+            const label = channelLabels[channelValue] || channelValue;
+            const rankColors = [
+              "bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 border-yellow-500/30",
+              "bg-gradient-to-br from-gray-300/20 to-gray-400/20 border-gray-400/30",
+              "bg-gradient-to-br from-amber-600/20 to-amber-700/20 border-amber-600/30",
+            ];
+            const rankColor = rankColors[index] || "bg-gradient-to-br from-muted/50 to-muted/60 border-border";
+            
+            return (
+              <div
+                key={index}
+                className={`rounded-xl p-5 border ${rankColor} report-shadow hover:shadow-lg transition-all duration-300`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+                      <FontAwesomeIcon icon={icon} className="w-6 h-6 text-accent" />
+                    </div>
+                    <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-bold shadow-md">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="text-base font-display font-semibold text-foreground mb-1">
+                      {label}
+                    </h5>
+                    <p className="text-xs text-muted-foreground font-body uppercase tracking-wider">
+                      Rank #{index + 1} Channel
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

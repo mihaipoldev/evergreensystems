@@ -82,7 +82,7 @@ export function WorkflowSelectionCard({
         <motion.div
           className={cn(
             "w-16 h-16 rounded-xl flex items-center justify-center mb-4",
-            "bg-gradient-to-br from-primary/10 to-secondary/10"
+            "bg-secondary"
           )}
           whileHover={{ rotate: [0, -5, 5, 0] }}
           transition={{ duration: 0.5 }}

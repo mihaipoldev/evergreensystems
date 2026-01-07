@@ -84,12 +84,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     section: "database",
   },
   {
-    title: "Intelligence",
-    href: "/intel",
-    icon: faRightLeft,
-    section: "settings",
-  },
-  {
     title: "Settings",
     href: "/admin/settings",
     icon: faGear,

@@ -11,7 +11,8 @@ import type { RunOutput } from "../types";
 type ReportWithRun = RunOutput & {
   run?: {
     id: string;
-    run_type: string;
+    workflow_name?: string | null;
+    workflow_label?: string | null;
     status: string;
     knowledge_base_name?: string | null;
     created_at: string;
@@ -36,7 +37,8 @@ export function ReportList({ initialReports }: ReportListProps) {
       filtered = filtered.filter(
         (report) =>
           report.run?.knowledge_base_name?.toLowerCase().includes(query) ||
-          report.run?.run_type.toLowerCase().includes(query)
+          report.run?.workflow_label?.toLowerCase().includes(query) ||
+          report.run?.workflow_name?.toLowerCase().includes(query)
       );
     }
 

@@ -7,12 +7,16 @@ import { GenerateNicheReportModal } from "./GenerateNicheReportModal";
 interface GenerateReportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subjectType: string | null;
+  projectType: string | null;
+  projectTypeId?: string | null;
   researchSubjectId: string;
   researchSubjectName?: string;
   researchSubjectGeography?: string | null;
   researchSubjectDescription?: string | null;
   researchSubjectCategory?: string | null;
+  // Keep backward compatibility
+  subjectType?: string | null;
+  subjectTypeId?: string | null;
 }
 
 /**
@@ -23,14 +27,22 @@ interface GenerateReportModalProps {
 export function GenerateReportModal({
   open,
   onOpenChange,
-  subjectType,
+  projectType,
+  projectTypeId,
   researchSubjectId,
   researchSubjectName,
   researchSubjectGeography,
   researchSubjectDescription,
   researchSubjectCategory,
+  // Backward compatibility
+  subjectType,
+  subjectTypeId,
 }: GenerateReportModalProps) {
   if (!open) return null;
+
+  // Use projectType if provided, otherwise fallback to subjectType for backward compatibility
+  const effectiveProjectType = projectType ?? subjectType ?? null;
+  const effectiveProjectTypeId = projectTypeId ?? subjectTypeId ?? null;
 
   const modalContent = (
     <>
@@ -54,12 +66,13 @@ export function GenerateReportModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-full flex flex-col overflow-hidden">
-          {/* Render the appropriate modal content based on subject type */}
-          {subjectType === "niche" || !subjectType ? (
+          {/* Render the appropriate modal content based on project type */}
+          {effectiveProjectType === "niche" || !effectiveProjectType ? (
             <GenerateNicheReportModal
               open={open}
               onOpenChange={onOpenChange}
-              subjectType={subjectType}
+              projectType={effectiveProjectType}
+              projectTypeId={effectiveProjectTypeId}
               researchSubjectId={researchSubjectId}
               researchSubjectName={researchSubjectName}
               researchSubjectGeography={researchSubjectGeography}
@@ -71,7 +84,8 @@ export function GenerateReportModal({
             <GenerateNicheReportModal
               open={open}
               onOpenChange={onOpenChange}
-              subjectType={subjectType}
+              projectType={effectiveProjectType}
+              projectTypeId={effectiveProjectTypeId}
               researchSubjectId={researchSubjectId}
               researchSubjectName={researchSubjectName}
               researchSubjectGeography={researchSubjectGeography}

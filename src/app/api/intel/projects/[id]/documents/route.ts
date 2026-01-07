@@ -31,7 +31,7 @@ export async function GET(
       );
     }
 
-    // Step 2: Get linked documents (from junction table - research documents from other KBs)
+    // Step 2: Get linked documents (from junction table - project documents from other KBs)
     const { data: linkedDocs, error: linkedError } = await adminSupabase
       .from("project_documents")
       .select(`

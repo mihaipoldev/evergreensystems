@@ -64,11 +64,19 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { name, label, description, icon, estimated_cost, estimated_time_minutes, input_schema, enabled } = body;
+    const { name, label, description, icon, estimated_cost, estimated_time_minutes, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
 
     if (!name || !label) {
       return NextResponse.json(
         { error: "name and label are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate knowledge_base_target
+    if (!knowledge_base_target || !['knowledgebase', 'client', 'project'].includes(knowledge_base_target)) {
+      return NextResponse.json(
+        { error: "knowledge_base_target is required and must be one of: knowledgebase, client, project" },
         { status: 400 }
       );
     }
@@ -98,6 +106,8 @@ export async function POST(request: Request) {
         estimated_time_minutes: estimated_time_minutes !== undefined ? estimated_time_minutes : null,
         input_schema: input_schema || null,
         enabled: enabled !== undefined ? enabled : true,
+        knowledge_base_target: knowledge_base_target,
+        target_knowledge_base_id: target_knowledge_base_id || null,
       })
       .select()
       .single();

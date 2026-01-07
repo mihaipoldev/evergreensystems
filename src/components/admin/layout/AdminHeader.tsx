@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faPlus, faBook, faFolder, faChartLine } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPlus, faBook, faFolder, faChartLine, faArrowRightArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { KnowledgeBaseModal } from "@/features/rag/knowledge-bases/components/KnowledgeBaseModal";
 import { ProjectModal } from "@/features/rag/projects/components/ProjectModal";
@@ -81,14 +81,26 @@ export function AdminHeader() {
               width="w-56"
             />
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full hover:bg-muted/50"
-            onClick={() => {}}
-          >
-            <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
-          </Button>
+          <ActionMenu
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full hover:bg-muted/50"
+              >
+                <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
+              </Button>
+            }
+            items={[
+              {
+                label: isIntelRoute ? "Admin" : "Intelligence",
+                icon: <FontAwesomeIcon icon={faArrowRightArrowLeft} className="h-4 w-4" />,
+                href: isIntelRoute ? "/admin" : "/intel",
+              },
+            ]}
+            align="end"
+            width="w-48"
+          />
         </div>
       </div>
       

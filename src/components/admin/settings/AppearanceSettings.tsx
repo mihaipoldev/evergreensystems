@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useTheme } from "next-themes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faWandMagicSparkles } from "@fortawesome/free-solid-svg-icons";
 import { Moon, Sun, Monitor, Palette, Edit2, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { hexToHsl, hslToCssString, hslToCssHsl } from "@/lib/color-utils";
@@ -63,6 +63,7 @@ export function AppearanceSettings() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userThemes, setUserThemes] = useState<UserTheme[]>([]);
   const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
+  const [isGeneratingPreset, setIsGeneratingPreset] = useState(false);
 
   // Convert database color to component color
   const dbColorToComponent = (dbColor: DatabaseColor): Color => {
@@ -657,6 +658,211 @@ export function AppearanceSettings() {
     }
   };
 
+  const handleGeneratePreset = async () => {
+    if (!userId) return;
+
+    setIsGeneratingPreset(true);
+    try {
+      // Call AI API to generate webapp preset
+      const response = await fetch("/api/admin/ai/generate-webapp-preset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to generate preset" }));
+        throw new Error(errorData.error || "Failed to generate preset");
+      }
+
+      const presetData = await response.json();
+
+      console.log('[PRESET DEBUG] API Response:', {
+        primary_color: presetData.primary_color,
+        accent_color: presetData.accent_color,
+        name: presetData.name
+      });
+
+      if (!presetData.primary_color || !presetData.accent_color) {
+        throw new Error("Invalid preset data received");
+      }
+
+      // Verify colors are different
+      if (presetData.primary_color === presetData.accent_color) {
+        console.warn('[PRESET DEBUG] WARNING: Primary and accent colors are the same!');
+      }
+
+      const supabase = createClient();
+
+      // Create primary color
+      const primaryHsl = hexToHsl(presetData.primary_color);
+      console.log('[PRESET DEBUG] Primary HSL:', primaryHsl);
+      const { data: primaryColor, error: primaryError } = await (supabase
+        .from("user_colors") as any)
+        .insert({
+          user_id: userId,
+          name: `${presetData.name || "AI Generated"} - Primary`,
+          hex: presetData.primary_color,
+          hsl_h: primaryHsl.h,
+          hsl_s: primaryHsl.s,
+          hsl_l: primaryHsl.l,
+        })
+        .select()
+        .single();
+
+      if (primaryError) throw primaryError;
+      console.log('[PRESET DEBUG] Primary color created:', {
+        id: primaryColor.id,
+        hex: primaryColor.hex,
+        name: primaryColor.name
+      });
+
+      // Create accent color
+      const accentHsl = hexToHsl(presetData.accent_color);
+      console.log('[PRESET DEBUG] Accent HSL:', accentHsl);
+      const { data: accentColor, error: accentError } = await (supabase
+        .from("user_colors") as any)
+        .insert({
+          user_id: userId,
+          name: `${presetData.name || "AI Generated"} - Accent`,
+          hex: presetData.accent_color,
+          hsl_h: accentHsl.h,
+          hsl_s: accentHsl.s,
+          hsl_l: accentHsl.l,
+        })
+        .select()
+        .single();
+
+      if (accentError) throw accentError;
+      console.log('[PRESET DEBUG] Accent color created:', {
+        id: accentColor.id,
+        hex: accentColor.hex,
+        name: accentColor.name
+      });
+
+      // Verify the colors are actually different
+      if (primaryColor.id === accentColor.id || primaryColor.hex === accentColor.hex) {
+        console.error('[PRESET DEBUG] ERROR: Primary and accent colors are the same!', {
+          primaryId: primaryColor.id,
+          accentId: accentColor.id,
+          primaryHex: primaryColor.hex,
+          accentHex: accentColor.hex
+        });
+        throw new Error("Primary and accent colors cannot be the same. Please try generating again.");
+      }
+
+      // Verify IDs are different
+      if (primaryColor.id === accentColor.id) {
+        console.error('[PRESET DEBUG] ERROR: Primary and accent color IDs are the same!');
+        throw new Error("Color IDs are the same. This should not happen.");
+      }
+
+      // Convert to component colors
+      const primaryComponent = dbColorToComponent(primaryColor);
+      const accentComponent = dbColorToComponent(accentColor);
+
+      // Update colors list
+      setUserColors((prev) => [primaryComponent, accentComponent, ...prev]);
+
+      // Create a new theme with both primary and accent colors
+      const defaultFontJson = serializeFontFamily(getDefaultFontFamily());
+      
+      // Double-check we're using the correct IDs
+      const primaryColorId = primaryColor.id;
+      const accentColorId = accentColor.id;
+      
+      console.log('[PRESET DEBUG] Creating theme with:', {
+        primary_color_id: primaryColorId,
+        accent_color_id: accentColorId,
+        primary_hex: primaryColor.hex,
+        accent_hex: accentColor.hex,
+        idsAreDifferent: primaryColorId !== accentColorId
+      });
+      
+      if (primaryColorId === accentColorId) {
+        console.error('[PRESET DEBUG] CRITICAL ERROR: Color IDs are the same before theme creation!');
+        throw new Error("Cannot create theme: primary and accent color IDs are identical.");
+      }
+      
+      const { data: newTheme, error: themeError } = await (supabase
+        .from("user_themes") as any)
+        .insert({
+          user_id: userId,
+          name: presetData.name || "AI Generated Preset",
+          primary_color_id: primaryColorId,
+          secondary_color_id: accentColorId, // Use accent as secondary for variety
+          accent_color_id: accentColorId,
+          font_family: defaultFontJson,
+        })
+        .select("id, primary_color_id, secondary_color_id, accent_color_id")
+        .single();
+
+      if (themeError) {
+        console.error('[PRESET DEBUG] Theme creation error:', themeError);
+        throw themeError;
+      }
+      
+      console.log('[PRESET DEBUG] Theme created successfully:', {
+        id: newTheme.id,
+        primary_color_id: newTheme.primary_color_id,
+        accent_color_id: newTheme.accent_color_id,
+        secondary_color_id: newTheme.secondary_color_id
+      });
+      
+      // Verify the saved theme has correct colors
+      if (newTheme.primary_color_id === newTheme.accent_color_id) {
+        console.error('[PRESET DEBUG] CRITICAL: Saved theme has same primary and accent color IDs!');
+      }
+
+      // Set this theme as active
+      const { error: settingsError } = await (supabase
+        .from("user_settings") as any)
+        .upsert(
+          {
+            user_id: userId,
+            active_theme_id: newTheme.id,
+          },
+          {
+            onConflict: "user_id",
+          }
+        );
+
+      if (settingsError) throw settingsError;
+
+      // Update active theme ID state
+      setActiveThemeId(newTheme.id);
+
+      // Reload themes list
+      const { data: updatedThemes } = await (supabase
+        .from("user_themes") as any)
+        .select("id, name, primary_color_id, secondary_color_id, accent_color_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (updatedThemes) {
+        setUserThemes(updatedThemes);
+      }
+
+      // Apply primary color to CSS
+      setSelectedColor(primaryComponent);
+      applyColorToCSS(primaryComponent);
+
+      toast({
+        title: "Preset generated",
+        description: `"${presetData.name || "AI Generated Preset"}" has been created with primary and accent colors.`,
+      });
+    } catch (error: any) {
+      console.error("Error generating preset:", error);
+      toast({
+        title: "Failed to generate preset",
+        description: error?.message || "An error occurred while generating the preset. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPreset(false);
+    }
+  };
 
   if (!mounted || loading) {
     return (
@@ -788,21 +994,43 @@ export function AppearanceSettings() {
                       {selectedColor.hex}
                     </div>
                   </div>
-                  <Button
-                    onClick={handleAddColor}
-                    variant="outline"
-                    className={cn(
-                      "relative overflow-hidden group/btn hover:border-primary/50 hover:bg-secondary hover:text-foreground transition-all duration-300",
-                      "w-full sm:w-auto"
-                    )}
-                  >
-                    <div
-                      className="absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity duration-300"
-                      style={{ backgroundColor: selectedColor.hex }}
-                    />
-                    <FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2 relative z-10" />
-                    <span className="relative z-10">Add Color</span>
-                  </Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button
+                      onClick={handleGeneratePreset}
+                      disabled={isGeneratingPreset}
+                      variant="default"
+                      className={cn(
+                        "relative overflow-hidden group/btn transition-all duration-300",
+                        "w-full sm:w-auto"
+                      )}
+                    >
+                      <FontAwesomeIcon 
+                        icon={faWandMagicSparkles} 
+                        className={cn(
+                          "h-4 w-4 mr-2 relative z-10",
+                          isGeneratingPreset && "animate-spin"
+                        )} 
+                      />
+                      <span className="relative z-10">
+                        {isGeneratingPreset ? "Generating..." : "Generate Preset"}
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={handleAddColor}
+                      variant="outline"
+                      className={cn(
+                        "relative overflow-hidden group/btn hover:border-primary/50 hover:bg-secondary hover:text-foreground transition-all duration-300",
+                        "w-full sm:w-auto"
+                      )}
+                    >
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity duration-300"
+                        style={{ backgroundColor: selectedColor.hex }}
+                      />
+                      <FontAwesomeIcon icon={faPlus} className="h-4 w-4 mr-2 relative z-10" />
+                      <span className="relative z-10">Add Color</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

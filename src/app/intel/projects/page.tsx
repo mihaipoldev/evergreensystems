@@ -1,12 +1,14 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { ProjectList } from "@/features/rag/projects/components/ProjectList";
 import type { Project } from "@/features/rag/projects/types";
 
 type ProjectWithCount = Project & { document_count?: number };
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
+  const searchParams = useSearchParams();
   const [projects, setProjects] = useState<ProjectWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,15 @@ export default function ProjectsPage() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch("/api/intel/projects");
+        // Get project_type_id from URL search params
+        const projectTypeId = searchParams.get("project_type_id");
+        
+        // Build API URL with query parameter if present
+        const apiUrl = projectTypeId 
+          ? `/api/intel/projects?project_type_id=${encodeURIComponent(projectTypeId)}`
+          : "/api/intel/projects";
+        
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -35,7 +45,7 @@ export default function ProjectsPage() {
     }
 
     fetchData();
-  }, []);
+  }, [searchParams]);
 
   if (error) {
     return (
@@ -51,6 +61,20 @@ export default function ProjectsPage() {
     <div className="w-full space-y-6">
       <ProjectList initialProjects={projects} />
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full space-y-6">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading projects...</p>
+        </div>
+      </div>
+    }>
+      <ProjectsPageContent />
+    </Suspense>
   );
 }
 

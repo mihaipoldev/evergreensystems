@@ -1,4 +1,5 @@
 export { NicheProfileSection } from "./NicheProfileSection";
+export { MarketIntelligenceSection } from "./MarketIntelligenceSection";
 export { BuyerPsychologySection } from "./BuyerPsychologySection";
 export { ValueDynamicsSection } from "./ValueDynamicsSection";
 export { LeadGenStrategySection } from "./LeadGenStrategySection";

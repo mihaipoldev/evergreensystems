@@ -18,6 +18,7 @@ export interface ActionMenuItem {
   href?: string;
   destructive?: boolean;
   separator?: boolean;
+  disabled?: boolean;
 }
 
 interface ActionMenuProps {
@@ -60,10 +61,11 @@ export function ActionMenu({
 
           const className = cn(
             "cursor-pointer !rounded-none px-4 py-2",
-            item.destructive && "text-destructive focus:text-destructive"
+            item.destructive && "text-destructive focus:text-destructive",
+            item.disabled && "opacity-50 cursor-not-allowed"
           );
 
-          if (item.href) {
+          if (item.href && !item.disabled) {
             return (
               <DropdownMenuItem key={index} asChild>
                 <Link
@@ -85,8 +87,11 @@ export function ActionMenu({
               key={index}
               onClick={(e) => {
                 e.stopPropagation();
-                item.onClick?.(e);
+                if (!item.disabled) {
+                  item.onClick?.(e);
+                }
               }}
+              disabled={item.disabled}
               className={className}
             >
               {content}

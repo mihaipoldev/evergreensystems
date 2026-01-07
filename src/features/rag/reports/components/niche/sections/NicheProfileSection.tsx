@@ -9,6 +9,7 @@ import {
   faUsers,
   faBox,
   faExclamationTriangle,
+  faBullseye,
 } from "@fortawesome/free-solid-svg-icons";
 import type { ReportData } from "../../../types";
 
@@ -24,16 +25,39 @@ export const NicheProfileSection = ({ profile }: NicheProfileSectionProps) => {
       title="Niche Profile"
       subtitle="Market overview, service offerings, and competitive landscape analysis"
     >
-      <div className="bg-secondary/50 rounded-xl p-6 mb-8 border border-border">
-        <p className="text-base font-body text-foreground leading-relaxed">
-          {typeof profile.summary === "string"
-            ? profile.summary
-            : (profile.summary as any)?.value ||
-              (profile.summary as any)?.text ||
-              (profile.summary as any)?.description ||
-              (profile.summary as any)?.summary ||
-              String(profile.summary || "No summary available")}
-        </p>
+      <div className="bg-card rounded-xl p-6 border border-border report-shadow mb-8">
+        {/* Summary Section */}
+        <div className="mb-6">
+          <h4 className="text-sm uppercase tracking-wider text-muted-foreground font-body mb-3">
+            Summary
+          </h4>
+          <p className="text-base font-body text-foreground leading-relaxed">
+            {typeof profile.summary === "string"
+              ? profile.summary
+              : (profile.summary as any)?.value ||
+                (profile.summary as any)?.text ||
+                (profile.summary as any)?.description ||
+                (profile.summary as any)?.summary ||
+                String(profile.summary || "No summary available")}
+          </p>
+        </div>
+
+        {/* What They Sell Section */}
+        {profile.what_they_sell && (
+          <div>
+            <h4 className="text-sm uppercase tracking-wider text-muted-foreground font-body mb-3">
+              What They Sell
+            </h4>
+            <p className="text-base font-body text-foreground leading-relaxed">
+              {typeof profile.what_they_sell === "string"
+                ? profile.what_they_sell
+                : (profile.what_they_sell as any)?.value ||
+                  (profile.what_they_sell as any)?.text ||
+                  (profile.what_they_sell as any)?.description ||
+                  String(profile.what_they_sell || "")}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -71,9 +95,13 @@ export const NicheProfileSection = ({ profile }: NicheProfileSectionProps) => {
       </div>
 
       <div className="mb-8">
-        <h4 className="text-lg font-display font-semibold text-foreground mb-4">
+        <h4 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+          <FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-accent" />
           Client Acquisition Dynamics
         </h4>
+        <p className="text-sm text-muted-foreground font-body mb-4">
+          How these companies currently acquire clients and the operational tools they use in their sales process.
+        </p>
         <DataTable
           headers={["Current Acquisition Methods", "Operational Tools in Use"]}
           rows={profile.client_acquisition_dynamics.how_they_currently_get_clients.map(
@@ -96,27 +124,14 @@ export const NicheProfileSection = ({ profile }: NicheProfileSectionProps) => {
         </div>
       </div>
 
-      <div className="mb-8">
-        <h4 className="text-lg font-display font-semibold text-foreground mb-4">
-          Lead Generation Seasonality
-        </h4>
-        <div className="bg-accent/10 rounded-lg p-5 border border-accent/20">
-          <p className="text-sm font-body text-foreground">
-            {typeof profile.lead_gen_seasonality === "string"
-              ? profile.lead_gen_seasonality
-              : (profile.lead_gen_seasonality as any)?.value ||
-                (profile.lead_gen_seasonality as any)?.text ||
-                (profile.lead_gen_seasonality as any)?.description ||
-                String(profile.lead_gen_seasonality || "Unknown")}
-          </p>
-        </div>
-      </div>
-
       <div>
         <h4 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
           <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-amber-500" />
           Lead Generation Risks
         </h4>
+        <p className="text-sm text-muted-foreground font-body mb-4">
+          Potential challenges and risks when targeting this niche for lead generation services.
+        </p>
         <InsightList items={profile.lead_gen_risks} type="warning" />
       </div>
     </SectionWrapper>

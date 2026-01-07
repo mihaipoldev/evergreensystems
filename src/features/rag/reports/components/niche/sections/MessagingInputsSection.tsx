@@ -20,7 +20,7 @@ export const MessagingInputsSection = ({ messaging }: MessagingInputsSectionProp
   return (
     <SectionWrapper
       id="messaging-inputs"
-      number="09"
+      number="10"
       title="Messaging Inputs"
       subtitle="Industry vocabulary, pain language, and proof elements for copywriting"
     >

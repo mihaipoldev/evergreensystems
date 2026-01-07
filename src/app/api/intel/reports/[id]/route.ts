@@ -9,7 +9,7 @@ type ReportData = {
   created_at: string;
   rag_runs: {
     id: string;
-    run_type: string;
+    workflow_id: string | null;
     status: string;
     knowledge_base_id: string;
     created_at: string;
@@ -20,6 +20,11 @@ type ReportData = {
       id: string;
       name: string;
     }[] | null;
+    workflows: {
+      id: string;
+      name: string;
+      label: string;
+    } | null;
   } | null;
 } | null;
 
@@ -48,13 +53,18 @@ export async function GET(
         *,
         rag_runs (
           id,
-          run_type,
+          workflow_id,
           status,
           knowledge_base_id,
           created_at,
           rag_knowledge_bases (
             id,
             name
+          ),
+          workflows (
+            id,
+            name,
+            label
           )
         )
       `)
@@ -72,13 +82,18 @@ export async function GET(
           *,
           rag_runs (
             id,
-            run_type,
+            workflow_id,
             status,
             knowledge_base_id,
             created_at,
             rag_knowledge_bases (
               id,
               name
+            ),
+            workflows (
+              id,
+              name,
+              label
             )
           )
         `)
@@ -102,13 +117,18 @@ export async function GET(
           *,
           rag_runs (
             id,
-            run_type,
+            workflow_id,
             status,
             knowledge_base_id,
             created_at,
             rag_knowledge_bases (
               id,
               name
+            ),
+            workflows (
+              id,
+              name,
+              label
             )
           )
         `)
@@ -123,13 +143,18 @@ export async function GET(
             *,
             rag_runs (
               id,
-              run_type,
+              workflow_id,
               status,
               knowledge_base_id,
               created_at,
               rag_knowledge_bases (
                 id,
                 name
+              ),
+              workflows (
+                id,
+                name,
+                label
               )
             )
           `)
@@ -165,7 +190,9 @@ export async function GET(
       created_at: data.created_at,
       run: data.rag_runs ? {
         id: data.rag_runs.id,
-        run_type: data.rag_runs.run_type,
+        workflow_id: data.rag_runs.workflow_id,
+        workflow_name: data.rag_runs.workflows?.name || null,
+        workflow_label: data.rag_runs.workflows?.label || null,
         status: data.rag_runs.status,
         knowledge_base_id: data.rag_runs.knowledge_base_id,
         created_at: data.rag_runs.created_at,

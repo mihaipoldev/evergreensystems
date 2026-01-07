@@ -1,7 +1,6 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -12,6 +11,8 @@ import {
   faFileText,
 } from "@fortawesome/free-solid-svg-icons";
 import { DocumentActionsMenu } from "./DocumentActionsMenu";
+import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
+import { statusColorMap } from "@/features/rag/shared/config/statusColors";
 import type { RAGDocument } from "../document-types";
 import { cn } from "@/lib/utils";
 
@@ -43,13 +44,12 @@ export function DocumentRow({
     ? `${(document.file_size / 1024 / 1024).toFixed(2)} MB`
     : "0 MB";
 
-  const statusColors: Record<string, string> = {
-    ready: "bg-green-600/10 text-green-600 dark:text-green-400",
-    processing: "bg-yellow-600/10 text-yellow-600 dark:text-yellow-400",
-    failed: "bg-destructive/10 text-destructive",
-  };
+  // Map status to color using the shared config
+  function getStatusColor(status: string): string {
+    return statusColorMap[status] || "muted";
+  }
 
-  const statusColorClass = statusColors[document.status] || statusColors.ready;
+  const statusColor = getStatusColor(document.status);
 
   const getFileTypeLabel = () => {
     // Format source type nicely
@@ -161,9 +161,11 @@ export function DocumentRow({
 
       {/* Status */}
       <div className="w-24 shrink-0">
-        <Badge variant="secondary" className={cn("w-fit capitalize", statusColorClass)}>
+        <StatusBadge 
+          color={statusColor}
+        >
           {document.status}
-        </Badge>
+        </StatusBadge>
       </div>
 
       {/* Knowledge Base */}
