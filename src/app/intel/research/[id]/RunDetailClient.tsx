@@ -418,7 +418,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
                 className="mt-10"
               >
                 <button
-                  onClick={() => router.push(`/intel/research-reports/${run.id}/result`)}
+                  onClick={() => router.push(`/intel/research/${run.id}/result`)}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl"
                 >
                   View Result

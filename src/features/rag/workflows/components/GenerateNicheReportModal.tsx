@@ -293,7 +293,7 @@ export function GenerateNicheReportModal({
       // Navigate to the run page if run_id is available
       if (result.run_id) {
         onOpenChange(false);
-        router.push(`/intel/research-reports/${result.run_id}`);
+        router.push(`/intel/research/${result.run_id}`);
       } else {
         onOpenChange(false);
       }

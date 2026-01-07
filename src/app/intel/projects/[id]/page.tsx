@@ -111,9 +111,6 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         id,
         name,
         label
-      ),
-      rag_run_outputs (
-        id
       )
     `)
     .eq("project_id", id)
@@ -121,19 +118,38 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   // Transform runs data to match RunWithExtras type
   const initialRuns: RunWithExtras[] = (runsData || []).map((run: any) => {
-    const runOutputs = run.rag_run_outputs;
-    const reportId = Array.isArray(runOutputs) && runOutputs.length > 0
-      ? runOutputs[0].id
-      : runOutputs?.id || null;
-
     return {
       ...run,
       knowledge_base_name: run.rag_knowledge_bases?.name || null,
       workflow_name: run.workflows?.name || null,
       workflow_label: run.workflows?.label || null,
-      report_id: reportId,
+      report_id: null, // Not loading rag_run_outputs
+      // fit_score and verdict are already in the run object from the database
+      fit_score: run.fit_score ?? null,
+      verdict: run.verdict ?? null,
     };
   });
+
+  // Fetch enabled workflows for this project type to get total count
+  // Use the same logic as GenerateReportModal - filter by project_type_id via junction table
+  let totalWorkflows = 0;
+  if (project.project_type_id) {
+    const { data: projectTypeWorkflowsData } = await supabase
+      .from("project_type_workflows")
+      .select(`
+        workflows (
+          id,
+          enabled
+        )
+      `)
+      .eq("project_type_id", project.project_type_id);
+    
+    // Filter to only enabled workflows
+    const enabledWorkflows = (projectTypeWorkflowsData || [])
+      .filter((item: any) => item.workflows !== null && item.workflows.enabled === true);
+    
+    totalWorkflows = enabledWorkflows.length;
+  }
 
   return (
     <ProjectDetailClient
@@ -142,6 +158,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
       initialRuns={initialRuns}
       projectTypeName={projectTypeName}
       projectType={projectType}
+      totalWorkflows={totalWorkflows}
     />
   );
 }

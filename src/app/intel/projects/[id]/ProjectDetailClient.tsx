@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,6 +15,7 @@ import {
   faCalendar,
   faClock,
   faCircleInfo,
+  faDatabase,
 } from "@fortawesome/free-solid-svg-icons";
 import { ProjectActionsMenu } from "@/features/rag/projects/components/ProjectActionsMenu";
 import { ProjectModal } from "@/features/rag/projects/components/ProjectModal";
@@ -29,6 +29,8 @@ import {
 import { ProjectDocumentsClient } from "./ProjectDocumentsClient";
 import { ProjectRunsClient } from "@/features/rag/projects/components/ProjectRunsClient";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
+import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
+import { statusColorMap } from "@/features/rag/shared/config/statusColors";
 import { getProjectTypeConfig } from "@/features/rag/projects/config/ProjectTypeConfig";
 import type { Project, ProjectWithKB } from "@/features/rag/projects/types";
 import type { RAGDocument } from "@/features/rag/documents/document-types";
@@ -40,6 +42,7 @@ type ProjectDetailClientProps = {
   initialRuns: RunWithExtras[];
   projectTypeName?: string | null;
   projectType?: { name: string; label: string; icon: string | null } | null;
+  totalWorkflows?: number;
 };
 
 const getStatusVariant = (status: string) => {
@@ -63,6 +66,7 @@ export function ProjectDetailClient({
   initialRuns,
   projectTypeName: initialProjectTypeName,
   projectType: initialProjectType,
+  totalWorkflows = 0,
 }: ProjectDetailClientProps) {
   const [project, setProject] = useState(initialProject);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -74,7 +78,7 @@ export function ProjectDetailClient({
   // Get project type configuration
   const projectTypeConfig = getProjectTypeConfig(projectTypeName);
   
-  // Get default tab from localStorage or use "documents" as fallback
+  // Get default tab from localStorage or use "runs" as fallback
   const getDefaultTab = () => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`project-tab-${project.id}`);
@@ -82,7 +86,7 @@ export function ProjectDetailClient({
         return saved;
       }
     }
-    return "documents";
+    return "runs";
   };
   
   const [activeTab, setActiveTab] = useState(getDefaultTab);
@@ -160,30 +164,28 @@ export function ProjectDetailClient({
                     <div className="space-y-3 text-sm">
                       <div>
                         <p className="text-xs text-muted-foreground tracking-wider mb-1">Name</p>
-                        <p className="text-foreground font-medium">{displayName}</p>
+                        <p className="text-foreground font-medium">{displayName || "—"}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground tracking-wider mb-1">Status</p>
-                        <p className="text-foreground font-medium capitalize">{project.status}</p>
+                        <StatusBadge 
+                          color={statusColorMap[project.status] || "muted"}
+                        >
+                          {project.status || "—"}
+                        </StatusBadge>
                       </div>
-                      {project.category && (
-                        <div>
-                          <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
-                          <p className="text-foreground font-medium">{project.category}</p>
-                        </div>
-                      )}
-                      {project.geography && (
-                        <div>
-                          <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
-                          <p className="text-foreground font-medium">{project.geography}</p>
-                        </div>
-                      )}
-                      {project.description && (
-                        <div>
-                          <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
-                          <p className="text-foreground font-medium">{project.description}</p>
-                        </div>
-                      )}
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
+                        <p className="text-foreground font-medium">{project.category || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
+                        <p className="text-foreground font-medium">{project.geography || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
+                        <p className="text-foreground font-medium">{project.description || "—"}</p>
+                      </div>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -192,10 +194,12 @@ export function ProjectDetailClient({
             
             <div className="flex items-center gap-2 flex-wrap">
               {project.rag_knowledge_bases && (
-                <Link href={`/intel/knowledge-bases/${project.kb_id}`}>
-                  <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer transition-colors">
-                    KB: {project.rag_knowledge_bases.name}
-                  </Badge>
+                <Link 
+                  href={`/intel/knowledge-bases/${project.kb_id}`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                >
+                  <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
+                  <span className="font-medium">{project.rag_knowledge_bases.name}</span>
                 </Link>
               )}
             </div>
@@ -316,51 +320,75 @@ export function ProjectDetailClient({
                 )}
                 {tab.id === "runs" && (
                   <div className="space-y-6">
-                    {/* Research Stats - Always 3-4 cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <StatCard
-                        title="Total Researches"
-                        value={runsCount}
-                        icon={faPlay}
-                        index={0}
-                      />
-                      {isNicheProject ? (
-                        <>
-                          <StatCard
-                            title="First Researched"
-                            value={project.first_researched_at ? formatDate(project.first_researched_at) : "Never"}
-                            icon={faCalendar}
-                            index={1}
-                          />
-                          <StatCard
-                            title="Last Researched"
-                            value={project.last_researched_at ? formatDate(project.last_researched_at) : "Never"}
-                            icon={faClock}
-                            index={2}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <StatCard
-                            title="Completed"
-                            value={initialRuns.filter(run => run.status === "complete").length}
-                            icon={faPlay}
-                            index={1}
-                          />
-                          <StatCard
-                            title="In Progress"
-                            value={initialRuns.filter(run => 
-                              run.status === "queued" || 
-                              run.status === "collecting" || 
-                              run.status === "ingesting" || 
-                              run.status === "generating"
-                            ).length}
-                            icon={faSpinner}
-                            index={2}
-                          />
-                        </>
-                      )}
-                    </div>
+                    {/* Research Stats - 4 cards for niche projects */}
+                    {isNicheProject ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Card 1: Total Research */}
+                        <StatCard
+                          title="Total Research"
+                          value={totalWorkflows > 0 ? `${runsCount}/${totalWorkflows}` : runsCount.toString()}
+                          icon={faPlay}
+                          index={0}
+                        />
+                        {/* Card 2: Niche Intelligence with fit score */}
+                        {(() => {
+                          const nicheIntelligenceRun = initialRuns.find(
+                            run => run.workflow_name === "niche_intelligence" && run.status === "complete"
+                          );
+                          const fitScore = nicheIntelligenceRun?.fit_score;
+                          const verdict = nicheIntelligenceRun?.verdict;
+                          return (
+                            <StatCard
+                              title="Niche Intelligence"
+                              value={fitScore !== null && fitScore !== undefined ? `${fitScore}/100` : "—"}
+                              icon={faWandMagicSparkles}
+                              index={1}
+                              verdict={verdict || null}
+                            />
+                          );
+                        })()}
+                        {/* Card 3: First Researched */}
+                        <StatCard
+                          title="First Researched"
+                          value={project.first_researched_at ? formatDate(project.first_researched_at) : "Never"}
+                          icon={faCalendar}
+                          index={2}
+                        />
+                        {/* Card 4: Last Researched */}
+                        <StatCard
+                          title="Last Researched"
+                          value={project.last_researched_at ? formatDate(project.last_researched_at) : "Never"}
+                          icon={faClock}
+                          index={3}
+                        />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <StatCard
+                          title="Total Researches"
+                          value={runsCount}
+                          icon={faPlay}
+                          index={0}
+                        />
+                        <StatCard
+                          title="Completed"
+                          value={initialRuns.filter(run => run.status === "complete").length}
+                          icon={faPlay}
+                          index={1}
+                        />
+                        <StatCard
+                          title="In Progress"
+                          value={initialRuns.filter(run => 
+                            run.status === "queued" || 
+                            run.status === "collecting" || 
+                            run.status === "ingesting" || 
+                            run.status === "generating"
+                          ).length}
+                          icon={faSpinner}
+                          index={2}
+                        />
+                      </div>
+                    )}
                     <ProjectRunsClient
                       initialRuns={initialRuns}
                       projectId={project.id}

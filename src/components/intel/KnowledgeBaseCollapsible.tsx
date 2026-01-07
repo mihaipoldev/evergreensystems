@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBook } from "@fortawesome/free-solid-svg-icons";
+import { faDatabase } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ export function KnowledgeBaseCollapsible({
           style={{ minWidth: 0, maxWidth: '100%' }}
         >
           <FontAwesomeIcon
-            icon={faBook}
+            icon={faDatabase}
             className={cn(
               "h-4 w-4 transition-colors shrink-0 flex-shrink-0",
               isKnowledgeBaseActive ? "text-primary" : "text-sidebar-foreground/90 group-hover:text-sidebar-foreground"

@@ -44,17 +44,17 @@ function setStoredSearch(value: string): void {
 }
 
 function getStoredFilters(): Record<string, string[]> {
-  if (typeof window === "undefined") return { Status: [], "Client Name": [], "Project Type": [] };
+  if (typeof window === "undefined") return { "Project Type": [] };
   try {
     const stored = localStorage.getItem(STORAGE_KEY_FILTERS);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return parsed && typeof parsed === "object" ? parsed : { Status: [], "Client Name": [], "Project Type": [] };
+      return parsed && typeof parsed === "object" ? parsed : { "Project Type": [] };
     }
   } catch {
     // Ignore parse errors
   }
-  return { Status: [], "Client Name": [], "Project Type": [] };
+  return { "Project Type": [] };
 }
 
 function setStoredFilters(filters: Record<string, string[]>): void {
@@ -168,28 +168,57 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
     return Array.from(names).sort();
   }, [initialProjects]);
 
-  const filterCategories: FilterCategory[] = [
-    {
-      label: "Project Type",
-      options: projectTypes.map(pt => ({ 
-        value: pt.id, 
-        label: pt.label || pt.name 
-      })),
-    },
-    {
-      label: "Status",
-      options: [
-        { value: "active", label: "Active" },
-        { value: "onboarding", label: "Onboarding" },
-        { value: "delivered", label: "Delivered" },
-        { value: "archived", label: "Archived" },
-      ],
-    },
-    {
-      label: "Client Name",
-      options: uniqueClientNames.map(name => ({ value: name, label: name })),
-    },
-  ];
+  // Get the selected project type name
+  const selectedProjectTypeId = selectedFilters["Project Type"]?.[0];
+  const selectedProjectType = projectTypes.find(pt => pt.id === selectedProjectTypeId);
+  const projectTypeName = selectedProjectType?.name || null;
+
+  // Conditional filter categories based on project type
+  const filterCategories: FilterCategory[] = useMemo(() => {
+    const baseCategories: FilterCategory[] = [
+      {
+        label: "Project Type",
+        options: projectTypes.map(pt => ({ 
+          value: pt.id, 
+          label: pt.label || pt.name 
+        })),
+      },
+    ];
+
+    if (projectTypeName === "niche") {
+      // For niche projects: Project Type + Verdict
+      return [
+        ...baseCategories,
+        {
+          label: "Verdict",
+          options: [
+            { value: "ideal", label: "Ideal" },
+            { value: "pursue", label: "Pursue" },
+            { value: "test", label: "Test" },
+            { value: "avoid", label: "Avoid" },
+          ],
+        },
+      ];
+    } else {
+      // For other projects: Project Type + Status + Client Name
+      return [
+        ...baseCategories,
+        {
+          label: "Status",
+          options: [
+            { value: "active", label: "Active" },
+            { value: "onboarding", label: "Onboarding" },
+            { value: "delivered", label: "Delivered" },
+            { value: "archived", label: "Archived" },
+          ],
+        },
+        {
+          label: "Client Name",
+          options: uniqueClientNames.map(name => ({ value: name, label: name })),
+        },
+      ];
+    }
+  }, [projectTypes, projectTypeName, uniqueClientNames]);
 
   const filteredAndSortedProjects = useMemo(() => {
     let filtered = initialProjects;
@@ -205,28 +234,46 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
       );
     }
 
-    // Apply status filter
-    const selectedStatuses = selectedFilters["Status"] || [];
-    if (selectedStatuses.length > 0) {
-      filtered = filtered.filter((project) =>
-        selectedStatuses.includes(project.status)
-      );
-    }
-
-    // Apply client name filter
-    const selectedClientNames = selectedFilters["Client Name"] || [];
-    if (selectedClientNames.length > 0) {
-      filtered = filtered.filter((project) =>
-        project.client_name && selectedClientNames.includes(project.client_name)
-      );
-    }
-
     // Apply project type filter
     const selectedProjectTypeIds = selectedFilters["Project Type"] || [];
     if (selectedProjectTypeIds.length > 0) {
       filtered = filtered.filter((project) =>
         project.project_type_id && selectedProjectTypeIds.includes(project.project_type_id)
       );
+    }
+
+    // Conditional filters based on project type
+    if (projectTypeName === "niche") {
+      // For niche projects: apply verdict filter
+      const selectedVerdicts = selectedFilters["Verdict"] || [];
+      if (selectedVerdicts.length > 0) {
+        filtered = filtered.filter((project) => {
+          const verdict = (project as any).niche_intelligence_verdict;
+          // Handle "ideal" as a special case - pursue with high fit score (>= 80)
+          if (selectedVerdicts.includes("ideal")) {
+            const fitScore = (project as any).niche_intelligence_fit_score;
+            if (verdict === "pursue" && fitScore !== null && fitScore >= 80) {
+              return true;
+            }
+          }
+          return verdict && selectedVerdicts.includes(verdict);
+        });
+      }
+    } else {
+      // For other projects: apply status and client name filters
+      const selectedStatuses = selectedFilters["Status"] || [];
+      if (selectedStatuses.length > 0) {
+        filtered = filtered.filter((project) =>
+          selectedStatuses.includes(project.status)
+        );
+      }
+
+      const selectedClientNames = selectedFilters["Client Name"] || [];
+      if (selectedClientNames.length > 0) {
+        filtered = filtered.filter((project) =>
+          project.client_name && selectedClientNames.includes(project.client_name)
+        );
+      }
     }
 
     // Apply sorting
@@ -240,6 +287,17 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
       case "Name":
         sorted.sort((a, b) => (a.client_name || "").localeCompare(b.client_name || ""));
         break;
+      case "Fit Score":
+        sorted.sort((a, b) => {
+          const scoreA = (a as any).niche_intelligence_fit_score ?? -1;
+          const scoreB = (b as any).niche_intelligence_fit_score ?? -1;
+          // Sort descending (highest score first), nulls go to end
+          if (scoreA === -1 && scoreB === -1) return 0;
+          if (scoreA === -1) return 1;
+          if (scoreB === -1) return -1;
+          return scoreB - scoreA;
+        });
+        break;
       default:
         sorted.sort((a, b) => 
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -247,7 +305,7 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
     }
 
     return sorted;
-  }, [initialProjects, searchQuery, selectedFilters, selectedSort]);
+  }, [initialProjects, searchQuery, selectedFilters, selectedSort, projectTypeName, projectTypes]);
 
   const handleDelete = () => {
     router.refresh();
@@ -303,11 +361,18 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
   const handleFilterClear = () => {
     // Mark that this is a manual action, not from URL
     projectTypeFromUrlRef.current = false;
-    const clearedFilters = {
-      Status: [],
-      "Client Name": [],
+    const clearedFilters: Record<string, string[]> = {
       "Project Type": [],
     };
+    
+    // Clear filters based on current project type
+    if (projectTypeName === "niche") {
+      clearedFilters["Verdict"] = [];
+    } else {
+      clearedFilters["Status"] = [];
+      clearedFilters["Client Name"] = [];
+    }
+    
     setSelectedFilters(clearedFilters);
   };
 
@@ -321,7 +386,7 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
           selectedFilters={selectedFilters}
           onFilterApply={handleFilterApply}
           onFilterClear={handleFilterClear}
-          sortOptions={["Recent", "Name"]}
+          sortOptions={projectTypeName === "niche" ? ["Recent", "Name", "Fit Score"] : ["Recent", "Name"]}
           onSortChange={setSelectedSort}
           selectedSort={selectedSort}
           primaryAction={{
@@ -354,6 +419,7 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
         <ProjectTable 
           projects={filteredAndSortedProjects}
           projectTypes={projectTypes}
+          projectTypeName={projectTypeName}
           onDelete={handleDelete}
           onEdit={handleEdit}
         />

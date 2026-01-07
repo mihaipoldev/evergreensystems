@@ -12,6 +12,7 @@ type ProjectWithCount = Project & { document_count?: number; linked_kb_name?: st
 interface ProjectTableProps {
   projects: ProjectWithCount[];
   projectTypes?: ProjectType[];
+  projectTypeName?: string | null;
   onDelete?: () => void;
   onEdit?: (project: Project) => void;
 }
@@ -19,21 +20,22 @@ interface ProjectTableProps {
 export function ProjectTable({
   projects,
   projectTypes = [],
+  projectTypeName,
   onDelete,
   onEdit,
 }: ProjectTableProps) {
   // Create a map of project type IDs to project types for quick lookup
   const projectTypeMap = new Map(projectTypes.map(pt => [pt.id, pt]));
+  const isNicheProject = projectTypeName === "niche";
 
   return (
     <TooltipProvider delayDuration={100}>
       <div className="space-y-2">
-        {/* Table Header */}
+        {/* Table Header - Conditional */}
         <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <div className="flex-1 min-w-0">Name</div>
-          <div className="w-24 shrink-0">Status</div>
-          <div className="w-32 shrink-0">Linked KB</div>
-          <div className="w-20 shrink-0">Docs</div>
+          {!isNicheProject && <div className="w-24 shrink-0">Status</div>}
+          {isNicheProject && <div className="w-32 shrink-0">Niche Score</div>}
           <div className="w-28 shrink-0">Updated</div>
           <div className="w-20 shrink-0 text-right">Actions</div>
         </div>
@@ -49,8 +51,8 @@ export function ProjectTable({
               <ProjectRow
                 key={project.id}
                 project={project}
-                linkedKBName={project.linked_kb_name}
                 projectTypeIcon={projectType?.icon || null}
+                isNicheProject={isNicheProject}
                 onDelete={onDelete}
                 onEdit={onEdit}
               />

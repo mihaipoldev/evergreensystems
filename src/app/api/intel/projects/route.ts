@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
     const projectTypeId = searchParams.get("project_type_id");
 
+    // Build projects query
     let query = adminSupabase
       .from("projects")
       .select("*")
@@ -35,36 +36,149 @@ export async function GET(request: Request) {
       query = query.ilike("client_name", searchPattern);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    // Parallelize project type check and projects query when projectTypeId is provided
+    let isNicheProjectType = false;
+    let data: any;
+    let error: any;
+    
+    if (projectTypeId) {
+      const projectsQuery = query.order("created_at", { ascending: false });
+      const [typeResult, projectsResult] = await Promise.all([
+        adminSupabase
+          .from("project_types")
+          .select("name")
+          .eq("id", projectTypeId)
+          .single(),
+        projectsQuery
+      ]) as [
+        { data: { name: string } | null; error: any },
+        { data: any; error: any }
+      ];
+      
+      if (typeResult.data && typeResult.data.name === "niche") {
+        isNicheProjectType = true;
+      }
+      
+      data = projectsResult.data;
+      error = projectsResult.error;
+    } else {
+      // No projectTypeId, just fetch projects
+      const projectsResult = await query.order("created_at", { ascending: false });
+      data = projectsResult.data;
+      error = projectsResult.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Get document counts for each project
-    const projectsWithCounts = await Promise.all(
-      (data || []).map(async (project: any) => {
-        // Count linked documents (from junction table - project documents)
-        const { count: linkedCount } = await adminSupabase
-          .from("project_documents")
-          .select("*", { count: "exact", head: true })
-          .eq("project_id", project.id);
+    const projectIds = (data || []).map((p: any) => p.id);
 
-        // Count workspace documents (documents in project's workspace KB)
-        const { count: workspaceCount } = await adminSupabase
-          .from("rag_documents")
-          .select("*", { count: "exact", head: true })
-          .eq("knowledge_base_id", project.kb_id)
-          .is("deleted_at", null);
+    // Fetch Niche Intelligence verdict and fit score for niche projects if applicable
+    let nicheDataByProject: Map<string, {
+      verdict: "pursue" | "test" | "avoid" | null;
+      fit_score: number | null;
+    }> = new Map();
 
-        return {
-          ...project,
-          document_count: (linkedCount || 0) + (workspaceCount || 0),
-        };
-      })
-    );
+    if (isNicheProjectType && projectIds.length > 0) {
+      // First, get the niche_intelligence workflow ID
+      const { data: nicheIntelWorkflow } = await adminSupabase
+        .from("workflows")
+        .select("id")
+        .eq("name", "niche_intelligence")
+        .single();
 
-    return NextResponse.json(projectsWithCounts, { status: 200 });
+      if (nicheIntelWorkflow) {
+        // Fetch only complete niche_intelligence workflow runs for these projects
+        // Filter by status at DB level for better performance
+        const { data: runsData, error: runsError } = await adminSupabase
+          .from("rag_runs")
+          .select(`
+            id,
+            project_id,
+            status,
+            rag_run_outputs!inner (
+              id,
+              output_json
+            )
+          `)
+          .in("project_id", projectIds)
+          .eq("workflow_id", (nicheIntelWorkflow as any).id)
+          .eq("status", "complete")
+          .order("created_at", { ascending: false });
+
+        if (!runsError && runsData) {
+          // Use Map to get latest run per project (already sorted by created_at DESC)
+          // Since we're filtering for complete runs at DB level, all runs are complete
+          const latestRunByProject = new Map<string, typeof runsData[0]>();
+          for (const run of runsData) {
+            const projectId = (run as any).project_id;
+            if (!projectId) continue;
+            
+            // Only keep the first (latest) run per project
+            if (!latestRunByProject.has(projectId)) {
+              latestRunByProject.set(projectId, run);
+            }
+          }
+
+          // Process each project's latest complete run
+          for (const [projectId, run] of latestRunByProject.entries()) {
+            const runOutputs = (run as any).rag_run_outputs;
+            let verdict: "pursue" | "test" | "avoid" | null = null;
+            let fitScore: number | null = null;
+            
+            // Extract verdict and fit_score from report JSONB
+            if (runOutputs && Array.isArray(runOutputs) && runOutputs.length > 0) {
+              const outputJsonRaw = runOutputs[0]?.output_json;
+              if (outputJsonRaw) {
+                try {
+                  // Handle both string and object formats
+                  const outputJson = typeof outputJsonRaw === "string" 
+                    ? JSON.parse(outputJsonRaw) 
+                    : outputJsonRaw;
+                  
+                  if (outputJson && typeof outputJson === "object") {
+                    // Try to extract from data.lead_gen_strategy first (ReportData structure)
+                    // Then fallback to lead_gen_strategy directly (alternative structure)
+                    const leadGenStrategy = (outputJson as any)?.data?.lead_gen_strategy 
+                      || (outputJson as any)?.lead_gen_strategy;
+                    
+                    if (leadGenStrategy) {
+                      if (leadGenStrategy.verdict && 
+                          ["pursue", "test", "avoid"].includes(leadGenStrategy.verdict)) {
+                        verdict = leadGenStrategy.verdict;
+                      }
+                      if (typeof leadGenStrategy.lead_gen_fit_score === "number") {
+                        fitScore = leadGenStrategy.lead_gen_fit_score;
+                      }
+                    }
+                  }
+                } catch (e) {
+                  // Silently fail - verdict and fit_score will remain null
+                  console.error("Error parsing output_json:", e);
+                }
+              }
+            }
+            
+            nicheDataByProject.set(projectId, { verdict, fit_score: fitScore });
+          }
+        }
+      }
+    }
+
+    // Attach niche intelligence verdict and fit score to projects
+    const projectsWithNicheData = (data || []).map((project: any) => {
+      const nicheData = nicheDataByProject.get(project.id);
+      return {
+        ...project,
+        ...(nicheData ? {
+          niche_intelligence_verdict: nicheData.verdict,
+          niche_intelligence_fit_score: nicheData.fit_score,
+        } : {}),
+      };
+    });
+
+    return NextResponse.json(projectsWithNicheData, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

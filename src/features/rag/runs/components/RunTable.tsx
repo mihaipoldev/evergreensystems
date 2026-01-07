@@ -7,7 +7,12 @@ import type { Run } from "../types";
 import { AnimatedTable } from "@/features/rag/shared/components/AnimatedTable";
 
 interface RunTableProps {
-  runs: (Run & { knowledge_base_name?: string | null; report_id?: string | null })[];
+  runs: (Run & { 
+    knowledge_base_name?: string | null; 
+    report_id?: string | null;
+    fit_score?: number | null;
+    verdict?: "pursue" | "test" | "avoid" | null;
+  })[];
   onView?: (run: Run) => void;
   onDelete?: () => void;
   hideHeader?: boolean;
@@ -23,6 +28,7 @@ export function RunTable({ runs, onView, onDelete, hideHeader = false }: RunTabl
             <div className="flex-1 min-w-0">Run</div>
             <div className="w-28 shrink-0">Status</div>
             <div className="w-44 shrink-0">Progress</div>
+            <div className="w-24 shrink-0">Verdict</div>
             <div className="w-40 shrink-0">Created</div>
             <div className="w-20 shrink-0 text-right">Actions</div>
           </div>

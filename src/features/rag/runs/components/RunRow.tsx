@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
+import { FitScoreAndVerdict } from "@/features/rag/shared/components/FitScoreAndVerdict";
 import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
@@ -17,7 +18,12 @@ import { getRunLabel } from "../types";
 import { cn } from "@/lib/utils";
 
 type RunRowProps = {
-  run: Run & { knowledge_base_name?: string | null; report_id?: string | null };
+  run: Run & { 
+    knowledge_base_name?: string | null; 
+    report_id?: string | null;
+    fit_score?: number | null;
+    verdict?: "pursue" | "test" | "avoid" | null;
+  };
   onView?: () => void;
   onDelete?: () => void;
 };
@@ -92,13 +98,12 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
     ? `${completedStepsCount}/${totalSteps} steps` 
     : "";
 
-  // Smart navigation: if complete and has report_id, go to result, otherwise go to progress
+  // Smart navigation: if complete, go to result, otherwise go to progress
   const isComplete = run.status === "complete";
-  const reportId = run.report_id;
   
-  const titleHref = isComplete && reportId 
-    ? `/intel/research-reports/${run.id}/result` 
-    : `/intel/research-reports/${run.id}`;
+  const titleHref = isComplete 
+    ? `/intel/research/${run.id}/result` 
+    : `/intel/research/${run.id}`;
 
   return (
     <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20">
@@ -118,7 +123,7 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
               </Link>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{isComplete && reportId ? "View Report" : "View Progress"}</p>
+              <p>{isComplete ? "View Report" : "View Progress"}</p>
             </TooltipContent>
           </Tooltip>
           {run.project_name && (
@@ -139,7 +144,7 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
       </div>
 
       {/* Progress */}
-      <div className="w-44 shrink-0 pr-6">
+      <div className="w-44 shrink-0 pr-8">
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex flex-col gap-1.5">
@@ -192,6 +197,15 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
             </div>
           </TooltipContent>
         </Tooltip>
+      </div>
+
+      {/* Fit Score & Verdict */}
+      <div className="w-24 shrink-0">
+        {run.status === "complete" ? (
+          <FitScoreAndVerdict fit_score={run.fit_score} verdict={run.verdict} />
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        )}
       </div>
 
       {/* Created */}

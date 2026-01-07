@@ -33,9 +33,6 @@ export async function GET(
           id,
           name
         ),
-        rag_run_outputs (
-          id
-        )
       `)
       .eq("id", id)
       .single();
@@ -51,13 +48,8 @@ export async function GET(
       return NextResponse.json({ error: "Run not found" }, { status: 404 });
     }
 
-    // Transform data to include knowledge base name, workflow info, and report ID
+    // Transform data to include knowledge base name, workflow info
     const runData = data as any;
-    // Handle rag_run_outputs - it might be an array or single object
-    const runOutputs = runData.rag_run_outputs;
-    const reportId = Array.isArray(runOutputs) && runOutputs.length > 0
-      ? runOutputs[0].id
-      : runOutputs?.id || null;
 
     // Handle projects - it might be null, an object, or an array
     let projectName = null;
@@ -75,7 +67,10 @@ export async function GET(
       project_name: projectName,
       workflow_name: runData.workflows?.name || null,
       workflow_label: runData.workflows?.label || null,
-      report_id: reportId,
+      report_id: null, // Not loading rag_run_outputs
+      // fit_score and verdict are already in the run object from the database
+      fit_score: runData.fit_score ?? null,
+      verdict: runData.verdict ?? null,
     };
 
     return NextResponse.json(runWithExtras, { status: 200 });

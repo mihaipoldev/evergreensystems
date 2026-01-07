@@ -18,6 +18,15 @@ export type Project = {
   updated_at: string;
   created_by: string | null;
   archived_at: string | null;
+  // Run statistics (only populated for niche projects when requested)
+  runs_count?: {
+    completed: number;
+    processed: number; // includes completed + in-progress
+    failed: number;
+  };
+  // Niche Intelligence verdict and fit score (only populated for niche projects when requested)
+  niche_intelligence_verdict?: "pursue" | "test" | "avoid" | null;
+  niche_intelligence_fit_score?: number | null;
 };
 
 export type ProjectWithKB = Project & {

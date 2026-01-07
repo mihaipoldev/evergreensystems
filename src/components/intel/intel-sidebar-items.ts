@@ -1,6 +1,6 @@
 import {
   faHome,
-  faBook,
+  faDatabase,
   faFolder,
   faFileText,
   faPlay,
@@ -27,7 +27,7 @@ export const INTEL_SIDEBAR_ITEMS: SidebarItem[] = [
   {
     title: "Knowledge Bases",
     href: "/intel/knowledge-bases",
-    icon: faBook,
+    icon: faDatabase,
     section: "admin",
   },
   {
@@ -49,8 +49,8 @@ export const INTEL_SIDEBAR_ITEMS: SidebarItem[] = [
     section: "admin",
   },
   {
-    title: "Research Reports",
-    href: "/intel/research-reports",
+    title: "Research",
+    href: "/intel/research",
     icon: faFileAlt,
     section: "overview",
   },

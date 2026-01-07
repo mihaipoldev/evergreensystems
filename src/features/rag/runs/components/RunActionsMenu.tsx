@@ -71,7 +71,7 @@ export function RunActionsMenu({
     {
       label: "View Progress",
       icon: <FontAwesomeIcon icon={faEye} className="h-4 w-4" />,
-      href: `/intel/research-reports/${run.id}`,
+      href: `/intel/research/${run.id}`,
       onClick: (e?: React.MouseEvent) => {
         e?.stopPropagation();
       },
@@ -79,7 +79,7 @@ export function RunActionsMenu({
     {
       label: "View Result",
       icon: <FontAwesomeIcon icon={faFileAlt} className="h-4 w-4" />,
-      href: isComplete && reportId ? `/intel/research-reports/${run.id}/result` : undefined,
+      href: isComplete && reportId ? `/intel/research/${run.id}/result` : undefined,
       onClick: (e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!isComplete || !reportId) {

@@ -10,26 +10,31 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolder,
-  faDatabase,
 } from "@fortawesome/free-solid-svg-icons";
 import { ProjectActionsMenu } from "./ProjectActionsMenu";
 import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
+import { FitScoreAndVerdict } from "@/features/rag/shared/components/FitScoreAndVerdict";
 import { statusColorMap } from "@/features/rag/shared/config/statusColors";
 import type { Project } from "../types";
 import { cn } from "@/lib/utils";
 
 type ProjectRowProps = {
-  project: Project & { document_count?: number };
-  linkedKBName?: string | null;
+  project: Project & { 
+    document_count?: number;
+    runs_count?: { completed: number; processed: number; failed: number };
+    niche_intelligence_verdict?: "pursue" | "test" | "avoid" | null;
+    niche_intelligence_fit_score?: number | null;
+  };
   projectTypeIcon?: string | null;
+  isNicheProject?: boolean;
   onDelete?: () => void;
   onEdit?: (project: Project) => void;
 };
 
 export function ProjectRow({
   project,
-  linkedKBName,
   projectTypeIcon,
+  isNicheProject = false,
   onDelete,
   onEdit,
 }: ProjectRowProps) {
@@ -83,31 +88,32 @@ export function ProjectRow({
         </div>
       </div>
 
-      {/* Status */}
-      <div className="w-24 shrink-0">
-        <StatusBadge 
-          color={statusColor}
-        >
-          {project.status}
-        </StatusBadge>
-      </div>
-
-      {/* Linked KB */}
-      <div className="w-32 shrink-0">
-        {linkedKBName ? (
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
-            <span className="truncate">{linkedKBName}</span>
+      {/* Conditional columns */}
+      {!isNicheProject && (
+        <>
+          {/* Status */}
+          <div className="w-24 shrink-0">
+            <StatusBadge 
+              color={statusColor}
+            >
+              {project.status}
+            </StatusBadge>
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">—</p>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Document Count */}
-      <div className="w-20 shrink-0">
-        <p className="text-sm text-muted-foreground">{project.document_count || 0} docs</p>
-      </div>
+      {isNicheProject && (
+        <>
+          {/* Niche Intelligence Fit Score & Verdict */}
+          <div className="w-32 shrink-0">
+            <FitScoreAndVerdict 
+              fit_score={project.niche_intelligence_fit_score} 
+              verdict={project.niche_intelligence_verdict}
+              showVerdict={false}
+            />
+          </div>
+        </>
+      )}
 
       {/* Updated */}
       <div className="w-28 shrink-0">

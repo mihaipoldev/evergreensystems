@@ -55,7 +55,7 @@ export function ReportRow({ report, onView }: ReportRowProps) {
         </div>
         <div className="min-w-0 flex flex-col h-full justify-center">
           <Link 
-            href={report.run?.id ? `/intel/research-reports/${report.run.id}/result` : `/intel/reports/${report.id}`}
+            href={report.run?.id ? `/intel/research/${report.run.id}/result` : `/intel/reports/${report.id}`}
             className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
           >
             {runLabel} Report

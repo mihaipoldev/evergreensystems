@@ -5,6 +5,8 @@ export type RunWithExtras = Run & {
   workflow_name?: string | null;
   workflow_label?: string | null;
   report_id?: string | null;
+  fit_score?: number | null;
+  verdict?: "pursue" | "test" | "avoid" | null;
 };
 
 export type TabConfig = {
@@ -20,21 +22,21 @@ export type ProjectTypeConfig = {
 export const PROJECT_TYPE_CONFIG: Record<string, ProjectTypeConfig> = {
   client: {
     tabs: [
-      { id: 'documents', label: 'Documents' },
       { id: 'runs', label: 'Researches' },
+      { id: 'documents', label: 'Documents' },
     ],
   },
   niche: {
     tabs: [
-      { id: 'documents', label: 'Documents' },
       { id: 'runs', label: 'Researches' },
+      { id: 'documents', label: 'Documents' },
     ],
   },
   // Default fallback
   default: {
     tabs: [
-      { id: 'documents', label: 'Documents' },
       { id: 'runs', label: 'Researches' },
+      { id: 'documents', label: 'Documents' },
     ],
   },
 };

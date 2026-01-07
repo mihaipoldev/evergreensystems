@@ -24,7 +24,7 @@ type RunListProps = {
   initialRuns: RunWithKB[];
 };
 
-const STORAGE_KEY_PREFIX = "research-reports-";
+const STORAGE_KEY_PREFIX = "research-";
 const STORAGE_KEY_SEARCH = `${STORAGE_KEY_PREFIX}search`;
 const STORAGE_KEY_FILTERS = `${STORAGE_KEY_PREFIX}filters`;
 const STORAGE_KEY_SORT = `${STORAGE_KEY_PREFIX}sort`;

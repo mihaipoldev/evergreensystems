@@ -34,6 +34,15 @@ type ProjectRunsClientProps = {
   projectId: string;
 };
 
+// Helper function to extract fit_score and verdict from API response
+const extractFitScoreAndVerdict = (runData: any): { fit_score: number | null; verdict: "pursue" | "test" | "avoid" | null } => {
+  // fit_score and verdict are already in the run object from the database
+  return {
+    fit_score: runData.fit_score ?? null,
+    verdict: runData.verdict ?? null,
+  };
+};
+
 export function ProjectRunsClient({
   initialRuns,
   projectId,
@@ -127,8 +136,7 @@ export function ProjectRunsClient({
           .select(`
             *,
             rag_knowledge_bases (name),
-            workflows (name, label),
-            rag_run_outputs (id)
+            workflows (name, label)
           `)
           .eq('project_id', projectId)
           .order('created_at', { ascending: false });
@@ -143,16 +151,16 @@ export function ProjectRunsClient({
             const kbName = run.rag_knowledge_bases?.name || null;
             const workflowName = run.workflows?.name || null;
             const workflowLabel = run.workflows?.label || null;
-            const reportId = Array.isArray(run.rag_run_outputs) && run.rag_run_outputs.length > 0
-              ? run.rag_run_outputs[0].id
-              : (run.rag_run_outputs?.id || null);
             
             return {
               ...(run as Run),
               knowledge_base_name: kbName,
               workflow_name: workflowName,
               workflow_label: workflowLabel,
-              report_id: reportId,
+              report_id: null, // Not loading rag_run_outputs
+              // fit_score and verdict are already in the run object from the database
+              fit_score: run.fit_score ?? null,
+              verdict: run.verdict ?? null,
             };
           });
           
@@ -181,8 +189,7 @@ export function ProjectRunsClient({
           .select(`
             *,
             rag_knowledge_bases (name),
-            workflows (name, label),
-            rag_run_outputs (id)
+            workflows (name, label)
           `)
           .eq('id', runId)
           .single();
@@ -197,16 +204,16 @@ export function ProjectRunsClient({
         const kbName = (runData as any).rag_knowledge_bases?.name || null;
         const workflowName = (runData as any).workflows?.name || null;
         const workflowLabel = (runData as any).workflows?.label || null;
-        const reportId = Array.isArray((runData as any).rag_run_outputs) && (runData as any).rag_run_outputs.length > 0
-          ? (runData as any).rag_run_outputs[0].id
-          : ((runData as any).rag_run_outputs?.id || null);
         
         return {
           ...(runData as Run),
           knowledge_base_name: kbName,
           workflow_name: workflowName,
           workflow_label: workflowLabel,
-          report_id: reportId,
+          report_id: null, // Not loading rag_run_outputs
+          // fit_score and verdict are already in the run object from the database
+          fit_score: (runData as any).fit_score ?? null,
+          verdict: (runData as any).verdict ?? null,
         };
       } catch (error) {
         console.error('[ProjectRunsClient] Exception fetching run:', error);
@@ -267,6 +274,12 @@ export function ProjectRunsClient({
               const response = await fetch(`/api/intel/runs/${newRun.id}`);
               if (response.ok) {
                 const runData = await response.json();
+                const { fit_score, verdict } = extractFitScoreAndVerdict(runData);
+                const runWithExtras = {
+                  ...runData,
+                  fit_score,
+                  verdict,
+                };
                 console.log('[ProjectRunsClient] Fetched new run data:', runData.id);
                 setRuns((prev) => {
                   const exists = prev.some((run) => run.id === newRun.id);
@@ -276,7 +289,7 @@ export function ProjectRunsClient({
                   }
                   
                   console.log('[ProjectRunsClient] Adding new run to list');
-                  const updated = [runData, ...prev];
+                  const updated = [runWithExtras, ...prev];
                   return updated.sort((a, b) => 
                     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                   );
@@ -334,6 +347,12 @@ export function ProjectRunsClient({
               const response = await fetch(`/api/intel/runs/${updatedRun.id}`);
               if (response.ok) {
                 const runData = await response.json();
+                const { fit_score, verdict } = extractFitScoreAndVerdict(runData);
+                const runWithExtras = {
+                  ...runData,
+                  fit_score,
+                  verdict,
+                };
                 console.log('[ProjectRunsClient] ✅ Fetched updated run from API:', {
                   runId: runData.id,
                   status: runData.status,
@@ -353,14 +372,14 @@ export function ProjectRunsClient({
                   
                   if (!exists) {
                     // Run not in list, add it
-                    const updated = [runData, ...prev];
+                    const updated = [runWithExtras, ...prev];
                     return updated.sort((a, b) => 
                       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                     );
                   }
                   
                   return prev.map((run) =>
-                    run.id === updatedRun.id ? runData : run
+                    run.id === updatedRun.id ? runWithExtras : run
                   );
                 });
               } else {
@@ -636,6 +655,7 @@ export function ProjectRunsClient({
               <div className="flex-1 min-w-0">Run</div>
               <div className="w-28 shrink-0">Status</div>
               <div className="w-44 shrink-0">Progress</div>
+              <div className="w-24 shrink-0">Verdict</div>
               <div className="w-40 shrink-0">Created</div>
               <div className="w-20 shrink-0 text-right">Actions</div>
             </div>
