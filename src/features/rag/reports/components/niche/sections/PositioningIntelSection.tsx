@@ -13,13 +13,14 @@ import type { ReportData } from "../../../types";
 
 interface PositioningIntelSectionProps {
   positioning: ReportData["data"]["positioning_intel"];
+  sectionNumber?: string;
 }
 
-export const PositioningIntelSection = ({ positioning }: PositioningIntelSectionProps) => {
+export const PositioningIntelSection = ({ positioning, sectionNumber = "09" }: PositioningIntelSectionProps) => {
   return (
     <SectionWrapper
       id="positioning-intel"
-      number="09"
+      number={sectionNumber}
       title="Positioning Intelligence"
       subtitle="How companies in this niche position themselves to their customers"
     >

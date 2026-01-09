@@ -47,7 +47,7 @@ export function ReportRow({ report, onView }: ReportRowProps) {
   const hasPDF = !!report.pdf_storage_path;
 
   return (
-    <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20">
+    <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20">
       {/* Icon + Name */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">

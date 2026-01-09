@@ -13,13 +13,14 @@ import type { ReportData } from "../../../types";
 
 interface OutboundApproachSectionProps {
   outbound: ReportData["data"]["outbound_approach"];
+  sectionNumber?: string;
 }
 
-export const OutboundApproachSection = ({ outbound }: OutboundApproachSectionProps) => {
+export const OutboundApproachSection = ({ outbound, sectionNumber = "08" }: OutboundApproachSectionProps) => {
   return (
     <SectionWrapper
       id="outbound-approach"
-      number="08"
+      number={sectionNumber}
       title="Outbound Approach"
       subtitle="Messaging framework, hooks, proof requirements, and objection handling"
     >

@@ -182,7 +182,7 @@
     --card: 0 0% 10%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 7%;
+    --popover: 0 0% 5%;
     --popover-foreground: 0 0% 95%;
 
     --muted: 0 0% 18%;
@@ -202,7 +202,7 @@
     --accent: 0 0% 16%;
     --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 65.8% 50%;
+    --destructive: 0 100% 60%;
     --destructive-foreground: 0 0% 96%;
 
     --sidebar-background: 0 0% 10%;
@@ -1113,6 +1113,80 @@ input[type="password"]:-webkit-autofill:active {
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 96%;
     --sidebar-accent: 222 30% 12%;
+  }
+
+  /* Chat specific tokens */
+  :root {
+    --chat-user-bg: 217 91% 60%;
+    --chat-user-fg: 0 0% 100%;
+    --chat-ai-bg: 210 40% 96%;
+    --chat-ai-fg: 222 47% 11%;
+    --chat-shadow: 0 4px 24px -4px hsl(222 47% 11% / 0.1);
+    --chat-shadow-lg: 0 8px 32px -8px hsl(222 47% 11% / 0.15);
+  }
+
+  .dark {
+    --chat-user-bg: 217 91% 55%;
+    --chat-user-fg: 0 0% 100%;
+    --chat-ai-bg: 217 33% 17%;
+    --chat-ai-fg: 210 40% 98%;
+  }
+
+  /* Chat utilities */
+  .chat-shadow {
+    box-shadow: var(--chat-shadow);
+  }
+
+  .chat-shadow-lg {
+    box-shadow: var(--chat-shadow-lg);
+  }
+
+  .text-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  @keyframes typing-dot {
+    0%, 60%, 100% {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-typing-dot {
+    animation: typing-dot 1.4s ease-in-out infinite;
+  }
+
+  /* Make bullet points (dots) bigger in chat messages */
+  .markdown-content ul li::marker {
+    font-size: 18px;
+  }
+
+  /* Keep numbered list markers at 15px to match text */
+  .markdown-content ol li::marker {
+    font-size: 15px;
   }
 
   /* Print styles */

@@ -9,13 +9,16 @@ import type { ReportData } from "../types";
 export async function getReportData(id: string): Promise<{
   data: ReportData | null;
   error: string | null;
+  workflowName: string | null;
+  workflowLabel: string | null;
+  projectName: string | null;
 }> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: "Unauthorized" };
+      return { data: null, error: "Unauthorized", workflowName: null, workflowLabel: null, projectName: null };
     }
 
     // Try with regular client first (respects RLS)
@@ -28,6 +31,7 @@ export async function getReportData(id: string): Promise<{
           workflow_id,
           status,
           knowledge_base_id,
+          project_id,
           created_at,
           rag_knowledge_bases (
             id,
@@ -37,6 +41,10 @@ export async function getReportData(id: string): Promise<{
             id,
             name,
             label
+          ),
+          projects (
+            id,
+            name
           )
         )
       `)
@@ -54,6 +62,7 @@ export async function getReportData(id: string): Promise<{
             workflow_id,
             status,
             knowledge_base_id,
+            project_id,
             created_at,
             rag_knowledge_bases (
               id,
@@ -63,6 +72,10 @@ export async function getReportData(id: string): Promise<{
               id,
               name,
               label
+            ),
+            projects (
+              id,
+              name
             )
           )
         `)
@@ -86,6 +99,7 @@ export async function getReportData(id: string): Promise<{
             workflow_id,
             status,
             knowledge_base_id,
+            project_id,
             created_at,
             rag_knowledge_bases (
               id,
@@ -95,6 +109,10 @@ export async function getReportData(id: string): Promise<{
               id,
               name,
               label
+            ),
+            projects (
+              id,
+              name
             )
           )
         `)
@@ -111,6 +129,7 @@ export async function getReportData(id: string): Promise<{
               workflow_id,
               status,
               knowledge_base_id,
+              project_id,
               created_at,
               rag_knowledge_bases (
                 id,
@@ -120,6 +139,10 @@ export async function getReportData(id: string): Promise<{
                 id,
                 name,
                 label
+              ),
+              projects (
+                id,
+                name
               )
             )
           `)
@@ -133,22 +156,48 @@ export async function getReportData(id: string): Promise<{
 
     if (error) {
       if (error.code === "PGRST116") {
-        return { data: null, error: "Report not found" };
+        return { data: null, error: "Report not found", workflowName: null, workflowLabel: null, projectName: null };
       }
-      return { data: null, error: error.message };
+      return { data: null, error: error.message, workflowName: null, workflowLabel: null, projectName: null };
     }
 
-    const dataTyped = data as { output_json: any } | null;
+    const dataTyped = data as { 
+      output_json: any;
+      rag_runs?: {
+        workflows?: {
+          name: string;
+          label: string;
+        } | null;
+        projects?: {
+          id: string;
+          name: string;
+        } | null;
+      } | null;
+    } | null;
+    
     if (!dataTyped || !dataTyped.output_json) {
-      return { data: null, error: "Report data is missing" };
+      return { data: null, error: "Report data is missing", workflowName: null, workflowLabel: null, projectName: null };
     }
+
+    // Extract workflow info from the query result
+    const workflowName = dataTyped.rag_runs?.workflows?.name || null;
+    const workflowLabel = dataTyped.rag_runs?.workflows?.label || null;
+    
+    // Extract project name from the query result
+    const projects = dataTyped.rag_runs?.projects;
+    const projectName = Array.isArray(projects) 
+      ? projects[0]?.name || null
+      : projects?.name || null;
 
     const transformed = transformOutputJson(dataTyped.output_json);
-    return { data: transformed, error: null };
+    return { data: transformed, error: null, workflowName, workflowLabel, projectName };
   } catch (error) {
     return {
       data: null,
       error: error instanceof Error ? error.message : "An unexpected error occurred",
+      workflowName: null,
+      workflowLabel: null,
+      projectName: null,
     };
   }
 }

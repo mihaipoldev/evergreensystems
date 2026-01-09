@@ -15,13 +15,14 @@ import type { ReportData } from "../../../types";
 
 interface TargetingStrategySectionProps {
   targeting: ReportData["data"]["lead_gen_strategy"]["targeting_strategy"];
+  sectionNumber?: string;
 }
 
-export const TargetingStrategySection = ({ targeting }: TargetingStrategySectionProps) => {
+export const TargetingStrategySection = ({ targeting, sectionNumber = "06" }: TargetingStrategySectionProps) => {
   return (
     <SectionWrapper
       id="targeting-strategy"
-      number="06"
+      number={sectionNumber}
       title="Targeting Strategy"
       subtitle="Priority segments, qualification filters, channels, and data sources"
     >

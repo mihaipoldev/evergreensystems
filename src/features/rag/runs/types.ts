@@ -10,8 +10,6 @@ export type Run = {
   status: RunStatus;
   error: string | null;
   metadata: Record<string, any>; // JSONB - stores used_knowledge_base_ids array and other metadata
-  fit_score?: number | null;
-  verdict?: "pursue" | "test" | "avoid" | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

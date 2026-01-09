@@ -12,9 +12,10 @@ import type { ReportData } from "../../../types";
 
 interface BuyerPsychologySectionProps {
   buyer: ReportData["data"]["buyer_psychology"];
+  sectionNumber?: string;
 }
 
-export const BuyerPsychologySection = ({ buyer }: BuyerPsychologySectionProps) => {
+export const BuyerPsychologySection = ({ buyer, sectionNumber = "03" }: BuyerPsychologySectionProps) => {
   const budgetLabels: Record<string, string> = {
     low: "$1k - $5k",
     medium: "$5k - $50k",
@@ -24,7 +25,7 @@ export const BuyerPsychologySection = ({ buyer }: BuyerPsychologySectionProps) =
   return (
     <SectionWrapper
       id="buyer-psychology"
-      number="03"
+      number={sectionNumber}
       title="Buyer Psychology"
       subtitle="Decision-making dynamics, triggers, objections, and sales cycle insights"
     >

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ReportHeader } from "@/features/rag/reports/components/layout/ReportHeader";
+import { getHeaderConfigForWorkflow } from "@/features/rag/reports/components/layout/ReportHeaderConfig";
 import { StandaloneReportLayout } from "@/features/rag/reports/components/layout/StandaloneReportLayout";
 import { NicheReport } from "@/features/rag/reports/components/niche/NicheReport";
 import { getReportData } from "@/features/rag/reports/data/getReportData";
@@ -41,18 +42,26 @@ export default async function StandaloneReportPage({ params }: ReportPageProps) 
     notFound();
   }
 
-  // Build sections array dynamically to include research_links if present
-  const allSections = reportData.data.research_links
-    ? [...sections, { id: "research-links", number: "10", title: "Research Links" }]
-    : sections;
+  // Build sections array dynamically to include lead_gen_scoring, research_links, and sources_used if present
+  let allSections = [...sections];
+  if (reportData.data.lead_gen_scoring) {
+    allSections.push({ id: "lead-gen-scoring", number: "11", title: "Lead Gen Scoring" });
+  }
+  if (reportData.data.research_links) {
+    allSections.push({ id: "research-links", number: "12", title: "Research Links" });
+  }
+  if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
+    allSections.push({ id: "sources-used", number: "13", title: "Sources Used" });
+  }
 
   return (
     <StandaloneReportLayout sections={allSections}>
       <ReportHeader
-        nicheName={reportData.meta.input.niche_name}
+        title={reportData.meta.input.niche_name}
         geo={reportData.meta.input.geo}
         generatedAt={reportData.meta.generated_at}
         confidence={reportData.meta.confidence}
+        headerConfig={getHeaderConfigForWorkflow("niche_intelligence")}
       />
 
       <NicheReport data={reportData} reportId={id} />

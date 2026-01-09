@@ -11,7 +11,7 @@ interface RunTableProps {
     knowledge_base_name?: string | null; 
     report_id?: string | null;
     fit_score?: number | null;
-    verdict?: "pursue" | "test" | "avoid" | null;
+    verdict?: "pursue" | "test" | "caution" | "avoid" | null;
   })[];
   onView?: (run: Run) => void;
   onDelete?: () => void;
@@ -26,9 +26,8 @@ export function RunTable({ runs, onView, onDelete, hideHeader = false }: RunTabl
         {!hideHeader && (
           <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
             <div className="flex-1 min-w-0">Run</div>
-            <div className="w-28 shrink-0">Status</div>
+            <div className="w-28 shrink-0">Result</div>
             <div className="w-44 shrink-0">Progress</div>
-            <div className="w-24 shrink-0">Verdict</div>
             <div className="w-40 shrink-0">Created</div>
             <div className="w-20 shrink-0 text-right">Actions</div>
           </div>

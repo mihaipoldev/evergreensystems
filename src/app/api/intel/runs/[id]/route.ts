@@ -61,6 +61,31 @@ export async function GET(
       }
     }
 
+    // Extract fit_score and verdict from metadata if available
+    const evaluationResult = runData.metadata?.evaluation_result;
+    let fit_score: number | null = null;
+    let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
+    
+    if (evaluationResult && typeof evaluationResult === "object") {
+      // Extract and normalize verdict
+      if (evaluationResult.verdict && typeof evaluationResult.verdict === "string") {
+        const normalizedVerdict = evaluationResult.verdict.toLowerCase();
+        if (normalizedVerdict === "pursue" || normalizedVerdict === "test" || normalizedVerdict === "caution" || normalizedVerdict === "avoid") {
+          verdict = normalizedVerdict;
+        }
+      }
+      
+      // Extract score
+      if (typeof evaluationResult.score === "number") {
+        fit_score = evaluationResult.score;
+      } else if (typeof evaluationResult.score === "string") {
+        const parsedScore = parseFloat(evaluationResult.score);
+        if (!isNaN(parsedScore)) {
+          fit_score = parsedScore;
+        }
+      }
+    }
+
     const runWithExtras = {
       ...runData,
       knowledge_base_name: runData.rag_knowledge_bases?.name || null,
@@ -68,9 +93,8 @@ export async function GET(
       workflow_name: runData.workflows?.name || null,
       workflow_label: runData.workflows?.label || null,
       report_id: null, // Not loading rag_run_outputs
-      // fit_score and verdict are already in the run object from the database
-      fit_score: runData.fit_score ?? null,
-      verdict: runData.verdict ?? null,
+      fit_score,
+      verdict,
     };
 
     return NextResponse.json(runWithExtras, { status: 200 });

@@ -42,7 +42,13 @@ export async function GET(request: Request) {
       `);
 
     if (status && status !== "All") {
-      query = query.eq("status", status.toLowerCase());
+      // Support multiple statuses: comma-separated string like "queued,processing"
+      const statuses = status.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+      if (statuses.length === 1) {
+        query = query.eq("status", statuses[0]);
+      } else if (statuses.length > 1) {
+        query = query.in("status", statuses);
+      }
     }
 
     // Filter by workflow_id
@@ -74,16 +80,6 @@ export async function GET(request: Request) {
     const runsWithKB = typedData.map((run: any) => {
       // Handle rag_run_outputs - it might be an array or single object
       const runOutputs = run.rag_run_outputs;
-      
-      // Debug: log first run to see structure
-      if (typedData && typedData.length > 0 && run.id === typedData[0].id) {
-        console.log("First run structure:", { 
-          runId: run.id, 
-          project_id: run.project_id,
-          projects: run.projects,
-          projects_name: run.projects?.name 
-        });
-      }
       
       const reportId = Array.isArray(runOutputs) && runOutputs.length > 0
         ? runOutputs[0].id

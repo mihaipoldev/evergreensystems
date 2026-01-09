@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -95,7 +94,6 @@ export function GenerateNicheReportModal({
   subjectType,
   subjectTypeId,
 }: GenerateNicheReportModalProps) {
-  const router = useRouter();
   // Use projectType if provided, otherwise fallback to subjectType for backward compatibility
   const effectiveProjectType = projectType ?? subjectType ?? null;
   const effectiveProjectTypeId = projectTypeId ?? subjectTypeId ?? null;
@@ -103,6 +101,7 @@ export function GenerateNicheReportModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
+  const [showConfig, setShowConfig] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isExecuting, setIsExecuting] = useState(false);
 
@@ -157,11 +156,12 @@ export function GenerateNicheReportModal({
       setWorkflows([]);
       setError(null);
       setSelectedWorkflow(null);
+      setShowConfig(false);
       setFormValues({});
     }
   }, [open, effectiveSubjectType, researchSubjectGeography]);
 
-  // Reset form values when workflow changes
+  // Prefill form values when workflow is selected (always, not just when config is shown)
   useEffect(() => {
     if (selectedWorkflow) {
       const workflow = workflows.find((w) => w.id === selectedWorkflow);
@@ -191,6 +191,9 @@ export function GenerateNicheReportModal({
         });
         setFormValues(initialValues);
       }
+    } else {
+      // Reset form values when no workflow is selected
+      setFormValues({});
     }
   }, [selectedWorkflow, workflows, researchSubjectGeography, researchSubjectDescription, researchSubjectCategory, subjectName]);
 
@@ -259,6 +262,9 @@ export function GenerateNicheReportModal({
       return;
     }
 
+    // Get the workflow's default AI model before entering try block
+    const aiModel = workflow.default_ai_model || null;
+
     setIsExecuting(true);
 
     try {
@@ -278,6 +284,7 @@ export function GenerateNicheReportModal({
           project_type_id: effectiveProjectTypeId || null,
           workflow_id: selectedWorkflow,
           input: formValues,
+          ai_model: aiModel,
         }),
       });
 
@@ -288,15 +295,10 @@ export function GenerateNicheReportModal({
       }
 
       const workflow = workflows.find((w) => w.id === selectedWorkflow);
-      toast.success(`Workflow "${workflow?.label || 'Unknown'}" executed successfully`);
+      toast.success(`Workflow "${workflow?.label || 'Unknown'}" started successfully`);
       
-      // Navigate to the run page if run_id is available
-      if (result.run_id) {
-        onOpenChange(false);
-        router.push(`/intel/research/${result.run_id}`);
-      } else {
-        onOpenChange(false);
-      }
+      // Close modal - the FloatingProgressIndicator will show progress
+      onOpenChange(false);
     } catch (err: any) {
       console.error("Error executing workflow:", err);
       const errorMessage = err.message || "Failed to execute workflow";
@@ -436,7 +438,7 @@ export function GenerateNicheReportModal({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-6 min-h-0">
         {loading && (
           <div className="text-center py-8 text-muted-foreground">
             <FontAwesomeIcon icon={faSpinner} className="w-6 h-6 animate-spin mx-auto mb-2" />
@@ -465,14 +467,22 @@ export function GenerateNicheReportModal({
                   key={workflow.id}
                   workflow={workflow}
                   isSelected={selectedWorkflow === workflow.id}
-                  onSelect={() => setSelectedWorkflow(workflow.id)}
+                  onSelect={() => {
+                    setSelectedWorkflow(workflow.id);
+                    setShowConfig(false); // Close config when selecting a different workflow
+                  }}
+                  onConfigClick={() => {
+                    if (selectedWorkflow === workflow.id) {
+                      setShowConfig(!showConfig);
+                    }
+                  }}
                 />
               ))}
             </div>
 
-            {/* Expanded Form - Shows when workflow is selected */}
+            {/* Expanded Form - Shows when config button is clicked */}
             <AnimatePresence>
-              {selectedWorkflow && (
+              {showConfig && selectedWorkflow && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -503,39 +513,43 @@ export function GenerateNicheReportModal({
                       )
                     )}
                   </div>
-
-                  {/* Generate Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleExecuteWorkflow}
-                    disabled={!selectedWorkflow || isExecuting || Object.entries(inputSchema).some(([key, field]) => {
-                      // Only check required fields
-                      const isRequired = field.required !== false; // Default to required if not specified
-                      return isRequired && !formValues[key]?.trim();
-                    })}
-                    className={cn(
-                      "w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all",
-                      "bg-primary text-primary-foreground",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "hover:bg-primary/90"
-                    )}
-                  >
-                    {isExecuting ? (
-                      <>
-                        <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <FontAwesomeIcon icon={faWandSparkles} className="w-4 h-4" />
-                        Generate Report
-                      </>
-                    )}
-                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Generate Button - Always visible */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleExecuteWorkflow}
+              disabled={
+                !selectedWorkflow || 
+                isExecuting || 
+                Object.entries(inputSchema).some(([key, field]) => {
+                  // Always check required fields - they should be prefilled when workflow is selected
+                  const isRequired = field.required !== false;
+                  return isRequired && !formValues[key]?.trim();
+                })
+              }
+              className={cn(
+                "w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all mt-4",
+                "bg-primary text-primary-foreground",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "hover:bg-primary/90"
+              )}
+            >
+              {isExecuting ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faWandSparkles} className="w-4 h-4" />
+                  Generate Report
+                </>
+              )}
+            </motion.button>
           </>
         )}
       </div>

@@ -22,9 +22,10 @@ import type { ReportData } from "../../../types";
 interface ResearchLinksSectionProps {
   researchLinks: NonNullable<ReportData["data"]["research_links"]>;
   reportId: string;
+  sectionNumber?: string;
 }
 
-export const ResearchLinksSection = ({ researchLinks, reportId }: ResearchLinksSectionProps) => {
+export const ResearchLinksSection = ({ researchLinks, reportId, sectionNumber = "12" }: ResearchLinksSectionProps) => {
   const googleGroupId = getReportGroupId(reportId, "research-links-google");
   const linkedinGroupId = getReportGroupId(reportId, "research-links-linkedin");
   const fundingGroupId = getReportGroupId(reportId, "research-links-funding");
@@ -54,7 +55,7 @@ export const ResearchLinksSection = ({ researchLinks, reportId }: ResearchLinksS
   return (
     <SectionWrapper
       id="research-links"
-      number="11"
+      number={sectionNumber}
       title="Research Links"
       subtitle="Additional research and discovery resources for this niche"
     >

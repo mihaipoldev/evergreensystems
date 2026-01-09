@@ -97,6 +97,11 @@ Create a `.env.local` file in the root directory with the following variables:
 
 - `NEXT_PUBLIC_SITE_URL` - Your website URL (e.g., `https://evergreensystems.ai`)
 
+### AI & Chat (Required for chat functionality with RAG)
+
+- `OPENAI_API_KEY` - Your OpenAI API key (used for generating embeddings for document search)
+- `OPENROUTER_KEY` - Your OpenRouter API key (used for AI chat responses)
+
 Example `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
@@ -106,6 +111,8 @@ BUNNY_STORAGE_ZONE=your-storage-zone
 BUNNY_STORAGE_PASSWORD=your-storage-password
 BUNNY_PULL_ZONE_URL=https://yourdomain.b-cdn.net
 NEXT_PUBLIC_SITE_URL=https://evergreensystems.ai
+OPENAI_API_KEY=sk-your-openai-api-key
+OPENROUTER_KEY=your-openrouter-api-key
 ```
 
 ## Next Steps

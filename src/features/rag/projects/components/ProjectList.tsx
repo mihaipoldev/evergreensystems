@@ -10,6 +10,11 @@ import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterM
 import { ProjectGrid } from "./ProjectGrid";
 import { ProjectTable } from "./ProjectTable";
 import { ProjectModal } from "./ProjectModal";
+import { BulkSelectionProvider, useBulkSelection } from "@/features/rag/shared/contexts/BulkSelectionContext";
+import { FloatingActionBar } from "@/features/rag/shared/components/FloatingActionBar";
+import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
+import { BulkGenerateReportModal } from "@/features/rag/workflows/components/BulkGenerateReportModal";
+import { toast } from "sonner";
 import type { Project } from "../types";
 import type { ProjectType } from "@/features/rag/project-type/types";
 
@@ -23,6 +28,7 @@ const STORAGE_KEY_PREFIX = "projects-";
 const STORAGE_KEY_SEARCH = `${STORAGE_KEY_PREFIX}search`;
 const STORAGE_KEY_FILTERS = `${STORAGE_KEY_PREFIX}filters`;
 const STORAGE_KEY_SORT = `${STORAGE_KEY_PREFIX}sort`;
+const STORAGE_KEY_GROUP_BY_VERDICT = "projects-group-by-verdict";
 
 // Helper functions for localStorage persistence
 function getStoredSearch(): string {
@@ -84,20 +90,48 @@ function setStoredSort(value: string): void {
   }
 }
 
-export function ProjectList({ initialProjects }: ProjectListProps) {
+function getStoredGroupByVerdict(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_GROUP_BY_VERDICT);
+    return saved === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setStoredGroupByVerdict(value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_GROUP_BY_VERDICT, String(value));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+// Inner component that uses bulk selection context
+function ProjectListContent({ initialProjects }: ProjectListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [viewMode, setViewMode] = useViewMode("grid");
+  // Always use table view for projects (grid view hidden but not deleted)
+  const [viewMode, setViewMode] = useViewMode("table");
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
   // Initialize filters from localStorage - URL params will override in useEffect
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
   const [selectedSort, setSelectedSort] = useState(() => getStoredSort());
+  const [groupByVerdict, setGroupByVerdict] = useState(() => getStoredGroupByVerdict());
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
   const hasLoadedFromStorage = useRef(false);
+  
+  // Bulk selection state
+  const { selectedIds, clearSelection, getSelectedCount } = useBulkSelection();
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [showBulkGenerateModal, setShowBulkGenerateModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Mark as loaded after first render
   useEffect(() => {
@@ -352,6 +386,13 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
     }
   }, [selectedSort]);
 
+  // Persist groupByVerdict changes (only after initial load)
+  useEffect(() => {
+    if (hasLoadedFromStorage.current) {
+      setStoredGroupByVerdict(groupByVerdict);
+    }
+  }, [groupByVerdict]);
+
   const handleFilterApply = (filters: Record<string, string[]>) => {
     // When user manually applies filters, mark that Project Type is no longer from URL
     projectTypeFromUrlRef.current = false;
@@ -376,6 +417,62 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
     setSelectedFilters(clearedFilters);
   };
 
+  const handleBulkDelete = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      const selectedIdsArray = Array.from(selectedIds);
+      const deletePromises = selectedIdsArray.map(id =>
+        fetch(`/api/intel/projects/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        })
+      );
+
+      const results = await Promise.all(deletePromises);
+      const errors = results.filter(r => !r.ok);
+      
+      if (errors.length > 0) {
+        throw new Error(`Failed to delete ${errors.length} project(s)`);
+      }
+
+      toast.success(`Deleted ${selectedIdsArray.length} project(s) successfully`);
+      setShowBulkDeleteDialog(false);
+      clearSelection();
+      router.refresh();
+    } catch (error: any) {
+      console.error("Error deleting projects:", error);
+      toast.error(error.message || "Failed to delete projects");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkGenerate = () => {
+    setShowBulkGenerateModal(true);
+  };
+
+  const handleBulkGenerateComplete = () => {
+    setShowBulkGenerateModal(false);
+    clearSelection();
+    router.refresh();
+  };
+
+  // Get selected projects data
+  const selectedProjectsData = useMemo(() => {
+    return filteredAndSortedProjects.filter((project) =>
+      selectedIds.has(project.id)
+    );
+  }, [filteredAndSortedProjects, selectedIds]);
+
   return (
     <div className="w-full space-y-6">
       <Toolbar
@@ -393,8 +490,15 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
             label: "New",
             onClick: () => setIsCreateModalOpen(true),
           }}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          // View mode toggle hidden for projects - always use table view
+          // viewMode={viewMode}
+          // onViewModeChange={setViewMode}
+          groupByVerdict={projectTypeName === "niche" ? {
+            enabled: groupByVerdict,
+            onToggle: (enabled: boolean) => {
+              setGroupByVerdict(enabled);
+            },
+          } : undefined}
         />
 
       {filteredAndSortedProjects.length === 0 ? (
@@ -408,18 +512,22 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
             ? "No projects. Create one to get started."
             : "No projects found matching your search"}
         </motion.div>
-      ) : viewMode === "grid" ? (
-        <ProjectGrid 
-          projects={filteredAndSortedProjects}
-          projectTypes={projectTypes}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-        />
       ) : (
+        // Always show table view for projects (grid view hidden but not deleted)
+        // Grid view code kept below for future use if needed:
+        // viewMode === "grid" ? (
+        //   <ProjectGrid 
+        //     projects={filteredAndSortedProjects}
+        //     projectTypes={projectTypes}
+        //     onDelete={handleDelete}
+        //     onEdit={handleEdit}
+        //   />
+        // ) : (
         <ProjectTable 
           projects={filteredAndSortedProjects}
           projectTypes={projectTypes}
           projectTypeName={projectTypeName}
+          groupByVerdict={projectTypeName === "niche" ? groupByVerdict : false}
           onDelete={handleDelete}
           onEdit={handleEdit}
         />
@@ -444,6 +552,39 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
         initialData={selectedProject || undefined}
         onSuccess={handleEditSuccess}
       />
+
+      <FloatingActionBar
+        selectedCount={getSelectedCount()}
+        onGenerate={handleBulkGenerate}
+        onDelete={() => setShowBulkDeleteDialog(true)}
+        onClear={clearSelection}
+      />
+
+      <DeleteConfirmationDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        entityName={`${selectedIds.size} project(s)`}
+        entityType="projects"
+        onConfirm={handleBulkDelete}
+        isDeleting={isDeleting}
+      />
+
+      <BulkGenerateReportModal
+        open={showBulkGenerateModal}
+        onOpenChange={setShowBulkGenerateModal}
+        selectedProjects={selectedProjectsData}
+        projectType={projectTypeName}
+        projectTypeId={selectedProjectTypeId || undefined}
+        onComplete={handleBulkGenerateComplete}
+      />
     </div>
+  );
+}
+
+export function ProjectList({ initialProjects }: ProjectListProps) {
+  return (
+    <BulkSelectionProvider>
+      <ProjectListContent initialProjects={initialProjects} />
+    </BulkSelectionProvider>
   );
 }

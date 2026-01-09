@@ -30,12 +30,16 @@ export type ReportData = {
       };
       market_maturity: string;
       timing_intelligence?: {
-        lead_gen_seasonality: string;
-        best_months_to_launch: string[];
         budget_approval_cycle: string;
+        fiscal_year_timing?: string;
       };
-      // Backward compatibility - keep for old data
-      lead_gen_seasonality?: string;
+      tam_analysis?: {
+        total_companies_in_geography?: number;
+        addressable_by_segment?: Record<string, string>;
+        market_concentration?: string;
+        geographic_clusters?: string[];
+        regional_differences?: string;
+      };
       deal_economics?: {
         typical_client_value_annually: string;
         average_deal_size: string;
@@ -46,11 +50,6 @@ export type ReportData = {
         operational_tools: string[];
         client_acquisition_methods: string[];
       };
-      lead_gen_competitive_landscape?: {
-        existing_lead_gen_providers: string[];
-        typical_pricing_benchmarks: string;
-      };
-      lead_gen_risks: string[];
     };
     buyer_psychology: {
       confidence: number;
@@ -79,9 +78,9 @@ export type ReportData = {
       confidence: number;
       sources_used?: string[];
       description?: string;
-      lead_gen_fit_score: number;
+      lead_gen_fit_score?: number;
       fit_score_description?: string;
-      fit_rationale: string[];
+      fit_rationale?: string[];
       fit_rationale_description?: string;
       red_flags: string[];
       red_flags_description?: string;
@@ -93,9 +92,20 @@ export type ReportData = {
         wedge_statement: string;
         why_it_works: string[];
       };
-      verdict: "pursue" | "test" | "avoid";
+      verdict?: "pursue" | "test" | "avoid";
       verdict_description?: string;
-      next_step_if_test: string;
+      next_step_if_test?: string;
+      strategic_assessment?: {
+        opportunity_summary: string;
+        key_advantages: string[];
+        key_challenges: string[];
+      };
+      pilot_approach?: {
+        recommended_pilot_size: string;
+        pilot_duration: string;
+        success_metrics: string[];
+        timing_considerations: string;
+      };
       targeting_strategy: {
         confidence?: number;
         sources_used?: string[];
@@ -161,6 +171,90 @@ export type ReportData = {
       google_search_links?: string[];
       linkedin_job_search_links?: string[];
       funding_search_links?: string[];
+    };
+    lead_gen_scoring?: {
+      confidence: number;
+      sources_used?: string[];
+      description?: string;
+      lead_gen_fit_score: number;
+      verdict: "pursue" | "test" | "avoid";
+      verdict_rationale: string;
+      scorecard_evaluation: {
+        offer_compatibility: {
+          total_score: string;
+          questions: Array<{
+            question: string;
+            answer: "yes" | "no";
+            reasoning: string;
+          }>;
+        };
+        market_size_and_access: {
+          total_score: string;
+          questions: Array<{
+            question: string;
+            answer: "yes" | "no";
+            reasoning: string;
+          }>;
+        };
+        fulfillment_feasibility: {
+          total_score: string;
+          questions: Array<{
+            question: string;
+            answer: "yes" | "no";
+            reasoning: string;
+          }>;
+        };
+        scorecard_summary: {
+          total_yes: number;
+          total_questions: number;
+          percentage: number;
+          interpretation: string;
+        };
+      };
+      final_jury_results: {
+        filters_passed: string;
+        overall_pass: boolean;
+        budget_filter: {
+          pass: boolean;
+          roi_multiple: number;
+          reasoning: string;
+        };
+        scalability_filter: {
+          pass: boolean;
+          reasoning: string;
+        };
+        offer_market_fit: {
+          pass: boolean;
+          reasoning: string;
+        };
+      };
+      dealbreakers: Array<{
+        type: string;
+        threshold: number;
+        actual_value: number;
+        severity: "critical" | "catastrophic";
+        impact: string;
+        score_cap_applied: number;
+      }>;
+      score_breakdown: {
+        components: Array<{
+          name: string;
+          weight: number;
+          score: number;
+          max_score: number;
+          value: string;
+          reasoning: string;
+        }>;
+        total_before_caps: number;
+        dealbreaker_cap_applied: number;
+        final_score: number;
+      };
+      interpretation: {
+        score_range: string;
+        category: string;
+        recommendation: string;
+        key_reasons: string[];
+      };
     };
   };
 };

@@ -47,3 +47,6 @@ export default async function RunDetailPage({ params }: RunDetailPageProps) {
   return <RunDetailClient run={runWithExtras} />;
 }
 
+
+
+

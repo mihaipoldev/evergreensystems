@@ -7,6 +7,7 @@ import {
   faSitemap,
   faClock,
   faDollarSign,
+  faBrain,
 } from "@fortawesome/free-solid-svg-icons";
 import { WorkflowActionsMenu } from "@/features/rag/workflows/components/WorkflowActionsMenu";
 import { WorkflowModal } from "@/features/rag/workflows/components/WorkflowModal";
@@ -95,9 +96,9 @@ export function WorkflowDetailClient({
                 </div>
               )}
 
-              {(workflow.estimated_cost !== null || workflow.estimated_time_minutes !== null) && (
+              {(workflow.estimated_cost !== null || workflow.estimated_time_minutes !== null || workflow.default_ai_model) && (
                 <div className="pt-4 border-t border-border/50">
-                  <div className="flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-6 text-sm flex-wrap">
                     {workflow.estimated_cost !== null && (
                       <div className="flex items-center gap-2">
                         <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4 text-muted-foreground" />
@@ -110,6 +111,13 @@ export function WorkflowDetailClient({
                         <FontAwesomeIcon icon={faClock} className="h-4 w-4 text-muted-foreground" />
                         <span className="text-foreground font-medium">{workflow.estimated_time_minutes}</span>
                         <span className="text-muted-foreground">minutes</span>
+                      </div>
+                    )}
+                    {workflow.default_ai_model && (
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faBrain} className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-foreground font-medium">{workflow.default_ai_model}</span>
+                        <span className="text-muted-foreground">AI model</span>
                       </div>
                     )}
                   </div>

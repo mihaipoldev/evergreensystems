@@ -1,0 +1,52 @@
+/features/rag/
+  chat/
+    ├── data.ts                    # Supabase queries
+    ├── types.ts                   # TypeScript types
+    ├── hooks.ts                   # React hooks
+    ├── actions.ts                 # Server actions for message handling
+    ├── rag.ts                     # RAG retrieval logic
+    │
+    └── components/
+        ├── ChatProvider.tsx           # Context provider for active chat
+        ├── ChatSidebar.tsx            # Slide-out chat panel (MAIN UI)
+        ├── ChatHeader.tsx             # Shows context, settings
+        ├── ChatMessages.tsx           # Message list with streaming
+        ├── ChatInput.tsx              # Message input with file attach
+        ├── ChatContextIndicator.tsx   # Visual indicator of what you're chatting with
+        ├── ChatSourceCitation.tsx     # Clickable source references
+        ├── ChatSuggestedQuestions.tsx # AI-generated suggestions
+        ├── ChatHistoryList.tsx        # Past conversations
+        │
+        └── contexts/
+            ├── KBChatContext.tsx      # Context-specific wrappers
+            ├── ProjectChatContext.tsx
+            ├── SubjectChatContext.tsx
+            └── DocumentChatContext.tsx
+
+/app/intel/
+  ├── layout.tsx                 # Add ChatProvider here
+  ├── page.tsx                   # Dashboard (can trigger chat)
+  │
+  ├── knowledge-bases/
+  │   └── [id]/
+  │       └── page.tsx           # [Chat with KB] button
+  │
+  ├── projects/
+  │   └── [id]/
+  │       └── page.tsx           # [Chat with Project] button
+  │
+  ├── reports/
+  │   └── [id]/
+  │       └── page.tsx           # [Chat about Report] floating button
+  │
+  └── chat/
+      └── [conversationId]/
+          └── page.tsx           # Full-page chat view (optional)
+
+/api/
+  chat/
+    ├── route.ts                 # POST /api/chat - streaming responses
+    ├── conversations/
+    │   └── route.ts             # CRUD for conversations
+    └── suggestions/
+        └── route.ts             # GET suggested questions

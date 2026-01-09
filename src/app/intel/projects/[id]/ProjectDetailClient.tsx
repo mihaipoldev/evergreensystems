@@ -35,6 +35,8 @@ import { getProjectTypeConfig } from "@/features/rag/projects/config/ProjectType
 import type { Project, ProjectWithKB } from "@/features/rag/projects/types";
 import type { RAGDocument } from "@/features/rag/documents/document-types";
 import type { RunWithExtras } from "@/features/rag/projects/config/ProjectTypeConfig";
+import { extractWorkflowResult } from "@/features/rag/runs/utils/extractWorkflowResult";
+import { ProjectChatContext } from "@/features/chat/components/ProjectChatContext";
 
 type ProjectDetailClientProps = {
   project: ProjectWithKB;
@@ -323,27 +325,41 @@ export function ProjectDetailClient({
                     {/* Research Stats - 4 cards for niche projects */}
                     {isNicheProject ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Card 1: Total Research */}
-                        <StatCard
-                          title="Total Research"
-                          value={totalWorkflows > 0 ? `${runsCount}/${totalWorkflows}` : runsCount.toString()}
-                          icon={faPlay}
-                          index={0}
-                        />
-                        {/* Card 2: Niche Intelligence with fit score */}
+                        {/* Card 1: Fit Score from niche_fit_evaluation workflow */}
                         {(() => {
-                          const nicheIntelligenceRun = initialRuns.find(
-                            run => run.workflow_name === "niche_intelligence" && run.status === "complete"
+                          const fitEvaluationRun = initialRuns.find(
+                            run => run.workflow_name === "niche_fit_evaluation" && run.status === "complete"
                           );
-                          const fitScore = nicheIntelligenceRun?.fit_score;
-                          const verdict = nicheIntelligenceRun?.verdict;
+                          const workflowResult = fitEvaluationRun ? extractWorkflowResult(fitEvaluationRun) : null;
+                          const fitScore = workflowResult?.score;
+                          const verdict = workflowResult?.verdict;
+                          const formattedScore = fitScore !== null && fitScore !== undefined ? fitScore.toFixed(1) : null;
                           return (
                             <StatCard
-                              title="Niche Intelligence"
-                              value={fitScore !== null && fitScore !== undefined ? `${fitScore}/100` : "—"}
+                              title="Fit Score"
+                              value={formattedScore !== null ? `${formattedScore}/100` : "—"}
                               icon={faWandMagicSparkles}
-                              index={1}
+                              index={0}
+                              fit_score={fitScore ?? null}
                               verdict={verdict || null}
+                            />
+                          );
+                        })()}
+                        {/* Card 2: Total Researched */}
+                        {(() => {
+                          // Count unique workflows that have been run
+                          const uniqueWorkflows = new Set(
+                            initialRuns
+                              .map(run => run.workflow_name)
+                              .filter((name): name is string => name !== null && name !== undefined)
+                          );
+                          const uniqueWorkflowsCount = uniqueWorkflows.size;
+                          return (
+                            <StatCard
+                              title="Total Researched"
+                              value={totalWorkflows > 0 ? `${uniqueWorkflowsCount}/${totalWorkflows}` : uniqueWorkflowsCount.toString()}
+                              icon={faPlay}
+                              index={1}
                             />
                           );
                         })()}
@@ -418,6 +434,12 @@ export function ProjectDetailClient({
         researchSubjectGeography={project.geography || null}
         researchSubjectDescription={project.description || null}
         researchSubjectCategory={project.category || null}
+      />
+
+      {/* Set chat context for this project */}
+      <ProjectChatContext 
+        projectId={project.id} 
+        projectName={project.client_name || project.name || 'Untitled Project'} 
       />
     </>
   );

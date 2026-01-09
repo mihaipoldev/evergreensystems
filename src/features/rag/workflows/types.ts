@@ -10,6 +10,7 @@ export type Workflow = {
   enabled: boolean;
   knowledge_base_target: string;
   target_knowledge_base_id: string | null;
+  default_ai_model: string;
   created_at: string;
   updated_at: string;
 };

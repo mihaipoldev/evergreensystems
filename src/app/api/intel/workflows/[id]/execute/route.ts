@@ -16,7 +16,7 @@ export async function POST(
 
     const { id: workflowId } = await params;
     const body = await request.json();
-    const { project_id, research_subject_id, workflow_id, input } = body;
+    const { project_id, research_subject_id, workflow_id, input, ai_model } = body;
 
     // Accept both project_id (new) and research_subject_id (backward compat)
     const effectiveProjectId = project_id || research_subject_id;
@@ -34,10 +34,10 @@ export async function POST(
     // Use service role client to access secrets and research data
     const adminSupabase = createServiceRoleClient();
 
-    // Fetch workflow to get knowledge_base_target and target_knowledge_base_id
+    // Fetch workflow to get knowledge_base_target, target_knowledge_base_id, and default_ai_model
     const { data: workflow, error: workflowError } = await (adminSupabase
       .from("workflows") as any)
-      .select("knowledge_base_target, target_knowledge_base_id")
+      .select("knowledge_base_target, target_knowledge_base_id, default_ai_model")
       .eq("id", effectiveWorkflowId)
       .single();
 
@@ -63,7 +63,8 @@ export async function POST(
 
     const workflowTyped = workflow as { 
       knowledge_base_target: string; 
-      target_knowledge_base_id: string | null 
+      target_knowledge_base_id: string | null;
+      default_ai_model: string;
     };
 
     // Fetch webhook URL from workflow_secrets
@@ -154,14 +155,14 @@ export async function POST(
       }
     }
 
-    // Create rag_runs record with status='processing'
+    // Create rag_runs record with status='queued'
     const { data: run, error: runError } = await (adminSupabase
       .from("rag_runs") as any)
       .insert({
         knowledge_base_id: knowledgeBaseId,
         workflow_id: effectiveWorkflowId,
         project_id: effectiveProjectId,
-        status: 'processing',
+        status: 'queued',
         created_by: user.id,
         input: input || {},
         metadata: {},
@@ -186,6 +187,15 @@ export async function POST(
 
     const runId = run.id;
 
+    // Update project's updated_at timestamp
+    await (adminSupabase
+      .from("projects") as any)
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", effectiveProjectId);
+
+    // Use ai_model from request body, or fallback to workflow's default_ai_model
+    const effectiveAiModel = ai_model || workflowTyped.default_ai_model;
+
     // Prepare webhook payload - include run_id so external service can update run status
     const webhookPayload = {
       Name: projectTyped.name || "",
@@ -196,6 +206,7 @@ export async function POST(
       WorkflowId: effectiveWorkflowId,
       ProjectId: effectiveProjectId,
       RunId: runId, // Include run_id in payload
+      ...(effectiveAiModel && { AiModel: effectiveAiModel }),
       ...(input && { Input: input }),
     };
 

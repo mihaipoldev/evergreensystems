@@ -254,3 +254,6 @@ export function KnowledgeBaseForm({ isEdit, initialData, returnTo }: KnowledgeBa
   );
 }
 
+
+
+

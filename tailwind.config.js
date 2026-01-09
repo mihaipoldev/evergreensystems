@@ -67,14 +67,24 @@ module.exports = {
 			input: 'hsl(var(--input))',
 			'input-background': 'hsl(var(--input-background))',
 			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			}
-  		},
+			chart: {
+				'1': 'hsl(var(--chart-1))',
+				'2': 'hsl(var(--chart-2))',
+				'3': 'hsl(var(--chart-3))',
+				'4': 'hsl(var(--chart-4))',
+				'5': 'hsl(var(--chart-5))'
+			},
+			chat: {
+				user: {
+					DEFAULT: 'hsl(var(--chat-user-bg))',
+					foreground: 'hsl(var(--chat-user-fg))'
+				},
+				ai: {
+					DEFAULT: 'hsl(var(--chat-ai-bg))',
+					foreground: 'hsl(var(--chat-ai-fg))'
+				}
+			}
+		},
   		keyframes: {
   			'accordion-down': {
   				from: {

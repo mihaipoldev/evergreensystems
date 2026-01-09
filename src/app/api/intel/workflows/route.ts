@@ -64,11 +64,29 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { name, label, description, icon, estimated_cost, estimated_time_minutes, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
+    const { name, label, description, icon, estimated_cost, estimated_time_minutes, default_ai_model, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
 
     if (!name || !label) {
       return NextResponse.json(
         { error: "name and label are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate default_ai_model
+    const validModels = [
+      'anthropic/claude-sonnet-4.5',
+      'anthropic/claude-haiku-4.5',
+      'google/gemini-3-flash-preview',
+      'google/gemini-3-pro-preview',
+      'openai/gpt-4o-mini',
+      'openai/gpt-4o',
+      'openai/gpt-5-mini',
+      'openai/gpt-5.2'
+    ];
+    if (!default_ai_model || !validModels.includes(default_ai_model)) {
+      return NextResponse.json(
+        { error: "default_ai_model is required and must be one of the allowed models" },
         { status: 400 }
       );
     }
@@ -104,6 +122,7 @@ export async function POST(request: Request) {
         icon: icon || null,
         estimated_cost: estimated_cost !== undefined ? estimated_cost : null,
         estimated_time_minutes: estimated_time_minutes !== undefined ? estimated_time_minutes : null,
+        default_ai_model: default_ai_model,
         input_schema: input_schema || null,
         enabled: enabled !== undefined ? enabled : true,
         knowledge_base_target: knowledge_base_target,

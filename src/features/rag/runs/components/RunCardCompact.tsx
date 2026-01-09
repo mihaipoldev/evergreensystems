@@ -7,22 +7,15 @@ import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import type { Run } from "../types";
 import { getRunLabel } from "../types";
 import { cn } from "@/lib/utils";
+import { getRunStatusBadgeClasses } from "@/features/rag/shared/utils/runStatusColors";
 
 type RunCardCompactProps = {
   run: Run & { knowledge_base_name?: string | null };
 };
 
 export function RunCardCompact({ run }: RunCardCompactProps) {
-  const statusColors: Record<string, string> = {
-    queued: "bg-muted text-muted-foreground",
-    collecting: "bg-yellow-600/10 text-yellow-600 dark:text-yellow-400",
-    ingesting: "bg-blue-600/10 text-blue-600 dark:text-blue-400",
-    generating: "bg-purple-600/10 text-purple-600 dark:text-purple-400",
-    complete: "bg-green-600/10 text-green-600 dark:text-green-400",
-    failed: "bg-destructive/10 text-destructive",
-  };
-
-  const statusColorClass = statusColors[run.status] || statusColors.queued;
+  // Use utility for status badge classes
+  const statusColorClass = getRunStatusBadgeClasses(run.status);
 
   // Use workflow label if available
   const runLabel = getRunLabel(run);

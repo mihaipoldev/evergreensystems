@@ -26,18 +26,11 @@ export const OfferAngleCard = ({ angle, index }: OfferAngleCardProps) => {
     >
       {/* Header */}
       <div className="bg-primary p-5">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faStar} className="w-4 h-4 text-accent" />
-            <span className="text-xs uppercase tracking-wider text-primary-foreground/70 font-body">
-              Offer Angle {index + 1}
-            </span>
-          </div>
-          {angle.confidence !== undefined && (
-            <span className="text-xs text-primary-foreground/70 font-body">
-              {(angle.confidence * 100).toFixed(0)}% confidence
-            </span>
-          )}
+        <div className="flex items-center gap-2 mb-2">
+          <FontAwesomeIcon icon={faStar} className="w-4 h-4 text-accent" />
+          <span className="text-xs uppercase tracking-wider text-primary-foreground/70 font-body">
+            Offer Angle {index + 1}
+          </span>
         </div>
         <h3 className="text-xl font-display font-semibold text-primary-foreground">
           {angle.angle_name}

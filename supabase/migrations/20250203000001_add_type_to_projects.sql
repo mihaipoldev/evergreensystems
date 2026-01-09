@@ -26,3 +26,6 @@ ALTER TABLE public.projects
 -- =========================================================
 CREATE INDEX IF NOT EXISTS idx_projects_type ON public.projects(type);
 
+
+
+

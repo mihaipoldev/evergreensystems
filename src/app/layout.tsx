@@ -16,6 +16,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { FontId } from "@/types/fonts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { FloatingProgressIndicatorWrapper } from "@/components/shared/FloatingProgressIndicatorWrapper";
+import { ConsoleLogFilter } from "@/components/shared/ConsoleLogFilter";
 import { SEO_CONFIG, ALL_KEYWORDS } from "@/lib/seo";
 import { getTimestamp, getDuration, debugServerTiming, timeAsync } from "@/lib/debug-performance";
 
@@ -258,9 +260,11 @@ export default async function RootLayout({
         {isAdminPage && <InstantColorApply />}
         {isAdminPage && <InstantFontApply />}
         {isAdminPage && <FontLoadingGuard />}
+        <ConsoleLogFilter />
         <StylePresetProvider />
         <Toaster />
         <SonnerToaster />
+        <FloatingProgressIndicatorWrapper />
         {children}
       </body>
     </html>

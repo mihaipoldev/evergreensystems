@@ -82,3 +82,6 @@ WHERE name = 'niche_intelligence';
 CREATE INDEX IF NOT EXISTS idx_rag_run_outputs_run_id 
 ON public.rag_run_outputs(run_id);
 
+
+
+

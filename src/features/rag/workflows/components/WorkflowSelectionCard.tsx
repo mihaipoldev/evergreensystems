@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faClock, faArrowRight, faCog } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 import { resolveIconFromClass } from "@/lib/icon-utils";
 import type { Workflow } from "../types";
@@ -11,6 +11,7 @@ interface WorkflowSelectionCardProps {
   workflow: Workflow;
   isSelected: boolean;
   onSelect: () => void;
+  onConfigClick?: () => void;
 }
 
 /**
@@ -21,6 +22,7 @@ export function WorkflowSelectionCard({
   workflow,
   isSelected,
   onSelect,
+  onConfigClick,
 }: WorkflowSelectionCardProps) {
   // Format price
   const price = workflow.estimated_cost
@@ -50,7 +52,7 @@ export function WorkflowSelectionCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={!isSelected ? { scale: 1.02, y: -4 } : {}}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.01, ease: "easeOut" }}
       onClick={onSelect}
       className={cn(
         "relative cursor-pointer rounded-2xl border-2 transition-all duration-300",
@@ -76,6 +78,28 @@ export function WorkflowSelectionCard({
           <span className="text-sm font-bold">{price}</span>
         </motion.div>
       </div>
+
+      {/* Config Button - Top Right (only when selected) */}
+      {isSelected && onConfigClick && (
+        <div className="absolute top-8 right-4 z-10">
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 400 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onConfigClick();
+            }}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all",
+              "bg-secondary hover:bg-secondary/80 text-foreground",
+              "hover:scale-110 active:scale-95"
+            )}
+          >
+            <FontAwesomeIcon icon={faCog} className="w-4 h-4" />
+          </motion.button>
+        </div>
+      )}
 
       <div className="p-6">
         {/* Icon */}
@@ -113,13 +137,11 @@ export function WorkflowSelectionCard({
 
         {/* Select Button */}
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           className={cn(
             "w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all",
             isSelected
               ? "bg-primary text-primary-foreground"
-              : "bg-muted text-foreground hover:bg-muted/80"
+              : "bg-muted/50 text-foreground hover:bg-muted/70"
           )}
         >
           {isSelected ? "Selected" : "Select"}

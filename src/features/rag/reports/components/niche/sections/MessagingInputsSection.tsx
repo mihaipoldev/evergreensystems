@@ -14,13 +14,14 @@ import type { ReportData } from "../../../types";
 
 interface MessagingInputsSectionProps {
   messaging: ReportData["data"]["messaging_inputs"];
+  sectionNumber?: string;
 }
 
-export const MessagingInputsSection = ({ messaging }: MessagingInputsSectionProps) => {
+export const MessagingInputsSection = ({ messaging, sectionNumber = "10" }: MessagingInputsSectionProps) => {
   return (
     <SectionWrapper
       id="messaging-inputs"
-      number="10"
+      number={sectionNumber}
       title="Messaging Inputs"
       subtitle="Industry vocabulary, pain language, and proof elements for copywriting"
     >

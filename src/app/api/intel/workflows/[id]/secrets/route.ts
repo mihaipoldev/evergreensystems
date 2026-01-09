@@ -16,11 +16,11 @@ export async function GET(
 
     const { id } = await params;
     
-    // Use service role to check if secrets exist (but don't return them)
+    // Use service role to fetch secrets for editing (authenticated users only)
     const adminSupabase = createServiceRoleClient();
     const { data, error } = await (adminSupabase
       .from("workflow_secrets") as any)
-      .select("workflow_id, created_at, updated_at") // Only return metadata, NOT secrets
+      .select("workflow_id, webhook_url, api_key, config, created_at, updated_at")
       .eq("workflow_id", id)
       .single();
 
@@ -31,13 +31,27 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const dataTyped = data as { workflow_id: string; created_at: string; updated_at: string } | null;
+    if (!data) {
+      return NextResponse.json({ exists: false }, { status: 200 });
+    }
 
-    // Return only metadata, never the actual secrets
+    const dataTyped = data as { 
+      workflow_id: string; 
+      webhook_url: string | null;
+      api_key: string | null;
+      config: any;
+      created_at: string; 
+      updated_at: string 
+    };
+
+    // Return secrets for editing (authenticated users only)
     return NextResponse.json({ 
       exists: true,
-      created_at: dataTyped?.created_at,
-      updated_at: dataTyped?.updated_at
+      webhook_url: dataTyped.webhook_url || null,
+      api_key: dataTyped.api_key || null,
+      config: dataTyped.config || null,
+      created_at: dataTyped.created_at,
+      updated_at: dataTyped.updated_at
     }, { status: 200 });
   } catch (error) {
     return NextResponse.json(

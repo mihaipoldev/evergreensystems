@@ -87,12 +87,13 @@ export function WorkflowModal({
   const [icon, setIcon] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [estimatedTimeMinutes, setEstimatedTimeMinutes] = useState("");
+  const [defaultAiModel, setDefaultAiModel] = useState<string>("anthropic/claude-haiku-4.5");
   const [inputSchema, setInputSchema] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [knowledgeBaseTarget, setKnowledgeBaseTarget] = useState<string>("knowledgebase");
   const [targetKnowledgeBaseId, setTargetKnowledgeBaseId] = useState<string>("");
   const [knowledgeBases, setKnowledgeBases] = useState<Array<{ id: string; name: string }>>([]);
-  const [errors, setErrors] = useState<{ name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Secrets state
@@ -105,7 +106,7 @@ export function WorkflowModal({
   // Store the original JSON string to preserve key order
   const originalInputSchemaRef = useRef<string>("");
 
-  // Fetch knowledge bases on mount (excluding those linked to projects)
+  // Fetch knowledge bases on mount (excluding those with kb_type 'project')
   useEffect(() => {
     const fetchKnowledgeBases = async () => {
       try {
@@ -120,34 +121,15 @@ export function WorkflowModal({
           },
         });
 
-        // Fetch projects to get linked_kb_id values
-        const projectsResponse = await fetch("/api/intel/projects", {
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        });
-
-        if (kbResponse.ok && projectsResponse.ok) {
+        if (kbResponse.ok) {
           const knowledgeBasesData = await kbResponse.json();
-          const projectsData = await projectsResponse.json();
           
-          // Get all knowledge base IDs that are linked to projects
-          const linkedKbIds = new Set(
-            (projectsData || [])
-              .map((project: any) => project.linked_kb_id)
-              .filter((id: string | null) => id !== null)
-          );
-          
-          // Filter out knowledge bases that are linked to projects
+          // Filter out knowledge bases that have kb_type = 'project'
           const filteredKbs = (knowledgeBasesData || []).filter(
-            (kb: { id: string }) => !linkedKbIds.has(kb.id)
+            (kb: { id: string; kb_type?: string }) => kb.kb_type !== 'project'
           );
           
           setKnowledgeBases(filteredKbs);
-        } else if (kbResponse.ok) {
-          // Fallback: if projects fetch fails, just use all knowledge bases
-          const data = await kbResponse.json();
-          setKnowledgeBases(data || []);
         }
       } catch (error) {
         console.error("Error fetching knowledge bases:", error);
@@ -184,6 +166,7 @@ export function WorkflowModal({
               setIcon(latestData.icon || "");
               setEstimatedCost(latestData.estimated_cost !== null ? latestData.estimated_cost.toString() : "");
               setEstimatedTimeMinutes(latestData.estimated_time_minutes !== null ? latestData.estimated_time_minutes.toString() : "");
+              setDefaultAiModel(latestData.default_ai_model || "anthropic/claude-haiku-4.5");
               // Convert to array format to preserve order
               const schemaString = stringifySchema(latestData.input_schema);
               setInputSchema(schemaString);
@@ -192,7 +175,7 @@ export function WorkflowModal({
               setKnowledgeBaseTarget(latestData.knowledge_base_target || "knowledgebase");
               setTargetKnowledgeBaseId(latestData.target_knowledge_base_id || "");
               
-              // Check if secrets exist (but don't fetch them)
+              // Fetch secrets for editing
               const secretsResponse = await fetch(`/api/intel/workflows/${initialData.id}/secrets`, {
                 headers: {
                   ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -201,7 +184,23 @@ export function WorkflowModal({
               
               if (secretsResponse.ok) {
                 const secretsData = await secretsResponse.json();
-                setHasSecrets(secretsData.exists || false);
+                console.log("Secrets data received:", secretsData);
+                // Check if secrets exist - either by exists flag or by presence of webhook_url
+                const hasSecretsValue = secretsData.exists === true || (secretsData.webhook_url && secretsData.webhook_url.trim() !== "");
+                setHasSecrets(hasSecretsValue);
+                // Populate secret values if they exist
+                if (hasSecretsValue && secretsData.webhook_url) {
+                  setWebhookUrl(secretsData.webhook_url);
+                  setApiKey(secretsData.api_key || "");
+                  setConfig(secretsData.config ? JSON.stringify(secretsData.config, null, 2) : "");
+                  // Auto-expand secrets section when secrets exist
+                  setSecretsExpanded(true);
+                  console.log("Secrets populated - webhookUrl:", secretsData.webhook_url, "apiKey:", secretsData.api_key ? "***" : "");
+                } else {
+                  console.log("No secrets found or webhook_url is empty");
+                }
+              } else {
+                console.error("Secrets response not OK:", secretsResponse.status, await secretsResponse.text());
               }
             } else {
               // Fallback to initialData if fetch fails
@@ -211,6 +210,7 @@ export function WorkflowModal({
               setIcon(initialData.icon || "");
               setEstimatedCost(initialData.estimated_cost !== null ? initialData.estimated_cost.toString() : "");
               setEstimatedTimeMinutes(initialData.estimated_time_minutes !== null ? initialData.estimated_time_minutes.toString() : "");
+              setDefaultAiModel(initialData.default_ai_model || "anthropic/claude-haiku-4.5");
               // Convert to array format to preserve order
               const schemaString = stringifySchema(initialData.input_schema);
               setInputSchema(schemaString);
@@ -218,6 +218,38 @@ export function WorkflowModal({
               setEnabled(initialData.enabled !== undefined ? initialData.enabled : true);
               setKnowledgeBaseTarget(initialData.knowledge_base_target || "knowledgebase");
               setTargetKnowledgeBaseId(initialData.target_knowledge_base_id || "");
+              
+              // Try to fetch secrets even if workflow fetch failed
+              try {
+                const supabase = createClient();
+                const { data: sessionData } = await supabase.auth.getSession();
+                const accessToken = sessionData?.session?.access_token;
+                
+                const secretsResponse = await fetch(`/api/intel/workflows/${initialData.id}/secrets`, {
+                  headers: {
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                  },
+                });
+                
+                if (secretsResponse.ok) {
+                  const secretsData = await secretsResponse.json();
+                  console.log("Secrets data received (fallback):", secretsData);
+                  const hasSecretsValue = secretsData.exists === true || (secretsData.webhook_url && secretsData.webhook_url.trim() !== "");
+                  setHasSecrets(hasSecretsValue);
+                  if (hasSecretsValue && secretsData.webhook_url) {
+                    setWebhookUrl(secretsData.webhook_url);
+                    setApiKey(secretsData.api_key || "");
+                    setConfig(secretsData.config ? JSON.stringify(secretsData.config, null, 2) : "");
+                    // Auto-expand secrets section when secrets exist
+                    setSecretsExpanded(true);
+                    console.log("Secrets populated (fallback) - webhookUrl:", secretsData.webhook_url);
+                  }
+                } else {
+                  console.error("Secrets response not OK (fallback):", secretsResponse.status);
+                }
+              } catch (secretsError) {
+                console.error("Error fetching secrets:", secretsError);
+              }
             }
           } catch (error) {
             console.error("Error fetching latest workflow data:", error);
@@ -228,6 +260,7 @@ export function WorkflowModal({
             setIcon(initialData.icon || "");
             setEstimatedCost(initialData.estimated_cost !== null ? initialData.estimated_cost.toString() : "");
             setEstimatedTimeMinutes(initialData.estimated_time_minutes !== null ? initialData.estimated_time_minutes.toString() : "");
+            setDefaultAiModel(initialData.default_ai_model || "anthropic/claude-haiku-4.5");
             // Convert to array format to preserve order
             const schemaString = stringifySchema(initialData.input_schema);
             setInputSchema(schemaString);
@@ -235,6 +268,38 @@ export function WorkflowModal({
             setEnabled(initialData.enabled !== undefined ? initialData.enabled : true);
             setKnowledgeBaseTarget(initialData.knowledge_base_target || "knowledgebase");
             setTargetKnowledgeBaseId(initialData.target_knowledge_base_id || "");
+            
+            // Try to fetch secrets even if workflow fetch failed
+            try {
+              const supabase = createClient();
+              const { data: sessionData } = await supabase.auth.getSession();
+              const accessToken = sessionData?.session?.access_token;
+              
+              const secretsResponse = await fetch(`/api/intel/workflows/${initialData.id}/secrets`, {
+                headers: {
+                  ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                },
+              });
+              
+              if (secretsResponse.ok) {
+                const secretsData = await secretsResponse.json();
+                console.log("Secrets data received (error fallback):", secretsData);
+                const hasSecretsValue = secretsData.exists === true || (secretsData.webhook_url && secretsData.webhook_url.trim() !== "");
+                setHasSecrets(hasSecretsValue);
+                if (hasSecretsValue && secretsData.webhook_url) {
+                  setWebhookUrl(secretsData.webhook_url);
+                  setApiKey(secretsData.api_key || "");
+                  setConfig(secretsData.config ? JSON.stringify(secretsData.config, null, 2) : "");
+                  // Auto-expand secrets section when secrets exist
+                  setSecretsExpanded(true);
+                  console.log("Secrets populated (error fallback) - webhookUrl:", secretsData.webhook_url);
+                }
+              } else {
+                console.error("Secrets response not OK (error fallback):", secretsResponse.status);
+              }
+            } catch (secretsError) {
+              console.error("Error fetching secrets:", secretsError);
+            }
           }
         };
 
@@ -247,6 +312,7 @@ export function WorkflowModal({
         setIcon("");
         setEstimatedCost("");
         setEstimatedTimeMinutes("");
+        setDefaultAiModel("anthropic/claude-haiku-4.5");
         setInputSchema("");
         originalInputSchemaRef.current = "";
         setEnabled(true);
@@ -263,13 +329,30 @@ export function WorkflowModal({
   }, [initialData?.id, open]);
 
   const handleSubmit = async () => {
-    const newErrors: { name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string } = {};
+    const newErrors: { name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string } = {};
 
     if (!name.trim()) {
       newErrors.name = "Name is required";
     }
     if (!label.trim()) {
       newErrors.label = "Label is required";
+    }
+    if (!defaultAiModel || !defaultAiModel.trim()) {
+      newErrors.defaultAiModel = "Default AI model is required";
+    } else {
+      const validModels = [
+        'anthropic/claude-sonnet-4.5',
+        'anthropic/claude-haiku-4.5',
+        'google/gemini-3-flash-preview',
+        'google/gemini-3-pro-preview',
+        'openai/gpt-4o-mini',
+        'openai/gpt-4o',
+        'openai/gpt-5-mini',
+        'openai/gpt-5.2'
+      ];
+      if (!validModels.includes(defaultAiModel)) {
+        newErrors.defaultAiModel = "Invalid AI model selected";
+      }
     }
     if (!knowledgeBaseTarget || !['knowledgebase', 'client', 'project'].includes(knowledgeBaseTarget)) {
       newErrors.knowledgeBaseTarget = "Knowledge base target is required and must be one of: knowledgebase, client, project";
@@ -342,6 +425,7 @@ export function WorkflowModal({
           icon: icon.trim() || null,
           estimated_cost: estimatedCost.trim() ? parseFloat(estimatedCost) : null,
           estimated_time_minutes: estimatedTimeMinutes.trim() ? parseInt(estimatedTimeMinutes, 10) : null,
+          default_ai_model: defaultAiModel.trim(),
           input_schema: parsedInputSchema,
           enabled,
           knowledge_base_target: knowledgeBaseTarget,
@@ -414,6 +498,7 @@ export function WorkflowModal({
     setIcon("");
     setEstimatedCost("");
     setEstimatedTimeMinutes("");
+    setDefaultAiModel("anthropic/claude-haiku-4.5");
     setInputSchema("");
     originalInputSchemaRef.current = "";
     setEnabled(true);
@@ -546,6 +631,37 @@ export function WorkflowModal({
             value={estimatedTimeMinutes}
             onChange={(e) => setEstimatedTimeMinutes(e.target.value)}
           />
+        </div>
+
+        {/* Default AI Model */}
+        <div className="space-y-2">
+          <Label htmlFor="workflow-default-ai-model">
+            Default AI Model <span className="text-destructive">*</span>
+          </Label>
+          <RAGSelect
+            value={defaultAiModel}
+            onValueChange={(value) => {
+              setDefaultAiModel(value);
+              if (errors.defaultAiModel) setErrors({ ...errors, defaultAiModel: undefined });
+            }}
+          >
+            <RAGSelectTrigger id="workflow-default-ai-model" error={!!errors.defaultAiModel}>
+              <RAGSelectValue placeholder="Select AI model" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</RAGSelectItem>
+              <RAGSelectItem value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</RAGSelectItem>
+              <RAGSelectItem value="google/gemini-3-flash-preview">google/gemini-3-flash-preview</RAGSelectItem>
+              <RAGSelectItem value="google/gemini-3-pro-preview">google/gemini-3-pro-preview</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-4o-mini">openai/gpt-4o-mini</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-4o">openai/gpt-4o</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-5-mini">openai/gpt-5-mini</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-5.2">openai/gpt-5.2</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+          {errors.defaultAiModel && (
+            <p className="text-xs text-destructive">{errors.defaultAiModel}</p>
+          )}
         </div>
 
         {/* Input Schema */}

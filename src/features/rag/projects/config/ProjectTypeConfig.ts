@@ -6,7 +6,7 @@ export type RunWithExtras = Run & {
   workflow_label?: string | null;
   report_id?: string | null;
   fit_score?: number | null;
-  verdict?: "pursue" | "test" | "avoid" | null;
+  verdict?: "pursue" | "test" | "caution" | "avoid" | null;
 };
 
 export type TabConfig = {

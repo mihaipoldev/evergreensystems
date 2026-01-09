@@ -22,34 +22,71 @@ export async function getAllProjects(): Promise<Project[]> {
 
 /**
  * Get all projects with document counts
+ * Optimized: Uses batch queries instead of O(n) individual queries
  */
 export async function getAllProjectsWithCounts(): Promise<(Project & { document_count: number })[]> {
   const projects = await getAllProjects();
+  
+  if (projects.length === 0) {
+    return [];
+  }
+
   const supabase = createServiceRoleClient();
+  const projectIds = projects.map(p => p.id);
+  const kbIds = projects.map(p => p.kb_id).filter((id): id is string => Boolean(id));
 
-  const projectsWithCounts = await Promise.all(
-    projects.map(async (project) => {
-      // Count linked documents (from junction table - project documents)
-      const { count: linkedCount } = await supabase
-        .from("project_documents")
-        .select("*", { count: "exact", head: true })
-        .eq("project_id", project.id);
+  // Optimized: Batch fetch all document counts in parallel
+  const [linkedCountsResult, workspaceCountsResult] = await Promise.all([
+    // Get linked document counts for all projects at once
+    // Index idx_project_documents_project_document is used here
+    supabase
+      .from("project_documents")
+      .select("project_id")
+      .in("project_id", projectIds),
+    
+    // Get workspace document counts for all KBs at once
+    // Index idx_rag_documents_kb_deleted_created is used here
+    kbIds.length > 0
+      ? supabase
+          .from("rag_documents")
+          .select("knowledge_base_id")
+          .in("knowledge_base_id", kbIds)
+          .is("deleted_at", null)
+      : Promise.resolve({ data: [], error: null })
+  ]);
 
-      // Count workspace documents (documents in project's workspace KB)
-      const { count: workspaceCount } = await supabase
-        .from("rag_documents")
-        .select("*", { count: "exact", head: true })
-        .eq("knowledge_base_id", project.kb_id)
-        .is("deleted_at", null);
+  // Process linked document counts
+  const linkedCountsByProject = new Map<string, number>();
+  if (linkedCountsResult.data) {
+    for (const item of linkedCountsResult.data) {
+      const projectId = (item as any).project_id;
+      if (projectId) {
+        linkedCountsByProject.set(projectId, (linkedCountsByProject.get(projectId) || 0) + 1);
+      }
+    }
+  }
 
-      return {
-        ...project,
-        document_count: (linkedCount || 0) + (workspaceCount || 0),
-      };
-    })
-  );
+  // Process workspace document counts
+  const workspaceCountsByKB = new Map<string, number>();
+  if (workspaceCountsResult.data) {
+    for (const item of workspaceCountsResult.data) {
+      const kbId = (item as any).knowledge_base_id;
+      if (kbId) {
+        workspaceCountsByKB.set(kbId, (workspaceCountsByKB.get(kbId) || 0) + 1);
+      }
+    }
+  }
 
-  return projectsWithCounts;
+  // Combine counts for each project
+  return projects.map((project) => {
+    const linkedCount = linkedCountsByProject.get(project.id) || 0;
+    const workspaceCount = project.kb_id ? (workspaceCountsByKB.get(project.kb_id) || 0) : 0;
+    
+    return {
+      ...project,
+      document_count: linkedCount + workspaceCount,
+    };
+  });
 }
 
 /**

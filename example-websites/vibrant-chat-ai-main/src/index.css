@@ -1,0 +1,351 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  :root {
+    /* Core backgrounds */
+    --background: 240 10% 98%;
+    --foreground: 240 10% 10%;
+
+    /* Cards with glass effect */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    /* Primary - Rich Purple */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Teal */
+    --secondary: 172 66% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted */
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 45%;
+
+    /* Accent - Warm Orange */
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Border & Input */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 262 83% 58%;
+
+    /* Radius */
+    --radius: 0.75rem;
+
+    /* Chat specific */
+    --chat-user-bg: 262 83% 58%;
+    --chat-ai-bg: 0 0% 100%;
+    --chat-ai-border: 262 50% 90%;
+    
+    /* Gradient stops */
+    --gradient-purple: 262 83% 58%;
+    --gradient-blue: 221 83% 53%;
+    --gradient-teal: 172 66% 50%;
+    --gradient-orange: 24 95% 53%;
+    --gradient-pink: 330 80% 60%;
+
+    /* Glass effect */
+    --glass-bg: 0 0% 100% / 0.8;
+    --glass-border: 0 0% 100% / 0.3;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode - Deep navy with neon accents */
+    --background: 240 20% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 20% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 20% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 262 100% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 172 80% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 15% 18%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 24 100% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 90% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 80% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 240 15% 20%;
+    --input: 240 15% 20%;
+    --ring: 262 100% 65%;
+
+    /* Chat specific dark */
+    --chat-user-bg: 262 100% 60%;
+    --chat-ai-bg: 240 20% 15%;
+    --chat-ai-border: 262 60% 40%;
+
+    /* Glass effect dark */
+    --glass-bg: 240 20% 12% / 0.9;
+    --glass-border: 262 100% 65% / 0.2;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Gradient backgrounds */
+  .gradient-purple-blue {
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(221 83% 53%) 100%);
+  }
+
+  .gradient-purple-teal {
+    background: linear-gradient(180deg, hsl(262 83% 58%) 0%, hsl(172 66% 50%) 100%);
+  }
+
+  .gradient-teal-blue {
+    background: linear-gradient(135deg, hsl(172 66% 50%) 0%, hsl(221 83% 53%) 100%);
+  }
+
+  .gradient-orange-pink {
+    background: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(330 80% 60%) 100%);
+  }
+
+  .gradient-purple-pink {
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 80% 60%) 100%);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(172 66% 50%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-warm {
+    background: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(330 80% 60%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient borders */
+  .gradient-border {
+    position: relative;
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(172 66% 50%) 100%);
+    border-radius: calc(var(--radius) + 2px);
+    z-index: -1;
+  }
+
+  /* Glass effect */
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  /* Glow effects */
+  .glow-purple {
+    box-shadow: 0 0 30px hsl(262 83% 58% / 0.3);
+  }
+
+  .glow-teal {
+    box-shadow: 0 0 30px hsl(172 66% 50% / 0.3);
+  }
+
+  .glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(262 83% 58% / 0.2);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(262 83% 58% / 0.5);
+    }
+  }
+
+  /* Hover lift */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px hsl(var(--foreground) / 0.1);
+  }
+
+  /* Chat bubbles */
+  .chat-bubble-user {
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(221 83% 53%) 100%);
+    color: white;
+    border-radius: 1rem 1rem 0.25rem 1rem;
+  }
+
+  .chat-bubble-ai {
+    background: hsl(var(--chat-ai-bg));
+    border: 1px solid hsl(var(--chat-ai-border));
+    border-radius: 1rem 1rem 1rem 0.25rem;
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Typing indicator */
+  .typing-wave {
+    display: flex;
+    gap: 4px;
+  }
+
+  .typing-wave span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(172 66% 50%) 100%);
+    animation: typing-bounce 1.4s ease-in-out infinite;
+  }
+
+  .typing-wave span:nth-child(1) { animation-delay: 0s; }
+  .typing-wave span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-wave span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+  }
+
+  /* Notification badge pulse */
+  .badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /* Progress ring */
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.35s;
+    transform-origin: 50% 50%;
+  }
+}
+
+@layer utilities {
+  /* Text shadow for contrast */
+  .text-shadow {
+    text-shadow: 0 2px 4px hsl(var(--foreground) / 0.1);
+  }
+
+  /* Fade edges for scroll containers */
+  .fade-edges {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+  }
+
+  /* Animated gradient background */
+  .animated-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}

@@ -49,16 +49,10 @@ export async function AdminColorStyle() {
 
   let color = null;
 
-  console.log('[COLOR DEBUG] AdminColorStyle - Settings:', {
-    hasSettings: !!settings,
-    activeThemeId: settings?.active_theme_id || null
-  });
-
   let secondaryColor = null;
   let accentColor = null;
 
   if (settings?.active_theme_id) {
-    console.log('[COLOR DEBUG] AdminColorStyle - Loading active theme:', settings.active_theme_id);
     // Get theme first
     const themeQueryStartTime = getTimestamp();
     const { data: theme } = await (supabase
@@ -67,13 +61,6 @@ export async function AdminColorStyle() {
       .eq("id", settings.active_theme_id)
       .single();
     const themeQueryDuration = getDuration(themeQueryStartTime);
-    
-    console.log('[COLOR DEBUG] AdminColorStyle - Theme loaded:', {
-      hasTheme: !!theme,
-      primaryColorId: theme?.primary_color_id || null,
-      secondaryColorId: theme?.secondary_color_id || null,
-      accentColorId: theme?.accent_color_id || null
-    });
 
     if (theme?.primary_color_id) {
       // Get primary color separately to handle missing colors gracefully
@@ -90,16 +77,9 @@ export async function AdminColorStyle() {
         hasColors: !!colorData
       });
 
-      console.log('[COLOR DEBUG] AdminColorStyle - Color query result:', {
-        hasColor: !!colorData,
-        hsl: colorData ? `${colorData.hsl_h} ${colorData.hsl_s}% ${colorData.hsl_l}%` : null
-      });
-
       if (colorData) {
         color = colorData;
-        console.log('[COLOR DEBUG] AdminColorStyle - ✅ Color loaded from active theme');
       } else {
-        console.log('[COLOR DEBUG] AdminColorStyle - ⚠️ Theme found but color not found, checking Default Theme...');
         // Theme exists but color not found - check Default Theme
         const { data: defaultTheme } = await (supabase
           .from("user_themes") as any)
@@ -117,7 +97,6 @@ export async function AdminColorStyle() {
 
           if (defaultColor) {
             color = defaultColor;
-            console.log('[COLOR DEBUG] AdminColorStyle - ✅ Color loaded from Default Theme');
           }
         }
       }
@@ -126,7 +105,6 @@ export async function AdminColorStyle() {
         hasThemeData: !!theme,
         hasColors: false
       });
-      console.log('[COLOR DEBUG] AdminColorStyle - ⚠️ Theme found but no primary_color_id');
     }
 
     // Load secondary color
@@ -139,7 +117,6 @@ export async function AdminColorStyle() {
 
       if (secondaryColorData) {
         secondaryColor = secondaryColorData;
-        console.log('[COLOR DEBUG] AdminColorStyle - ✅ Secondary color loaded from active theme');
       }
     }
 
@@ -153,14 +130,12 @@ export async function AdminColorStyle() {
 
       if (accentColorData) {
         accentColor = accentColorData;
-        console.log('[COLOR DEBUG] AdminColorStyle - ✅ Accent color loaded from active theme');
       }
     }
   }
 
   // Fallback: No active theme - check Default Theme first
   if (!color) {
-    console.log('[COLOR DEBUG] AdminColorStyle - No active theme color, checking Default Theme...');
     const fallbackQueryStartTime = getTimestamp();
     const { data: defaultTheme } = await (supabase
       .from("user_themes") as any)
@@ -168,13 +143,6 @@ export async function AdminColorStyle() {
       .eq("user_id", user.id)
       .eq("name", "Default Theme")
       .maybeSingle();
-    
-    console.log('[COLOR DEBUG] AdminColorStyle - Default Theme check:', {
-      hasDefaultTheme: !!defaultTheme,
-      primaryColorId: defaultTheme?.primary_color_id || null,
-      secondaryColorId: defaultTheme?.secondary_color_id || null,
-      accentColorId: defaultTheme?.accent_color_id || null
-    });
 
     if (defaultTheme?.primary_color_id) {
       const { data: defaultColor } = await (supabase
@@ -191,11 +159,6 @@ export async function AdminColorStyle() {
 
       if (defaultColor) {
         color = defaultColor;
-        console.log('[COLOR DEBUG] AdminColorStyle - ✅ Color loaded from Default Theme (fallback):', {
-          hsl: `${color.hsl_h} ${color.hsl_s}% ${color.hsl_l}%`
-        });
-      } else {
-        console.log('[COLOR DEBUG] AdminColorStyle - ⚠️ Default Theme found but color not found');
       }
     } else {
       const fallbackQueryDuration = getDuration(fallbackQueryStartTime);
@@ -203,7 +166,6 @@ export async function AdminColorStyle() {
         hasDefaultTheme: false,
         hasColors: false
       });
-      console.log('[COLOR DEBUG] AdminColorStyle - ❌ No Default Theme found - user must select color manually');
     }
 
     // Load secondary color from default theme if available
@@ -216,7 +178,6 @@ export async function AdminColorStyle() {
 
       if (defaultSecondaryColor) {
         secondaryColor = defaultSecondaryColor;
-        console.log('[COLOR DEBUG] AdminColorStyle - ✅ Secondary color loaded from Default Theme (fallback)');
       }
     }
 
@@ -230,7 +191,6 @@ export async function AdminColorStyle() {
 
       if (defaultAccentColor) {
         accentColor = defaultAccentColor;
-        console.log('[COLOR DEBUG] AdminColorStyle - ✅ Accent color loaded from Default Theme (fallback)');
       }
     }
   }

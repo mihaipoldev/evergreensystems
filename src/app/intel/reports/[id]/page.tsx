@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { ReportHeader } from "@/features/rag/reports/components/layout/ReportHeader";
+import { getHeaderConfigForWorkflow } from "@/features/rag/reports/components/layout/ReportHeaderConfig";
 import { ReportLayout } from "@/features/rag/reports/components/layout/ReportLayout";
 import { NicheReport } from "@/features/rag/reports/components/niche/NicheReport";
 import { getReportData } from "@/features/rag/reports/data/getReportData";
+import { ReportChatContext } from "@/features/chat/components/ReportChatContext";
 
 const sections = [
   { id: "niche-profile", number: "01", title: "Niche Profile" },
@@ -46,13 +48,22 @@ export default async function ReportPage({ params }: ReportPageProps) {
     ? [...sections, { id: "research-links", number: "10", title: "Research Links" }]
     : sections;
 
+  const reportTitle = reportData.meta.input.niche_name || "Report";
+  const reportDescription = `Niche Intelligence Report for ${reportData.meta.input.niche_name}${reportData.meta.input.geo ? ` (${reportData.meta.input.geo})` : ''}`;
+
   return (
     <ReportLayout sections={allSections} showTableOfContents={false} reportId={id}>
+      <ReportChatContext
+        reportId={id}
+        reportTitle={reportTitle}
+        reportDescription={reportDescription}
+      />
       <ReportHeader
-        nicheName={reportData.meta.input.niche_name}
+        title={reportData.meta.input.niche_name}
         geo={reportData.meta.input.geo}
         generatedAt={reportData.meta.generated_at}
         confidence={reportData.meta.confidence}
+        headerConfig={getHeaderConfigForWorkflow("niche_intelligence")}
       />
 
       <NicheReport data={reportData} reportId={id} />

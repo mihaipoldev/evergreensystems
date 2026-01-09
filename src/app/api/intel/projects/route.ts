@@ -76,91 +76,125 @@ export async function GET(request: Request) {
 
     // Fetch Niche Intelligence verdict and fit score for niche projects if applicable
     let nicheDataByProject: Map<string, {
-      verdict: "pursue" | "test" | "avoid" | null;
+      verdict: "pursue" | "test" | "caution" | "avoid" | null;
       fit_score: number | null;
+      updated_at: string | null;
+      runs: Array<{
+        verdict: "pursue" | "test" | "caution" | "avoid" | null;
+        fit_score: number | null;
+        updated_at: string | null;
+        status: "complete" | "queued" | "collecting" | "ingesting" | "generating" | "processing" | "failed";
+      }>;
     }> = new Map();
 
     if (isNicheProjectType && projectIds.length > 0) {
-      // First, get the niche_intelligence workflow ID
-      const { data: nicheIntelWorkflow } = await adminSupabase
+      // First, get the niche_fit_evaluation workflow ID
+      const { data: nicheFitEvalWorkflow } = await adminSupabase
         .from("workflows")
         .select("id")
-        .eq("name", "niche_intelligence")
+        .eq("name", "niche_fit_evaluation")
         .single();
 
-      if (nicheIntelWorkflow) {
-        // Fetch only complete niche_intelligence workflow runs for these projects
+      if (nicheFitEvalWorkflow) {
+        // Fetch both complete and in-progress niche_fit_evaluation workflow runs for these projects
         // Filter by status at DB level for better performance
+        // Index idx_rag_runs_project_workflow_status_created is used here
+        // Include all in-progress statuses: queued, collecting, ingesting, generating, processing
         const { data: runsData, error: runsError } = await adminSupabase
           .from("rag_runs")
           .select(`
             id,
             project_id,
             status,
-            rag_run_outputs!inner (
-              id,
-              output_json
-            )
+            metadata,
+            updated_at
           `)
           .in("project_id", projectIds)
-          .eq("workflow_id", (nicheIntelWorkflow as any).id)
-          .eq("status", "complete")
+          .eq("workflow_id", (nicheFitEvalWorkflow as any).id)
+          .in("status", ["complete", "queued", "collecting", "ingesting", "generating", "processing"])
           .order("created_at", { ascending: false });
 
         if (!runsError && runsData) {
-          // Use Map to get latest run per project (already sorted by created_at DESC)
-          // Since we're filtering for complete runs at DB level, all runs are complete
-          const latestRunByProject = new Map<string, typeof runsData[0]>();
+          // Group all runs by project (already sorted by created_at DESC)
+          const runsByProject = new Map<string, typeof runsData>();
           for (const run of runsData) {
             const projectId = (run as any).project_id;
             if (!projectId) continue;
             
-            // Only keep the first (latest) run per project
-            if (!latestRunByProject.has(projectId)) {
-              latestRunByProject.set(projectId, run);
+            if (!runsByProject.has(projectId)) {
+              runsByProject.set(projectId, []);
             }
+            runsByProject.get(projectId)!.push(run);
           }
 
-          // Process each project's latest complete run
-          for (const [projectId, run] of latestRunByProject.entries()) {
-            const runOutputs = (run as any).rag_run_outputs;
-            let verdict: "pursue" | "test" | "avoid" | null = null;
+          // Optimized: Extract evaluation result from metadata (matching extractWorkflowResult logic)
+          const processRunMetadata = (id: string, metadata: any, updatedAt: string | null, status: string): { id: string; verdict: "pursue" | "test" | "caution" | "avoid" | null; fit_score: number | null; updated_at: string | null; status: "complete" | "queued" | "collecting" | "ingesting" | "generating" | "processing" | "failed" } => {
+            let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
             let fitScore: number | null = null;
             
-            // Extract verdict and fit_score from report JSONB
-            if (runOutputs && Array.isArray(runOutputs) && runOutputs.length > 0) {
-              const outputJsonRaw = runOutputs[0]?.output_json;
-              if (outputJsonRaw) {
-                try {
-                  // Handle both string and object formats
-                  const outputJson = typeof outputJsonRaw === "string" 
-                    ? JSON.parse(outputJsonRaw) 
-                    : outputJsonRaw;
-                  
-                  if (outputJson && typeof outputJson === "object") {
-                    // Try to extract from data.lead_gen_strategy first (ReportData structure)
-                    // Then fallback to lead_gen_strategy directly (alternative structure)
-                    const leadGenStrategy = (outputJson as any)?.data?.lead_gen_strategy 
-                      || (outputJson as any)?.lead_gen_strategy;
-                    
-                    if (leadGenStrategy) {
-                      if (leadGenStrategy.verdict && 
-                          ["pursue", "test", "avoid"].includes(leadGenStrategy.verdict)) {
-                        verdict = leadGenStrategy.verdict;
-                      }
-                      if (typeof leadGenStrategy.lead_gen_fit_score === "number") {
-                        fitScore = leadGenStrategy.lead_gen_fit_score;
-                      }
-                    }
-                  }
-                } catch (e) {
-                  // Silently fail - verdict and fit_score will remain null
-                  console.error("Error parsing output_json:", e);
+            // Access evaluation_result from metadata
+            const evaluationResult = metadata?.evaluation_result;
+            
+            if (evaluationResult && typeof evaluationResult === "object") {
+              // Extract and normalize verdict
+              if (evaluationResult.verdict && typeof evaluationResult.verdict === "string") {
+                const normalizedVerdict = evaluationResult.verdict.toLowerCase();
+                if (normalizedVerdict === "pursue" || normalizedVerdict === "test" || normalizedVerdict === "caution" || normalizedVerdict === "avoid") {
+                  verdict = normalizedVerdict;
+                }
+              }
+              
+              // Extract score
+              if (typeof evaluationResult.score === "number") {
+                fitScore = evaluationResult.score;
+              } else if (typeof evaluationResult.score === "string") {
+                const parsedScore = parseFloat(evaluationResult.score);
+                if (!isNaN(parsedScore)) {
+                  fitScore = parsedScore;
                 }
               }
             }
             
-            nicheDataByProject.set(projectId, { verdict, fit_score: fitScore });
+            // Preserve the actual status from the database
+            const validStatuses = ["complete", "queued", "collecting", "ingesting", "generating", "processing", "failed"] as const;
+            const normalizedStatus = validStatuses.includes(status as any) ? status as typeof validStatuses[number] : "complete";
+            return { id, verdict, fit_score: fitScore, updated_at: updatedAt, status: normalizedStatus };
+          };
+
+          // Process all runs for each project
+          for (const [projectId, runs] of runsByProject.entries()) {
+            // Process all runs - include complete ones with data and in-progress ones
+            const processedRuns = runs
+              .map(run => {
+                const id = (run as any).id;
+                const metadata = (run as any).metadata;
+                const updatedAt = (run as any).updated_at || null;
+                const status = (run as any).status || "complete";
+                return processRunMetadata(id, metadata, updatedAt, status);
+              })
+              .filter(run => {
+                // Include complete runs with data OR any in-progress runs (queued, collecting, ingesting, generating, processing)
+                const isComplete = run.status === "complete";
+                const isInProgress = ["queued", "collecting", "ingesting", "generating", "processing"].includes(run.status);
+                return (isComplete && (run.verdict !== null || run.fit_score !== null)) || isInProgress;
+              });
+
+            if (processedRuns.length > 0) {
+              // Find the latest COMPLETED run for the main display (table)
+              // Keep all runs (including processing) for the tooltip
+              const latestCompletedRun = processedRuns.find(run => run.status === "complete" && (run.verdict !== null || run.fit_score !== null));
+              
+              // If we have a completed run, use it for the main display
+              // Otherwise, use the first run (which might be processing)
+              const displayRun = latestCompletedRun || processedRuns[0];
+              
+              nicheDataByProject.set(projectId, {
+                verdict: displayRun.verdict,
+                fit_score: displayRun.fit_score,
+                updated_at: displayRun.updated_at,
+                runs: processedRuns,
+              });
+            }
           }
         }
       }
@@ -174,6 +208,8 @@ export async function GET(request: Request) {
         ...(nicheData ? {
           niche_intelligence_verdict: nicheData.verdict,
           niche_intelligence_fit_score: nicheData.fit_score,
+          niche_intelligence_updated_at: nicheData.updated_at,
+          niche_intelligence_runs: nicheData.runs,
         } : {}),
       };
     });

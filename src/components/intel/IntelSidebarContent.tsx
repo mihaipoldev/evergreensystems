@@ -84,11 +84,18 @@ export function IntelSidebarContent({
   // State for knowledge bases expandable (like pages in admin)
   const [isKnowledgeBasesOpen, setIsKnowledgeBasesOpen] = useState(false);
   // State for projects expandable - persisted in localStorage
-  const [isProjectsOpen, setIsProjectsOpen] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem("intel-sidebar-projects-open");
-    return stored === "true";
-  });
+  // Initialize to false to avoid hydration mismatch, then sync from localStorage on client
+  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+
+  // Load projects open state from localStorage after hydration
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("intel-sidebar-projects-open");
+      if (stored === "true") {
+        setIsProjectsOpen(true);
+      }
+    }
+  }, []);
 
   // Persist projects open state to localStorage
   useEffect(() => {

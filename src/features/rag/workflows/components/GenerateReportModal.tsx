@@ -61,38 +61,42 @@ export function GenerateReportModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-4 md:inset-[8%] lg:inset-[12%] xl:inset-[15%] z-[100] overflow-hidden rounded-2xl bg-card border border-border max-w-5xl mx-auto"
-        style={{ boxShadow: "0 20px 60px -12px hsl(var(--primary) / 0.3)" }}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="h-full flex flex-col overflow-hidden">
-          {/* Render the appropriate modal content based on project type */}
-          {effectiveProjectType === "niche" || !effectiveProjectType ? (
-            <GenerateNicheReportModal
-              open={open}
-              onOpenChange={onOpenChange}
-              projectType={effectiveProjectType}
-              projectTypeId={effectiveProjectTypeId}
-              researchSubjectId={researchSubjectId}
-              researchSubjectName={researchSubjectName}
-              researchSubjectGeography={researchSubjectGeography}
-              researchSubjectDescription={researchSubjectDescription}
-              researchSubjectCategory={researchSubjectCategory}
-            />
-          ) : (
-            // Future: Add other modal types here (e.g., GenerateCompanyReportModal)
-            <GenerateNicheReportModal
-              open={open}
-              onOpenChange={onOpenChange}
-              projectType={effectiveProjectType}
-              projectTypeId={effectiveProjectTypeId}
-              researchSubjectId={researchSubjectId}
-              researchSubjectName={researchSubjectName}
-              researchSubjectGeography={researchSubjectGeography}
-              researchSubjectDescription={researchSubjectDescription}
-              researchSubjectCategory={researchSubjectCategory}
-            />
-          )}
+        <div
+          className="w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl bg-card border border-border pointer-events-auto"
+          style={{ boxShadow: "0 20px 60px -12px hsl(var(--primary) / 0.3)" }}
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            {/* Render the appropriate modal content based on project type */}
+            {effectiveProjectType === "niche" || !effectiveProjectType ? (
+              <GenerateNicheReportModal
+                open={open}
+                onOpenChange={onOpenChange}
+                projectType={effectiveProjectType}
+                projectTypeId={effectiveProjectTypeId}
+                researchSubjectId={researchSubjectId}
+                researchSubjectName={researchSubjectName}
+                researchSubjectGeography={researchSubjectGeography}
+                researchSubjectDescription={researchSubjectDescription}
+                researchSubjectCategory={researchSubjectCategory}
+              />
+            ) : (
+              // Future: Add other modal types here (e.g., GenerateCompanyReportModal)
+              <GenerateNicheReportModal
+                open={open}
+                onOpenChange={onOpenChange}
+                projectType={effectiveProjectType}
+                projectTypeId={effectiveProjectTypeId}
+                researchSubjectId={researchSubjectId}
+                researchSubjectName={researchSubjectName}
+                researchSubjectGeography={researchSubjectGeography}
+                researchSubjectDescription={researchSubjectDescription}
+                researchSubjectCategory={researchSubjectCategory}
+              />
+            )}
+          </div>
         </div>
       </motion.div>
     </>

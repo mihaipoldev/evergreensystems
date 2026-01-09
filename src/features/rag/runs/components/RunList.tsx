@@ -13,6 +13,7 @@ import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons
 import { RunTable } from "./RunTable";
 import type { Run } from "../types";
 import { createClient } from "@/lib/supabase/client";
+import { getRunStatusBadgeClasses, getRunStatusColorString } from "@/features/rag/shared/utils/runStatusColors";
 
 type RunWithKB = Run & { 
   knowledge_base_name?: string | null;
@@ -515,7 +516,7 @@ export function RunList({ initialRuns }: RunListProps) {
             {/* Table Header */}
             <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <div className="flex-1 min-w-0">Run</div>
-              <div className="w-28 shrink-0">Status</div>
+              <div className="w-28 shrink-0">Result</div>
               <div className="w-44 shrink-0">Progress</div>
               <div className="w-40 shrink-0">Created</div>
               <div className="w-20 shrink-0 text-right">Actions</div>
@@ -548,16 +549,30 @@ export function RunList({ initialRuns }: RunListProps) {
               };
               const statusLabel = statusLabels[status] || status;
 
-              const statusColors: Record<string, string> = {
-                complete: "bg-green-600/10 text-green-600 dark:text-green-400",
-                generating: "bg-purple-600/10 text-purple-600 dark:text-purple-400",
-                ingesting: "bg-blue-600/10 text-blue-600 dark:text-blue-400",
-                collecting: "bg-yellow-600/10 text-yellow-600 dark:text-yellow-400",
-                queued: "bg-muted text-muted-foreground",
-                failed: "bg-destructive/10 text-destructive",
-                other: "bg-muted text-muted-foreground",
+              // Use utility for status badge classes and dot color
+              const statusBadgeClasses = getRunStatusBadgeClasses(status);
+              const statusColorString = getRunStatusColorString(status);
+              
+              // Map color string to Tailwind bg class for dot indicator
+              const getDotColorClass = (colorString: string): string => {
+                switch (colorString) {
+                  case "blue-600":
+                    return "bg-blue-600";
+                  case "orange-600":
+                    return "bg-orange-600";
+                  case "red-600":
+                    return "bg-red-600";
+                  case "green-600":
+                    return "bg-green-600";
+                  case "yellow-600":
+                    return "bg-yellow-600";
+                  case "purple-600":
+                    return "bg-purple-600";
+                  default:
+                    return "bg-muted";
+                }
               };
-              const statusColor = statusColors[status] || statusColors.other;
+              const dotColor = getDotColorClass(statusColorString);
 
               return (
                 <Collapsible
@@ -571,7 +586,7 @@ export function RunList({ initialRuns }: RunListProps) {
                       className="h-4 w-4 text-muted-foreground shrink-0"
                     />
                     <div className="flex items-center gap-2 flex-1">
-                      <span className={`h-2 w-2 rounded-full ${statusColor.split(' ')[0]}`}></span>
+                      <span className={`h-2 w-2 rounded-full ${dotColor}`}></span>
                       <h3 className="text-sm font-semibold text-foreground capitalize">{statusLabel}</h3>
                     </div>
                     <span className="text-xs text-muted-foreground">

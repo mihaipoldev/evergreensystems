@@ -1,27 +1,26 @@
 import { SectionWrapper } from "../../shared/SectionWrapper";
 import { StatCard } from "../../shared/StatCard";
 import { DataTable } from "../../shared/DataTable";
-import { InsightList } from "../../shared/InsightList";
 import { TagCloud } from "../../shared/TagCloud";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowTrendUp,
   faUsers,
   faBox,
-  faExclamationTriangle,
   faBullseye,
 } from "@fortawesome/free-solid-svg-icons";
 import type { ReportData } from "../../../types";
 
 interface NicheProfileSectionProps {
   profile: ReportData["data"]["niche_profile"];
+  sectionNumber?: string;
 }
 
-export const NicheProfileSection = ({ profile }: NicheProfileSectionProps) => {
+export const NicheProfileSection = ({ profile, sectionNumber = "01" }: NicheProfileSectionProps) => {
   return (
     <SectionWrapper
       id="niche-profile"
-      number="01"
+      number={sectionNumber}
       title="Niche Profile"
       subtitle="Market overview, service offerings, and competitive landscape analysis"
     >
@@ -122,17 +121,6 @@ export const NicheProfileSection = ({ profile }: NicheProfileSectionProps) => {
                 String(profile.client_acquisition_dynamics.typical_sales_approach || "Unknown")}
           </p>
         </div>
-      </div>
-
-      <div>
-        <h4 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-          <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-amber-500" />
-          Lead Generation Risks
-        </h4>
-        <p className="text-sm text-muted-foreground font-body mb-4">
-          Potential challenges and risks when targeting this niche for lead generation services.
-        </p>
-        <InsightList items={profile.lead_gen_risks} type="warning" />
       </div>
     </SectionWrapper>
   );

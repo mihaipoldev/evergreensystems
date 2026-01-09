@@ -50,3 +50,6 @@ export function getReportGroupId(reportId: string, sectionName: string): string 
   return `report-${reportId}-${sectionName}`;
 }
 
+
+
+

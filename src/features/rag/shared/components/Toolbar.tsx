@@ -48,6 +48,10 @@ interface ToolbarProps {
     enabled: boolean;
     onToggle: (enabled: boolean) => void;
   };
+  groupByVerdict?: {
+    enabled: boolean;
+    onToggle: (enabled: boolean) => void;
+  };
 }
 
 export function Toolbar({
@@ -70,6 +74,7 @@ export function Toolbar({
   showProjectsToggle,
   groupBySource,
   groupByStatus,
+  groupByVerdict,
 }: ToolbarProps) {
   const [internalSearchValue, setInternalSearchValue] = useState("");
   const [internalSelectedSort, setInternalSelectedSort] = useState(sortOptions[0] || "Recent");
@@ -276,6 +281,24 @@ export function Toolbar({
                 : "bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card"
             )}
             title={groupByStatus.enabled ? "Ungroup runs" : "Group by status"}
+          >
+            <FontAwesomeIcon icon={faLayerGroup} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
+            Group
+          </Button>
+        )}
+
+        {/* Group By Verdict Toggle */}
+        {groupByVerdict && (
+          <Button
+            variant="outline"
+            onClick={() => groupByVerdict.onToggle(!groupByVerdict.enabled)}
+            className={cn(
+              "h-10 gap-2 px-3 transition-all duration-300",
+              groupByVerdict.enabled
+                ? "bg-primary/100 text-background shadow-card border-0 hover:bg-primary/90 hover:text-background"
+                : "bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card"
+            )}
+            title={groupByVerdict.enabled ? "Ungroup projects" : "Group by verdict"}
           >
             <FontAwesomeIcon icon={faLayerGroup} className="!h-3 !w-3" style={{ fontSize: '12px', width: '12px', height: '12px' }} />
             Group

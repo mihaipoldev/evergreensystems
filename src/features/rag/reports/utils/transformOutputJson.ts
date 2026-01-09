@@ -20,6 +20,29 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
     return current ?? defaultValue;
   };
 
+  // Check if this is a niche evaluation report by checking for verdict and score_details at root
+  const isEvaluationReport = outputJson.verdict && outputJson.score_details && !outputJson.meta && !outputJson.niche_profile;
+  
+  if (isEvaluationReport) {
+    // For niche evaluation, return a minimal ReportData structure
+    // The actual evaluation data will be in data.evaluation
+    return {
+      meta: {
+        knowledge_base: "unknown",
+        mode: "niche_fit_evaluation",
+        confidence: 0,
+        generated_at: outputJson.evaluation_timestamp || new Date().toISOString().split('T')[0],
+        input: {
+          niche_name: outputJson.niche_name || "",
+          geo: "",
+        },
+      },
+      data: {
+        evaluation: outputJson, // Pass the entire evaluation object
+      } as any,
+    };
+  }
+
   const meta = outputJson.meta || {};
   const data = outputJson.data || {};
 
@@ -63,20 +86,25 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
           typical_sales_approach: data.niche_profile?.client_acquisition_dynamics?.typical_sales_approach || "",
         },
         market_maturity: data.niche_profile?.market_maturity || "",
-        // Handle timing_intelligence (new structure) with backward compatibility
         timing_intelligence: data.niche_profile?.timing_intelligence
           ? {
-              lead_gen_seasonality: data.niche_profile.timing_intelligence.lead_gen_seasonality || "",
-              best_months_to_launch: Array.isArray(data.niche_profile.timing_intelligence.best_months_to_launch)
-                ? data.niche_profile.timing_intelligence.best_months_to_launch
-                : [],
               budget_approval_cycle: data.niche_profile.timing_intelligence.budget_approval_cycle || "",
+              fiscal_year_timing: data.niche_profile.timing_intelligence.fiscal_year_timing || "",
             }
           : undefined,
-        // Backward compatibility: if timing_intelligence doesn't exist, use old lead_gen_seasonality
-        lead_gen_seasonality: data.niche_profile?.timing_intelligence
-          ? undefined
-          : (data.niche_profile?.lead_gen_seasonality || ""),
+        tam_analysis: data.niche_profile?.tam_analysis
+          ? {
+              total_companies_in_geography: typeof data.niche_profile.tam_analysis.total_companies_in_geography === 'number'
+                ? data.niche_profile.tam_analysis.total_companies_in_geography
+                : undefined,
+              addressable_by_segment: data.niche_profile.tam_analysis.addressable_by_segment || {},
+              market_concentration: data.niche_profile.tam_analysis.market_concentration || "",
+              geographic_clusters: Array.isArray(data.niche_profile.tam_analysis.geographic_clusters)
+                ? data.niche_profile.tam_analysis.geographic_clusters
+                : [],
+              regional_differences: data.niche_profile.tam_analysis.regional_differences || "",
+            }
+          : undefined,
         deal_economics: data.niche_profile?.deal_economics
           ? {
               typical_client_value_annually: data.niche_profile.deal_economics.typical_client_value_annually || "",
@@ -97,19 +125,6 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
             ? data.niche_profile.existing_solutions.client_acquisition_methods
             : [],
         },
-        lead_gen_competitive_landscape: data.niche_profile?.lead_gen_competitive_landscape
-          ? {
-              existing_lead_gen_providers: Array.isArray(data.niche_profile.lead_gen_competitive_landscape.existing_lead_gen_providers)
-                ? data.niche_profile.lead_gen_competitive_landscape.existing_lead_gen_providers
-                : [],
-              typical_pricing_benchmarks: data.niche_profile.lead_gen_competitive_landscape.typical_pricing_benchmarks || "",
-            }
-          : undefined,
-        lead_gen_risks: Array.isArray(data.niche_profile?.lead_gen_risks)
-          ? data.niche_profile.lead_gen_risks
-          : [],
-        // Preserve tam_analysis if it exists
-        tam_analysis: data.niche_profile?.tam_analysis,
       } as any,
       buyer_psychology: {
         confidence: typeof data.buyer_psychology?.confidence === 'number' ? data.buyer_psychology.confidence : 0,
@@ -184,9 +199,30 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
                  data.lead_gen_strategy?.verdict === "test" || 
                  data.lead_gen_strategy?.verdict === "avoid")
           ? data.lead_gen_strategy.verdict
-          : "test",
+          : undefined,
         verdict_description: data.lead_gen_strategy?.verdict_description,
-        next_step_if_test: data.lead_gen_strategy?.next_step_if_test || "",
+        next_step_if_test: data.lead_gen_strategy?.next_step_if_test,
+        strategic_assessment: data.lead_gen_strategy?.strategic_assessment
+          ? {
+              opportunity_summary: data.lead_gen_strategy.strategic_assessment.opportunity_summary || "",
+              key_advantages: Array.isArray(data.lead_gen_strategy.strategic_assessment.key_advantages)
+                ? data.lead_gen_strategy.strategic_assessment.key_advantages
+                : [],
+              key_challenges: Array.isArray(data.lead_gen_strategy.strategic_assessment.key_challenges)
+                ? data.lead_gen_strategy.strategic_assessment.key_challenges
+                : [],
+            }
+          : undefined,
+        pilot_approach: data.lead_gen_strategy?.pilot_approach
+          ? {
+              recommended_pilot_size: data.lead_gen_strategy.pilot_approach.recommended_pilot_size || "",
+              pilot_duration: data.lead_gen_strategy.pilot_approach.pilot_duration || "",
+              success_metrics: Array.isArray(data.lead_gen_strategy.pilot_approach.success_metrics)
+                ? data.lead_gen_strategy.pilot_approach.success_metrics
+                : [],
+              timing_considerations: data.lead_gen_strategy.pilot_approach.timing_considerations || "",
+            }
+          : undefined,
         targeting_strategy: {
           confidence: typeof data.lead_gen_strategy?.targeting_strategy?.confidence === 'number'
             ? data.lead_gen_strategy.targeting_strategy.confidence
@@ -297,7 +333,214 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
           ? data.research_links.funding_search_links
           : undefined,
       } : undefined,
-    },
-  };
+      lead_gen_scoring: data.lead_gen_scoring ? {
+        confidence: typeof data.lead_gen_scoring.confidence === 'number' ? data.lead_gen_scoring.confidence : 0,
+        sources_used: Array.isArray(data.lead_gen_scoring.sources_used) ? data.lead_gen_scoring.sources_used : undefined,
+        description: data.lead_gen_scoring.description,
+        lead_gen_fit_score: typeof data.lead_gen_scoring.lead_gen_fit_score === 'number' 
+          ? data.lead_gen_scoring.lead_gen_fit_score 
+          : 0,
+        verdict: (data.lead_gen_scoring.verdict === "pursue" || 
+                 data.lead_gen_scoring.verdict === "test" || 
+                 data.lead_gen_scoring.verdict === "avoid")
+          ? data.lead_gen_scoring.verdict
+          : "test",
+        verdict_rationale: data.lead_gen_scoring.verdict_rationale || "",
+        scorecard_evaluation: data.lead_gen_scoring.scorecard_evaluation ? {
+          offer_compatibility: {
+            total_score: data.lead_gen_scoring.scorecard_evaluation.offer_compatibility?.total_score || "",
+            questions: Array.isArray(data.lead_gen_scoring.scorecard_evaluation.offer_compatibility?.questions)
+              ? data.lead_gen_scoring.scorecard_evaluation.offer_compatibility.questions.map((q: any) => ({
+                  question: q.question || "",
+                  answer: (q.answer === "yes" || q.answer === "no") ? q.answer : "no",
+                  reasoning: q.reasoning || "",
+                }))
+              : [],
+          },
+          market_size_and_access: {
+            total_score: data.lead_gen_scoring.scorecard_evaluation.market_size_and_access?.total_score || "",
+            questions: Array.isArray(data.lead_gen_scoring.scorecard_evaluation.market_size_and_access?.questions)
+              ? data.lead_gen_scoring.scorecard_evaluation.market_size_and_access.questions.map((q: any) => ({
+                  question: q.question || "",
+                  answer: (q.answer === "yes" || q.answer === "no") ? q.answer : "no",
+                  reasoning: q.reasoning || "",
+                }))
+              : [],
+          },
+          fulfillment_feasibility: {
+            total_score: data.lead_gen_scoring.scorecard_evaluation.fulfillment_feasibility?.total_score || "",
+            questions: Array.isArray(data.lead_gen_scoring.scorecard_evaluation.fulfillment_feasibility?.questions)
+              ? data.lead_gen_scoring.scorecard_evaluation.fulfillment_feasibility.questions.map((q: any) => ({
+                  question: q.question || "",
+                  answer: (q.answer === "yes" || q.answer === "no") ? q.answer : "no",
+                  reasoning: q.reasoning || "",
+                }))
+              : [],
+          },
+          scorecard_summary: {
+            total_yes: typeof data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.total_yes === 'number'
+              ? data.lead_gen_scoring.scorecard_evaluation.scorecard_summary.total_yes
+              : 0,
+            total_questions: typeof data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.total_questions === 'number'
+              ? data.lead_gen_scoring.scorecard_evaluation.scorecard_summary.total_questions
+              : 0,
+            percentage: typeof data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.percentage === 'number'
+              ? data.lead_gen_scoring.scorecard_evaluation.scorecard_summary.percentage
+              : 0,
+            interpretation: data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.interpretation || "",
+          },
+        } : {
+          offer_compatibility: { total_score: "", questions: [] },
+          market_size_and_access: { total_score: "", questions: [] },
+          fulfillment_feasibility: { total_score: "", questions: [] },
+          scorecard_summary: { total_yes: 0, total_questions: 0, percentage: 0, interpretation: "" },
+        },
+        final_jury_results: data.lead_gen_scoring.final_jury_results ? {
+          filters_passed: data.lead_gen_scoring.final_jury_results.filters_passed || "",
+          overall_pass: typeof data.lead_gen_scoring.final_jury_results.overall_pass === 'boolean'
+            ? data.lead_gen_scoring.final_jury_results.overall_pass
+            : false,
+          budget_filter: {
+            pass: typeof data.lead_gen_scoring.final_jury_results.budget_filter?.pass === 'boolean'
+              ? data.lead_gen_scoring.final_jury_results.budget_filter.pass
+              : false,
+            roi_multiple: typeof data.lead_gen_scoring.final_jury_results.budget_filter?.roi_multiple === 'number'
+              ? data.lead_gen_scoring.final_jury_results.budget_filter.roi_multiple
+              : 0,
+            reasoning: data.lead_gen_scoring.final_jury_results.budget_filter?.reasoning || "",
+          },
+          scalability_filter: {
+            pass: typeof data.lead_gen_scoring.final_jury_results.scalability_filter?.pass === 'boolean'
+              ? data.lead_gen_scoring.final_jury_results.scalability_filter.pass
+              : false,
+            reasoning: data.lead_gen_scoring.final_jury_results.scalability_filter?.reasoning || "",
+          },
+          offer_market_fit: {
+            pass: typeof data.lead_gen_scoring.final_jury_results.offer_market_fit?.pass === 'boolean'
+              ? data.lead_gen_scoring.final_jury_results.offer_market_fit.pass
+              : false,
+            reasoning: data.lead_gen_scoring.final_jury_results.offer_market_fit?.reasoning || "",
+          },
+        } : {
+          filters_passed: "0/3",
+          overall_pass: false,
+          budget_filter: { pass: false, roi_multiple: 0, reasoning: "" },
+          scalability_filter: { pass: false, reasoning: "" },
+          offer_market_fit: { pass: false, reasoning: "" },
+        },
+        dealbreakers: Array.isArray(data.lead_gen_scoring.dealbreakers)
+          ? data.lead_gen_scoring.dealbreakers.map((db: any) => ({
+              type: db.type || "",
+              threshold: typeof db.threshold === 'number' ? db.threshold : 0,
+              actual_value: typeof db.actual_value === 'number' ? db.actual_value : 0,
+              severity: (db.severity === "critical" || db.severity === "catastrophic") ? db.severity : "critical",
+              impact: db.impact || "",
+              score_cap_applied: typeof db.score_cap_applied === 'number' ? db.score_cap_applied : 0,
+            }))
+          : [],
+        score_breakdown: data.lead_gen_scoring.score_breakdown ? {
+          components: Array.isArray(data.lead_gen_scoring.score_breakdown.components)
+            ? data.lead_gen_scoring.score_breakdown.components.map((c: any) => ({
+                name: c.name || "",
+                weight: typeof c.weight === 'number' ? c.weight : 0,
+                score: typeof c.score === 'number' ? c.score : 0,
+                max_score: typeof c.max_score === 'number' ? c.max_score : 0,
+                value: c.value || "",
+                reasoning: c.reasoning || "",
+              }))
+            : [],
+          total_before_caps: typeof data.lead_gen_scoring.score_breakdown.total_before_caps === 'number'
+            ? data.lead_gen_scoring.score_breakdown.total_before_caps
+            : 0,
+          dealbreaker_cap_applied: typeof data.lead_gen_scoring.score_breakdown.dealbreaker_cap_applied === 'number'
+            ? data.lead_gen_scoring.score_breakdown.dealbreaker_cap_applied
+            : 0,
+          final_score: typeof data.lead_gen_scoring.score_breakdown.final_score === 'number'
+            ? data.lead_gen_scoring.score_breakdown.final_score
+            : 0,
+        } : {
+          components: [],
+          total_before_caps: 0,
+          dealbreaker_cap_applied: 0,
+          final_score: 0,
+        },
+        interpretation: data.lead_gen_scoring.interpretation ? {
+          score_range: data.lead_gen_scoring.interpretation.score_range || "",
+          category: data.lead_gen_scoring.interpretation.category || "",
+          recommendation: data.lead_gen_scoring.interpretation.recommendation || "",
+          key_reasons: Array.isArray(data.lead_gen_scoring.interpretation.key_reasons)
+            ? data.lead_gen_scoring.interpretation.key_reasons
+            : [],
+        } : {
+          score_range: "",
+          category: "",
+          recommendation: "",
+          key_reasons: [],
+        },
+      } : undefined,
+      // Preserve evaluation data if it exists (for evaluation reports)
+      // Evaluation data can be at root of outputJson or in data.evaluation
+      // Evaluation data structure: verdict, synthesis, critical_concerns, key_opportunities, flags, quick_stats, score_details
+      evaluation: (outputJson.verdict || outputJson.synthesis || data.evaluation) ? {
+        // Check root level first, then data.evaluation
+        verdict: (outputJson.verdict || data.evaluation?.verdict) ? {
+          label: (outputJson.verdict || data.evaluation?.verdict)?.label || "",
+          color: (outputJson.verdict || data.evaluation?.verdict)?.color || "",
+          score: typeof (outputJson.verdict || data.evaluation?.verdict)?.score === 'number' 
+            ? (outputJson.verdict || data.evaluation?.verdict).score 
+            : 0,
+          priority: typeof (outputJson.verdict || data.evaluation?.verdict)?.priority === 'number' 
+            ? (outputJson.verdict || data.evaluation?.verdict).priority 
+            : 0,
+          recommendation: (outputJson.verdict || data.evaluation?.verdict)?.recommendation || "",
+          confidence: (outputJson.verdict || data.evaluation?.verdict)?.confidence || "",
+        } : undefined,
+        synthesis: outputJson.synthesis || data.evaluation?.synthesis || "",
+        critical_concerns: Array.isArray(outputJson.critical_concerns) 
+          ? outputJson.critical_concerns 
+          : (Array.isArray(data.evaluation?.critical_concerns) ? data.evaluation.critical_concerns : []),
+        key_opportunities: Array.isArray(outputJson.key_opportunities) 
+          ? outputJson.key_opportunities 
+          : (Array.isArray(data.evaluation?.key_opportunities) ? data.evaluation.key_opportunities : []),
+        flags: (outputJson.flags || data.evaluation?.flags) ? {
+          consensus: Array.isArray((outputJson.flags || data.evaluation?.flags)?.consensus) 
+            ? (outputJson.flags || data.evaluation?.flags).consensus 
+            : [],
+          by_category: (outputJson.flags || data.evaluation?.flags)?.by_category || {},
+          category_summary: Array.isArray((outputJson.flags || data.evaluation?.flags)?.category_summary) 
+            ? (outputJson.flags || data.evaluation?.flags).category_summary 
+            : [],
+        } : undefined,
+        quick_stats: (outputJson.quick_stats || data.evaluation?.quick_stats) ? {
+          has_strong_consensus: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.has_strong_consensus === 'boolean' 
+            ? (outputJson.quick_stats || data.evaluation?.quick_stats).has_strong_consensus 
+            : false,
+          positive_signals: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.positive_signals === 'number' 
+            ? (outputJson.quick_stats || data.evaluation?.quick_stats).positive_signals 
+            : 0,
+          negative_signals: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.negative_signals === 'number' 
+            ? (outputJson.quick_stats || data.evaluation?.quick_stats).negative_signals 
+            : 0,
+          net_sentiment: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.net_sentiment === 'number' 
+            ? (outputJson.quick_stats || data.evaluation?.quick_stats).net_sentiment 
+            : 0,
+          confidence_description: (outputJson.quick_stats || data.evaluation?.quick_stats)?.confidence_description || "",
+        } : undefined,
+        // Include score_details if it exists (for individual model scores)
+        score_details: (outputJson.score_details || data.evaluation?.score_details) ? {
+          std_dev: typeof (outputJson.score_details || data.evaluation?.score_details)?.std_dev === 'number'
+            ? (outputJson.score_details || data.evaluation?.score_details).std_dev
+            : 0,
+          raw_average: typeof (outputJson.score_details || data.evaluation?.score_details)?.raw_average === 'number'
+            ? (outputJson.score_details || data.evaluation?.score_details).raw_average
+            : 0,
+          adjusted_average: typeof (outputJson.score_details || data.evaluation?.score_details)?.adjusted_average === 'number'
+            ? (outputJson.score_details || data.evaluation?.score_details).adjusted_average
+            : 0,
+          individual_scores: (outputJson.score_details || data.evaluation?.score_details)?.individual_scores || {},
+        } : undefined,
+      } : undefined,
+    } as any,
+  } as ReportData;
 }
 

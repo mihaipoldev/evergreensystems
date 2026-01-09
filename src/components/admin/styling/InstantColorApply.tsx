@@ -6,20 +6,14 @@ export function InstantColorApply() {
   // Script that runs before React hydrates, using cookies and sessionStorage as fallback
   const scriptContent = `
     (function() {
-      const scriptStartTime = performance.now();
-      console.log('[PERF] 🎨 InstantColorApply - Script execution start');
-      
       // Check if color was already applied by middleware or AdminColorStyle
       if (document.getElementById('primary-color-inline') || 
           document.getElementById('primary-color-blocking') || 
           document.getElementById('primary-color-script')) {
-        const alreadyAppliedDuration = performance.now() - scriptStartTime;
-        console.log('[PERF] 🎨 InstantColorApply - Already applied: ' + alreadyAppliedDuration.toFixed(1) + 'ms');
         return; // Already applied
       }
       
       // Try to get primary color from cookie first (fastest, available immediately)
-      const cookieReadStartTime = performance.now();
       let savedColor = null;
       // Secondary color is not applied dynamically - it comes from CSS defaults
       let savedAccentColor = null;
@@ -56,12 +50,9 @@ export function InstantColorApply() {
       } catch (e) {
         // Cookie parsing failed
       }
-      const cookieReadDuration = performance.now() - cookieReadStartTime;
-      console.log('[PERF] 🎨 InstantColorApply - Cookie read: ' + cookieReadDuration.toFixed(1) + 'ms (hasColor: ' + !!savedColor + ', hasAccent: ' + !!savedAccentColor + ')');
       
       // Fallback to sessionStorage if no cookie
       if (!savedColor) {
-        const storageReadStartTime = performance.now();
         try {
           savedColor = sessionStorage.getItem('primary-color-hsl');
           // Validate format (should be "H S% L%" format)
@@ -71,8 +62,6 @@ export function InstantColorApply() {
         } catch (e) {
           // sessionStorage not available
         }
-        const storageReadDuration = performance.now() - storageReadStartTime;
-        console.log('[PERF] 🎨 InstantColorApply - SessionStorage read: ' + storageReadDuration.toFixed(1) + 'ms (hasColor: ' + !!savedColor + ')');
       }
       
       if (!savedAccentColor) {
@@ -89,7 +78,6 @@ export function InstantColorApply() {
       
       if (savedColor) {
         try {
-          const colorApplyStartTime = performance.now();
           // Parse HSL values from saved color
           const hslMatch = savedColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
           const root = document.documentElement;
@@ -126,7 +114,6 @@ export function InstantColorApply() {
           }
           
           // Insert immediately - this must be first in head
-          const domManipStartTime = performance.now();
           if (document.head) {
             if (document.head.firstChild) {
               document.head.insertBefore(style, document.head.firstChild);
@@ -134,12 +121,8 @@ export function InstantColorApply() {
               document.head.appendChild(style);
             }
           }
-          const domManipDuration = performance.now() - domManipStartTime;
-          const colorApplyDuration = performance.now() - colorApplyStartTime;
-          console.log('[PERF] 🎨 InstantColorApply - Color application: ' + colorApplyDuration.toFixed(1) + 'ms (DOM: ' + domManipDuration.toFixed(1) + 'ms)');
         } catch (e) {
           // Error applying color, ignore
-          console.log('[PERF] 🎨 InstantColorApply - Color application (ERROR): ' + (e instanceof Error ? e.message : 'Unknown error'));
         }
       }
       
@@ -197,12 +180,8 @@ export function InstantColorApply() {
           }
         } catch (e) {
           // Error applying accent color, ignore
-          console.log('[PERF] 🎨 InstantColorApply - Accent color application (ERROR): ' + (e instanceof Error ? e.message : 'Unknown error'));
         }
       }
-      
-      const scriptTotalDuration = performance.now() - scriptStartTime;
-      console.log('[PERF] 🎨 InstantColorApply - Total: ' + scriptTotalDuration.toFixed(1) + 'ms');
     })();
   `;
 

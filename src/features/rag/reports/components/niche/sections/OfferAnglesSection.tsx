@@ -4,14 +4,15 @@ import type { ReportData } from "../../../types";
 
 interface OfferAnglesSectionProps {
   angles: ReportData["data"]["generic_offer_angles"];
+  sectionNumber?: string;
 }
 
-export const OfferAnglesSection = ({ angles }: OfferAnglesSectionProps) => {
+export const OfferAnglesSection = ({ angles, sectionNumber = "07" }: OfferAnglesSectionProps) => {
   if (!angles || angles.length === 0) {
     return (
       <SectionWrapper
         id="offer-angles"
-        number="07"
+        number={sectionNumber}
         title="Offer Angles"
         subtitle="Strategic positioning frameworks for lead generation services"
       >
@@ -25,11 +26,11 @@ export const OfferAnglesSection = ({ angles }: OfferAnglesSectionProps) => {
   return (
     <SectionWrapper
       id="offer-angles"
-      number="06"
+      number={sectionNumber}
       title="Offer Angles"
       subtitle="Strategic positioning frameworks for lead generation services"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {angles.map((angle, index) => (
           <OfferAngleCard key={index} angle={angle} index={index} />
         ))}

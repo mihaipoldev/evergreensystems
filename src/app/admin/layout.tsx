@@ -2,6 +2,7 @@
 
 import { AdminHeader } from "@/components/admin/layout/AdminHeader";
 import { AdminSidebar } from "@/components/admin/layout/AdminSidebar";
+import { AdminFooter } from "@/components/shared/AdminFooter";
 import { NavigationLoadingProvider } from "@/providers/NavigationLoadingProvider";
 import { AdminThemeProvider } from "@/providers/AdminThemeProvider";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
@@ -51,12 +52,13 @@ export default function AdminLayout({
             <div className="relative flex flex-1 flex-col md:pl-64 min-w-0">
                   <AdminHeader />
               <main className="flex flex-1 flex-col min-w-0 px-4 md:px-10 lg:px-12">
-                <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[40px] md:pt-[84px] pb-12 md:pb-0">
-                  <div className="relative flex flex-col py-6 pb-4 md:pb-8 space-y-4 md:space-y-6 min-w-0">
+                <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[40px] md:pt-[84px] pb-32">
+                  <div className="relative flex flex-col py-6 space-y-4 md:space-y-6 min-w-0">
                     {children}
                   </div>
                 </div>
               </main>
+              <AdminFooter />
               <PageTransitionLoader />
             </div>
           </div>

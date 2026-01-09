@@ -14,6 +14,7 @@ import { KnowledgeBaseActionsMenu } from "@/features/rag/knowledge-bases/compone
 import { KnowledgeBaseModal } from "@/features/rag/knowledge-bases/components/KnowledgeBaseModal";
 import { KnowledgeBaseDocumentsClient } from "./KnowledgeBaseDocumentsClient";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
+import { KnowledgeBaseChatContext } from "@/features/chat/components/KnowledgeBaseChatContext";
 import type { KnowledgeBase } from "@/features/rag/knowledge-bases/types";
 import type { RAGDocument } from "@/features/rag/documents/document-types";
 import type { KnowledgeBaseStats } from "@/features/rag/knowledge-bases/data";
@@ -44,6 +45,12 @@ export function KnowledgeBaseDetailClient({
 
   return (
     <>
+      {/* Set chat context for this knowledge base */}
+      <KnowledgeBaseChatContext
+        knowledgeBaseId={knowledge.id}
+        knowledgeBaseName={knowledge.name}
+        knowledgeBaseDescription={knowledge.description || undefined}
+      />
       <div className="w-full space-y-6">
         <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
           <div>

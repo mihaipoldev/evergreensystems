@@ -96,7 +96,7 @@ export function DocumentRow({
   };
 
   return (
-    <Card className="relative flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card transition-shadow h-20 overflow-hidden">
+    <Card className="relative flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 overflow-hidden">
       {/* Corner Indicator */}
       {document.is_workspace_document !== undefined && (
         <Tooltip>

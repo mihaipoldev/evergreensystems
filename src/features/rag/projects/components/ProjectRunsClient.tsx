@@ -14,19 +14,16 @@ import { createClient } from "@/lib/supabase/client";
 import type { Run } from "@/features/rag/runs/types";
 import type { RunWithExtras } from "@/features/rag/projects/config/ProjectTypeConfig";
 import { cn } from "@/lib/utils";
-import { statusColorMap } from "@/features/rag/shared/config/statusColors";
+import { getRunStatusColorString, getRunStatusBadgeClasses, getRunStatusGradientClasses } from "@/features/rag/shared/utils/runStatusColors";
 
-// Define colors for group statuses (can override shared config if needed)
-const groupStatusColorMap: Record<string, string> = {
-  processing: "blue-600",
-  queued: "orange-600", // Override: use orange instead of muted for queued in groups
-  failed: "red-600",
-  complete: "green-600",
-};
-
-// Use group-specific colors if available, otherwise fall back to shared config
+// Helper to get color string for group statuses (groups use aggregated statuses like "processing")
 const getGroupStatusColor = (status: string): string => {
-  return groupStatusColorMap[status] || statusColorMap[status] || "muted";
+  // For "processing" group (which contains collecting/ingesting/generating), use yellow-600
+  if (status === "processing") {
+    return "yellow-600";
+  }
+  // Use utility for other statuses
+  return getRunStatusColorString(status);
 };
 
 type ProjectRunsClientProps = {
@@ -34,12 +31,36 @@ type ProjectRunsClientProps = {
   projectId: string;
 };
 
-// Helper function to extract fit_score and verdict from API response
-const extractFitScoreAndVerdict = (runData: any): { fit_score: number | null; verdict: "pursue" | "test" | "avoid" | null } => {
-  // fit_score and verdict are already in the run object from the database
+// Helper function to extract fit_score and verdict from metadata
+const extractFitScoreAndVerdict = (runData: any): { fit_score: number | null; verdict: "pursue" | "test" | "caution" | "avoid" | null } => {
+  // Extract from metadata.evaluation_result
+  const evaluationResult = runData.metadata?.evaluation_result;
+  let fit_score: number | null = null;
+  let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
+  
+  if (evaluationResult && typeof evaluationResult === "object") {
+    // Extract and normalize verdict
+    if (evaluationResult.verdict && typeof evaluationResult.verdict === "string") {
+      const normalizedVerdict = evaluationResult.verdict.toLowerCase();
+      if (normalizedVerdict === "pursue" || normalizedVerdict === "test" || normalizedVerdict === "caution" || normalizedVerdict === "avoid") {
+        verdict = normalizedVerdict;
+      }
+    }
+    
+    // Extract score
+    if (typeof evaluationResult.score === "number") {
+      fit_score = evaluationResult.score;
+    } else if (typeof evaluationResult.score === "string") {
+      const parsedScore = parseFloat(evaluationResult.score);
+      if (!isNaN(parsedScore)) {
+        fit_score = parsedScore;
+      }
+    }
+  }
+  
   return {
-    fit_score: runData.fit_score ?? null,
-    verdict: runData.verdict ?? null,
+    fit_score,
+    verdict,
   };
 };
 
@@ -152,15 +173,17 @@ export function ProjectRunsClient({
             const workflowName = run.workflows?.name || null;
             const workflowLabel = run.workflows?.label || null;
             
+            // Extract fit_score and verdict from metadata
+            const { fit_score, verdict } = extractFitScoreAndVerdict(run);
+            
             return {
               ...(run as Run),
               knowledge_base_name: kbName,
               workflow_name: workflowName,
               workflow_label: workflowLabel,
               report_id: null, // Not loading rag_run_outputs
-              // fit_score and verdict are already in the run object from the database
-              fit_score: run.fit_score ?? null,
-              verdict: run.verdict ?? null,
+              fit_score,
+              verdict,
             };
           });
           
@@ -205,15 +228,17 @@ export function ProjectRunsClient({
         const workflowName = (runData as any).workflows?.name || null;
         const workflowLabel = (runData as any).workflows?.label || null;
         
+        // Extract fit_score and verdict from metadata
+        const { fit_score, verdict } = extractFitScoreAndVerdict(runData);
+        
         return {
           ...(runData as Run),
           knowledge_base_name: kbName,
           workflow_name: workflowName,
           workflow_label: workflowLabel,
           report_id: null, // Not loading rag_run_outputs
-          // fit_score and verdict are already in the run object from the database
-          fit_score: (runData as any).fit_score ?? null,
-          verdict: (runData as any).verdict ?? null,
+          fit_score,
+          verdict,
         };
       } catch (error) {
         console.error('[ProjectRunsClient] Exception fetching run:', error);
@@ -653,9 +678,8 @@ export function ProjectRunsClient({
             {/* Table Header */}
             <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <div className="flex-1 min-w-0">Run</div>
-              <div className="w-28 shrink-0">Status</div>
+              <div className="w-28 shrink-0">Result</div>
               <div className="w-44 shrink-0">Progress</div>
-              <div className="w-24 shrink-0">Verdict</div>
               <div className="w-40 shrink-0">Created</div>
               <div className="w-20 shrink-0 text-right">Actions</div>
             </div>
@@ -681,29 +705,32 @@ export function ProjectRunsClient({
               };
               const statusLabel = statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1);
 
-              // Get the color for this status (using group-specific or shared config)
+              // Get the color for this status using utility
               const statusColorValue = getGroupStatusColor(status);
               
-              // Solid colors for the dot indicator (full class names for Tailwind)
-              const statusDotColorMap: Record<string, string> = {
-                "blue-600": "bg-blue-600",
-                "orange-600": "bg-orange-600",
-                "red-600": "bg-red-600",
-                "green-600": "bg-green-600",
-                "yellow-600": "bg-yellow-600",
-                "purple-600": "bg-purple-600",
-                "muted": "bg-muted",
+              // Map color string to Tailwind bg class for dot indicator
+              const getDotColorClass = (colorString: string): string => {
+                switch (colorString) {
+                  case "blue-600":
+                    return "bg-blue-600";
+                  case "orange-600":
+                    return "bg-orange-600";
+                  case "red-600":
+                    return "bg-red-600";
+                  case "green-600":
+                    return "bg-green-600";
+                  case "yellow-600":
+                    return "bg-yellow-600";
+                  case "purple-600":
+                    return "bg-purple-600";
+                  default:
+                    return "bg-muted";
+                }
               };
-              const dotColor = statusDotColorMap[statusColorValue] || "bg-muted";
+              const dotColor = getDotColorClass(statusColorValue);
               
-              // Group header colors (semi-transparent for display)
-              const statusHeaderColors: Record<string, string> = {
-                processing: "bg-blue-600/10 text-blue-600 dark:text-blue-400",
-                queued: "bg-orange-600/10 text-orange-600 dark:text-orange-400",
-                failed: "bg-red-600/10 text-red-600 dark:text-red-400",
-                complete: "bg-green-600/10 text-green-600 dark:text-green-400",
-              };
-              const statusHeaderColor = statusHeaderColors[status] || "bg-muted text-muted-foreground";
+              // Get group header badge classes using utility (for processing group, use yellow)
+              const statusHeaderBadgeClasses = getRunStatusBadgeClasses(status === "processing" ? "processing" : status);
 
               return (
                 <Collapsible

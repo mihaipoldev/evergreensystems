@@ -25,8 +25,16 @@ export type Project = {
     failed: number;
   };
   // Niche Intelligence verdict and fit score (only populated for niche projects when requested)
-  niche_intelligence_verdict?: "pursue" | "test" | "avoid" | null;
+  niche_intelligence_verdict?: "pursue" | "test" | "caution" | "avoid" | null;
   niche_intelligence_fit_score?: number | null;
+  niche_intelligence_updated_at?: string | null;
+  niche_intelligence_runs?: Array<{
+    id: string;
+    verdict: "pursue" | "test" | "caution" | "avoid" | null;
+    fit_score: number | null;
+    updated_at: string | null;
+    status: "complete" | "queued" | "collecting" | "ingesting" | "generating" | "processing" | "failed";
+  }> | null;
 };
 
 export type ProjectWithKB = Project & {

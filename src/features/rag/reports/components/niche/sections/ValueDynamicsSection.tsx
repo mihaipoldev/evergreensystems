@@ -12,13 +12,14 @@ import type { ReportData } from "../../../types";
 
 interface ValueDynamicsSectionProps {
   value: ReportData["data"]["value_dynamics"];
+  sectionNumber?: string;
 }
 
-export const ValueDynamicsSection = ({ value }: ValueDynamicsSectionProps) => {
+export const ValueDynamicsSection = ({ value, sectionNumber = "04" }: ValueDynamicsSectionProps) => {
   return (
     <SectionWrapper
       id="value-dynamics"
-      number="04"
+      number={sectionNumber}
       title="Value Dynamics"
       subtitle="Core pain points, desired outcomes, KPIs, and proof requirements"
     >

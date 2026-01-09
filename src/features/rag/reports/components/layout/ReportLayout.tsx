@@ -131,10 +131,10 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
         <main className={`flex-1 min-h-screen ${showTableOfContents ? 'lg:ml-[280px]' : ''}`}>
           <div className={`max-w-4xl mx-auto px-6 py-8 ${showTableOfContents ? 'pt-20 lg:pt-8' : 'pt-0'}`}>
             {/* Action Buttons - Desktop */}
-            <div className="hidden lg:flex justify-end gap-2 mb-4 no-print">
+            <div className="hidden lg:flex justify-end gap-6 mb-4 no-print pb-3">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-body text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground rounded-md transition-colors"
               >
                 <FontAwesomeIcon icon={faPrint} className="w-4 h-4" />
                 Print Report
@@ -144,7 +144,7 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
                   href={`/reports/${reportId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-body text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                  className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground rounded-md transition-colors"
                 >
                   <FontAwesomeIcon icon={faExternalLink} className="w-4 h-4" />
                   Full Report

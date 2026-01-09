@@ -5,12 +5,8 @@
 
 // Check if performance debugging is enabled (can be controlled via env var)
 const isDebugEnabled = () => {
-  if (typeof window === 'undefined') {
-    // Server-side: always enabled for now
-    return true;
-  }
-  // Client-side: always enabled for now
-  return true;
+  // Debug logging disabled
+  return false;
 };
 
 /**
