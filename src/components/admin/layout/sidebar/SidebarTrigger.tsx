@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/components/ui/button";
 
 // Module-level state for sharing Sheet state between AdminSidebar and SidebarTrigger
@@ -48,10 +46,20 @@ export function SidebarTrigger() {
     <Button 
       variant="ghost" 
       size="icon" 
-      className="md:hidden"
+      className="md:hidden touch-safe-button bg-transparent active:bg-transparent focus-visible:bg-transparent"
       onClick={() => setIsOpen(true)}
+      onMouseLeave={(e) => {
+        // Force remove hover state on mouse leave
+        e.currentTarget.blur();
+      }}
+      onTouchEnd={(e) => {
+        // Force remove focus/hover state after touch
+        e.currentTarget.blur();
+      }}
     >
-      <FontAwesomeIcon icon={faBars} className="h-5 w-5" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon" className="!h-6 !w-6 pointer-events-none">
+        <path fillRule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+      </svg>
       <span className="sr-only">Toggle menu</span>
     </Button>
   );

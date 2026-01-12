@@ -34,7 +34,7 @@ const sections: Array<{
     id: "appearance-v2",
     label: "Brand Colors",
     icon: faPaintBrush,
-    description: "Primary & secondary colors",
+    description: "Primary & accent colors",
   },
 ];
 

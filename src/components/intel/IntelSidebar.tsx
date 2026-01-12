@@ -81,10 +81,10 @@ export function IntelSidebar() {
         <SheetHeader className="px-6 py-5 border-b border-border/50 bg-sidebar/95 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="flex flex-col flex-1 min-w-0">
-              <SheetTitle className="text-lg font-bold leading-tight text-sidebar-foreground tracking-tight">
+              <SheetTitle className="text-left text-lg font-bold leading-tight text-sidebar-foreground tracking-tight">
                 Evergreen Sys.
               </SheetTitle>
-              <p className="text-xs text-muted-foreground leading-tight mt-0.5 font-medium">
+              <p className="text-left text-xs text-muted-foreground leading-tight mt-0.5 font-medium">
                 Intel Panel
               </p>
             </div>

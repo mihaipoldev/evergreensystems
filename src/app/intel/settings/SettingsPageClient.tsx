@@ -62,6 +62,7 @@ export function SettingsPageClient() {
     if (tabParam && URL_SECTION_MAP[tabParam]) {
       // URL has valid tab - use it and save to localStorage
       const section = URL_SECTION_MAP[tabParam];
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveSection(section);
       setStoredSettingsSection(section);
     } else {
@@ -86,6 +87,7 @@ export function SettingsPageClient() {
     const tabParam = searchParams.get("tab");
     if (tabParam && URL_SECTION_MAP[tabParam]) {
       const section = URL_SECTION_MAP[tabParam];
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveSection((current) => {
         if (current !== section) {
           setStoredSettingsSection(section);
@@ -115,11 +117,12 @@ export function SettingsPageClient() {
     <>
       <div>
         {isMobile ? (
-          <div className="space-y-6">
+          <div className="space-y-1 md:space-y-6">
             <Tabs value={activeSection} onValueChange={(value) => handleSectionChange(value as Section)}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="account">Account</TabsTrigger>
-                <TabsTrigger value="appearance">Appearance</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 h-auto bg-transparent border-0">
+                <TabsTrigger value="account" className="w-full">Account</TabsTrigger>
+                <TabsTrigger value="appearance" className="w-full">Appearance</TabsTrigger>
+                <TabsTrigger value="appearance-v2" className="w-full">Brand Colors</TabsTrigger>
               </TabsList>
             </Tabs>
             <SettingsContent activeSection={activeSection} />

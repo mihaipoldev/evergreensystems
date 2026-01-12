@@ -3,10 +3,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
-import { KnowledgeBaseGrid } from "./KnowledgeBaseGrid";
 import { KnowledgeBaseTable } from "./KnowledgeBaseTable";
 import { KnowledgeBaseModal } from "./KnowledgeBaseModal";
 import type { KnowledgeBaseWithCount } from "../data";
@@ -104,7 +102,6 @@ function setStoredShowProjects(value: boolean): void {
 
 export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useViewMode("grid");
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
@@ -399,7 +396,7 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
 
   return (
     <>
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-3">
         <Toolbar
           searchPlaceholder="Search knowledge bases..."
           searchValue={searchQuery}
@@ -415,8 +412,6 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
             label: "New",
             onClick: () => setIsCreateModalOpen(true),
           }}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
           showProjectsToggle={{
             show: showProjects,
             onToggle: handleToggleProjects,
@@ -434,12 +429,6 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
               ? "No knowledge bases. Create one to get started."
               : "No knowledge bases found matching your search"}
           </motion.div>
-        ) : viewMode === "grid" ? (
-          <KnowledgeBaseGrid
-            knowledgeBases={filteredAndSortedKnowledge}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-          />
         ) : (
           <KnowledgeBaseTable
             knowledgeBases={filteredAndSortedKnowledge}

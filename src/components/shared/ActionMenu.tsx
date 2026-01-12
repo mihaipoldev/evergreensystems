@@ -19,6 +19,7 @@ export interface ActionMenuItem {
   destructive?: boolean;
   separator?: boolean;
   disabled?: boolean;
+  active?: boolean;
 }
 
 interface ActionMenuProps {
@@ -43,6 +44,7 @@ export function ActionMenu({
         align={align}
         sideOffset={0}
         className={cn("px-0 py-2 border-0", width)}
+        onCloseAutoFocus={(e) => e.preventDefault()}
         style={{
           boxShadow: 'rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px'
         }}
@@ -61,6 +63,7 @@ export function ActionMenu({
 
           const className = cn(
             "cursor-pointer !rounded-none px-4 py-2",
+            item.active && "text-primary bg-primary/10",
             item.destructive && "text-destructive focus:text-destructive",
             item.disabled && "opacity-50 cursor-not-allowed"
           );

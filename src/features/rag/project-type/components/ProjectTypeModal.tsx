@@ -425,7 +425,7 @@ export function ProjectTypeModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -433,7 +433,7 @@ export function ProjectTypeModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none"
+            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -448,10 +448,10 @@ export function ProjectTypeModal({
         </>
       }
     >
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5">
         {/* Name */}
-        <div className="space-y-2">
-          <Label htmlFor="project-type-name">
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="project-type-name" className="text-sm md:text-base">
             Name <span className="text-destructive">*</span>
           </Label>
           <RAGInput
@@ -470,8 +470,8 @@ export function ProjectTypeModal({
         </div>
 
         {/* Label */}
-        <div className="space-y-2">
-          <Label htmlFor="project-type-label">
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="project-type-label" className="text-sm md:text-base">
             Label <span className="text-destructive">*</span>
           </Label>
           <RAGInput
@@ -490,20 +490,21 @@ export function ProjectTypeModal({
         </div>
 
         {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="project-type-description">Description</Label>
+        <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
+          <Label htmlFor="project-type-description" className="text-sm md:text-base">Description</Label>
           <RAGTextarea
             id="project-type-description"
             placeholder="Describe this project type..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
+            className="min-h-[80px] md:min-h-[120px]"
           />
         </div>
 
         {/* Icon */}
-        <div className="space-y-2">
-          <Label htmlFor="project-type-icon">Icon</Label>
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="project-type-icon" className="text-sm md:text-base">Icon</Label>
           <RAGInput
             id="project-type-icon"
             placeholder="e.g., 📊, 📁, 🏢"
@@ -513,8 +514,8 @@ export function ProjectTypeModal({
         </div>
 
         {/* Enabled */}
-        <div className="space-y-2">
-          <Label htmlFor="project-type-enabled">Status</Label>
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="project-type-enabled" className="text-sm md:text-base">Status</Label>
           <RAGSelect
             value={enabled ? "enabled" : "disabled"}
             onValueChange={(value) => {
@@ -533,8 +534,8 @@ export function ProjectTypeModal({
 
         {/* Workflow Linking Section - Only in edit mode */}
         {isEdit && (
-          <div className="space-y-3 pt-2 border-t">
-            <Label>Linked Workflows</Label>
+          <div className="space-y-2 md:space-y-3 pt-3 md:pt-5 border-t border-border/50">
+            <Label className="text-sm md:text-base">Linked Workflows</Label>
             
             {isLoadingWorkflows ? (
               <div className="text-sm text-muted-foreground py-4 text-center">

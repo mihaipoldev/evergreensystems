@@ -23,7 +23,7 @@ interface ReportTableProps {
 
 export function ReportTable({ reports, onView }: ReportTableProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Table Header */}
       <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <div className="flex-1 min-w-0">Report</div>

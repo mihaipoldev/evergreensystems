@@ -1,0 +1,273 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Warm, professional palette */
+    --background: 40 20% 98%;
+    --foreground: 220 20% 14%;
+
+    --card: 40 15% 96%;
+    --card-foreground: 220 20% 14%;
+
+    --popover: 40 20% 98%;
+    --popover-foreground: 220 20% 14%;
+
+    /* Deep charcoal primary */
+    --primary: 220 20% 14%;
+    --primary-foreground: 40 20% 98%;
+
+    /* Warm stone secondary */
+    --secondary: 35 10% 92%;
+    --secondary-foreground: 220 20% 20%;
+
+    --muted: 35 8% 90%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Warm amber accent for CTAs */
+    --accent: 38 92% 50%;
+    --accent-foreground: 220 20% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 35 12% 88%;
+    --input: 35 12% 88%;
+    --ring: 38 92% 50%;
+
+    --radius: 0.5rem;
+
+    /* Custom tokens */
+    --section-divider: 35 10% 90%;
+    --card-hover: 35 12% 94%;
+    --text-secondary: 220 10% 40%;
+    --cta-gradient: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(32 90% 45%) 100%);
+    --cta-shadow: 0 4px 20px -4px hsl(38 92% 50% / 0.4);
+    --card-shadow: 0 1px 3px 0 hsl(220 20% 14% / 0.04);
+    --card-shadow-hover: 0 4px 12px -2px hsl(220 20% 14% / 0.08);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 40 15% 95%;
+
+    --card: 220 18% 12%;
+    --card-foreground: 40 15% 95%;
+
+    --popover: 220 20% 8%;
+    --popover-foreground: 40 15% 95%;
+
+    --primary: 40 15% 95%;
+    --primary-foreground: 220 20% 8%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 40 15% 90%;
+
+    --muted: 220 15% 20%;
+    --muted-foreground: 40 10% 60%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 220 20% 10%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 38 92% 50%;
+
+    --section-divider: 220 15% 18%;
+    --card-hover: 220 15% 16%;
+    --text-secondary: 40 10% 55%;
+    --cta-shadow: 0 4px 20px -4px hsl(38 92% 50% / 0.3);
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-4xl mx-auto px-6 py-16 md:py-24;
+  }
+
+  .section-divider {
+    @apply border-t border-section-divider;
+  }
+
+  .heading-display {
+    @apply text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight;
+  }
+
+  .heading-section {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+  }
+
+  .heading-subsection {
+    @apply text-lg md:text-xl font-medium;
+  }
+
+  .text-body {
+    @apply text-base md:text-lg leading-relaxed text-muted-foreground;
+  }
+
+  .text-small {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .card-subtle {
+    @apply bg-card rounded-lg p-6 shadow-card transition-shadow duration-200 hover:shadow-card-hover;
+  }
+
+  .cta-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-lg transition-all duration-200;
+    background: var(--cta-gradient);
+    color: hsl(var(--accent-foreground));
+    box-shadow: var(--cta-shadow);
+  }
+
+  .cta-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px -4px hsl(38 92% 50% / 0.5);
+  }
+
+  .list-checkmark li {
+    @apply flex items-start gap-3 py-2;
+  }
+
+  .list-checkmark li::before {
+    content: "✓";
+    @apply text-accent font-medium flex-shrink-0 mt-0.5;
+  }
+
+  .process-step {
+    @apply flex items-center gap-4 py-4 border-b border-section-divider last:border-0;
+  }
+
+  .process-number {
+    @apply w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium text-foreground flex-shrink-0;
+  }
+
+  .kpi-card {
+    @apply bg-card rounded-lg p-5 shadow-card border border-border/50;
+  }
+
+  .kpi-value {
+    @apply text-lg font-semibold text-foreground mb-1;
+  }
+
+  .kpi-label {
+    @apply text-sm font-medium text-foreground mb-2;
+  }
+
+  .kpi-description {
+    @apply text-xs text-muted-foreground leading-relaxed;
+  }
+
+  .faq-item {
+    @apply border-b border-section-divider py-6 last:border-0;
+  }
+
+  .faq-question {
+    @apply text-base font-medium text-foreground mb-3;
+  }
+
+  .faq-answer {
+    @apply text-sm text-muted-foreground leading-relaxed;
+  }
+
+  .video-container {
+    @apply relative w-full bg-foreground/5 rounded-xl overflow-hidden;
+    aspect-ratio: 16 / 9;
+  }
+
+  .video-placeholder {
+    @apply absolute inset-0 flex items-center justify-center;
+  }
+
+  .play-button {
+    @apply w-20 h-20 rounded-full bg-accent/90 flex items-center justify-center transition-transform duration-200 hover:scale-105 cursor-pointer;
+    box-shadow: var(--cta-shadow);
+  }
+
+  .timeline-step {
+    @apply relative pl-8 pb-8 last:pb-0;
+  }
+
+  .timeline-step::before {
+    content: "";
+    @apply absolute left-0 top-2 w-3 h-3 rounded-full bg-accent;
+  }
+
+  .timeline-step::after {
+    content: "";
+    @apply absolute left-[5px] top-5 w-0.5 h-full bg-border;
+  }
+
+  .timeline-step:last-child::after {
+    @apply hidden;
+  }
+
+  .comparison-card {
+    @apply bg-card rounded-lg p-6 border border-border/50;
+  }
+
+  .guarantee-box {
+    @apply bg-accent/5 border border-accent/20 rounded-xl p-8;
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: var(--card-shadow);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  .border-section-divider {
+    border-color: hsl(var(--section-divider));
+  }
+
+  .bg-section-divider {
+    background-color: hsl(var(--section-divider));
+  }
+
+  .text-text-secondary {
+    color: hsl(var(--text-secondary));
+  }
+}

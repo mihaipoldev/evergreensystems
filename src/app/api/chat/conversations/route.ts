@@ -12,6 +12,14 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { title, context_type, context_id, contexts } = body;
+    
+    console.log('[API] Creating conversation with:', { 
+      hasTitle: !!title, 
+      hasContextType: !!context_type, 
+      hasContextId: !!context_id, 
+      contextsCount: contexts?.length || 0,
+      contexts: contexts 
+    });
 
     // Support both old format (single context) and new format (multiple contexts)
     // Old format: context_type, context_id
@@ -65,19 +73,34 @@ export async function POST(request: Request) {
 
     // Add contexts to junction table if provided
     if (contexts && Array.isArray(contexts) && contexts.length > 0) {
+      console.log('[Conversation Creation] Adding contexts:', contexts.length, contexts);
       const contextsToInsert = contexts.map((ctx: any) => ({
         conversation_id: conversation.id,
         context_type: ctx.context_type,
         context_id: ctx.context_id,
       }));
 
-      const { error: contextsError } = await (supabase
+      const { data: insertedContexts, error: contextsError } = await (supabase
         .from('chat_conversation_contexts') as any)
-        .insert(contextsToInsert);
+        .insert(contextsToInsert)
+        .select();
 
       if (contextsError) {
-        console.error('Error adding contexts:', contextsError);
-        // Continue anyway - conversation is created, contexts can be added later
+        console.error('[Conversation Creation] Error adding contexts:', contextsError);
+        // Try to add contexts one by one as fallback
+        for (const ctx of contextsToInsert) {
+          try {
+            await (supabase
+              .from('chat_conversation_contexts') as any)
+              .insert(ctx)
+              .select();
+            console.log('[Conversation Creation] Successfully added context:', ctx);
+          } catch (singleError) {
+            console.error('[Conversation Creation] Failed to add single context:', ctx, singleError);
+          }
+        }
+      } else {
+        console.log('[Conversation Creation] Successfully added contexts:', insertedContexts?.length || 0);
       }
     } else if (context_type && context_id && context_type !== 'general') {
       // Migrate old format to new junction table

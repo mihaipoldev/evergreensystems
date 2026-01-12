@@ -156,7 +156,7 @@ export default function WorkflowsPage() {
 
   if (error) {
     return (
-      <div className="w-full space-y-6">
+      <div className="w-full">
         <div className="text-center py-12">
           <p className="text-destructive">{error}</p>
         </div>
@@ -165,7 +165,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full">
       <WorkflowList initialWorkflows={workflows} />
     </div>
   );

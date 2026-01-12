@@ -393,27 +393,27 @@ export function BulkGenerateReportModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
+        className="fixed inset-0 z-[100] flex items-center justify-center md:p-4 pointer-events-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl bg-card border border-border pointer-events-auto"
+          className="w-full h-full md:w-full md:max-w-2xl md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden md:rounded-2xl bg-card border-0 md:border border-border pointer-events-auto"
           style={{ boxShadow: "0 20px 60px -12px hsl(var(--primary) / 0.3)" }}
         >
           {/* Header */}
           <div className="flex-shrink-0 p-4 md:p-6 border-b border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                 <motion.div
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0"
                 >
-                  <FontAwesomeIcon icon={faWandSparkles} className="w-6 h-6" />
+                  <FontAwesomeIcon icon={faWandSparkles} className="w-5 h-5 md:w-6 md:h-6" />
                 </motion.div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <h1
-                    className="text-xl md:text-2xl font-bold"
+                    className="text-lg md:text-2xl font-bold leading-tight"
                     style={{
                       background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
                       WebkitBackgroundClip: "text",
@@ -423,7 +423,7 @@ export function BulkGenerateReportModal({
                   >
                     Generate Intelligence Reports
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden md:block">
                     Generate reports for {selectedProjects.length} project{selectedProjects.length !== 1 ? "s" : ""}
                   </p>
                 </div>
@@ -433,15 +433,16 @@ export function BulkGenerateReportModal({
                 whileTap={{ scale: 0.9 }}
                 onClick={handleClose}
                 disabled={isGenerating}
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                aria-label="Close modal"
               >
-                <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
+                <FontAwesomeIcon icon={faTimes} className="w-4 h-4 md:w-5 md:h-5" />
               </motion.button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-6 min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-4 md:pb-6 min-h-0">
             {!isGenerating && statuses.length === 0 && (
               <>
                 {isLoadingWorkflows ? (
@@ -450,13 +451,13 @@ export function BulkGenerateReportModal({
                     <p>Loading workflows...</p>
                   </div>
                 ) : workflows.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+                  <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-6 md:p-8 text-center text-muted-foreground text-sm md:text-base">
                     No workflows available for this project type.
                   </div>
                 ) : (
                   <>
                     {/* Workflow Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
                       {workflows.map((workflow) => (
                         <WorkflowSelectionCard
                           key={workflow.id}
@@ -482,10 +483,11 @@ export function BulkGenerateReportModal({
                       onClick={handleGenerate}
                       disabled={!workflowId || isLoadingWorkflows}
                       className={cn(
-                        "w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all",
+                        "w-full py-3.5 md:py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all",
                         "bg-primary text-primary-foreground",
                         "disabled:opacity-50 disabled:cursor-not-allowed",
-                        "hover:bg-primary/90"
+                        "hover:bg-primary/90 active:bg-primary/95",
+                        "touch-manipulation"
                       )}
                     >
                       {isGenerating ? (
@@ -511,7 +513,7 @@ export function BulkGenerateReportModal({
                   <div
                     key={status.projectId}
                     className={cn(
-                      "p-4 rounded-lg border flex items-center gap-3",
+                      "p-3 md:p-4 rounded-lg border flex items-center gap-2 md:gap-3",
                       status.status === "success" && "border-green-500/50 bg-green-500/10",
                       status.status === "error" && "border-red-500/50 bg-red-500/10",
                       status.status === "processing" && "border-primary/50 bg-primary/10",

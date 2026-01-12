@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Calm, confident palette - slate/charcoal primary */
+    --background: 0 0% 100%;
+    --foreground: 220 20% 15%;
+
+    --card: 220 15% 98%;
+    --card-foreground: 220 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 15%;
+
+    /* Deep slate - authority without aggression */
+    --primary: 220 25% 18%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 20% 15%;
+
+    --muted: 220 10% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 220 15% 92%;
+    --accent-foreground: 220 20% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 220 25% 18%;
+
+    --radius: 0.5rem;
+
+    /* Custom tokens for funnel */
+    --text-primary: 220 20% 15%;
+    --text-secondary: 220 10% 40%;
+    --text-muted: 220 8% 55%;
+    
+    --surface-elevated: 220 15% 99%;
+    --surface-subtle: 220 12% 97%;
+    
+    --cta-bg: 220 25% 18%;
+    --cta-hover: 220 25% 12%;
+    --cta-text: 0 0% 100%;
+    
+    --success: 160 60% 40%;
+    --success-muted: 160 40% 95%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 220 10% 95%;
+    --card: 220 18% 12%;
+    --card-foreground: 220 10% 95%;
+    --popover: 220 20% 8%;
+    --popover-foreground: 220 10% 95%;
+    --primary: 220 15% 90%;
+    --primary-foreground: 220 20% 10%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 220 10% 95%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 220 15% 18%;
+    --accent-foreground: 220 10% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 220 15% 80%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-4xl mx-auto px-6 md:px-8;
+  }
+
+  .section-spacing {
+    @apply py-16 md:py-24;
+  }
+
+  .heading-xl {
+    @apply text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight;
+    color: hsl(var(--text-primary));
+  }
+
+  .heading-lg {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+    color: hsl(var(--text-primary));
+  }
+
+  .heading-md {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+    color: hsl(var(--text-primary));
+  }
+
+  .heading-sm {
+    @apply text-lg font-semibold;
+    color: hsl(var(--text-primary));
+  }
+
+  .body-lg {
+    @apply text-lg md:text-xl leading-relaxed;
+    color: hsl(var(--text-secondary));
+  }
+
+  .body-md {
+    @apply text-base md:text-lg leading-relaxed;
+    color: hsl(var(--text-secondary));
+  }
+
+  .body-sm {
+    @apply text-sm leading-relaxed;
+    color: hsl(var(--text-muted));
+  }
+
+  .cta-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-lg transition-all duration-200;
+    background-color: hsl(var(--cta-bg));
+    color: hsl(var(--cta-text));
+  }
+
+  .cta-primary:hover {
+    background-color: hsl(var(--cta-hover));
+    transform: translateY(-1px);
+  }
+
+  .divider {
+    @apply w-full h-px;
+    background-color: hsl(var(--border));
+  }
+}

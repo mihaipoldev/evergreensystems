@@ -192,10 +192,10 @@ export function KnowledgeBaseModal({
       title={isEdit ? "Edit Knowledge Base" : "Create Knowledge Base"}
       footer={
         <>
-          <Button className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+          <Button className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2" variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button className="shadow-buttons border-none" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button className="shadow-buttons border-none py-6 md:py-2" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting
               ? isEdit
                 ? "Updating..."
@@ -208,10 +208,10 @@ export function KnowledgeBaseModal({
       }
     >
       {/* Section: Basic Information */}
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
             {/* Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="kb-name">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="kb-name" className="text-sm md:text-base">
                 Name <span className="text-destructive">*</span>
               </Label>
               <RAGInput
@@ -230,8 +230,8 @@ export function KnowledgeBaseModal({
             </div>
 
             {/* Type Field */}
-            <div className="space-y-2">
-              <Label htmlFor="kb-type">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="kb-type" className="text-sm md:text-base">
                 Type <span className="text-destructive">*</span>
               </Label>
               <RAGSelect
@@ -261,23 +261,24 @@ export function KnowledgeBaseModal({
             </div>
 
             {/* Description Field */}
-            <div className="space-y-2">
-              <Label htmlFor="kb-description">Description</Label>
+            <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
+              <Label htmlFor="kb-description" className="text-sm md:text-base">Description</Label>
               <RAGTextarea
                 id="kb-description"
                 placeholder="Describe the purpose and contents of this knowledge base..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
+                className="min-h-[100px] md:min-h-[180px]"
               />
             </div>
           </div>
 
           {/* Section: Access & Status */}
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
             {/* Visibility Field */}
-            <div className="space-y-3 pb-2">
-              <Label>Visibility</Label>
+            <div className="space-y-2 md:space-y-3 pb-2">
+              <Label className="text-sm md:text-base">Visibility</Label>
               <RadioGroup value={visibility} onValueChange={(value) => setVisibility(value as "private" | "public")}>
                 <div className="flex items-center space-x-3">
                   <RadioGroupItem className="shadow-icon" value="private" id="visibility-private" />
@@ -297,9 +298,9 @@ export function KnowledgeBaseModal({
             </div>
 
             {/* Active Status Toggle */}
-            <div className="flex items-center justify-between bg-card/80 rounded-lg border border-none shadow-card p-4">
+            <div className="flex items-center justify-between bg-card/80 rounded-lg border border-none shadow-card p-3 md:p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="kb-active" className="cursor-pointer">Active Status</Label>
+                <Label htmlFor="kb-active" className="cursor-pointer text-sm md:text-base">Active Status</Label>
                 <p className="text-xs text-muted-foreground">
                   Enable to allow indexing and queries
                 </p>

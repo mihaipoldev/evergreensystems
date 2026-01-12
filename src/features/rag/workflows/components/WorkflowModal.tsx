@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faKey, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faKey, faChevronDown, faChevronUp, faCode } from "@fortawesome/free-solid-svg-icons";
 import {
   RAGInput,
   RAGTextarea,
@@ -20,6 +22,9 @@ import {
   RAGModal,
 } from "@/features/rag/shared/components";
 import type { Workflow } from "../types";
+
+// Lazy load lightweight code editor for JSON content (no SSR)
+const CodeEditor = dynamic(() => import("@uiw/react-textarea-code-editor"), { ssr: false });
 
 /**
  * Convert object schema format to array format for preserving order.
@@ -80,6 +85,8 @@ export function WorkflowModal({
   onSuccess,
 }: WorkflowModalProps) {
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const isEdit = !!initialData;
   const [name, setName] = useState("");
   const [label, setLabel] = useState("");
@@ -105,6 +112,11 @@ export function WorkflowModal({
   
   // Store the original JSON string to preserve key order
   const originalInputSchemaRef = useRef<string>("");
+
+  // Handle theme mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch knowledge bases on mount (excluding those with kb_type 'project')
   useEffect(() => {
@@ -491,6 +503,50 @@ export function WorkflowModal({
     }
   };
 
+  // Format JSON function
+  const formatJSON = (jsonString: string, isConfig = false): string => {
+    if (!jsonString.trim()) return "";
+    
+    try {
+      const parsed = JSON.parse(jsonString);
+      const formatted = JSON.stringify(parsed, null, 2);
+      
+      // For input schema, normalize to array format if needed
+      if (!isConfig) {
+        const arraySchema = normalizeSchemaToArray(parsed);
+        if (arraySchema !== null) {
+          return JSON.stringify(arraySchema, null, 2);
+        }
+      }
+      
+      return formatted;
+    } catch (error) {
+      toast.error("Invalid JSON format. Please check your JSON syntax.");
+      return jsonString;
+    }
+  };
+
+  const handleFormatInputSchema = () => {
+    const formatted = formatJSON(inputSchema, false);
+    if (formatted !== inputSchema) {
+      setInputSchema(formatted);
+      originalInputSchemaRef.current = formatted;
+      if (errors.inputSchema) {
+        setErrors({ ...errors, inputSchema: undefined });
+      }
+    }
+  };
+
+  const handleFormatConfig = () => {
+    const formatted = formatJSON(config, true);
+    if (formatted !== config) {
+      setConfig(formatted);
+      if (errors.config) {
+        setErrors({ ...errors, config: undefined });
+      }
+    }
+  };
+
   const handleClose = () => {
     setName("");
     setLabel("");
@@ -521,7 +577,7 @@ export function WorkflowModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -529,7 +585,7 @@ export function WorkflowModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none"
+            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -544,10 +600,10 @@ export function WorkflowModal({
         </>
       }
     >
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5">
         {/* Name */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-name">
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-name" className="text-sm md:text-base">
             Name <span className="text-destructive">*</span>
           </Label>
           <RAGInput
@@ -566,8 +622,8 @@ export function WorkflowModal({
         </div>
 
         {/* Label */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-label">
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-label" className="text-sm md:text-base">
             Label <span className="text-destructive">*</span>
           </Label>
           <RAGInput
@@ -586,128 +642,21 @@ export function WorkflowModal({
         </div>
 
         {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-description">Description</Label>
+        <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
+          <Label htmlFor="workflow-description" className="text-sm md:text-base">Description</Label>
           <RAGTextarea
             id="workflow-description"
             placeholder="Describe what this workflow does..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={3}
+            rows={4}
+            className="min-h-[80px] md:min-h-[120px]"
           />
-        </div>
-
-        {/* Icon */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-icon">Icon</Label>
-          <RAGInput
-            id="workflow-icon"
-            placeholder="e.g., 📊, 👥"
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-          />
-        </div>
-
-        {/* Estimated Cost */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-cost">Estimated Cost</Label>
-          <RAGInput
-            id="workflow-cost"
-            type="number"
-            step="0.01"
-            placeholder="e.g., 10.50"
-            value={estimatedCost}
-            onChange={(e) => setEstimatedCost(e.target.value)}
-          />
-        </div>
-
-        {/* Estimated Time Minutes */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-time">Estimated Time (minutes)</Label>
-          <RAGInput
-            id="workflow-time"
-            type="number"
-            placeholder="e.g., 30"
-            value={estimatedTimeMinutes}
-            onChange={(e) => setEstimatedTimeMinutes(e.target.value)}
-          />
-        </div>
-
-        {/* Default AI Model */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-default-ai-model">
-            Default AI Model <span className="text-destructive">*</span>
-          </Label>
-          <RAGSelect
-            value={defaultAiModel}
-            onValueChange={(value) => {
-              setDefaultAiModel(value);
-              if (errors.defaultAiModel) setErrors({ ...errors, defaultAiModel: undefined });
-            }}
-          >
-            <RAGSelectTrigger id="workflow-default-ai-model" error={!!errors.defaultAiModel}>
-              <RAGSelectValue placeholder="Select AI model" />
-            </RAGSelectTrigger>
-            <RAGSelectContent>
-              <RAGSelectItem value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</RAGSelectItem>
-              <RAGSelectItem value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</RAGSelectItem>
-              <RAGSelectItem value="google/gemini-3-flash-preview">google/gemini-3-flash-preview</RAGSelectItem>
-              <RAGSelectItem value="google/gemini-3-pro-preview">google/gemini-3-pro-preview</RAGSelectItem>
-              <RAGSelectItem value="openai/gpt-4o-mini">openai/gpt-4o-mini</RAGSelectItem>
-              <RAGSelectItem value="openai/gpt-4o">openai/gpt-4o</RAGSelectItem>
-              <RAGSelectItem value="openai/gpt-5-mini">openai/gpt-5-mini</RAGSelectItem>
-              <RAGSelectItem value="openai/gpt-5.2">openai/gpt-5.2</RAGSelectItem>
-            </RAGSelectContent>
-          </RAGSelect>
-          {errors.defaultAiModel && (
-            <p className="text-xs text-destructive">{errors.defaultAiModel}</p>
-          )}
-        </div>
-
-        {/* Input Schema */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-schema">Input Schema (JSON)</Label>
-          <RAGTextarea
-            id="workflow-schema"
-            placeholder='[{"name": "field1", "type": "text"}, {"name": "field2", "type": "textarea"}]'
-            value={inputSchema}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              setInputSchema(newValue);
-              // Update the ref to preserve the user's typed order
-              originalInputSchemaRef.current = newValue;
-              if (errors.inputSchema) setErrors({ ...errors, inputSchema: undefined });
-            }}
-            rows={6}
-            error={!!errors.inputSchema}
-          />
-          {errors.inputSchema && (
-            <p className="text-xs text-destructive">{errors.inputSchema}</p>
-          )}
-        </div>
-
-        {/* Enabled */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-enabled">Status</Label>
-          <RAGSelect
-            value={enabled ? "enabled" : "disabled"}
-            onValueChange={(value) => {
-              setEnabled(value === "enabled");
-            }}
-          >
-            <RAGSelectTrigger id="workflow-enabled">
-              <RAGSelectValue placeholder="Select status" />
-            </RAGSelectTrigger>
-            <RAGSelectContent>
-              <RAGSelectItem value="enabled">Enabled</RAGSelectItem>
-              <RAGSelectItem value="disabled">Disabled</RAGSelectItem>
-            </RAGSelectContent>
-          </RAGSelect>
         </div>
 
         {/* Knowledge Base Target */}
-        <div className="space-y-2">
-          <Label htmlFor="workflow-knowledge-base-target">
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-knowledge-base-target" className="text-sm md:text-base">
             Knowledge Base Target <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
@@ -737,8 +686,8 @@ export function WorkflowModal({
 
         {/* Target Knowledge Base ID - Only show when target is 'knowledgebase' */}
         {knowledgeBaseTarget === 'knowledgebase' && (
-          <div className="space-y-2">
-            <Label htmlFor="workflow-target-knowledge-base-id">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="workflow-target-knowledge-base-id" className="text-sm md:text-base">
               Target Knowledge Base {knowledgeBaseTarget === 'knowledgebase' && <span className="text-destructive">*</span>}
             </Label>
             <RAGSelect
@@ -771,13 +720,145 @@ export function WorkflowModal({
           </div>
         )}
 
+        {/* Icon */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-icon" className="text-sm md:text-base">Icon</Label>
+          <RAGInput
+            id="workflow-icon"
+            placeholder="e.g., 📊, 👥"
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
+          />
+        </div>
+
+        {/* Estimated Cost */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-cost" className="text-sm md:text-base">Estimated Cost</Label>
+          <RAGInput
+            id="workflow-cost"
+            type="number"
+            step="0.01"
+            placeholder="e.g., 10.50"
+            value={estimatedCost}
+            onChange={(e) => setEstimatedCost(e.target.value)}
+          />
+        </div>
+
+        {/* Estimated Time Minutes */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-time" className="text-sm md:text-base">Estimated Time (minutes)</Label>
+          <RAGInput
+            id="workflow-time"
+            type="number"
+            placeholder="e.g., 30"
+            value={estimatedTimeMinutes}
+            onChange={(e) => setEstimatedTimeMinutes(e.target.value)}
+          />
+        </div>
+
+        {/* Default AI Model */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-default-ai-model" className="text-sm md:text-base">
+            Default AI Model <span className="text-destructive">*</span>
+          </Label>
+          <RAGSelect
+            value={defaultAiModel}
+            onValueChange={(value) => {
+              setDefaultAiModel(value);
+              if (errors.defaultAiModel) setErrors({ ...errors, defaultAiModel: undefined });
+            }}
+          >
+            <RAGSelectTrigger id="workflow-default-ai-model" error={!!errors.defaultAiModel}>
+              <RAGSelectValue placeholder="Select AI model" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</RAGSelectItem>
+              <RAGSelectItem value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</RAGSelectItem>
+              <RAGSelectItem value="google/gemini-3-flash-preview">google/gemini-3-flash-preview</RAGSelectItem>
+              <RAGSelectItem value="google/gemini-3-pro-preview">google/gemini-3-pro-preview</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-4o-mini">openai/gpt-4o-mini</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-4o">openai/gpt-4o</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-5-mini">openai/gpt-5-mini</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-5.2">openai/gpt-5.2</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+          {errors.defaultAiModel && (
+            <p className="text-xs text-destructive">{errors.defaultAiModel}</p>
+          )}
+        </div>
+
+        {/* Input Schema */}
+        <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="workflow-schema" className="text-sm md:text-base">Input Schema (JSON)</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleFormatInputSchema}
+              className="h-7 text-xs"
+            >
+              <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
+              Format JSON
+            </Button>
+          </div>
+          <div className={`border rounded-lg bg-background overflow-hidden ${errors.inputSchema ? "border-destructive" : "border-input"}`}>
+            {mounted && (
+              <CodeEditor
+                value={inputSchema}
+                language="json"
+                placeholder='[{"name": "field1", "type": "text"}, {"name": "field2", "type": "textarea"}]'
+                onChange={(evn) => {
+                  const newValue = evn.target.value;
+                  setInputSchema(newValue);
+                  // Update the ref to preserve the user's typed order
+                  originalInputSchemaRef.current = newValue;
+                  if (errors.inputSchema) setErrors({ ...errors, inputSchema: undefined });
+                }}
+                padding={12}
+                style={{
+                  minHeight: "160px",
+                  fontSize: "13px",
+                  fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace",
+                  lineHeight: "1.5",
+                  letterSpacing: "0",
+                  backgroundColor: "transparent",
+                }}
+                data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
+              />
+            )}
+          </div>
+          {errors.inputSchema && (
+            <p className="text-xs text-destructive">{errors.inputSchema}</p>
+          )}
+        </div>
+
+        {/* Enabled */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-enabled" className="text-sm md:text-base">Status</Label>
+          <RAGSelect
+            value={enabled ? "enabled" : "disabled"}
+            onValueChange={(value) => {
+              setEnabled(value === "enabled");
+            }}
+          >
+            <RAGSelectTrigger id="workflow-enabled">
+              <RAGSelectValue placeholder="Select status" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="enabled">Enabled</RAGSelectItem>
+              <RAGSelectItem value="disabled">Disabled</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+        </div>
+
         {/* Secrets Section - Collapsible */}
-        <div className="border-t border-border/50 pt-5">
+        <div className="border-t border-border/50 pt-3 md:pt-5">
           <Collapsible open={secretsExpanded} onOpenChange={setSecretsExpanded}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-2.5 md:p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faKey} className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-sm">Secrets Configuration</span>
+                <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
+                <span className="font-medium text-xs md:text-sm">Secrets Configuration</span>
                 {hasSecrets && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-green-600/10 text-green-600 dark:text-green-400">
                     Configured
@@ -789,14 +870,14 @@ export function WorkflowModal({
                 className="h-4 w-4 text-muted-foreground" 
               />
             </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-4">
-              <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400">
+            <CollapsibleContent className="space-y-3 md:space-y-4 pt-3 md:pt-4">
+              <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2.5 md:p-3 text-xs md:text-sm text-yellow-700 dark:text-yellow-400">
                 <strong>Security Notice:</strong> These secrets are stored securely and never exposed. 
                 Enter new values to update them.
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="workflow-webhook-endpoint">
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="workflow-webhook-endpoint" className="text-sm md:text-base">
                   Webhook URL <span className="text-destructive">*</span>
                 </Label>
                 <RAGInput
@@ -822,8 +903,8 @@ export function WorkflowModal({
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="workflow-api-key">API Key (optional)</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="workflow-api-key" className="text-sm md:text-base">API Key (optional)</Label>
                 <RAGInput
                   id="workflow-api-key"
                   name="workflow-api-key"
@@ -840,19 +921,44 @@ export function WorkflowModal({
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="secrets-config">Config (JSON, optional)</Label>
-                <RAGTextarea
-                  id="secrets-config"
-                  placeholder='{"key": "value"}'
-                  value={config}
-                  onChange={(e) => {
-                    setConfig(e.target.value);
-                    if (errors.config) setErrors({ ...errors, config: undefined });
-                  }}
-                  rows={4}
-                  error={!!errors.config}
-                />
+              <div className="space-y-1.5 md:space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="secrets-config" className="text-sm md:text-base">Config (JSON, optional)</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleFormatConfig}
+                    className="h-7 text-xs"
+                  >
+                    <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
+                    Format JSON
+                  </Button>
+                </div>
+                <div className={`border rounded-lg bg-background overflow-hidden ${errors.config ? "border-destructive" : "border-input"}`}>
+                  {mounted && (
+                    <CodeEditor
+                      value={config}
+                      language="json"
+                      placeholder='{"key": "value"}'
+                      onChange={(evn) => {
+                        const newValue = evn.target.value;
+                        setConfig(newValue);
+                        if (errors.config) setErrors({ ...errors, config: undefined });
+                      }}
+                      padding={12}
+                      style={{
+                        minHeight: "100px",
+                        fontSize: "13px",
+                        fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace",
+                        lineHeight: "1.5",
+                        letterSpacing: "0",
+                        backgroundColor: "transparent",
+                      }}
+                      data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
+                    />
+                  )}
+                </div>
                 {errors.config && (
                   <p className="text-xs text-destructive">{errors.config}</p>
                 )}

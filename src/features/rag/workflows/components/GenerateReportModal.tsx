@@ -61,11 +61,11 @@ export function GenerateReportModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none"
+        className="fixed inset-0 z-[100] flex items-center justify-center md:p-4 pointer-events-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl bg-card border border-border pointer-events-auto"
+          className="w-full h-full md:w-full md:max-w-5xl md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden md:rounded-2xl bg-card border-0 md:border border-border pointer-events-auto"
           style={{ boxShadow: "0 20px 60px -12px hsl(var(--primary) / 0.3)" }}
         >
           <div className="flex flex-col h-full overflow-hidden">

@@ -21,7 +21,7 @@ export function MarkdownContentModal({
       open={open}
       onOpenChange={onOpenChange}
       title={title || "Document Content"}
-      maxWidth="sm:max-w-[800px]"
+      maxWidth="md:max-w-[800px]"
       footer={
         <Button
           className="shadow-buttons border-none"
@@ -31,8 +31,8 @@ export function MarkdownContentModal({
         </Button>
       }
     >
-      <div className="max-h-[800px] overflow-y-auto my-2">
-        <MarkdownRenderer content={content} className="p-0 py-4" />
+      <div className="max-h-[calc(100vh-8rem)] md:max-h-[800px] overflow-y-auto my-2">
+        <MarkdownRenderer content={content} className="p-0 py-3 md:py-4" />
       </div>
     </RAGModal>
   );

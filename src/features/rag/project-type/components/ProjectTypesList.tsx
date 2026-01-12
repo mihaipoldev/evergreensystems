@@ -4,10 +4,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
-import { ProjectTypesGrid } from "./ProjectTypesGrid";
 import { ProjectTypesTable } from "./ProjectTypesTable";
 import { ProjectTypeModal } from "./ProjectTypeModal";
 import type { ProjectType } from "../types";
@@ -83,7 +81,6 @@ function setStoredSort(value: string): void {
 
 export function ProjectTypesList({ initialProjectTypes }: ProjectTypesListProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useViewMode("grid");
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>(initialProjectTypes);
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
@@ -299,7 +296,7 @@ export function ProjectTypesList({ initialProjectTypes }: ProjectTypesListProps)
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-3">
       <Toolbar
         searchPlaceholder="Search project types..."
         searchValue={searchQuery}
@@ -311,13 +308,11 @@ export function ProjectTypesList({ initialProjectTypes }: ProjectTypesListProps)
         sortOptions={["Recent", "Name"]}
         onSortChange={setSelectedSort}
         selectedSort={selectedSort}
-        primaryAction={{
-          label: "New",
-          onClick: () => setIsCreateModalOpen(true),
-        }}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+          primaryAction={{
+            label: "New",
+            onClick: () => setIsCreateModalOpen(true),
+          }}
+        />
 
       {filteredAndSortedProjectTypes.length === 0 ? (
         <motion.div
@@ -330,8 +325,6 @@ export function ProjectTypesList({ initialProjectTypes }: ProjectTypesListProps)
             ? "No project types. Create one to get started."
             : "No project types found matching your search"}
         </motion.div>
-      ) : viewMode === "grid" ? (
-        <ProjectTypesGrid projectTypes={filteredAndSortedProjectTypes} onDelete={handleDelete} onEdit={handleEdit} />
       ) : (
         <ProjectTypesTable projectTypes={filteredAndSortedProjectTypes} onDelete={handleDelete} onEdit={handleEdit} />
       )}

@@ -61,7 +61,8 @@ export async function GET(request: Request) {
         documentsQuery.ilike('title', `%${query}%`);
       }
       
-      const { data: documents } = await documentsQuery.limit(100);
+      // Fetch all documents (already filtered by chunk_count > 0)
+      const { data: documents } = await documentsQuery;
 
       if (documents && documents.length > 0) {
         // Get KB names for breadcrumbs in parallel
@@ -79,14 +80,11 @@ export async function GET(request: Request) {
         }
 
         documents.forEach((doc: any) => {
-          const kbName = kbMap.get(doc.knowledge_base_id);
           results.push({
             id: doc.id,
             type: 'document',
             title: doc.title || 'Untitled Document',
-            subtitle: `${doc.chunk_count || 0} chunks`,
-            breadcrumb: kbName ? `Knowledge Base: ${kbName}` : undefined,
-            metadata: `${doc.chunk_count || 0} chunks`,
+            metadata: `${doc.chunk_count || 0} ${doc.chunk_count === 1 ? 'chunk' : 'chunks'}`,
           });
         });
       }
@@ -104,7 +102,8 @@ export async function GET(request: Request) {
         projectsQuery.ilike('client_name', `%${query}%`);
       }
       
-      const { data: projects } = await projectsQuery.limit(100);
+      // Remove limit to fetch all projects, then filter by documents
+      const { data: projects } = await projectsQuery;
 
       if (projects && projects.length > 0) {
         // Get all KB IDs and linked doc IDs in parallel
@@ -173,54 +172,68 @@ export async function GET(request: Request) {
               type: 'project',
               title: project.client_name || 'Untitled Project',
               subtitle: project.description,
-              breadcrumb: `Project: ${project.status || 'Active'}`,
-              metadata: `${totalDocCount} documents`,
+              metadata: `${totalDocCount} ${totalDocCount === 1 ? 'document' : 'documents'}`,
             });
           }
         });
       }
     }
 
-    // Search knowledge bases - OPTIMIZED with parallel queries
+    // Search knowledge bases - OPTIMIZED: only show KBs with documents
     if (types.includes('knowledgeBase')) {
-      const kbQuery = (adminSupabase
-        .from('rag_knowledge_bases') as any)
-        .select('id, name, description, is_active, updated_at')
-        .eq('is_active', true)
-        .order('updated_at', { ascending: false });
-      
-      if (query.trim()) {
-        kbQuery.ilike('name', `%${query}%`);
-      }
-      
-      const { data: knowledgeBases } = await kbQuery.limit(100);
+      // First, get unique KB IDs that have documents with chunks
+      const { data: docsWithKBs } = await (adminSupabase
+        .from('rag_documents') as any)
+        .select('knowledge_base_id')
+        .is('deleted_at', null)
+        .gt('chunk_count', 0)
+        .not('knowledge_base_id', 'is', null);
 
-      if (knowledgeBases && knowledgeBases.length > 0) {
-        // Count documents for all KBs in parallel
-        const kbIds = knowledgeBases.map((kb: any) => kb.id);
-        const countPromises = kbIds.map((kbId: string) =>
-          (adminSupabase
-            .from('rag_documents') as any)
-            .select('*', { count: 'exact', head: true })
-            .eq('knowledge_base_id', kbId)
-            .is('deleted_at', null)
-            .gt('chunk_count', 0)
-        );
+      if (docsWithKBs && docsWithKBs.length > 0) {
+        // Get unique KB IDs
+        const uniqueKbIds = [...new Set(docsWithKBs.map((doc: any) => doc.knowledge_base_id))];
 
-        const counts = await Promise.all(countPromises);
+        // Fetch KB details for those IDs
+        let kbQuery = (adminSupabase
+          .from('rag_knowledge_bases') as any)
+          .select('id, name, description, is_active, updated_at')
+          .eq('is_active', true)
+          .in('id', uniqueKbIds);
+        
+        if (query.trim()) {
+          kbQuery = kbQuery.ilike('name', `%${query}%`);
+        }
+        
+        const { data: knowledgeBases } = await kbQuery.order('updated_at', { ascending: false });
 
-        knowledgeBases.forEach((kb: any, index: number) => {
-          const count = counts[index].count || 0;
-          // Show KB even without documents
-          results.push({
-            id: kb.id,
-            type: 'knowledgeBase',
-            title: kb.name || 'Untitled Knowledge Base',
-            subtitle: kb.description,
-            breadcrumb: 'Knowledge Base',
-            metadata: count > 0 ? `${count} documents` : 'No documents yet',
+        if (knowledgeBases && knowledgeBases.length > 0) {
+          // Count documents for all KBs in parallel
+          const kbIds = knowledgeBases.map((kb: any) => kb.id);
+          const countPromises = kbIds.map((kbId: string) =>
+            (adminSupabase
+              .from('rag_documents') as any)
+              .select('*', { count: 'exact', head: true })
+              .eq('knowledge_base_id', kbId)
+              .is('deleted_at', null)
+              .gt('chunk_count', 0)
+          );
+
+          const counts = await Promise.all(countPromises);
+
+          knowledgeBases.forEach((kb: any, index: number) => {
+            const count = counts[index].count || 0;
+            // Only add KBs with documents (count > 0) - should always be true, but double-check
+            if (count > 0) {
+              results.push({
+                id: kb.id,
+                type: 'knowledgeBase',
+                title: kb.name || 'Untitled Knowledge Base',
+                subtitle: kb.description,
+                metadata: `${count} ${count === 1 ? 'document' : 'documents'}`,
+              });
+            }
           });
-        });
+        }
       }
     }
 

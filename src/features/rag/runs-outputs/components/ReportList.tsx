@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import { ReportTable } from "./ReportTable";
 import type { RunOutput } from "../types";
 
@@ -25,7 +24,6 @@ type ReportListProps = {
 
 export function ReportList({ initialReports }: ReportListProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useViewMode("table");
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredReports = useMemo(() => {
@@ -46,13 +44,11 @@ export function ReportList({ initialReports }: ReportListProps) {
   }, [initialReports, searchQuery]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-3">
       <Toolbar
         searchPlaceholder="Search reports..."
         onSearch={setSearchQuery}
         sortOptions={[]}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
       />
 
       {filteredReports.length === 0 ? (

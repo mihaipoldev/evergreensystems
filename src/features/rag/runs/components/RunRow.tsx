@@ -65,71 +65,120 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
     ? `/intel/research/${run.id}/result` 
     : `/intel/research/${run.id}`;
 
+  // Extract workflow result for mobile layout
+  const workflowResult = run.status === "complete" ? extractWorkflowResult(run) : null;
+
   return (
-    <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20">
-      {/* Icon + Name */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-          <FontAwesomeIcon icon={faPlay} className={cn("h-4 w-4", iconColor)} />
-        </div>
-        <div className="min-w-0 flex flex-col h-full justify-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link 
-                href={titleHref}
-                className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
-              >
-                {runLabel}
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isComplete ? "View Report" : "View Progress"}</p>
-            </TooltipContent>
-          </Tooltip>
-          {run.project_name && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {run.project_name}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Fit Score & Verdict */}
-      <div className="w-28 shrink-0">
-        {run.status === "complete" ? (
-          (() => {
-            console.log("[RunRow] Extracting workflow result for run:", run.id);
-            console.log("[RunRow] Full run object:", run);
-            const workflowResult = extractWorkflowResult(run);
-            console.log("[RunRow] Workflow result:", workflowResult);
-            if (workflowResult) {
-              console.log("[RunRow] Rendering FitScoreAndVerdict with:", { score: workflowResult.score, verdict: workflowResult.verdict });
-              return <FitScoreAndVerdict fit_score={workflowResult.score} verdict={workflowResult.verdict} />;
+    <>
+      {/* Mobile Layout */}
+      <Card className="md:hidden border-none shadow-none hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow p-3">
+        <Link
+          href={titleHref}
+          className="contents"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("[data-action-menu]")) {
+              e.preventDefault();
             }
-            console.log("[RunRow] No workflow result, hiding column");
-            return null;
-          })()
-        ) : null}
-      </div>
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+              <FontAwesomeIcon icon={faPlay} className={cn("h-5 w-5", iconColor)} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-base break-words">
+                {runLabel}
+              </div>
+              {run.project_name && (
+                <div className="text-xs text-muted-foreground mt-0.5 break-words">
+                  {run.project_name}
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground space-y-0 mt-2">
+                {workflowResult && (
+                  <div>
+                    <FitScoreAndVerdict fit_score={workflowResult.score} verdict={workflowResult.verdict} />
+                  </div>
+                )}
+                <div>
+                  <RunProgress status={run.status} metadata={run.metadata} className="!w-full !pr-0" />
+                </div>
+                <div>{formattedDate}</div>
+              </div>
+            </div>
+            <div className="flex-shrink-0 ml-2" data-action-menu>
+              <RunActionsMenu run={run} onDelete={onDelete} />
+            </div>
+          </div>
+        </Link>
+      </Card>
 
-      {/* Progress */}
-      <RunProgress 
-        status={run.status} 
-        metadata={run.metadata}
-      />
-
-      {/* Created */}
-      <div className="w-40 shrink-0">
-        <p className="text-sm text-muted-foreground">{formattedDate}</p>
-      </div>
-
-      {/* Actions */}
-      <div className="w-20 shrink-0 flex items-center justify-end">
-        <div onClick={(e) => e.stopPropagation()}>
-          <RunActionsMenu run={run} onDelete={onDelete} />
+      {/* Desktop Layout */}
+      <Card className="hidden md:flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20">
+        {/* Icon + Name */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+            <FontAwesomeIcon icon={faPlay} className={cn("h-4 w-4", iconColor)} />
+          </div>
+          <div className="min-w-0 flex flex-col h-full justify-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link 
+                  href={titleHref}
+                  className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
+                >
+                  {runLabel}
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isComplete ? "View Report" : "View Progress"}</p>
+              </TooltipContent>
+            </Tooltip>
+            {run.project_name && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {run.project_name}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </Card>
+
+        {/* Fit Score & Verdict */}
+        <div className="w-28 shrink-0">
+          {run.status === "complete" ? (
+            (() => {
+              console.log("[RunRow] Extracting workflow result for run:", run.id);
+              console.log("[RunRow] Full run object:", run);
+              const workflowResult = extractWorkflowResult(run);
+              console.log("[RunRow] Workflow result:", workflowResult);
+              if (workflowResult) {
+                console.log("[RunRow] Rendering FitScoreAndVerdict with:", { score: workflowResult.score, verdict: workflowResult.verdict });
+                return <FitScoreAndVerdict fit_score={workflowResult.score} verdict={workflowResult.verdict} />;
+              }
+              console.log("[RunRow] No workflow result, hiding column");
+              return null;
+            })()
+          ) : null}
+        </div>
+
+        {/* Progress */}
+        <RunProgress 
+          status={run.status} 
+          metadata={run.metadata}
+        />
+
+        {/* Created */}
+        <div className="w-40 shrink-0">
+          <p className="text-sm text-muted-foreground">{formattedDate}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="w-20 shrink-0 flex items-center justify-end">
+          <div onClick={(e) => e.stopPropagation()}>
+            <RunActionsMenu run={run} onDelete={onDelete} />
+          </div>
+        </div>
+      </Card>
+    </>
   );
 }
 

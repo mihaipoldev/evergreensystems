@@ -37,7 +37,7 @@ export default function KnowledgeBasesPage() {
 
   if (error) {
     return (
-      <div className="w-full space-y-6">
+      <div className="w-full">
         <div className="text-center py-12">
           <p className="text-destructive">{error}</p>
         </div>
@@ -46,7 +46,7 @@ export default function KnowledgeBasesPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full">
       <KnowledgeBaseList initialKnowledge={knowledge} />
     </div>
   );

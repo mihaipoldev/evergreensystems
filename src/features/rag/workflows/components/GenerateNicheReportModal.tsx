@@ -349,8 +349,8 @@ export function GenerateNicheReportModal({
 
     if (normalizedType === "textarea") {
       return (
-        <div key={fieldKey} className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground">
+        <div key={fieldKey} className="space-y-1.5 md:space-y-2">
+          <label className="text-xs md:text-sm font-medium text-muted-foreground">
             {label}
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
@@ -372,8 +372,8 @@ export function GenerateNicheReportModal({
 
     // Default to input (for "input" type or any other type)
     return (
-      <div key={fieldKey} className="space-y-2">
-        <label className="text-sm font-medium text-muted-foreground">
+      <div key={fieldKey} className="space-y-1.5 md:space-y-2">
+        <label className="text-xs md:text-sm font-medium text-muted-foreground">
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </label>
@@ -384,7 +384,7 @@ export function GenerateNicheReportModal({
           placeholder={`Enter ${label.toLowerCase()}...`}
           disabled={locked}
           className={cn(
-            "w-full h-10 rounded-md border px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            "w-full h-10 md:h-10 rounded-md border px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             locked
               ? "border-input bg-muted text-foreground cursor-not-allowed"
               : "border-input bg-input-background"
@@ -400,18 +400,18 @@ export function GenerateNicheReportModal({
     <>
       {/* Header */}
       <div className="flex-shrink-0 p-4 md:p-6 border-b border-border/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
             <motion.div
               animate={{ rotate: [0, 360] }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0"
             >
-              <FontAwesomeIcon icon={faWandSparkles} className="w-6 h-6" />
+              <FontAwesomeIcon icon={faWandSparkles} className="w-5 h-5 md:w-6 md:h-6" />
             </motion.div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h1
-                className="text-xl md:text-2xl font-bold"
+                className="text-lg md:text-2xl font-bold leading-tight"
                 style={{
                   background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
                   WebkitBackgroundClip: "text",
@@ -421,7 +421,7 @@ export function GenerateNicheReportModal({
               >
                 Generate Your Intelligence Report
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden md:block">
                 Select a workflow and configure your analysis
               </p>
             </div>
@@ -430,15 +430,16 @@ export function GenerateNicheReportModal({
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => onOpenChange(false)}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+            className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors flex-shrink-0"
+            aria-label="Close modal"
           >
-            <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
+            <FontAwesomeIcon icon={faTimes} className="w-4 h-4 md:w-5 md:h-5" />
           </motion.button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-6 min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-4 md:pb-6 min-h-0">
         {loading && (
           <div className="text-center py-8 text-muted-foreground">
             <FontAwesomeIcon icon={faSpinner} className="w-6 h-6 animate-spin mx-auto mb-2" />
@@ -453,7 +454,7 @@ export function GenerateNicheReportModal({
         )}
 
         {!loading && !error && workflows.length === 0 && (
-          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-6 md:p-8 text-center text-muted-foreground text-sm md:text-base">
             No workflows available for project type "{effectiveSubjectType}".
           </div>
         )}
@@ -461,7 +462,7 @@ export function GenerateNicheReportModal({
         {!loading && !error && workflows.length > 0 && (
           <>
             {/* Workflow Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
               {workflows.map((workflow) => (
                 <WorkflowSelectionCard
                   key={workflow.id}
@@ -488,11 +489,11 @@ export function GenerateNicheReportModal({
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="space-y-4"
+                  className="space-y-3 md:space-y-4"
                 >
-                  <div className="p-4 rounded-xl bg-card border border-border space-y-4">
-                    <h2 className="text-base font-semibold flex items-center gap-2">
-                      <FontAwesomeIcon icon={faFileText} className="w-4 h-4 text-primary" />
+                  <div className="p-3 md:p-4 rounded-xl bg-card border border-border space-y-3 md:space-y-4">
+                    <h2 className="text-sm md:text-base font-semibold flex items-center gap-2">
+                      <FontAwesomeIcon icon={faFileText} className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
                       Report Configuration
                     </h2>
 
@@ -532,10 +533,11 @@ export function GenerateNicheReportModal({
                 })
               }
               className={cn(
-                "w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all mt-4",
+                "w-full py-3.5 md:py-3 rounded-lg font-semibold text-sm md:text-sm flex items-center justify-center gap-2 transition-all mt-4 md:mt-4",
                 "bg-primary text-primary-foreground",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                "hover:bg-primary/90"
+                "hover:bg-primary/90 active:bg-primary/95",
+                "touch-manipulation" // Better touch response on mobile
               )}
             >
               {isExecuting ? (

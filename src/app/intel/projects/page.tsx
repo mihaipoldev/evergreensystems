@@ -49,7 +49,7 @@ function ProjectsPageContent() {
 
   if (error) {
     return (
-      <div className="w-full space-y-6">
+      <div className="w-full">
         <div className="text-center py-12">
           <p className="text-destructive">{error}</p>
         </div>
@@ -58,7 +58,7 @@ function ProjectsPageContent() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full">
       <ProjectList initialProjects={projects} />
     </div>
   );
@@ -67,7 +67,7 @@ function ProjectsPageContent() {
 export default function ProjectsPage() {
   return (
     <Suspense fallback={
-      <div className="w-full space-y-6">
+      <div className="w-full">
         <div className="text-center py-12">
           <p className="text-muted-foreground">Loading projects...</p>
         </div>

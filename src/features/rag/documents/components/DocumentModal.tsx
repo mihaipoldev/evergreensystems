@@ -337,7 +337,7 @@ export function DocumentModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -345,7 +345,7 @@ export function DocumentModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none"
+            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting || (sourceType === "link" && selectedDocumentIds.length === 0)}
           >
@@ -360,7 +360,7 @@ export function DocumentModal({
         </>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Knowledge Base */}
         {knowledgeBaseId ? (
           <LockedInput
@@ -368,8 +368,8 @@ export function DocumentModal({
             value={currentKBName}
           />
         ) : (
-          <div className="space-y-2">
-            <Label htmlFor="kb-select">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="kb-select" className="text-sm md:text-base">
               Knowledge Base <span className="text-destructive">*</span>
             </Label>
             <RAGSelect
@@ -401,8 +401,8 @@ export function DocumentModal({
         )}
 
         {/* Source Type */}
-        <div className="space-y-3">
-          <Label>
+        <div className="space-y-2 md:space-y-3 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
+          <Label className="text-sm md:text-base">
             Source Type <span className="text-destructive">*</span>
           </Label>
           <RadioGroup
@@ -416,7 +416,7 @@ export function DocumentModal({
               }
               if (errors.source) setErrors({ ...errors, source: undefined });
             }}
-            className="flex gap-4"
+            className="flex flex-wrap gap-3 md:gap-4"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="file" id="source-file" />
@@ -442,11 +442,11 @@ export function DocumentModal({
 
           {/* File Upload Area */}
           {sourceType === "file" && (
-            <div className="space-y-2">
+            <div className="space-y-1.5 md:space-y-2">
               {!file ? (
                 <div
                   className={cn(
-                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                    "border-2 border-dashed rounded-lg p-4 md:p-6 text-center cursor-pointer transition-colors",
                     errors.source 
                       ? "border-destructive" 
                       : isDragging
@@ -466,7 +466,7 @@ export function DocumentModal({
                       isDragging ? "text-primary" : "text-muted-foreground"
                     )}
                   />
-                  <p className="text-sm font-medium">
+                  <p className="text-sm md:text-base font-medium">
                     Upload file
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -474,13 +474,13 @@ export function DocumentModal({
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 border border-border rounded-lg bg-muted/30">
                   <FontAwesomeIcon
                     icon={faFileText}
-                    className="h-8 w-8 text-primary shrink-0"
+                    className="h-6 w-6 md:h-8 md:w-8 text-primary shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{file.name}</p>
+                    <p className="text-xs md:text-sm font-medium truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </p>
@@ -540,7 +540,7 @@ export function DocumentModal({
                 }}
                 error={!!errors.source}
                 rows={10}
-                className="resize-none"
+                className="resize-none min-h-[120px] md:min-h-[240px]"
               />
             </div>
           )}
@@ -564,7 +564,7 @@ export function DocumentModal({
 
         {/* Should Chunk - Hide when linking documents */}
         {sourceType !== "link" && (
-          <div className="space-y-3 pb-2">
+          <div className="space-y-3 pb-2 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
             <Label>Should Chunk</Label>
             <RadioGroup
               value={shouldChunk ? "yes" : "no"}

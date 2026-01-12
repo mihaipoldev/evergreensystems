@@ -39,10 +39,10 @@ export function WorkflowSelectionCard({
   if (workflow.icon) {
     const icon = resolveIconFromClass(workflow.icon);
     if (icon) {
-      iconElement = <FontAwesomeIcon icon={icon} className="text-2xl" />;
+      iconElement = <FontAwesomeIcon icon={icon} className="text-xl" />;
     } else {
       // Fallback to emoji if Font Awesome icon not found
-      iconElement = <span className="text-3xl">{workflow.icon}</span>;
+      iconElement = <span className="text-2xl">{workflow.icon}</span>;
     }
   }
 
@@ -68,20 +68,20 @@ export function WorkflowSelectionCard({
       }}
     >
       {/* Price Badge - Top Right */}
-      <div className="absolute -top-3 -right-3 z-10">
+      <div className="absolute -top-2 -right-2 z-10">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
-          className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full shadow-lg"
+          className="bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-lg"
         >
-          <span className="text-sm font-bold">{price}</span>
+          <span className="text-xs font-bold">{price}</span>
         </motion.div>
       </div>
 
       {/* Config Button - Top Right (only when selected) */}
       {isSelected && onConfigClick && (
-        <div className="absolute top-8 right-4 z-10">
+        <div className="absolute top-6 right-3 z-10">
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -91,21 +91,21 @@ export function WorkflowSelectionCard({
               onConfigClick();
             }}
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all",
+              "w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all",
               "bg-secondary hover:bg-secondary/80 text-foreground",
               "hover:scale-110 active:scale-95"
             )}
           >
-            <FontAwesomeIcon icon={faCog} className="w-4 h-4" />
+            <FontAwesomeIcon icon={faCog} className="w-3.5 h-3.5" />
           </motion.button>
         </div>
       )}
 
-      <div className="p-6">
+      <div className="p-4">
         {/* Icon */}
         <motion.div
           className={cn(
-            "w-16 h-16 rounded-xl flex items-center justify-center mb-4",
+            "w-12 h-12 rounded-xl flex items-center justify-center mb-3",
             "bg-secondary"
           )}
           whileHover={{ rotate: [0, -5, 5, 0] }}
@@ -114,38 +114,38 @@ export function WorkflowSelectionCard({
           {iconElement || (
             <FontAwesomeIcon
               icon={faArrowRight}
-              className="text-2xl text-primary"
+              className="text-xl text-primary"
             />
           )}
         </motion.div>
 
         {/* Title */}
-        <h3 className="text-xl font-bold text-foreground mb-2">
+        <h3 className="text-lg font-bold text-foreground mb-1.5">
           {workflow.label}
         </h3>
 
         {/* Description */}
-        <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2">
+        <p className="text-muted-foreground text-sm leading-relaxed mb-3 line-clamp-2">
           {workflow.description || "No description available"}
         </p>
 
         {/* Time Badge */}
-        <div className="flex items-center gap-2 text-muted-foreground mb-4">
-          <FontAwesomeIcon icon={faClock} className="w-4 h-4" />
-          <span className="text-sm font-medium">{time}</span>
+        <div className="flex items-center gap-2 text-muted-foreground mb-3">
+          <FontAwesomeIcon icon={faClock} className="w-3.5 h-3.5" />
+          <span className="text-xs font-medium">{time}</span>
         </div>
 
         {/* Select Button */}
         <motion.button
           className={cn(
-            "w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all",
+            "w-full py-2 px-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all",
             isSelected
               ? "bg-primary text-primary-foreground"
               : "bg-muted/50 text-foreground hover:bg-muted/70"
           )}
         >
           {isSelected ? "Selected" : "Select"}
-          <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
+          <FontAwesomeIcon icon={faArrowRight} className="w-3.5 h-3.5" />
         </motion.button>
       </div>
     </motion.div>

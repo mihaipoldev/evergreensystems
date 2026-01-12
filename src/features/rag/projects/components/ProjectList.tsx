@@ -4,10 +4,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
-import { ProjectGrid } from "./ProjectGrid";
 import { ProjectTable } from "./ProjectTable";
 import { ProjectModal } from "./ProjectModal";
 import { BulkSelectionProvider, useBulkSelection } from "@/features/rag/shared/contexts/BulkSelectionContext";
@@ -90,20 +88,29 @@ function setStoredSort(value: string): void {
   }
 }
 
-function getStoredGroupByVerdict(): boolean {
-  if (typeof window === "undefined") return false;
+function getStoredGroupByVerdict(): string {
+  if (typeof window === "undefined") return "none";
   try {
     const saved = localStorage.getItem(STORAGE_KEY_GROUP_BY_VERDICT);
-    return saved === "true";
+    if (saved === "true") {
+      // Migrate from old boolean format
+      localStorage.setItem(STORAGE_KEY_GROUP_BY_VERDICT, "verdict");
+      return "verdict";
+    }
+    if (saved === "false") {
+      localStorage.setItem(STORAGE_KEY_GROUP_BY_VERDICT, "none");
+      return "none";
+    }
+    return saved || "none";
   } catch {
-    return false;
+    return "none";
   }
 }
 
-function setStoredGroupByVerdict(value: boolean): void {
+function setStoredGroupByVerdict(value: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY_GROUP_BY_VERDICT, String(value));
+    localStorage.setItem(STORAGE_KEY_GROUP_BY_VERDICT, value);
   } catch {
     // Ignore localStorage errors
   }
@@ -113,8 +120,6 @@ function setStoredGroupByVerdict(value: boolean): void {
 function ProjectListContent({ initialProjects }: ProjectListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Always use table view for projects (grid view hidden but not deleted)
-  const [viewMode, setViewMode] = useViewMode("table");
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
   // Initialize filters from localStorage - URL params will override in useEffect
@@ -474,7 +479,7 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
   }, [filteredAndSortedProjects, selectedIds]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-3">
       <Toolbar
         searchPlaceholder="Search projects..."
         searchValue={searchQuery}
@@ -490,13 +495,14 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
             label: "New",
             onClick: () => setIsCreateModalOpen(true),
           }}
-          // View mode toggle hidden for projects - always use table view
-          // viewMode={viewMode}
-          // onViewModeChange={setViewMode}
           groupByVerdict={projectTypeName === "niche" ? {
-            enabled: groupByVerdict,
-            onToggle: (enabled: boolean) => {
-              setGroupByVerdict(enabled);
+            options: [
+              { value: "none", label: "None" },
+              { value: "verdict", label: "Verdict" },
+            ],
+            selectedValue: groupByVerdict,
+            onSelect: (value: string) => {
+              setGroupByVerdict(value);
             },
           } : undefined}
         />
@@ -513,21 +519,11 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
             : "No projects found matching your search"}
         </motion.div>
       ) : (
-        // Always show table view for projects (grid view hidden but not deleted)
-        // Grid view code kept below for future use if needed:
-        // viewMode === "grid" ? (
-        //   <ProjectGrid 
-        //     projects={filteredAndSortedProjects}
-        //     projectTypes={projectTypes}
-        //     onDelete={handleDelete}
-        //     onEdit={handleEdit}
-        //   />
-        // ) : (
         <ProjectTable 
           projects={filteredAndSortedProjects}
           projectTypes={projectTypes}
           projectTypeName={projectTypeName}
-          groupByVerdict={projectTypeName === "niche" ? groupByVerdict : false}
+          groupByVerdict={projectTypeName === "niche" ? groupByVerdict !== "none" : false}
           onDelete={handleDelete}
           onEdit={handleEdit}
         />

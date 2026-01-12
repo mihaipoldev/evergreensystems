@@ -4,58 +4,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useChatContext } from '../contexts/ChatContext';
 import type { ContextItem } from '../types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface ContextDropdownProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface ContextCategory {
-  id: string;
-  icon: string;
-  title: string;
-  items?: ContextItem[];
-}
-
-const contextCategories: ContextCategory[] = [
-  {
-    id: 'general',
-    icon: '🌐',
-    title: 'General Assistant (no specific context)',
-  },
-  {
-    id: 'documents',
-    icon: '📄',
-    title: 'Documents',
-    items: [], // Will be populated from API
-  },
-  {
-    id: 'knowledge-bases',
-    icon: '📚',
-    title: 'Knowledge Bases',
-    items: [], // Will be populated from API
-  },
-  {
-    id: 'projects',
-    icon: '📁',
-    title: 'Projects',
-    items: [], // Will be populated from API
-  },
-];
-
-const currentPageContext: ContextItem = {
-  id: 'current-page',
-  type: 'document',
-  icon: '📄',
-  title: '3D Printing Report',
-  description: 'Current Page',
-};
 
 export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
-  const { activeContexts, addContext, clearContexts } = useChatContext();
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['documents']);
+  const { activeContexts, addContext } = useChatContext();
+  const [activeTab, setActiveTab] = useState('projects'); // Default to projects
   const [documents, setDocuments] = useState<ContextItem[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [projects, setProjects] = useState<ContextItem[]>([]);
@@ -67,17 +28,20 @@ export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
   // Fetch documents, projects, and knowledge bases when dropdown opens
   useEffect(() => {
     if (isOpen) {
-      if (documents.length === 0 && !loadingDocuments) {
-        fetchDocuments();
-      }
+      // Always fetch projects (default tab)
       if (projects.length === 0 && !loadingProjects) {
         fetchProjects();
       }
-      if (knowledgeBases.length === 0 && !loadingKnowledgeBases && !knowledgeBasesFetched) {
+      // Fetch documents when docs tab is active
+      if (activeTab === 'documents' && documents.length === 0 && !loadingDocuments) {
+        fetchDocuments();
+      }
+      // Fetch knowledge bases when KBs tab is active
+      if (activeTab === 'knowledge-bases' && knowledgeBases.length === 0 && !loadingKnowledgeBases && !knowledgeBasesFetched) {
         fetchKnowledgeBases();
       }
     }
-  }, [isOpen, documents.length, loadingDocuments, projects.length, loadingProjects, knowledgeBases.length, loadingKnowledgeBases, knowledgeBasesFetched]);
+  }, [isOpen, activeTab, documents.length, loadingDocuments, projects.length, loadingProjects, knowledgeBases.length, loadingKnowledgeBases, knowledgeBasesFetched]);
 
   const fetchDocuments = async () => {
     setLoadingDocuments(true);
@@ -102,12 +66,6 @@ export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
           metadata: doc.chunk_count ? `${doc.chunk_count} chunks` : undefined,
         }));
         setDocuments(documentItems);
-        
-        // Update the documents category
-        const documentsCategory = contextCategories.find(cat => cat.id === 'documents');
-        if (documentsCategory) {
-          documentsCategory.items = documentItems;
-        }
       }
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -139,12 +97,6 @@ export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
           metadata: project.document_count ? `${project.document_count} documents` : undefined,
         }));
         setProjects(projectItems);
-        
-        // Update the projects category
-        const projectsCategory = contextCategories.find(cat => cat.id === 'projects');
-        if (projectsCategory) {
-          projectsCategory.items = projectItems;
-        }
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -179,12 +131,6 @@ export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
           metadata: kb.metadata,
         }));
         setKnowledgeBases(kbItems);
-        
-        // Update the knowledge bases category
-        const kbCategory = contextCategories.find(cat => cat.id === 'knowledge-bases');
-        if (kbCategory) {
-          kbCategory.items = kbItems;
-        }
       } else {
         setKnowledgeBases([]);
       }
@@ -197,20 +143,8 @@ export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
     }
   };
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
   const selectContext = (context: ContextItem) => {
-    if (context.id === 'general') {
-      clearContexts();
-    } else {
-      addContext(context);
-    }
+    addContext(context);
     onClose();
   };
 
@@ -236,146 +170,134 @@ export const ContextDropdown = ({ isOpen, onClose }: ContextDropdownProps) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute left-4 right-4 top-full mt-2 z-[80] bg-card border border-border rounded-xl chat-shadow-lg overflow-hidden"
+            className="absolute left-4 right-4 top-full mt-2 z-[80] bg-card border border-border rounded-xl chat-shadow-lg overflow-hidden w-96"
           >
-            <div className="max-h-80 overflow-y-auto scrollbar-thin">
-              {/* Current Page - Selected */}
-              <button
-                onClick={() =>
-                  selectContext({
-                    ...currentPageContext,
-                    title: '3D Printing Service Providers Report',
-                    description: 'Context includes: Report content (8 sections), 47 source URLs, Market data',
-                  })
-                }
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-base">{currentPageContext.icon}</span>
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-foreground">
-                      Current Page - {currentPageContext.title}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Active document</div>
-                  </div>
-                </div>
-                {isSelected('current-page', 'document') && (
-                  <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-primary flex-shrink-0" />
-                )}
-              </button>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full rounded-none border-b border-border bg-transparent h-auto p-0">
+                <TabsTrigger value="projects" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                  <span className="mr-2">📁</span>
+                  Projects
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                  <span className="mr-2">📄</span>
+                  Docs
+                </TabsTrigger>
+                <TabsTrigger value="knowledge-bases" className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                  <span className="mr-2">📚</span>
+                  KBs
+                </TabsTrigger>
+              </TabsList>
 
-              {/* General Assistant */}
-              <button
-                onClick={() =>
-                  selectContext({
-                    id: 'general',
-                    type: 'general',
-                    icon: '🌐',
-                    title: 'General Assistant',
-                    description: 'No specific context - general AI assistance',
-                  })
-                }
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-base">🌐</span>
-                  <span className="text-sm font-medium text-foreground">
-                    General Assistant (no specific context)
-                  </span>
-                </div>
-                {activeContexts.length === 0 && (
-                  <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-primary flex-shrink-0" />
-                )}
-              </button>
-
-              {/* Expandable Categories */}
-              {contextCategories.slice(1).map((category) => {
-                // Use fetched documents/projects/knowledge bases for respective categories
-                let categoryItems: ContextItem[] | undefined;
-                if (category.id === 'documents') {
-                  categoryItems = documents;
-                } else if (category.id === 'projects') {
-                  categoryItems = projects;
-                } else if (category.id === 'knowledge-bases') {
-                  categoryItems = knowledgeBases;
-                } else {
-                  categoryItems = category.items;
-                }
-                return (
-                <div key={category.id}>
-                  <button
-                    onClick={() => toggleCategory(category.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-base">{category.icon}</span>
-                      <span className="text-sm font-medium text-foreground">
-                        {category.title}
-                      </span>
-                      {(category.id === 'documents' && loadingDocuments) || 
-                       (category.id === 'projects' && loadingProjects) ||
-                       (category.id === 'knowledge-bases' && loadingKnowledgeBases) ? (
-                        <span className="text-xs text-muted-foreground">Loading...</span>
-                      ) : null}
+              <div className="max-h-80 overflow-y-auto scrollbar-thin">
+                {/* Projects Tab */}
+                <TabsContent value="projects" className="m-0 p-0">
+                  {loadingProjects ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      Loading projects...
                     </div>
-                    <FontAwesomeIcon
-                      icon={faChevronRight}
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        expandedCategories.includes(category.id) ? 'rotate-90' : ''
-                      }`}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {expandedCategories.includes(category.id) && categoryItems && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden bg-muted/30"
-                      >
-                        {categoryItems.length === 0 && category.id === 'documents' && !loadingDocuments && (
-                          <div className="pl-12 pr-4 py-3 text-sm text-muted-foreground">
-                            No documents with chunks available
-                          </div>
-                        )}
-                        {categoryItems.length === 0 && category.id === 'projects' && !loadingProjects && (
-                          <div className="pl-12 pr-4 py-3 text-sm text-muted-foreground">
-                            No projects with documents available
-                          </div>
-                        )}
-                        {categoryItems.length === 0 && category.id === 'knowledge-bases' && !loadingKnowledgeBases && (
-                          <div className="pl-12 pr-4 py-3 text-sm text-muted-foreground">
-                            No knowledge bases with documents available
-                          </div>
-                        )}
-                        {categoryItems.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => selectContext(item)}
-                            className="w-full flex items-center justify-between pl-12 pr-4 py-2.5 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">{item.icon}</span>
-                              <span className="text-sm text-foreground">{item.title}</span>
-                              {item.metadata && (
-                                <span className="text-xs text-muted-foreground">
-                                  ({item.metadata})
-                                </span>
-                              )}
-                            </div>
-                            {isSelected(item.id, item.type) && (
-                              <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-primary flex-shrink-0" />
+                  ) : projects.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No projects with documents available
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {projects.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => selectContext(item)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-sm flex-shrink-0">{item.icon}</span>
+                            <span className="text-sm text-foreground truncate">{item.title}</span>
+                            {item.metadata && (
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                ({item.metadata})
+                              </span>
                             )}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                );
-              })}
-            </div>
+                          </div>
+                          {isSelected(item.id, item.type) && (
+                            <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Documents Tab */}
+                <TabsContent value="documents" className="m-0 p-0">
+                  {loadingDocuments ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      Loading documents...
+                    </div>
+                  ) : documents.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No documents with chunks available
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {documents.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => selectContext(item)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-sm flex-shrink-0">{item.icon}</span>
+                            <span className="text-sm text-foreground truncate">{item.title}</span>
+                            {item.metadata && (
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                ({item.metadata})
+                              </span>
+                            )}
+                          </div>
+                          {isSelected(item.id, item.type) && (
+                            <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Knowledge Bases Tab */}
+                <TabsContent value="knowledge-bases" className="m-0 p-0">
+                  {loadingKnowledgeBases ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      Loading knowledge bases...
+                    </div>
+                  ) : knowledgeBases.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No knowledge bases with documents available
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {knowledgeBases.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => selectContext(item)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-sm flex-shrink-0">{item.icon}</span>
+                            <span className="text-sm text-foreground truncate">{item.title}</span>
+                            {item.metadata && (
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                ({item.metadata})
+                              </span>
+                            )}
+                          </div>
+                          {isSelected(item.id, item.type) && (
+                            <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </div>
+            </Tabs>
           </motion.div>
         </>
       )}

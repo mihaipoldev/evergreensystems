@@ -743,9 +743,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           {/* Gradient Background Container */}
           <div
             className="w-full max-w-[800px] rounded-2xl p-[1px] relative group"
-            style={{
-              backgroundImage: 'linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)',
-            }}
+          
           >
             {/* Glow Effect on Hover - Gradient from left (secondary) to right (primary) - Behind the video */}
             <div 
@@ -758,7 +756,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
             />
             
             {/* Black Inner Container */}
-            <div className="bg-transparent rounded-2xl p-[2px] relative w-full">
+            <div className="bg-transparent rounded-2xl p-[0px] relative w-full">
               {/* Media Container */}
               {mainMedia ? (
                 <div 

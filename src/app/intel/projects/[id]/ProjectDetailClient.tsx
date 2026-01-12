@@ -141,10 +141,10 @@ export function ProjectDetailClient({
     <>
       <div className="w-full space-y-6">
         <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <TooltipProvider delayDuration={100}>
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
+              <div className="flex items-start gap-2 mb-1 mt-1.5">
+                <h1 className="text-lg md:text-3xl font-bold text-foreground flex items-start gap-2">
                   {initialProjectType?.icon && <span>{initialProjectType.icon}</span>}
                   {displayName}
                 </h1>
@@ -152,7 +152,7 @@ export function ProjectDetailClient({
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      className="md:h-8 hidden md:block text-muted-foreground hover:text-foreground transition-colors"
                       aria-label="Project information"
                     >
                       <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
@@ -194,14 +194,14 @@ export function ProjectDetailClient({
               </div>
             </TooltipProvider>
             
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
               {project.rag_knowledge_bases && (
                 <Link 
                   href={`/intel/knowledge-bases/${project.kb_id}`}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group min-w-0 max-w-full"
                 >
-                  <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
-                  <span className="font-medium">{project.rag_knowledge_bases.name}</span>
+                  <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="font-medium truncate min-w-0">{project.rag_knowledge_bases.name}</span>
                 </Link>
               )}
             </div>
@@ -229,7 +229,7 @@ export function ProjectDetailClient({
           <div className="flex items-center gap-3">
             <Button
               onClick={() => setIsGenerateModalOpen(true)}
-              className="relative h-10 w-10 p-0 overflow-hidden border-0 shadow-none transition-all duration-300 hover:scale-105 bg-primary hover:bg-primary text-accent-foreground"
+              className="hidden md:inline-flex relative h-10 w-10 p-0 overflow-hidden border-0 shadow-none transition-all duration-300 hover:scale-105 bg-primary hover:bg-primary text-accent-foreground"
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 5px 6px -2px hsl(var(--accent) / 0.1), 0 3px 3px -2px hsl(var(--accent) / 0.05)';
               }}

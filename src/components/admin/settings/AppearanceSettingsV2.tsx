@@ -6,11 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,8 +25,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTheme } from "next-themes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faSun, faMoon, faDisplay } from "@fortawesome/free-solid-svg-icons";
 import { Moon, Sun, Monitor, Palette, Edit2, Trash2, Save, Sparkles } from "lucide-react";
+import { ActionMenu } from "@/components/shared/ActionMenu";
 import { createClient } from "@/lib/supabase/client";
 import { hexToHsl, hslToCssString } from "@/lib/color-utils";
 import { HexColorPicker } from "react-colorful";
@@ -80,9 +76,8 @@ export function AppearanceSettingsV2() {
   
   // Color picker state
   const [primaryColor, setPrimaryColor] = useState<Color | null>(null);
-  const [secondaryColor, setSecondaryColor] = useState<Color | null>(null);
   const [accentColor, setAccentColor] = useState<Color | null>(null);
-  const [activeColorType, setActiveColorType] = useState<'primary' | 'secondary' | 'accent'>('primary');
+  const [activeColorType, setActiveColorType] = useState<'primary' | 'accent'>('primary');
   
   // Dialog state
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -94,7 +89,6 @@ export function AppearanceSettingsV2() {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renamePresetName, setRenamePresetName] = useState("");
   const [presetToRename, setPresetToRename] = useState<string | null>(null);
-  const [isThemePopoverOpen, setIsThemePopoverOpen] = useState(false);
 
   // Convert database color to component color
   const dbColorToComponent = (dbColor: DatabaseColor): Color => {
@@ -416,11 +410,7 @@ export function AppearanceSettingsV2() {
               setPrimaryColor(primary);
               applyPrimaryColorToCSS(primary);
             }
-            if (secondaryColor) {
-              const secondary = dbColorToComponent(secondaryColor);
-              setSecondaryColor(secondary);
-              // Secondary color is not applied dynamically - it comes from CSS defaults
-            }
+            // Secondary color removed from UI - not loading it anymore
             if (accentColor) {
               const accent = dbColorToComponent(accentColor);
               setAccentColor(accent);
@@ -441,10 +431,9 @@ export function AppearanceSettingsV2() {
 
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme);
-    setIsThemePopoverOpen(false);
   };
 
-  const handleColorChange = (hex: string, type?: 'primary' | 'secondary' | 'accent') => {
+  const handleColorChange = (hex: string, type?: 'primary' | 'accent') => {
     const colorType = type || activeColorType;
     const hsl = hexToHsl(hex);
     const color: Color = {
@@ -461,9 +450,6 @@ export function AppearanceSettingsV2() {
     if (colorType === 'primary') {
       setPrimaryColor(color);
       applyPrimaryColorToCSS(color);
-    } else if (colorType === 'secondary') {
-      setSecondaryColor(color);
-      // Secondary color is not applied dynamically - it comes from CSS defaults
     } else if (colorType === 'accent') {
       setAccentColor(color);
       applyAccentColorToCSS(color);
@@ -481,11 +467,7 @@ export function AppearanceSettingsV2() {
       setPrimaryColor(primary);
       applyPrimaryColorToCSS(primary);
     }
-    if (theme.secondary_color) {
-      const secondary = dbColorToComponent(theme.secondary_color);
-      setSecondaryColor(secondary);
-      // Secondary color is not applied dynamically - it comes from CSS defaults
-    }
+    // Secondary color removed from UI - not loading it anymore
     if (theme.accent_color) {
       const accent = dbColorToComponent(theme.accent_color);
       setAccentColor(accent);
@@ -672,20 +654,9 @@ export function AppearanceSettingsV2() {
         },
       };
 
-      const secondaryColorComponent: Color = {
-        id: newSecondaryColor.id,
-        name: `${presetData.name || "AI Generated"} - Secondary`,
-        hex: grayHex,
-        hsl: {
-          h: grayHsl.h,
-          s: grayHsl.s,
-          l: grayHsl.l,
-        },
-      };
-
       setPrimaryColor(primaryColorComponent);
       setAccentColor(accentColorComponent);
-      setSecondaryColor(secondaryColorComponent);
+      // Secondary color removed from UI - not setting it in state anymore
       applyPrimaryColorToCSS(primaryColorComponent);
 
       setSelectedPresetId(newTheme.id);
@@ -708,10 +679,10 @@ export function AppearanceSettingsV2() {
   };
 
   const handleSavePreset = async () => {
-    if (!userId || !primaryColor || !secondaryColor || !accentColor) {
+    if (!userId || !primaryColor || !accentColor) {
       toast({
         title: "Missing colors",
-        description: "Please select primary, secondary, and accent colors before saving.",
+        description: "Please select primary and accent colors before saving.",
         variant: "destructive",
       });
       return;
@@ -735,7 +706,7 @@ export function AppearanceSettingsV2() {
   };
 
   const createPreset = async (presetName: string) => {
-    if (!userId || !primaryColor || !secondaryColor || !accentColor) return;
+    if (!userId || !primaryColor || !accentColor) return;
 
     try {
       const supabase = createClient();
@@ -769,34 +740,24 @@ export function AppearanceSettingsV2() {
         primaryColorId = newPrimary.id;
       }
 
-      // Find or create secondary color
-      let secondaryColorId: string;
-      const { data: existingSecondary } = await (supabase
+      // Create default gray secondary color for backward compatibility
+      const grayHex = "#9ca3af"; // Neutral gray (similar to gray-400 in Tailwind)
+      const grayHsl = hexToHsl(grayHex);
+      const { data: newSecondary, error: secondaryError } = await (supabase
         .from("user_colors") as any)
+        .insert({
+          user_id: userId,
+          name: `Secondary ${presetName}`,
+          hex: grayHex,
+          hsl_h: grayHsl.h,
+          hsl_s: grayHsl.s,
+          hsl_l: grayHsl.l,
+        })
         .select("id")
-        .eq("user_id", userId)
-        .eq("hex", secondaryColor.hex)
-        .maybeSingle();
+        .single();
 
-      if (existingSecondary) {
-        secondaryColorId = existingSecondary.id;
-      } else {
-        const { data: newSecondary, error: secondaryError } = await (supabase
-          .from("user_colors") as any)
-          .insert({
-            user_id: userId,
-            name: `Secondary ${presetName}`,
-            hex: secondaryColor.hex,
-            hsl_h: secondaryColor.hsl.h,
-            hsl_s: secondaryColor.hsl.s,
-            hsl_l: secondaryColor.hsl.l,
-          })
-          .select("id")
-          .single();
-
-        if (secondaryError) throw secondaryError;
-        secondaryColorId = newSecondary.id;
-      }
+      if (secondaryError) throw secondaryError;
+      const secondaryColorId = newSecondary.id;
 
       // Find or create accent color
       let accentColorId: string;
@@ -880,7 +841,7 @@ export function AppearanceSettingsV2() {
   };
 
   const updatePreset = async (presetId: string) => {
-    if (!userId || !primaryColor || !secondaryColor || !accentColor) return;
+    if (!userId || !primaryColor || !accentColor) return;
 
     try {
       const supabase = createClient();
@@ -914,34 +875,24 @@ export function AppearanceSettingsV2() {
         primaryColorId = newPrimary.id;
       }
 
-      // Find or create secondary color
-      let secondaryColorId: string;
-      const { data: existingSecondary } = await (supabase
+      // Create default gray secondary color for backward compatibility
+      const grayHex = "#9ca3af"; // Neutral gray (similar to gray-400 in Tailwind)
+      const grayHsl = hexToHsl(grayHex);
+      const { data: newSecondary, error: secondaryError } = await (supabase
         .from("user_colors") as any)
+        .insert({
+          user_id: userId,
+          name: `Secondary`,
+          hex: grayHex,
+          hsl_h: grayHsl.h,
+          hsl_s: grayHsl.s,
+          hsl_l: grayHsl.l,
+        })
         .select("id")
-        .eq("user_id", userId)
-        .eq("hex", secondaryColor.hex)
-        .maybeSingle();
+        .single();
 
-      if (existingSecondary) {
-        secondaryColorId = existingSecondary.id;
-      } else {
-        const { data: newSecondary, error: secondaryError } = await (supabase
-          .from("user_colors") as any)
-          .insert({
-            user_id: userId,
-            name: `Secondary`,
-            hex: secondaryColor.hex,
-            hsl_h: secondaryColor.hsl.h,
-            hsl_s: secondaryColor.hsl.s,
-            hsl_l: secondaryColor.hsl.l,
-          })
-          .select("id")
-          .single();
-
-        if (secondaryError) throw secondaryError;
-        secondaryColorId = newSecondary.id;
-      }
+      if (secondaryError) throw secondaryError;
+      const secondaryColorId = newSecondary.id;
 
       // Find or create accent color
       let accentColorId: string;
@@ -1121,100 +1072,20 @@ export function AppearanceSettingsV2() {
   return (
     <div className="space-y-6">
       <Card className="relative overflow-hidden shadow-lg border-0 rounded-3xl">
-        <CardHeader className="relative">
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Palette className="h-6 w-6 text-primary" />
-            Appearance v2
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6 relative">
-          {/* Theme Section */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="font-medium">Theme</div>
-              <div className="text-sm text-muted-foreground">Choose your interface theme</div>
-            </div>
-            <Popover open={isThemePopoverOpen} onOpenChange={setIsThemePopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-10 gap-2 px-3 bg-card/90 shadow-buttons border-0 text-foreground/80 hover:text-foreground hover:bg-card/100 hover:shadow-card transition-all duration-300 w-full sm:w-auto"
-                >
-                  {currentTheme === "dark" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : currentTheme === "light" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Monitor className="h-4 w-4" />
-                  )}
-                  <span>{currentTheme === "dark" ? "Dark" : currentTheme === "light" ? "Light" : "System"}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                sideOffset={4}
-                className="w-48 px-0 py-2 border-0"
-                style={{
-                  boxShadow:
-                    "rgba(0, 0, 0, 0.2) 0px 2px 4px -1px, rgba(0, 0, 0, 0.14) 0px 4px 5px 0px, rgba(0, 0, 0, 0.12) 0px 1px 10px 0px",
-                }}
-              >
-                <div className="px-4 py-2">
-                  <div className="space-y-0">
-                    <button
-                      onClick={() => handleThemeChange("light")}
-                      className={cn(
-                        "flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1.5 -mx-2 w-full hover:bg-secondary group",
-                        currentTheme === "light" && "bg-secondary"
-                      )}
-                    >
-                      <Sun className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
-                      <span className="text-sm text-muted-foreground group-hover:text-foreground font-normal">
-                        Light
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleThemeChange("dark")}
-                      className={cn(
-                        "flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1.5 -mx-2 w-full hover:bg-secondary group",
-                        currentTheme === "dark" && "bg-secondary"
-                      )}
-                    >
-                      <Moon className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
-                      <span className="text-sm text-muted-foreground group-hover:text-foreground font-normal">
-                        Dark
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleThemeChange("system")}
-                      className={cn(
-                        "flex items-center space-x-2 cursor-pointer rounded-sm px-2 py-1.5 -mx-2 w-full hover:bg-secondary group",
-                        currentTheme === "system" && "bg-secondary"
-                      )}
-                    >
-                      <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
-                      <span className="text-sm text-muted-foreground group-hover:text-foreground font-normal">
-                        System
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+        <CardContent className="space-y-6 relative pt-6">
 
           {/* Brand Color Section */}
           <div>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
-                <div className="font-medium text-lg">Brand Colors</div>
+                <div className="font-medium text-lg">Theme Settings</div>
               </div>
               <div className="text-sm text-muted-foreground">Choose your vibe ✨</div>
             </div>
 
             {/* Current Colors Display */}
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Primary Color Card */}
               <div
                 onClick={() => setActiveColorType('primary')}
@@ -1243,40 +1114,6 @@ export function AppearanceSettingsV2() {
                     {primaryColor && (
                       <div className="text-xs text-muted-foreground font-mono font-medium truncate">
                         {primaryColor.hex}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Secondary Color Card */}
-              <div
-                onClick={() => setActiveColorType('secondary')}
-                className={cn(
-                  "p-5 rounded-xl border-2 bg-muted/10 relative overflow-hidden group transition-all duration-300 cursor-pointer",
-                  activeColorType === 'secondary'
-                    ? "border-primary ring-2 ring-primary/20"
-                    : "border-border/50 hover:border-primary/30"
-                )}
-              >
-                <div className="relative flex items-center gap-4">
-                  <div className="relative group/color flex-shrink-0">
-                    <div
-                      className="w-16 h-16 rounded-xl border-[3px] border-white/90 shadow-2xl transition-all duration-300 group-hover/color:scale-110 group-hover/color:shadow-[0_0_30px_rgba(0,0,0,0.3)]"
-                      style={{ backgroundColor: secondaryColor?.hex || '#cccccc' }}
-                    />
-                    <div
-                      className="absolute inset-0 rounded-xl blur-xl opacity-60 transition-opacity duration-300 group-hover/color:opacity-80"
-                      style={{ backgroundColor: secondaryColor?.hex || '#cccccc' }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold mb-1">
-                      Secondary Color
-                    </div>
-                    {secondaryColor && (
-                      <div className="text-xs text-muted-foreground font-mono font-medium truncate">
-                        {secondaryColor.hex}
                       </div>
                     )}
                   </div>
@@ -1319,11 +1156,11 @@ export function AppearanceSettingsV2() {
             </div>
 
             {/* Inline Color Picker */}
-            {(activeColorType === 'primary' || activeColorType === 'secondary' || activeColorType === 'accent') && (
+            {(activeColorType === 'primary' || activeColorType === 'accent') && (
               <div className="mb-6 p-5 rounded-xl border-2 border-border/50 bg-muted/10">
                 <div className="mb-4">
                   <div className="text-sm font-semibold mb-2">
-                    Pick {activeColorType === 'primary' ? 'Primary' : activeColorType === 'secondary' ? 'Secondary' : 'Accent'} Color
+                    Pick {activeColorType === 'primary' ? 'Primary' : 'Accent'} Color
                   </div>
                   <div className="text-xs text-muted-foreground mb-4">
                     Use the color picker below to select your {activeColorType} color
@@ -1332,7 +1169,7 @@ export function AppearanceSettingsV2() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <HexColorPicker
-                      color={activeColorType === 'primary' ? (primaryColor?.hex || '#3382c7') : activeColorType === 'secondary' ? (secondaryColor?.hex || '#3382c7') : (accentColor?.hex || '#3382c7')}
+                      color={activeColorType === 'primary' ? (primaryColor?.hex || '#3382c7') : (accentColor?.hex || '#3382c7')}
                       onChange={(hex) => handleColorChange(hex, activeColorType)}
                       style={{ width: '100%', height: '200px' }}
                     />
@@ -1342,13 +1179,13 @@ export function AppearanceSettingsV2() {
                       <Label className="text-xs text-muted-foreground mb-1 block">Hex Value</Label>
                       <Input
                         type="text"
-                        value={activeColorType === 'primary' ? (primaryColor?.hex || '') : activeColorType === 'secondary' ? (secondaryColor?.hex || '') : (accentColor?.hex || '')}
+                        value={activeColorType === 'primary' ? (primaryColor?.hex || '') : (accentColor?.hex || '')}
                         onChange={(e) => {
                           const hex = e.target.value;
                           // Allow typing intermediate values - validate format
                           if (/^#[0-9A-Fa-f]{0,6}$/.test(hex) || hex === '') {
                             // Get current color to preserve id and other properties
-                            const currentColor = activeColorType === 'primary' ? primaryColor : activeColorType === 'secondary' ? secondaryColor : accentColor;
+                            const currentColor = activeColorType === 'primary' ? primaryColor : accentColor;
                             
                             // Create a temporary color object with the new hex
                             // Only calculate HSL if we have a complete hex (7 chars)
@@ -1367,8 +1204,6 @@ export function AppearanceSettingsV2() {
                             // Update state immediately so input reflects typing
                             if (activeColorType === 'primary') {
                               setPrimaryColor(color);
-                            } else if (activeColorType === 'secondary') {
-                              setSecondaryColor(color);
                             } else if (activeColorType === 'accent') {
                               setAccentColor(color);
                             }
@@ -1386,11 +1221,9 @@ export function AppearanceSettingsV2() {
                             handleColorChange(hex, activeColorType);
                           } else {
                             // Reset to current color if invalid
-                            const currentHex = activeColorType === 'primary' ? (primaryColor?.hex || '#3382c7') : activeColorType === 'secondary' ? (secondaryColor?.hex || '#3382c7') : (accentColor?.hex || '#3382c7');
+                            const currentHex = activeColorType === 'primary' ? (primaryColor?.hex || '#3382c7') : (accentColor?.hex || '#3382c7');
                             if (activeColorType === 'primary' && primaryColor) {
                               setPrimaryColor(primaryColor);
-                            } else if (activeColorType === 'secondary' && secondaryColor) {
-                              setSecondaryColor(secondaryColor);
                             } else if (activeColorType === 'accent' && accentColor) {
                               setAccentColor(accentColor);
                             }
@@ -1406,20 +1239,16 @@ export function AppearanceSettingsV2() {
                         style={{ 
                           backgroundColor: activeColorType === 'primary' 
                             ? (primaryColor?.hex || '#cccccc') 
-                            : activeColorType === 'secondary'
-                            ? (secondaryColor?.hex || '#cccccc')
                             : (accentColor?.hex || '#cccccc')
                         }}
                       />
                       <div className="flex-1">
                         <div className="text-xs font-medium">
-                          {activeColorType === 'primary' ? 'Primary' : activeColorType === 'secondary' ? 'Secondary' : 'Accent'} Color
+                          {activeColorType === 'primary' ? 'Primary' : 'Accent'} Color
                         </div>
                         <div className="text-xs text-muted-foreground font-mono">
                           {activeColorType === 'primary' 
                             ? (primaryColor?.hex || 'Not set') 
-                            : activeColorType === 'secondary'
-                            ? (secondaryColor?.hex || 'Not set')
                             : (accentColor?.hex || 'Not set')}
                         </div>
                       </div>
@@ -1439,7 +1268,7 @@ export function AppearanceSettingsV2() {
                     setIsSaveDialogOpen(true);
                   }
                 }}
-                disabled={!primaryColor || !secondaryColor || !accentColor}
+                disabled={!primaryColor || !accentColor}
                 className="gap-2"
               >
                 <Save className="h-4 w-4" />
@@ -1461,7 +1290,6 @@ export function AppearanceSettingsV2() {
                   disabled={isGeneratingPreset}
                 >
                   <Sparkles className={cn("h-4 w-4", isGeneratingPreset && "animate-spin")} />
-                  {isGeneratingPreset ? "Generating..." : "Generate Preset"}
                 </Button>
                 <Button
                   onClick={handleCreateNewPreset}
@@ -1470,7 +1298,6 @@ export function AppearanceSettingsV2() {
                   className="gap-2 hover:bg-secondary hover:text-foreground"
                 >
                   <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
-                  Create New Preset
                 </Button>
               </div>
             </div>

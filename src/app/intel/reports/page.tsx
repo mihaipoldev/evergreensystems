@@ -48,7 +48,7 @@ export default function ReportsPage() {
 
   if (error) {
     return (
-      <div className="w-full space-y-6">
+      <div className="w-full">
         <div className="text-center py-12">
           <p className="text-destructive">{error}</p>
         </div>
@@ -57,7 +57,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full">
       <ReportList initialReports={reports} />
     </div>
   );

@@ -271,7 +271,7 @@ export function ProjectModal({
       footer={
         <>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30"
+            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -279,7 +279,7 @@ export function ProjectModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none"
+            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -294,10 +294,10 @@ export function ProjectModal({
         </>
       }
     >
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5">
         {/* Project Type */}
-        <div className="space-y-2">
-          <Label htmlFor="project-type">
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="project-type" className="text-sm md:text-base">
             Project Type <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
@@ -332,10 +332,10 @@ export function ProjectModal({
 
         {/* Client Type Fields */}
         {isClientType && (
-          <>
+          <div className="pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
             {/* Client Name */}
-            <div className="space-y-2">
-              <Label htmlFor="client-name">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="client-name" className="text-sm md:text-base">
                 Client Name <span className="text-destructive">*</span>
               </Label>
               <RAGInput
@@ -358,8 +358,8 @@ export function ProjectModal({
             </div>
 
             {/* Project Status */}
-            <div className="space-y-2">
-              <Label htmlFor="project-status">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="project-status" className="text-sm md:text-base">
                 Project Status <span className="text-destructive">*</span>
               </Label>
               <RAGSelect
@@ -389,15 +389,15 @@ export function ProjectModal({
                 <p className="text-xs text-destructive">{errors.status}</p>
               )}
             </div>
-          </>
+          </div>
         )}
 
         {/* Niche Research Type Fields */}
         {isNicheType && (
-          <>
+          <div className="pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
             {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="name" className="text-sm md:text-base">
                 Name <span className="text-destructive">*</span>
               </Label>
               <RAGInput
@@ -420,8 +420,8 @@ export function ProjectModal({
             </div>
 
             {/* Geography */}
-            <div className="space-y-2">
-              <Label htmlFor="geography">Geography</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="geography" className="text-sm md:text-base">Geography</Label>
               <RAGInput
                 id="geography"
                 placeholder="e.g., United States"
@@ -432,8 +432,8 @@ export function ProjectModal({
             </div>
 
             {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="category" className="text-sm md:text-base">Category</Label>
               <RAGInput
                 id="category"
                 placeholder="e.g., Logistics"
@@ -442,18 +442,19 @@ export function ProjectModal({
                 autoComplete="off"
               />
             </div>
-          </>
+          </div>
         )}
 
         {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="project-description">Description</Label>
+        <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
+          <Label htmlFor="project-description" className="text-sm md:text-base">Description</Label>
           <RAGTextarea
             id="project-description"
             placeholder="Describe the project goals, scope, and expected outcomes..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
+            className="min-h-[80px] md:min-h-[120px]"
           />
         </div>
       </div>

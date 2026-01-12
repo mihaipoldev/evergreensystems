@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { RunTable } from "@/features/rag/runs/components/RunTable";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -70,7 +69,6 @@ export function ProjectRunsClient({
 }: ProjectRunsClientProps) {
   const [runs, setRuns] = useState<RunWithExtras[]>(initialRuns);
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useViewMode("table");
   const [searchQuery, setSearchQuery] = useState("");
   const [workflows, setWorkflows] = useState<Array<{ id: string; name: string; label: string }>>([]);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
@@ -647,18 +645,6 @@ export function ProjectRunsClient({
         sortOptions={sortOptions}
         selectedSort={selectedSort}
         onSortChange={setSelectedSort}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        showViewModeToggle={false}
-        groupByStatus={{
-          enabled: groupByStatus,
-          onToggle: (enabled: boolean) => {
-            setGroupByStatus(enabled);
-            if (typeof window !== "undefined") {
-              localStorage.setItem(`project-runs-group-by-status-${projectId}`, enabled.toString());
-            }
-          },
-        }}
       />
 
       {filteredAndSortedRuns.length === 0 ? (

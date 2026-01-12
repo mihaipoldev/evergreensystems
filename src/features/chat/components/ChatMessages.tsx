@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faCopy, faThumbsUp, faThumbsDown } from '@fortawesome/free-solid-svg-icons';
 import { MarkdownRenderer } from '@/features/rag/shared/components';
 import { SuggestedQuestions } from './SuggestedQuestions';
+import { useToast } from '@/hooks/use-toast';
 import type { Message } from '../types';
 
 interface ChatMessagesProps {
@@ -14,9 +15,10 @@ interface ChatMessagesProps {
   isTyping: boolean;
   showSuggestedQuestions?: boolean;
   onQuestionClick?: (question: string) => void;
+  shouldScrollToBottom?: boolean;
 }
 
-export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = false, onQuestionClick }: ChatMessagesProps) => {
+export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = false, onQuestionClick, shouldScrollToBottom = false }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const userScrolledUpRef = useRef(false);
@@ -27,6 +29,11 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
   const streamingUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const streamingRafIdRef = useRef<number | null>(null);
   const lastContentLengthRef = useRef(0);
+  const hasInitiallyScrolledRef = useRef(false);
+  const { toast } = useToast();
+  
+  // Track likes/dislikes per message
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, 'like' | 'dislike' | null>>({});
 
   // Handle copy event to replace selected text with original markdown
   useEffect(() => {
@@ -252,6 +259,124 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
     };
   }, []);
 
+  // Scroll to bottom on initial load (when messages first appear)
+  useEffect(() => {
+    if (messages.length > 0 && !hasInitiallyScrolledRef.current && containerRef.current) {
+      hasInitiallyScrolledRef.current = true;
+      userScrolledUpRef.current = false;
+      
+      const scrollToBottom = () => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        isProgrammaticScrollRef.current = true;
+        container.scrollTop = container.scrollHeight;
+      };
+      
+      // Immediate scroll
+      scrollToBottom();
+      
+      // Use scrollIntoView immediately
+      if (messagesEndRef.current) {
+        isProgrammaticScrollRef.current = true;
+        messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+      }
+      
+      // After layout
+      requestAnimationFrame(() => {
+        scrollToBottom();
+        if (messagesEndRef.current) {
+          isProgrammaticScrollRef.current = true;
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        }
+      });
+      
+      // Final check after animations
+      setTimeout(() => {
+        scrollToBottom();
+        if (messagesEndRef.current) {
+          isProgrammaticScrollRef.current = true;
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        }
+        
+        // Verify we're at bottom
+        if (containerRef.current) {
+          const distanceFromBottom = containerRef.current.scrollHeight - 
+                                    containerRef.current.scrollTop - 
+                                    containerRef.current.clientHeight;
+          if (distanceFromBottom > 1) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          }
+        }
+      }, 100);
+    } else if (messages.length === 0) {
+      // Reset flag when messages are cleared
+      hasInitiallyScrolledRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
+
+  // Force scroll to absolute bottom when conversation is loaded
+  useEffect(() => {
+    if (shouldScrollToBottom && messages.length > 0) {
+      // Force scroll to absolute bottom when loading a conversation
+      userScrolledUpRef.current = false; // Reset scroll state
+      
+      const scrollToAbsoluteBottom = () => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        // Force to absolute bottom - set scrollTop to maximum possible value
+        isProgrammaticScrollRef.current = true;
+        container.scrollTop = container.scrollHeight;
+      };
+      
+      // Wait for DOM to be fully rendered with messages
+      // Use double requestAnimationFrame to ensure layout is complete
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToAbsoluteBottom();
+          
+          // Use scrollIntoView as backup
+          if (messagesEndRef.current) {
+            isProgrammaticScrollRef.current = true;
+            messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+          }
+          
+          // Wait a bit longer for any animations/transitions to complete
+          setTimeout(() => {
+            scrollToAbsoluteBottom();
+            
+            // Use scrollIntoView again
+            if (messagesEndRef.current) {
+              isProgrammaticScrollRef.current = true;
+              messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+            }
+            
+            // Final verification - ensure we're at absolute bottom
+            setTimeout(() => {
+              if (containerRef.current) {
+                const container = containerRef.current;
+                isProgrammaticScrollRef.current = true;
+                container.scrollTop = container.scrollHeight;
+                
+                // Verify we're at absolute bottom
+                const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+                if (distanceFromBottom > 1) {
+                  // Force one more time if not at bottom
+                  container.scrollTop = container.scrollHeight;
+                }
+              }
+              if (messagesEndRef.current) {
+                isProgrammaticScrollRef.current = true;
+                messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+              }
+            }, 50);
+          }, 200);
+        });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldScrollToBottom, messages.length]);
+
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     const messageCountIncreased = messages.length > lastMessageCountRef.current;
@@ -267,54 +392,48 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
       lastUserMessageIdRef.current = lastMessage?.id || null;
       lastMessageCountRef.current = messages.length;
       
-      // Immediate scroll - use multiple approaches to ensure it works reliably
-      isProgrammaticScrollRef.current = true; // Mark as programmatic
+      const forceScrollToBottom = () => {
+        if (!containerRef.current) return;
+        isProgrammaticScrollRef.current = true;
+        const container = containerRef.current;
+        container.scrollTop = container.scrollHeight;
+      };
+      
+      // Immediate scroll - force scroll right away
+      forceScrollToBottom();
       
       // Use scrollIntoView on messagesEndRef for more reliable scrolling
-      // Try immediate scroll first
       if (messagesEndRef.current) {
+        isProgrammaticScrollRef.current = true;
         messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-      } else if (containerRef.current) {
-        // Fallback to direct scrollTop if messagesEndRef isn't ready
-        containerRef.current.scrollTop = containerRef.current.scrollHeight;
       }
       
       // Then use RAF to catch any DOM updates that haven't happened yet
       requestAnimationFrame(() => {
+        forceScrollToBottom();
         if (messagesEndRef.current) {
           isProgrammaticScrollRef.current = true;
           messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-        } else if (containerRef.current) {
-          isProgrammaticScrollRef.current = true;
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
       });
       
       // Double-check after a small delay to ensure DOM is fully updated
       setTimeout(() => {
+        forceScrollToBottom();
         if (messagesEndRef.current) {
-          const rect = messagesEndRef.current.getBoundingClientRect();
-          const container = containerRef.current;
-          if (container) {
-            const containerRect = container.getBoundingClientRect();
-            // Check if element is visible in viewport
-            if (rect.bottom > containerRect.bottom + 10) {
-              isProgrammaticScrollRef.current = true;
-              messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-            }
-          }
-        } else if (containerRef.current) {
+          isProgrammaticScrollRef.current = true;
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        }
+        // Final verification
+        if (containerRef.current) {
           const distanceFromBottom = containerRef.current.scrollHeight - 
                                     containerRef.current.scrollTop - 
                                     containerRef.current.clientHeight;
-          
-          // If we're not at the bottom yet, scroll again
-          if (distanceFromBottom > 10) {
-            isProgrammaticScrollRef.current = true;
-            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          if (distanceFromBottom > 1) {
+            forceScrollToBottom();
           }
         }
-      }, 50);
+      }, 100);
       return;
     }
 
@@ -450,24 +569,33 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
     <div 
       ref={containerRef} 
       data-chat-messages-container
-      className="flex-1 overflow-y-auto scrollbar-thin px-7 pt-20 pb-4 space-y-4 -mb-8"
+      className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-7 pt-20 pb-4 space-y-4 -mb-8"
       style={{ overscrollBehavior: 'none' }}
     >
-      {messages.map((message, index) => (
+      {messages.map((message, index) => {
+        const isUserMessage = message.role === 'user';
+        const isLatestMessage = index === messages.length - 1;
+        const isRecentMessage = index >= messages.length - 3;
+        
+        // Skip animation delays for user messages and last 3 messages for instant appearance
+        const shouldAnimate = !isUserMessage && !isRecentMessage;
+        const animationDelay = shouldAnimate ? Math.min((index - (messages.length - 4)) * 0.01, 0.15) : 0; // Max 150ms delay for old messages only
+        
+        return (
         <motion.div
           key={message.id}
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldAnimate ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            delay: index * 0.05,
-            duration: 0.3,
-            ease: [0.4, 0, 0.2, 1] // Custom easing for smoother animation
-          }}
-          className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'full-width'}`}
+          transition={shouldAnimate ? { 
+            delay: animationDelay,
+            duration: 0.2, // Faster animation
+            ease: [0.4, 0, 0.2, 1]
+          } : { duration: 0 }} // No animation for user/recent messages
+          className={`flex gap-3 ${isUserMessage ? 'justify-end' : 'full-width'}`}
           data-message-id={message.id}
         >
           {message.role === 'user' ? (
-            <div className="mb-2 max-w-[85%] bg-muted text-foreground rounded-2xl rounded-br-md px-3.5 py-1.5">
+            <div className="mb-2 max-w-[85%] bg-primary text-background rounded-2xl rounded-br-md px-3.5 py-1.5">
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
               
               {message.citation && (
@@ -490,12 +618,70 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
           ) : (
             <div className="w-full">
               <div 
-                className="text-sm text-foreground mb-8 pr-6 [&_.markdown-content]:text-sm [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_h4]:text-[15px] [&_p]:text-[15px] [&_p]:leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2 [&_li]:text-[15px] [&_li::marker]:text-[18px]"
+                className="text-sm text-foreground mb-1 pr-6 [&_.markdown-content]:text-sm [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_h4]:text-[15px] [&_p]:text-[15px] [&_p]:leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2 [&_li]:text-[15px] [&_li::marker]:text-[18px]"
                 style={{
                   transition: 'opacity 0.2s ease-out'
                 }}
               >
                 <MarkdownRenderer content={message.content} />
+              </div>
+              
+              {/* Action buttons: Copy, Like, Dislike */}
+              <div className="flex items-center gap-1 mb-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(message.content).then(() => {
+                      toast({
+                        title: 'Copied!',
+                        description: 'Message copied to clipboard',
+                      });
+                    }).catch(() => {
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to copy message',
+                        variant: 'destructive',
+                      });
+                    });
+                  }}
+                  className="p-2 flex items-center justify-center rounded-md hover:bg-muted/50 transition-colors text-muted-foreground hover:text-muted-foreground"
+                  aria-label="Copy message"
+                >
+                  <FontAwesomeIcon icon={faCopy} className="h-3.5 w-3.5" />
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const currentFeedback = messageFeedback[message.id];
+                    const newFeedback = currentFeedback === 'like' ? null : 'like';
+                    setMessageFeedback(prev => ({ ...prev, [message.id]: newFeedback }));
+                    // TODO: Send feedback to API
+                  }}
+                  className={`p-2 flex items-center justify-center rounded-md hover:bg-muted/50 transition-colors ${
+                    messageFeedback[message.id] === 'like' 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground hover:text-muted-foreground'
+                  }`}
+                  aria-label="Like message"
+                >
+                  <FontAwesomeIcon icon={faThumbsUp} className="h-3.5 w-3.5" />
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const currentFeedback = messageFeedback[message.id];
+                    const newFeedback = currentFeedback === 'dislike' ? null : 'dislike';
+                    setMessageFeedback(prev => ({ ...prev, [message.id]: newFeedback }));
+                    // TODO: Send feedback to API
+                  }}
+                  className={`p-2 flex items-center justify-center rounded-md hover:bg-muted/50 transition-colors ${
+                    messageFeedback[message.id] === 'dislike' 
+                      ? 'text-destructive' 
+                      : 'text-muted-foreground hover:text-muted-foreground'
+                  }`}
+                  aria-label="Dislike message"
+                >
+                  <FontAwesomeIcon icon={faThumbsDown} className="h-3.5 w-3.5" />
+                </button>
               </div>
               
               {message.citation && (
@@ -517,7 +703,8 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
             </div>
           )}
         </motion.div>
-      ))}
+      );
+      })}
       
       {isTyping && (
         <motion.div

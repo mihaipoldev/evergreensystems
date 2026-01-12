@@ -26,30 +26,30 @@ export function RAGModal({
   title,
   children,
   footer,
-  maxWidth = "sm:max-w-[560px]",
+  maxWidth = "md:max-w-[560px]",
   className,
 }: RAGModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className={cn(
-          "shadow-card border-0 max-h-[calc(100vh-2rem)] !flex !flex-col",
+          "shadow-card max-h-screen md:!h-[95vh] !flex !flex-col",
           maxWidth, 
           className
         )}
       >
-        <DialogHeader className="pb-2 shrink-0">
-          <DialogTitle className="text-lg font-bold leading-none tracking-tight">
+        <DialogHeader className="pb-2 md:pb-2 shrink-0">
+          <DialogTitle className="text-base md:text-lg font-bold leading-none tracking-tight">
             {title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 -mb-6 pb-6">
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-4 md:-mx-6 px-4 md:px-6 -mb-4 md:-mb-6 pb-4 md:pb-6">
           {children}
         </div>
 
         {footer && (
-          <DialogFooter className="gap-2 sm:gap-0 pt-2 shrink-0">
+          <DialogFooter className="gap-2 md:gap-0 pt-2 shrink-0">
             {footer}
           </DialogFooter>
         )}

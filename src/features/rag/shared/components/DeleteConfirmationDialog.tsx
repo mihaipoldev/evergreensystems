@@ -71,13 +71,13 @@ export function DeleteConfirmationDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-h-screen md:max-h-auto !flex !flex-col">
         <AlertDialogHeader>
-          <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
-          <AlertDialogDescription>{dialogDescription}</AlertDialogDescription>
+          <AlertDialogTitle className="text-base md:text-lg">{dialogTitle}</AlertDialogTitle>
+          <AlertDialogDescription className="text-sm">{dialogDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         {showDeleteDocumentsOption && (
-          <div className="flex items-center space-x-2 py-4">
+          <div className="flex items-center space-x-2 py-3 md:py-4">
             <Checkbox
               id="delete-documents"
               checked={deleteDocuments}
@@ -92,7 +92,7 @@ export function DeleteConfirmationDialog({
             </Label>
           </div>
         )}
-        <AlertDialogFooter>
+        <AlertDialogFooter className="gap-2">
           <AlertDialogCancel 
             disabled={isDeleting}
             className="hover:bg-secondary hover:text-secondary-foreground"

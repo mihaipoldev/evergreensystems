@@ -40,7 +40,7 @@ export const ChatHeader = ({
           <Button
             variant="ghost"
             size="icon"
-            className="p-0 px-2 h-7 w-7 text-foreground hover:bg-transparent hover:text-foreground hover:scale-110 transition-all duration-300"
+            className="p-0 px-2 h-7 w-7 md:h-7 md:w-7 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 text-foreground hover:bg-transparent hover:text-foreground hover:scale-110 transition-all duration-300"
             onClick={onSettingsClick}
             title="Chat Settings"
           >
@@ -52,7 +52,7 @@ export const ChatHeader = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-foreground/90 hover:text-foreground hover:bg-transparent hover:scale-110 transition-all duration-300"
+            className="h-8 w-8 md:h-8 md:w-8 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 text-foreground/90 hover:text-foreground hover:bg-transparent hover:scale-110 transition-all duration-300"
             onClick={onNewChat}
             title="New Chat"
           >
@@ -61,7 +61,7 @@ export const ChatHeader = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-foreground/90 hover:text-foreground hover:bg-transparent hover:scale-110 transition-all duration-300"
+            className="h-7 w-7 md:h-7 md:w-7 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 text-foreground/90 hover:text-foreground hover:bg-transparent hover:scale-110 transition-all duration-300"
             onClick={() => setIsOpen(false)}
             title="Close"
           >

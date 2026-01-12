@@ -10,6 +10,7 @@ interface ChatContextType {
   addContext: (context: ContextItem) => void;
   removeContext: (contextId: string, contextType?: string) => void;
   clearContexts: () => void;
+  setContexts: (contexts: ContextItem[]) => void;
   currentConversationId: string | null;
   setCurrentConversationId: (id: string | null) => void;
 }
@@ -92,6 +93,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('chat-active-contexts');
   }, []);
 
+  const setContexts = useCallback((contexts: ContextItem[]) => {
+    setActiveContexts(contexts);
+    if (contexts.length > 0) {
+      localStorage.setItem('chat-active-contexts', JSON.stringify(contexts));
+    } else {
+      localStorage.removeItem('chat-active-contexts');
+    }
+  }, []);
+
   return (
     <ChatContext.Provider
       value={{
@@ -101,6 +111,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         addContext,
         removeContext,
         clearContexts,
+        setContexts,
         currentConversationId,
         setCurrentConversationId,
       }}

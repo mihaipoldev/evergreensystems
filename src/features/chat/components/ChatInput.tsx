@@ -10,6 +10,7 @@ import { useChatContext } from '../contexts/ChatContext';
 import { ContextSearchPopover } from './ContextSearchPopover';
 import type { ContextSearchResult } from '../types';
 import { addContextToConversation, removeContextFromConversation, getConversationContexts } from '../services/chat-api';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatInputProps {
   value: string;
@@ -31,9 +32,11 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
   const [contextPopoverOpen, setContextPopoverOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { activeContexts, addContext, removeContext, clearContexts, currentConversationId } = useChatContext();
+  const { toast } = useToast();
   const maxChars = 2000;
 
-  // Sync contexts from database when conversation changes
+  // ALWAYS sync contexts from database when conversation changes
+  // This ensures contexts ALWAYS come from the database, not local state
   useEffect(() => {
     const syncContextsFromDB = async () => {
       if (!currentConversationId) {
@@ -42,26 +45,10 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
       }
       
       try {
+        // ALWAYS fetch from database first
         const dbContexts = await getConversationContexts(currentConversationId);
         
-        // Get current context IDs for comparison
-        const currentContextIds = new Set(
-          activeContexts.map(ctx => `${ctx.type}-${ctx.id}`)
-        );
-        const dbContextIds = new Set(
-          (dbContexts || []).map((ctx: any) => `${ctx.context_type}-${ctx.context_id}`)
-        );
-        
-        // Only sync if they're different (avoid unnecessary updates)
-        const needsSync = 
-          activeContexts.length !== (dbContexts?.length || 0) ||
-          !Array.from(dbContextIds).every(id => currentContextIds.has(id));
-        
-        if (!needsSync && activeContexts.length > 0) {
-          return; // Already in sync
-        }
-        
-        // Clear and rebuild from DB to ensure sync
+        // ALWAYS clear local state and rebuild from DB to ensure we're always in sync
         clearContexts();
         
         // Fetch full details for each context
@@ -251,33 +238,68 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
       metadata: context.metadata,
     };
 
-    // Add to local state first (for immediate UI feedback)
-    addContext(contextItem);
-    
-    // Save to database if conversation exists
+    // ALWAYS save to database first if conversation exists
     if (currentConversationId) {
       try {
         await addContextToConversation(currentConversationId, {
           context_type: context.type,
           context_id: context.id,
         });
-        // Context is now saved, sync will happen automatically on next render
+        // After saving to DB, sync from DB to ensure we're always in sync
+        const dbContexts = await getConversationContexts(currentConversationId);
+        clearContexts(); // Clear local state
+        
+        // Rebuild from DB to ensure we're always in sync
+        if (dbContexts && dbContexts.length > 0) {
+          const contextPromises = dbContexts.map(async (ctx: any) => {
+            try {
+              const response = await fetch(`/api/chat/contexts/details?type=${ctx.context_type}&id=${ctx.context_id}`);
+              if (response.ok) {
+                const details = await response.json();
+                return {
+                  id: ctx.context_id,
+                  type: ctx.context_type as 'document' | 'project' | 'knowledgeBase',
+                  icon: details.icon || (ctx.context_type === 'document' ? '📄' : ctx.context_type === 'project' ? '📁' : '📚'),
+                  title: details.title || `Loading ${ctx.context_type}...`,
+                  description: details.description,
+                  metadata: details.metadata,
+                };
+              }
+            } catch (error) {
+              console.error(`Error fetching details for ${ctx.context_type} ${ctx.context_id}:`, error);
+            }
+            return {
+              id: ctx.context_id,
+              type: ctx.context_type as 'document' | 'project' | 'knowledgeBase',
+              icon: ctx.context_type === 'document' ? '📄' : ctx.context_type === 'project' ? '📁' : '📚',
+              title: `Loading ${ctx.context_type}...`,
+              description: `${ctx.context_type}: ${ctx.context_id}`,
+            };
+          });
+          
+          const contexts = await Promise.all(contextPromises);
+          contexts.forEach(ctx => addContext(ctx));
+        }
       } catch (error) {
         console.error('Failed to save context:', error);
-        // Remove from local state if save failed
-        removeContext(context.id, context.type);
+        // Don't add to local state if save failed
+        toast({
+          title: 'Error',
+          description: 'Failed to save context to database',
+          variant: 'destructive',
+        });
+        return; // Exit early if save failed
       }
+    } else {
+      // If no conversation exists, add to local state (will be saved when conversation is created)
+      addContext(contextItem);
     }
-    // If no conversation exists, context will be saved when conversation is created
     
     setContextPopoverOpen(false);
   };
 
   const handleRemoveContext = async (contextId: string, contextType: string) => {
-    // Remove from local state
-    removeContext(contextId, contextType);
-    
-    // Remove from database if conversation exists
+    // ALWAYS remove from database first if conversation exists
     if (currentConversationId) {
       try {
         const contexts = await getConversationContexts(currentConversationId);
@@ -287,10 +309,55 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
         
         if (contextToRemove) {
           await removeContextFromConversation(currentConversationId, contextToRemove.id);
+          
+          // After removing from DB, sync from DB to ensure we're always in sync
+          const updatedDbContexts = await getConversationContexts(currentConversationId);
+          clearContexts(); // Clear local state
+          
+          // Rebuild from DB
+          if (updatedDbContexts && updatedDbContexts.length > 0) {
+            const contextPromises = updatedDbContexts.map(async (ctx: any) => {
+              try {
+                const response = await fetch(`/api/chat/contexts/details?type=${ctx.context_type}&id=${ctx.context_id}`);
+                if (response.ok) {
+                  const details = await response.json();
+                  return {
+                    id: ctx.context_id,
+                    type: ctx.context_type as 'document' | 'project' | 'knowledgeBase',
+                    icon: details.icon || (ctx.context_type === 'document' ? '📄' : ctx.context_type === 'project' ? '📁' : '📚'),
+                    title: details.title || `Loading ${ctx.context_type}...`,
+                    description: details.description,
+                    metadata: details.metadata,
+                  };
+                }
+              } catch (error) {
+                console.error(`Error fetching details for ${ctx.context_type} ${ctx.context_id}:`, error);
+              }
+              return {
+                id: ctx.context_id,
+                type: ctx.context_type as 'document' | 'project' | 'knowledgeBase',
+                icon: ctx.context_type === 'document' ? '📄' : ctx.context_type === 'project' ? '📁' : '📚',
+                title: `Loading ${ctx.context_type}...`,
+                description: `${ctx.context_type}: ${ctx.context_id}`,
+              };
+            });
+            
+            const contexts = await Promise.all(contextPromises);
+            contexts.forEach(ctx => addContext(ctx));
+          }
         }
       } catch (error) {
         console.error('Failed to remove context:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to remove context from database',
+          variant: 'destructive',
+        });
+        return; // Exit early if removal failed
       }
+    } else {
+      // If no conversation exists, just remove from local state
+      removeContext(contextId, contextType);
     }
   };
 
@@ -321,7 +388,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
       </AnimatePresence>
 
       {/* Main container div with border and rounded corners */}
-      <div className="relative bg-muted/50 border border-foreground/10 rounded-2xl p-2.5 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+      <div className="relative bg-muted/20 dark:bg-muted/50 border border-foreground/10 rounded-2xl p-2.5 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
         {/* Top section - Context badges */}
         <div className="flex items-center gap-1 mb-2 flex-wrap">
           {/* @ badge - Opens popover to search and select contexts */}
@@ -338,7 +405,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-96 p-1 bg-card/100 border rounded-xl border-foreground/5 !z-[100]"
+              className="w-80 max-w-96 md:w-96 p-1 bg-card/100 border rounded-xl border-foreground/5 !z-[100]"
               align="start"
               side="top"
               sideOffset={4}
@@ -421,7 +488,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
                 : 'bg-primary text-foreground hover:bg-primary/90'
             }`}
           >
-            <FontAwesomeIcon icon={faArrowUp} className="!h-3.5 !w-3.5" />
+            <FontAwesomeIcon icon={faArrowUp} className="text-background !h-3.5 !w-3.5" />
           </Button>
         </div>
       </div>

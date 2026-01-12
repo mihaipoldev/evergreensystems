@@ -48,9 +48,15 @@ export async function POST(
       .eq('conversation_id', conversationId);
 
     if (contextsError) {
-      console.error('Error fetching contexts:', contextsError);
+      console.error('[RAG] Error fetching contexts:', contextsError);
       // Continue without contexts if fetch fails
     }
+
+    console.log('[RAG] Fetched contexts from DB:', {
+      conversationId,
+      contextsCount: contexts?.length || 0,
+      contexts: contexts || [],
+    });
 
     // Note: Contexts are now managed via chat_conversation_contexts junction table
     // Old context_type/context_id parameters are ignored for new conversations
@@ -110,18 +116,28 @@ export async function POST(
 
     // Use ONLY contexts from junction table (no fallback to old columns)
     const contextsList = (contexts && contexts.length > 0) 
-      ? contexts.map((ctx: any) => ({ type: ctx.context_type, id: ctx.context_id }))
+      ? contexts.map((ctx: any) => {
+          // Ensure type matches expected format
+          const type = ctx.context_type as 'document' | 'project' | 'knowledgeBase';
+          return { type, id: ctx.context_id };
+        })
       : [];
 
     console.log('[RAG] Checking contexts:', { 
       contextsFromJunction: contexts?.length || 0,
+      rawContexts: contexts,
       contextsList,
+      contextsListLength: contextsList.length,
     });
 
     // Use multi-context RAG if we have contexts
     if (contextsList.length > 0) {
       try {
-        console.log('[RAG] Attempting multi-context RAG retrieval for', contextsList.length, 'context(s)');
+        console.log('[RAG] ========================================');
+        console.log('[RAG] ATTEMPTING RAG RETRIEVAL');
+        console.log('[RAG] Contexts list:', JSON.stringify(contextsList, null, 2));
+        console.log('[RAG] User query:', content.trim());
+        console.log('[RAG] ========================================');
         
         // Generate embedding for the user's query
         console.log('[RAG] Generating query embedding...');
@@ -129,9 +145,22 @@ export async function POST(
         console.log('[RAG] Query embedding generated, length:', queryEmbedding.length);
 
         // Retrieve relevant chunks from all contexts
-        console.log('[RAG] Retrieving chunks for multiple contexts...');
+        console.log('[RAG] Calling retrieveRelevantChunksForMultipleContexts with:', {
+          contextsCount: contextsList.length,
+          contexts: contextsList,
+          embeddingLength: queryEmbedding.length,
+          limit: 20
+        });
         const chunks = await retrieveRelevantChunksForMultipleContexts(contextsList, queryEmbedding, 20);
         console.log('[RAG] Retrieved chunks:', chunks.length);
+        if (chunks.length > 0) {
+          console.log('[RAG] First chunk sample:', {
+            id: chunks[0].id,
+            contentPreview: chunks[0].content.substring(0, 100),
+            document_id: chunks[0].document_id,
+            similarity_score: chunks[0].similarity_score,
+          });
+        }
 
         if (chunks.length > 0) {
           retrievedChunks = chunks;
@@ -181,9 +210,11 @@ Instructions:
           console.log('[RAG] Multi-context RAG built successfully, chunks:', chunks.length, 'documents:', chunksByDocument.size, 'contexts:', contextsList.length);
         } else {
           console.warn('[RAG] No chunks retrieved for contexts');
+          console.warn('[RAG] This might mean: 1) No documents in project/KB, 2) Documents have no chunks, 3) Similarity search failed');
         }
       } catch (ragError) {
         console.error('[RAG] Error retrieving multi-context RAG:', ragError);
+        console.error('[RAG] Error details:', ragError instanceof Error ? ragError.stack : ragError);
         // Continue without RAG context if retrieval fails
       }
     } else {
@@ -195,11 +226,16 @@ Instructions:
 
     // Add system message with RAG context if available
     if (ragContext) {
+      console.log('[RAG] Adding RAG context to system message, length:', ragContext.length);
       formattedMessages.unshift({
         role: 'system',
         content: ragContext,
       });
+    } else {
+      console.log('[RAG] No RAG context to add - ragContext is empty');
     }
+
+    console.log('[RAG] Final message count:', formattedMessages.length, 'First message role:', formattedMessages[0]?.role);
 
     // Create streaming response
     const stream = new ReadableStream({

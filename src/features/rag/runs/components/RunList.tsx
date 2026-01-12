@@ -3,8 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -91,20 +90,29 @@ function setStoredSort(value: string): void {
   }
 }
 
-function getStoredGroupByStatus(): boolean {
-  if (typeof window === "undefined") return false;
+function getStoredGroupByStatus(): string {
+  if (typeof window === "undefined") return "none";
   try {
     const saved = localStorage.getItem(STORAGE_KEY_GROUP_BY_STATUS);
-    return saved === "true";
+    if (saved === "true") {
+      // Migrate from old boolean format
+      localStorage.setItem(STORAGE_KEY_GROUP_BY_STATUS, "status");
+      return "status";
+    }
+    if (saved === "false") {
+      localStorage.setItem(STORAGE_KEY_GROUP_BY_STATUS, "none");
+      return "none";
+    }
+    return saved || "none";
   } catch {
-    return false;
+    return "none";
   }
 }
 
-function setStoredGroupByStatus(value: boolean): void {
+function setStoredGroupByStatus(value: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY_GROUP_BY_STATUS, String(value));
+    localStorage.setItem(STORAGE_KEY_GROUP_BY_STATUS, value);
   } catch {
     // Ignore localStorage errors
   }
@@ -113,7 +121,6 @@ function setStoredGroupByStatus(value: boolean): void {
 export function RunList({ initialRuns }: RunListProps) {
   const router = useRouter();
   const [runs, setRuns] = useState<RunWithKB[]>(initialRuns);
-  const [viewMode, setViewMode] = useViewMode("table");
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
   const [workflows, setWorkflows] = useState<Array<{ id: string; name: string; label: string }>>([]);
@@ -373,19 +380,19 @@ export function RunList({ initialRuns }: RunListProps) {
 
   // Expand all groups by default when grouping is first enabled
   useEffect(() => {
-    if (groupByStatus && !hasInitializedExpansion.current) {
+    if (groupByStatus !== "none" && !hasInitializedExpansion.current) {
       const statuses = ["complete", "generating", "ingesting", "collecting", "queued", "failed"];
       setExpandedGroups(new Set(statuses));
       hasInitializedExpansion.current = true;
     }
-    if (!groupByStatus) {
+    if (groupByStatus === "none") {
       hasInitializedExpansion.current = false;
     }
   }, [groupByStatus]);
 
   // Group runs by status when grouping is enabled
   const groupedRuns = useMemo(() => {
-    if (!groupByStatus) {
+    if (groupByStatus === "none") {
       return null;
     }
 
@@ -488,13 +495,14 @@ export function RunList({ initialRuns }: RunListProps) {
         sortOptions={sortOptions}
         selectedSort={selectedSort}
         onSortChange={setSelectedSort}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        showViewModeToggle={false}
         groupByStatus={{
-          enabled: groupByStatus,
-          onToggle: (enabled: boolean) => {
-            setGroupByStatus(enabled);
+          options: [
+            { value: "none", label: "None" },
+            { value: "status", label: "Status" },
+          ],
+          selectedValue: groupByStatus,
+          onSelect: (value: string) => {
+            setGroupByStatus(value);
           },
         }}
       />
@@ -510,7 +518,7 @@ export function RunList({ initialRuns }: RunListProps) {
             ? "No runs found."
             : "No runs found matching your search"}
         </motion.div>
-      ) : groupByStatus && groupedRuns ? (
+      ) : groupByStatus !== "none" && groupedRuns ? (
         <TooltipProvider delayDuration={100}>
           <div className="space-y-2">
             {/* Table Header */}

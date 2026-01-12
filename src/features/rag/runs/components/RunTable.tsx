@@ -24,7 +24,7 @@ export function RunTable({ runs, onView, onDelete, hideHeader = false }: RunTabl
       <div className="space-y-2">
         {/* Table Header */}
         {!hideHeader && (
-          <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
             <div className="flex-1 min-w-0">Run</div>
             <div className="w-28 shrink-0">Result</div>
             <div className="w-44 shrink-0">Progress</div>

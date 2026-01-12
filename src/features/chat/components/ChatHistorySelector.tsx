@@ -5,9 +5,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faMessage } from '@fortawesome/free-solid-svg-icons';
-import { getConversations, type Conversation } from '../services/chat-api';
+import { getConversations, getConversation, type Conversation } from '../services/chat-api';
 import { useChatContext } from '../contexts/ChatContext';
 import { formatDistanceToNow } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const getContextIcon = (contextType: string | null): string => {
   switch (contextType) {
@@ -27,16 +29,81 @@ const getContextIcon = (contextType: string | null): string => {
 export const ChatHistorySelector = () => {
   const { currentConversationId, setCurrentConversationId } = useChatContext();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationTitle, setCurrentConversationTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const popoverContentRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const data = await getConversations();
+      // Sort by updated_at descending (most recent first)
+      const sorted = data.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+      setConversations(sorted);
+      
+      // If current conversation is in the list, update the title
+      if (currentConversationId) {
+        const found = sorted.find(c => c.id === currentConversationId);
+        if (found) {
+          setCurrentConversationTitle(found.title);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCurrentConversationTitle = async (conversationId: string) => {
+    try {
+      const conversation = await getConversation(conversationId);
+      setCurrentConversationTitle(conversation.title);
+      
+      // Also update conversations list if not already there
+      setConversations((prev) => {
+        const exists = prev.find(c => c.id === conversationId);
+        if (!exists) {
+          // Add to beginning since it's the current conversation
+          return [conversation, ...prev];
+        }
+        // Update if exists
+        return prev.map(c => c.id === conversationId ? conversation : c);
+      });
+    } catch (error) {
+      console.error('Error loading current conversation:', error);
+      // If conversation doesn't exist, clear the title
+      setCurrentConversationTitle(null);
+    }
+  };
+
+  // Load conversations on mount
+  useEffect(() => {
+    loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (open) {
       loadConversations();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Always load current conversation title when currentConversationId changes
+  useEffect(() => {
+    if (currentConversationId) {
+      loadCurrentConversationTitle(currentConversationId);
+    } else {
+      setCurrentConversationTitle(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentConversationId]);
 
   // Prevent body scroll when scrolling inside history selector popover
   useEffect(() => {
@@ -143,36 +210,22 @@ export const ChatHistorySelector = () => {
     };
   }, [open]);
 
-  const loadConversations = async () => {
-    try {
-      setLoading(true);
-      const data = await getConversations();
-      // Sort by updated_at descending (most recent first)
-      const sorted = data.sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      setConversations(sorted);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSelectConversation = (id: string) => {
     setCurrentConversationId(id);
     setOpen(false);
   };
 
-  const currentConversation = conversations.find(c => c.id === currentConversationId);
-  const displayText = currentConversation?.title || 'New Chat';
+  // Always use the current conversation title from state, or find in conversations list, or show 'New Chat'
+  const displayText = currentConversationTitle || 
+                      conversations.find(c => c.id === currentConversationId)?.title || 
+                      'New Chat';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-auto px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/50 justify-between gap-2 min-w-[120px] max-w-[200px]"
+          className="h-auto px-3 py-1.5 text-sm font-medium text-foreground hover:bg-transparent hover:text-foreground justify-between gap-2 min-w-[120px] max-w-[200px]"
         >
           <span className="truncate">{displayText}</span>
           <FontAwesomeIcon icon={faChevronDown} className="!h-2.5 !w-2.5 flex-shrink-0 text-muted-foreground" />
@@ -180,8 +233,16 @@ export const ChatHistorySelector = () => {
       </PopoverTrigger>
       <PopoverContent 
         ref={popoverContentRef}
-        className="w-80 p-0 z-[80]" 
-        align="start"
+        className={cn(
+          "p-0 z-[80] ml-4 md:ml-0",
+          // Desktop settings
+          "w-80",
+          // Mobile settings - customize these as needed
+          isMobile && "w-[calc(100vw-2rem)] max-w-none"
+        )}
+        align={isMobile ? "center" : "start"}
+        side={isMobile ? "bottom" : "bottom"}
+        sideOffset={isMobile ? 8 : 4}
         style={{ overscrollBehavior: 'none' }}
       >
         <div 

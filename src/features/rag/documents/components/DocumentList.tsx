@@ -4,14 +4,12 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
-import { DocumentGrid } from "./DocumentGrid";
 import { DocumentTable } from "./DocumentTable";
 import { DocumentRow } from "./DocumentRow";
 import { DocumentModal } from "./DocumentModal";
@@ -102,20 +100,29 @@ function setStoredSort(value: string): void {
   }
 }
 
-function getStoredGroupBySource(): boolean {
-  if (typeof window === "undefined") return false;
+function getStoredGroupBySource(): string {
+  if (typeof window === "undefined") return "none";
   try {
     const saved = localStorage.getItem(STORAGE_KEY_GROUP_BY_SOURCE);
-    return saved === "true";
+    if (saved === "true") {
+      // Migrate from old boolean format
+      localStorage.setItem(STORAGE_KEY_GROUP_BY_SOURCE, "workspace-linked");
+      return "workspace-linked";
+    }
+    if (saved === "false") {
+      localStorage.setItem(STORAGE_KEY_GROUP_BY_SOURCE, "none");
+      return "none";
+    }
+    return saved || "none";
   } catch {
-    return false;
+    return "none";
   }
 }
 
-function setStoredGroupBySource(value: boolean): void {
+function setStoredGroupBySource(value: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY_GROUP_BY_SOURCE, String(value));
+    localStorage.setItem(STORAGE_KEY_GROUP_BY_SOURCE, value);
   } catch {
     // Ignore localStorage errors
   }
@@ -123,7 +130,6 @@ function setStoredGroupBySource(value: boolean): void {
 
 export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseName, projectId, researchSubjectId, researchSubjectType }: DocumentListProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useViewMode("table");
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
@@ -150,11 +156,11 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
 
   // Expand all groups by default when grouping is first enabled
   useEffect(() => {
-    if (groupBySource && hasSourceInfo && !hasInitializedExpansion.current) {
+    if (groupBySource !== "none" && hasSourceInfo && !hasInitializedExpansion.current) {
       setExpandedGroups(new Set(["workspace", "linked"]));
       hasInitializedExpansion.current = true;
     }
-    if (!groupBySource) {
+    if (groupBySource === "none") {
       hasInitializedExpansion.current = false;
     }
   }, [groupBySource, hasSourceInfo]);
@@ -280,7 +286,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
 
   // Group documents by workspace/linked when grouping is enabled
   const groupedDocuments = useMemo(() => {
-    if (!groupBySource || !hasSourceInfo) {
+    if (groupBySource === "none" || !hasSourceInfo) {
       return null;
     }
 
@@ -412,7 +418,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
 
   return (
     <>
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-3">
         <Toolbar
           searchPlaceholder="Search documents..."
           searchValue={searchQuery}
@@ -429,11 +435,15 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
             onClick: () => setIsAddModalOpen(true),
           }}
           secondaryAction={undefined}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
           groupBySource={hasSourceInfo ? {
-            enabled: groupBySource,
-            onToggle: setGroupBySource,
+            options: [
+              { value: "none", label: "None" },
+              { value: "workspace-linked", label: "Workspace/Linked" },
+            ],
+            selectedValue: groupBySource,
+            onSelect: (value: string) => {
+              setGroupBySource(value);
+            },
           } : undefined}
         />
 
@@ -448,89 +458,8 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
               ? "No documents found."
               : "No documents found matching your search"}
           </motion.div>
-        ) : viewMode === "grid" ? (
-          groupBySource && groupedDocuments ? (
-            <div className="space-y-2">
-              {/* Workspace Group */}
-              {groupedDocuments.workspace.length > 0 && (
-                <Collapsible
-                  open={expandedGroups.has("workspace")}
-                  onOpenChange={() => toggleGroup("workspace")}
-                >
-                  <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
-                    <FontAwesomeIcon
-                      icon={expandedGroups.has("workspace") ? faChevronDown : faChevronRight}
-                      className="h-4 w-4 text-muted-foreground shrink-0"
-                    />
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="h-2 w-2 rounded-full bg-primary"></span>
-                      <h3 className="text-sm font-semibold text-foreground">Workspace Documents</h3>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {groupedDocuments.workspace.length} {groupedDocuments.workspace.length === 1 ? "document" : "documents"}
-                    </span>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="pt-2">
-                      <DocumentGrid
-                        documents={groupedDocuments.workspace}
-                        knowledgeBaseName={knowledgeBaseName}
-                        hideKnowledgeBase={!!knowledgeBaseId}
-                        onView={handleView}
-                        onDownload={handleDownload}
-                        onDelete={handleDelete}
-                      />
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-
-              {/* Linked Group */}
-              {groupedDocuments.linked.length > 0 && (
-                <Collapsible
-                  open={expandedGroups.has("linked")}
-                  onOpenChange={() => toggleGroup("linked")}
-                >
-                  <CollapsibleTrigger className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors rounded-lg">
-                    <FontAwesomeIcon
-                      icon={expandedGroups.has("linked") ? faChevronDown : faChevronRight}
-                      className="h-4 w-4 text-muted-foreground shrink-0"
-                    />
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="h-2 w-2 rounded-full bg-muted-foreground/30"></span>
-                      <h3 className="text-sm font-semibold text-foreground">Linked Documents</h3>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {groupedDocuments.linked.length} {groupedDocuments.linked.length === 1 ? "document" : "documents"}
-                    </span>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="pt-2">
-                      <DocumentGrid
-                        documents={groupedDocuments.linked}
-                        knowledgeBaseName={knowledgeBaseName}
-                        hideKnowledgeBase={!!knowledgeBaseId}
-                        onView={handleView}
-                        onDownload={handleDownload}
-                        onDelete={handleDelete}
-                      />
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </div>
-          ) : (
-            <DocumentGrid
-              documents={filteredAndSortedDocuments}
-              knowledgeBaseName={knowledgeBaseName}
-              hideKnowledgeBase={!!knowledgeBaseId}
-              onView={handleView}
-              onDownload={handleDownload}
-              onDelete={handleDelete}
-            />
-          )
         ) : (
-          groupBySource && groupedDocuments ? (
+          groupBySource !== "none" && groupedDocuments ? (
             <TooltipProvider delayDuration={100}>
               <div className="space-y-2">
                 {/* Table Header */}

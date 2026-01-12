@@ -197,7 +197,7 @@ export default function DocumentsPage() {
 
   if (error) {
     return (
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-3">
         <div className="text-center py-12">
           <p className="text-destructive">{error}</p>
         </div>
@@ -206,7 +206,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full">
       <DocumentList initialDocuments={documents} />
     </div>
   );

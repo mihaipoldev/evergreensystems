@@ -25,9 +25,9 @@ export function DocumentTable({
 }: DocumentTableProps) {
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {/* Table Header */}
-        <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <div className="flex-1 min-w-0">Name</div>
           <div className="w-20 shrink-0">Size</div>
           <div className="w-24 shrink-0">Status</div>

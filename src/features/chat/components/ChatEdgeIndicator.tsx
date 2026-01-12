@@ -15,12 +15,11 @@ export const ChatEdgeIndicator = () => {
       initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      whileHover={{ scale: 1.02, boxShadow: '0 0 20px hsl(217 91% 60% / 0.3)' }}
       onClick={() => setIsOpen(true)}
-      className="fixed right-0 top-1/2 -translate-y-1/2 z-[70] flex flex-col items-center justify-center gap-3 w-8 py-6 bg-gradient-to-b from-muted to-card border-l border-t border-b border-border rounded-l-lg cursor-pointer transition-all duration-200 hover:w-9 group"
+      className="fixed right-0 top-1/2 -translate-y-1/2 z-[70] flex flex-col items-center justify-center gap-3 w-8 py-6 bg-gradient-to-b from-muted to-card border-l border-t border-b border-border rounded-l-lg cursor-pointer group transition-all duration-200 hover:bg-gradient-to-b hover:from-muted/90 hover:to-card/90"
     >
-      <FontAwesomeIcon icon={faMessage} className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-      <span className="text-vertical text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+      <FontAwesomeIcon icon={faMessage} className="w-4 h-4 text-primary transition-opacity duration-200 group-hover:opacity-80" />
+      <span className="text-vertical text-xs font-medium text-muted-foreground transition-colors duration-200 group-hover:text-foreground/80">
         Chat
       </span>
     </motion.button>

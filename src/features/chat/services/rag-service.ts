@@ -157,6 +157,8 @@ export async function retrieveRelevantChunksForProject(
   const embeddingString = `[${queryEmbedding.join(',')}]`;
 
   // Call the database function for vector similarity search across project documents
+  console.log(`[RAG] Calling match_chunks_for_project for project ${projectId}`);
+  console.log(`[RAG] Parameters: threshold=0.5, limit=${limit}, embeddingLength=${queryEmbedding.length}`);
   const { data, error } = await (supabase.rpc as any)('match_chunks_for_project', {
     p_project_id: projectId,
     p_query_embedding: embeddingString,
@@ -164,14 +166,23 @@ export async function retrieveRelevantChunksForProject(
     p_match_count: limit,
   });
 
+  console.log(`[RAG] match_chunks_for_project response:`, {
+    hasData: !!data,
+    dataLength: data?.length || 0,
+    hasError: !!error,
+    error: error ? JSON.stringify(error, null, 2) : null,
+  });
+
   if (error) {
     // If RLS blocks or function doesn't exist, try service role client
-    console.warn('Project vector similarity search failed with regular client, trying service role:', error);
+    console.warn(`[RAG] Project vector similarity search failed with regular client, trying service role:`, error);
+    console.warn(`[RAG] Error details:`, JSON.stringify(error, null, 2));
     
     const { createServiceRoleClient } = await import('@/lib/supabase/server');
     const serviceSupabase = createServiceRoleClient();
     
     // Try again with service role client
+    console.log(`[RAG] Retrying with service role client for project ${projectId}`);
     const { data: serviceData, error: serviceError } = await (serviceSupabase.rpc as any)('match_chunks_for_project', {
       p_project_id: projectId,
       p_query_embedding: embeddingString,
@@ -179,7 +190,13 @@ export async function retrieveRelevantChunksForProject(
       p_match_count: limit,
     });
 
+    if (serviceError) {
+      console.error(`[RAG] Service role client also failed:`, serviceError);
+      console.error(`[RAG] Service error details:`, JSON.stringify(serviceError, null, 2));
+    }
+
     if (!serviceError && serviceData) {
+      console.log(`[RAG] Service role client succeeded, returned ${serviceData?.length || 0} chunks`);
       return (serviceData || []).map((chunk: any) => ({
         id: chunk.id,
         content: chunk.content,
@@ -191,9 +208,10 @@ export async function retrieveRelevantChunksForProject(
 
     // Final fallback: basic retrieval without similarity
     // Get all project documents first, then retrieve chunks from each
-    console.warn('Project vector similarity search completely failed, using basic retrieval');
+    console.warn(`[RAG] Project vector similarity search completely failed, using basic retrieval for project ${projectId}`);
     
     // Get project KB ID
+    console.log(`[RAG] Fetching project ${projectId} details...`);
     const { data: project, error: projectError } = await (serviceSupabase
       .from('projects') as any)
       .select('kb_id')
@@ -201,32 +219,51 @@ export async function retrieveRelevantChunksForProject(
       .single();
 
     if (projectError || !project) {
+      console.error(`[RAG] Failed to find project ${projectId}:`, projectError);
       throw new Error(`Failed to find project: ${projectError?.message || 'Project not found'}`);
     }
+    
+    console.log(`[RAG] Project ${projectId} has KB ID: ${project.kb_id}`);
 
     // Get all project documents (workspace + linked)
-    const { data: workspaceDocs } = await (serviceSupabase
+    console.log(`[RAG] Fetching workspace documents for KB ${project.kb_id}...`);
+    const { data: workspaceDocs, error: workspaceError } = await (serviceSupabase
       .from('rag_documents') as any)
       .select('id')
       .eq('knowledge_base_id', project.kb_id)
       .is('deleted_at', null);
 
-    const { data: linkedDocs } = await (serviceSupabase
+    if (workspaceError) {
+      console.error(`[RAG] Error fetching workspace docs:`, workspaceError);
+    }
+    console.log(`[RAG] Found ${workspaceDocs?.length || 0} workspace documents`);
+
+    console.log(`[RAG] Fetching linked documents for project ${projectId}...`);
+    const { data: linkedDocs, error: linkedError } = await (serviceSupabase
       .from('project_documents') as any)
       .select('document_id')
       .eq('project_id', projectId);
+
+    if (linkedError) {
+      console.error(`[RAG] Error fetching linked docs:`, linkedError);
+    }
+    console.log(`[RAG] Found ${linkedDocs?.length || 0} linked documents`);
 
     const allDocIds = [
       ...(workspaceDocs || []).map((d: any) => d.id),
       ...(linkedDocs || []).map((d: any) => d.document_id),
     ];
 
+    console.log(`[RAG] Total document IDs: ${allDocIds.length}`, allDocIds);
+
     if (allDocIds.length === 0) {
+      console.warn(`[RAG] No documents found for project ${projectId}`);
       return [];
     }
 
     // Retrieve chunks from all documents (limit per document to avoid too many results)
     const chunksPerDoc = Math.ceil(limit / allDocIds.length);
+    console.log(`[RAG] Fetching chunks from ${allDocIds.length} documents (limit: ${limit}, per doc: ${chunksPerDoc})...`);
     const { data: chunks, error: fetchError } = await (serviceSupabase
       .from('rag_chunks') as any)
       .select(`
@@ -243,10 +280,14 @@ export async function retrieveRelevantChunksForProject(
       .limit(limit);
 
     if (fetchError) {
+      console.error(`[RAG] Error fetching chunks:`, fetchError);
       throw new Error(`Failed to retrieve project chunks: ${fetchError.message}`);
     }
 
+    console.log(`[RAG] Retrieved ${chunks?.length || 0} chunks from database`);
+
     if (!chunks || chunks.length === 0) {
+      console.warn(`[RAG] No chunks found for project ${projectId} documents`);
       return [];
     }
 
@@ -261,13 +302,102 @@ export async function retrieveRelevantChunksForProject(
   }
 
   // Map the results to ChunkResult format
-  return (data || []).map((chunk: any) => ({
+  const results = (data || []).map((chunk: any) => ({
     id: chunk.id,
     content: chunk.content,
     document_id: chunk.document_id,
     similarity_score: chunk.similarity_score || 0,
     document_title: chunk.document_title || null,
   }));
+  
+  console.log(`[RAG] Mapped ${results.length} chunks from match_chunks_for_project`);
+  
+  // If we got 0 results, try fallback to check if documents/chunks exist
+  if (results.length === 0) {
+    console.warn(`[RAG] No chunks found via vector search, checking if documents/chunks exist...`);
+    const { createServiceRoleClient } = await import('@/lib/supabase/server');
+    const serviceSupabase = createServiceRoleClient();
+    
+    // Check if project exists and get KB ID
+    const { data: project } = await (serviceSupabase
+      .from('projects') as any)
+      .select('kb_id')
+      .eq('id', projectId)
+      .single();
+    
+    if (project) {
+      // Check workspace docs
+      const { data: workspaceDocs } = await (serviceSupabase
+        .from('rag_documents') as any)
+        .select('id, title, chunk_count')
+        .eq('knowledge_base_id', project.kb_id)
+        .is('deleted_at', null);
+      
+      // Check linked docs
+      const { data: linkedDocs } = await (serviceSupabase
+        .from('project_documents') as any)
+        .select('document_id, rag_documents(id, title, chunk_count)')
+        .eq('project_id', projectId);
+      
+      console.log(`[RAG] Project has ${workspaceDocs?.length || 0} workspace docs, ${linkedDocs?.length || 0} linked docs`);
+      
+      const allDocIds = [
+        ...(workspaceDocs || []).map((d: any) => d.id),
+        ...(linkedDocs || []).map((d: any) => d.document_id),
+      ];
+      
+      if (allDocIds.length > 0) {
+        // Check if chunks exist for these documents
+        const { data: chunksCheck } = await (serviceSupabase
+          .from('rag_chunks') as any)
+          .select('id, document_id')
+          .in('document_id', allDocIds)
+          .not('embedding', 'is', null)
+          .limit(1);
+        
+        console.log(`[RAG] Found ${chunksCheck?.length || 0} chunks with embeddings for project documents`);
+        
+        if (chunksCheck && chunksCheck.length > 0) {
+          console.warn(`[RAG] Chunks exist but vector search returned 0 results. Using fallback retrieval...`);
+          
+          // Use fallback: retrieve chunks without similarity search
+          const { data: fallbackChunks, error: fallbackError } = await (serviceSupabase
+            .from('rag_chunks') as any)
+            .select(`
+              id,
+              content,
+              document_id,
+              rag_documents!inner(
+                id,
+                title
+              )
+            `)
+            .in('document_id', allDocIds)
+            .not('embedding', 'is', null)
+            .limit(limit);
+          
+          if (!fallbackError && fallbackChunks && fallbackChunks.length > 0) {
+            console.log(`[RAG] Fallback retrieved ${fallbackChunks.length} chunks`);
+            return fallbackChunks.map((chunk: any) => ({
+              id: chunk.id,
+              content: chunk.content,
+              document_id: chunk.document_id,
+              similarity_score: 0.7, // Default score for fallback
+              document_title: chunk.rag_documents?.title || null,
+            }));
+          } else {
+            console.warn(`[RAG] Fallback retrieval also failed:`, fallbackError);
+          }
+        } else {
+          console.warn(`[RAG] No chunks with embeddings found for project documents`);
+        }
+      } else {
+        console.warn(`[RAG] Project has no documents`);
+      }
+    }
+  }
+  
+  return results;
 }
 
 
@@ -392,19 +522,28 @@ export async function retrieveRelevantChunksForMultipleContexts(
   // Fetch chunks from all contexts in parallel
   const chunkPromises = contexts.map(async (context) => {
     try {
+      console.log(`[RAG] Retrieving chunks for ${context.type} ${context.id}...`);
+      let result;
       switch (context.type) {
         case 'document':
-          return await retrieveRelevantChunks(context.id, queryEmbedding, limitPerContext);
+          result = await retrieveRelevantChunks(context.id, queryEmbedding, limitPerContext);
+          console.log(`[RAG] Document ${context.id} returned ${result.length} chunks`);
+          return result;
         case 'project':
-          return await retrieveRelevantChunksForProject(context.id, queryEmbedding, limitPerContext);
+          result = await retrieveRelevantChunksForProject(context.id, queryEmbedding, limitPerContext);
+          console.log(`[RAG] Project ${context.id} returned ${result.length} chunks`);
+          return result;
         case 'knowledgeBase':
-          return await retrieveRelevantChunksForKnowledgeBase(context.id, queryEmbedding, limitPerContext);
+          result = await retrieveRelevantChunksForKnowledgeBase(context.id, queryEmbedding, limitPerContext);
+          console.log(`[RAG] Knowledge Base ${context.id} returned ${result.length} chunks`);
+          return result;
         default:
-          console.warn(`Unknown context type: ${context.type}`);
+          console.warn(`[RAG] Unknown context type: ${context.type}`);
           return [];
       }
     } catch (error) {
-      console.error(`Error retrieving chunks for ${context.type} ${context.id}:`, error);
+      console.error(`[RAG] Error retrieving chunks for ${context.type} ${context.id}:`, error);
+      console.error(`[RAG] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
       return [];
     }
   });

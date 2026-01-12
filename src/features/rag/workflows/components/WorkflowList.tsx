@@ -3,10 +3,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Toolbar, type ViewMode } from "@/features/rag/shared/components/Toolbar";
-import { useViewMode } from "@/features/rag/shared/hooks/useViewMode";
+import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
-import { WorkflowGrid } from "./WorkflowGrid";
 import { WorkflowTable } from "./WorkflowTable";
 import { WorkflowModal } from "./WorkflowModal";
 import type { Workflow } from "../types";
@@ -82,7 +80,6 @@ function setStoredSort(value: string): void {
 
 export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
   const router = useRouter();
-  const [viewMode, setViewMode] = useViewMode("grid");
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
@@ -196,7 +193,7 @@ export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-3">
       <Toolbar
         searchPlaceholder="Search workflows..."
         searchValue={searchQuery}
@@ -208,13 +205,11 @@ export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
         sortOptions={["Recent", "Name"]}
         onSortChange={setSelectedSort}
         selectedSort={selectedSort}
-        primaryAction={{
-          label: "New",
-          onClick: () => setIsCreateModalOpen(true),
-        }}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+          primaryAction={{
+            label: "New",
+            onClick: () => setIsCreateModalOpen(true),
+          }}
+        />
 
       {filteredAndSortedWorkflows.length === 0 ? (
         <motion.div
@@ -227,8 +222,6 @@ export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
             ? "No workflows. Create one to get started."
             : "No workflows found matching your search"}
         </motion.div>
-      ) : viewMode === "grid" ? (
-        <WorkflowGrid workflows={filteredAndSortedWorkflows} onDelete={handleDelete} onEdit={handleEdit} />
       ) : (
         <WorkflowTable workflows={filteredAndSortedWorkflows} onDelete={handleDelete} onEdit={handleEdit} />
       )}

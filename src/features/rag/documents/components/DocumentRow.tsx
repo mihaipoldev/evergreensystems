@@ -96,104 +96,179 @@ export function DocumentRow({
   };
 
   return (
-    <Card className="relative flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 overflow-hidden">
-      {/* Corner Indicator */}
-      {document.is_workspace_document !== undefined && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div 
-              className={cn(
-                "absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-transparent cursor-help",
-                document.is_workspace_document 
-                  ? "border-r-primary" 
-                  : "border-r-muted-foreground/30"
-              )}
-              aria-label={document.is_workspace_document ? "Workspace document" : "Linked document"}
-            />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{document.is_workspace_document ? "Workspace Document" : "Linked Document"}</p>
-          </TooltipContent>
-        </Tooltip>
-      )}
-      
-      {/* Icon + Name */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className={cn(
-          "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
-          document.is_workspace_document === true
-            ? "bg-primary/10"
-            : document.is_workspace_document === false
-            ? "bg-muted/50"
-            : "bg-secondary"
-        )}>
-          <FontAwesomeIcon
-            icon={faFileText}
-            className={cn(
-              "h-4 w-4",
-              document.is_workspace_document === true
-                ? "text-primary"
-                : document.is_workspace_document === false
-                ? "text-muted-foreground"
-                : "text-primary"
-            )}
-          />
-        </div>
-        <div className="min-w-0 flex flex-col h-full justify-center">
+    <>
+      {/* Mobile Layout */}
+      <Card className="relative md:hidden border-none shadow-none hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow p-3 overflow-hidden">
+        {/* Corner Indicator */}
+        {document.is_workspace_document !== undefined && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <p className="font-medium text-foreground truncate">
-                {document.title || "Untitled Document"}
-              </p>
+              <div 
+                className={cn(
+                  "absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-transparent cursor-help",
+                  document.is_workspace_document 
+                    ? "border-r-primary" 
+                    : "border-r-muted-foreground/30"
+                )}
+                aria-label={document.is_workspace_document ? "Workspace document" : "Linked document"}
+              />
             </TooltipTrigger>
             <TooltipContent>
-              <p>{document.title || "Untitled Document"}</p>
+              <p>{document.is_workspace_document ? "Workspace Document" : "Linked Document"}</p>
             </TooltipContent>
           </Tooltip>
-          <div className="text-xs text-muted-foreground mt-0.5">{getFileTypeLabel()}</div>
+        )}
+        
+        <div className="flex items-start gap-3">
+          <div className={cn(
+            "h-10 w-8 rounded-lg flex items-center justify-center flex-shrink-0",
+            document.is_workspace_document === true
+              ? "bg-primary/10"
+              : document.is_workspace_document === false
+              ? "bg-muted/50"
+              : "bg-secondary"
+          )}>
+            <FontAwesomeIcon
+              icon={faFileText}
+              className={cn(
+                "h-5 w-5",
+                document.is_workspace_document === true
+                  ? "text-primary"
+                  : document.is_workspace_document === false
+                  ? "text-muted-foreground"
+                  : "text-primary"
+              )}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-base break-words">
+              {document.title || "Untitled Document"}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">{getFileTypeLabel()}</div>
+            <div className="text-sm text-muted-foreground space-y-0 mt-2">
+              <div>{fileSize}</div>
+              <div>
+                <StatusBadge color={statusColor}>
+                  {document.status}
+                </StatusBadge>
+              </div>
+              {(document.knowledge_base_name || knowledgeBaseName) && (
+                <div>{document.knowledge_base_name || knowledgeBaseName}</div>
+              )}
+              <div>{formattedDate}</div>
+            </div>
+          </div>
+          <div className="flex-shrink-0 ml-2 relative z-20" data-action-menu>
+            <DocumentActionsMenu
+              document={document}
+              onView={onView}
+              onDownload={onDownload}
+              onDelete={onDelete}
+            />
+          </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Size */}
-      <div className="w-20 shrink-0">
-        <p className="text-sm text-muted-foreground">{fileSize}</p>
-      </div>
-
-      {/* Status */}
-      <div className="w-24 shrink-0">
-        <StatusBadge 
-          color={statusColor}
-        >
-          {document.status}
-        </StatusBadge>
-      </div>
-
-      {/* Knowledge Base */}
-      {(document.knowledge_base_name || knowledgeBaseName) && (
-        <div className="w-32 shrink-0">
-          <p className="text-sm text-muted-foreground truncate">
-            {document.knowledge_base_name || knowledgeBaseName}
-          </p>
+      {/* Desktop Layout */}
+      <Card className="relative hidden md:flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 overflow-hidden">
+        {/* Corner Indicator */}
+        {document.is_workspace_document !== undefined && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className={cn(
+                  "absolute top-0 right-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-transparent cursor-help",
+                  document.is_workspace_document 
+                    ? "border-r-primary" 
+                    : "border-r-muted-foreground/30"
+                )}
+                aria-label={document.is_workspace_document ? "Workspace document" : "Linked document"}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{document.is_workspace_document ? "Workspace Document" : "Linked Document"}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        
+        {/* Icon + Name */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className={cn(
+            "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+            document.is_workspace_document === true
+              ? "bg-primary/10"
+              : document.is_workspace_document === false
+              ? "bg-muted/50"
+              : "bg-secondary"
+          )}>
+            <FontAwesomeIcon
+              icon={faFileText}
+              className={cn(
+                "h-4 w-4",
+                document.is_workspace_document === true
+                  ? "text-primary"
+                  : document.is_workspace_document === false
+                  ? "text-muted-foreground"
+                  : "text-primary"
+              )}
+            />
+          </div>
+          <div className="min-w-0 flex flex-col h-full justify-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="font-medium text-foreground truncate">
+                  {document.title || "Untitled Document"}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{document.title || "Untitled Document"}</p>
+              </TooltipContent>
+            </Tooltip>
+            <div className="text-xs text-muted-foreground mt-0.5">{getFileTypeLabel()}</div>
+          </div>
         </div>
-      )}
 
-      {/* Uploaded */}
-      <div className="w-28 shrink-0">
-        <p className="text-sm text-muted-foreground">{formattedDate}</p>
-      </div>
-
-      {/* Actions */}
-      <div className="w-20 shrink-0 flex items-center justify-end relative z-20">
-        <div onClick={(e) => e.stopPropagation()}>
-          <DocumentActionsMenu
-            document={document}
-            onView={onView}
-            onDownload={onDownload}
-            onDelete={onDelete}
-          />
+        {/* Size */}
+        <div className="w-20 shrink-0">
+          <p className="text-sm text-muted-foreground">{fileSize}</p>
         </div>
-      </div>
-    </Card>
+
+        {/* Status */}
+        <div className="w-24 shrink-0">
+          <StatusBadge 
+            color={statusColor}
+          >
+            {document.status}
+          </StatusBadge>
+        </div>
+
+        {/* Knowledge Base */}
+        {(document.knowledge_base_name || knowledgeBaseName) && (
+          <div className="w-32 shrink-0">
+            <p className="text-sm text-muted-foreground truncate">
+              {document.knowledge_base_name || knowledgeBaseName}
+            </p>
+          </div>
+        )}
+
+        {/* Uploaded */}
+        <div className="w-28 shrink-0">
+          <p className="text-sm text-muted-foreground">{formattedDate}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="w-20 shrink-0 flex items-center justify-end relative z-20">
+          <div onClick={(e) => e.stopPropagation()}>
+            <DocumentActionsMenu
+              document={document}
+              onView={onView}
+              onDownload={onDownload}
+              onDelete={onDelete}
+            />
+          </div>
+        </div>
+      </Card>
+    </>
   );
 }
 

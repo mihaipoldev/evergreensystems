@@ -16,7 +16,6 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
-import { AnimatedGrid } from "@/features/rag/shared/components/AnimatedGrid";
 import { SectionHeader } from "@/features/rag/shared/components/SectionHeader";
 import { KnowledgeBaseCardCompact } from "@/features/rag/knowledge-bases/components/KnowledgeBaseCardCompact";
 import { KnowledgeBaseModal } from "@/features/rag/knowledge-bases/components/KnowledgeBaseModal";
@@ -229,11 +228,7 @@ export default function IntelDashboardPage() {
             </div>
           </motion.div>
         ) : (
-          <AnimatedGrid
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            getKey={(_, index) => knowledgeBases[index]?.id || index}
-            staggerDelay={0.04}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {knowledgeBases.map((kb) => (
               <div key={kb.id} className="group transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
                 <KnowledgeBaseCardCompact
@@ -242,7 +237,7 @@ export default function IntelDashboardPage() {
                 />
               </div>
             ))}
-          </AnimatedGrid>
+          </div>
         )}
       </section>
 
@@ -278,11 +273,7 @@ export default function IntelDashboardPage() {
             </div>
           </motion.div>
         ) : (
-          <AnimatedGrid
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            getKey={(_, index) => projects[index]?.id || index}
-            staggerDelay={0.04}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
               <div key={project.id} className="group transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
                 <ProjectCardCompact
@@ -291,7 +282,7 @@ export default function IntelDashboardPage() {
                 />
               </div>
             ))}
-          </AnimatedGrid>
+          </div>
         )}
       </section>
 
@@ -327,17 +318,13 @@ export default function IntelDashboardPage() {
             </div>
           </motion.div>
         ) : (
-          <AnimatedGrid
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            getKey={(_, index) => recentDocuments[index]?.id || index}
-            staggerDelay={0.04}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentDocuments.map((doc) => (
               <div key={doc.id} className="group transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
                 <DocumentCardCompact document={doc} />
               </div>
             ))}
-          </AnimatedGrid>
+          </div>
         )}
       </section>
 
@@ -365,17 +352,13 @@ export default function IntelDashboardPage() {
             <div className="relative z-10">No runs yet.</div>
           </motion.div>
         ) : (
-          <AnimatedGrid
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            getKey={(_, index) => recentRuns[index]?.id || index}
-            staggerDelay={0.04}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentRuns.map((run) => (
               <div key={run.id} className="group transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
                 <RunCardCompact run={run} />
               </div>
             ))}
-          </AnimatedGrid>
+          </div>
         )}
       </section>
 

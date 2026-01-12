@@ -144,104 +144,176 @@ export function ProjectRow({
   };
 
   return (
-    <Card 
-      className={cn(
-        "flex items-center gap-4 p-4 shadow-card-light hover:shadow-card hover:bg-card/70 dark:hover:bg-muted/40 transition-all h-20 cursor-pointer border-2",
-        selected 
-          ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80" 
-          : "border-transparent"
-      )}
-      onClick={handleRowClick}
-    >
-      {/* Icon + Name */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-          {projectTypeIcon ? (
-            <span className="text-lg">{projectTypeIcon}</span>
-          ) : (
-            <FontAwesomeIcon
-              icon={faFolder}
-              className="h-4 w-4 text-primary"
-            />
-          )}
+    <>
+      {/* Mobile Layout */}
+      <Card 
+        className={cn(
+          "md:hidden group cursor-pointer hover:bg-card/70 dark:hover:bg-muted/40 shadow-none md:shadow-card rounded-2xl transition-all border-2 p-3",
+          selected 
+            ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80" 
+            : "border-transparent"
+        )}
+        onClick={handleRowClick}
+      >
+        <Link
+          href={`/intel/projects/${project.id}`}
+          className="contents"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("[data-action-menu]")) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+              {projectTypeIcon ? (
+                <span className="text-lg">{projectTypeIcon}</span>
+              ) : (
+                <FontAwesomeIcon
+                  icon={faFolder}
+                  className="h-5 w-5 text-primary"
+                />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-base break-words">
+                {project.name}
+              </div>
+              <div className="text-sm text-muted-foreground space-y-0">
+                {!isNicheProject && (
+                  <div>
+                    <StatusBadge color={statusColor}>
+                      {project.status}
+                    </StatusBadge>
+                  </div>
+                )}
+                {isNicheProject && (
+                  <div>
+                    <FitScoreAndVerdict 
+                      fit_score={project.niche_intelligence_fit_score} 
+                      verdict={project.niche_intelligence_verdict}
+                      showVerdict={false}
+                      updatedAt={project.niche_intelligence_updated_at}
+                      runs={project.niche_intelligence_runs}
+                    />
+                  </div>
+                )}
+                <div>{formattedDate}</div>
+              </div>
+            </div>
+            <div className="flex-shrink-0 ml-2" data-action-menu>
+              <ProjectActionsMenu
+                project={project}
+                projectTypes={projectTypes}
+                projectTypeName={projectTypeName}
+                onDelete={onDelete}
+                onEdit={onEdit}
+              />
+            </div>
+          </div>
+        </Link>
+      </Card>
+
+      {/* Desktop Layout */}
+      <Card 
+        className={cn(
+          "hidden md:flex items-center gap-4 p-4 hover:bg-card/70 dark:hover:bg-muted/40 rounded-2xl shadow-light transition-all h-20 cursor-pointer border-2",
+          selected 
+            ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80" 
+            : "border-transparent"
+        )}
+        onClick={handleRowClick}
+      >
+        {/* Icon + Name */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0">
+            {projectTypeIcon ? (
+              <span className="text-lg">{projectTypeIcon}</span>
+            ) : (
+              <FontAwesomeIcon
+                icon={faFolder}
+                className="h-4 w-4 text-primary"
+              />
+            )}
+          </div>
+          <div className={cn(
+            "min-w-0 flex flex-col h-full",
+            project.description ? "justify-start" : "justify-center"
+          )}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link 
+                  href={`/intel/projects/${project.id}`}
+                  className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
+                >
+                  {project.name}
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{project.name}</p>
+              </TooltipContent>
+            </Tooltip>
+            {project.description && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{project.description}</p>
+            )}
+          </div>
         </div>
-        <div className={cn(
-          "min-w-0 flex flex-col h-full",
-          project.description ? "justify-start" : "justify-center"
-        )}>
+
+        {/* Conditional columns */}
+        {!isNicheProject && (
+          <>
+            {/* Status */}
+            <div className="w-24 shrink-0">
+              <StatusBadge 
+                color={statusColor}
+              >
+                {project.status}
+              </StatusBadge>
+            </div>
+          </>
+        )}
+
+        {isNicheProject && (
+          <>
+            {/* Niche Intelligence Fit Score & Verdict */}
+            <div className="w-32 shrink-0">
+              <FitScoreAndVerdict 
+                fit_score={project.niche_intelligence_fit_score} 
+                verdict={project.niche_intelligence_verdict}
+                showVerdict={false}
+                updatedAt={project.niche_intelligence_updated_at}
+                runs={project.niche_intelligence_runs}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Updated */}
+        <div className="w-28 shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link 
-                href={`/intel/projects/${project.id}`}
-                className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
-              >
-                {project.client_name}
-              </Link>
+              <p className="text-sm text-muted-foreground cursor-help inline-block">{formattedDate}</p>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>{project.client_name}</p>
+            <TooltipContent align="center">
+              <p>{fullDateWithTime}</p>
             </TooltipContent>
           </Tooltip>
-          {project.description && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">{project.description}</p>
-          )}
         </div>
-      </div>
 
-      {/* Conditional columns */}
-      {!isNicheProject && (
-        <>
-          {/* Status */}
-          <div className="w-24 shrink-0">
-            <StatusBadge 
-              color={statusColor}
-            >
-              {project.status}
-            </StatusBadge>
-          </div>
-        </>
-      )}
-
-      {isNicheProject && (
-        <>
-          {/* Niche Intelligence Fit Score & Verdict */}
-          <div className="w-32 shrink-0">
-            <FitScoreAndVerdict 
-              fit_score={project.niche_intelligence_fit_score} 
-              verdict={project.niche_intelligence_verdict}
-              showVerdict={false}
-              updatedAt={project.niche_intelligence_updated_at}
-              runs={project.niche_intelligence_runs}
+        {/* Actions */}
+        <div className="w-20 shrink-0 flex items-center justify-end">
+          <div onClick={(e) => e.stopPropagation()}>
+            <ProjectActionsMenu
+              project={project}
+              projectTypes={projectTypes}
+              projectTypeName={projectTypeName}
+              onDelete={onDelete}
+              onEdit={onEdit}
             />
           </div>
-        </>
-      )}
-
-      {/* Updated */}
-      <div className="w-28 shrink-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <p className="text-sm text-muted-foreground cursor-help inline-block">{formattedDate}</p>
-          </TooltipTrigger>
-          <TooltipContent align="center">
-            <p>{fullDateWithTime}</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
-      {/* Actions */}
-      <div className="w-20 shrink-0 flex items-center justify-end">
-        <div onClick={(e) => e.stopPropagation()}>
-          <ProjectActionsMenu
-            project={project}
-            projectTypes={projectTypes}
-            projectTypeName={projectTypeName}
-            onDelete={onDelete}
-            onEdit={onEdit}
-          />
         </div>
-      </div>
-    </Card>
+      </Card>
+    </>
   );
 }
 

@@ -46,6 +46,21 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
+    /* Custom tokens for funnel pages */
+    --text-primary: 220 20% 15%;
+    --text-secondary: 220 10% 40%;
+    --text-muted: 220 8% 55%;
+    
+    --surface-elevated: 220 15% 99%;
+    --surface-subtle: 220 12% 97%;
+    
+    --cta-bg: var(--primary);
+    --cta-hover: 220 25% 12%;
+    --cta-text: 0 0% 100%;
+    
+    --success: 160 60% 40%;
+    --success-muted: 160 40% 95%;
+
     /* Font family variables - admin only (using geist-sans directly) */
     --font-family-admin-heading: var(--font-geist-sans);
     --font-family-admin-body: var(--font-geist-sans);
@@ -296,6 +311,21 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Custom tokens for funnel pages - dark mode */
+    --text-primary: 220 10% 95%;
+    --text-secondary: 220 10% 75%;
+    --text-muted: 220 10% 60%;
+    
+    --surface-elevated: 220 18% 12%;
+    --surface-subtle: 220 15% 15%;
+    
+    --cta-bg: var(--primary);
+    --cta-hover: 220 15% 95%;
+    --cta-text: 220 20% 10%;
+    
+    --success: 160 60% 50%;
+    --success-muted: 160 40% 20%;
   }
 }
 
@@ -330,6 +360,81 @@
   html:not(.preset-admin) body h5,
   html:not(.preset-admin) body h6 {
     font-family: var(--font-family-public-heading), system-ui, sans-serif !important;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-4xl mx-auto px-6 md:px-8;
+  }
+
+  .section-spacing {
+    @apply py-4 md:py-16;
+  }
+
+  /* Hero text alignment - easily change alignment for entire hero section */
+  /* Change 'center' below to 'left', 'right', or 'justify' as needed */
+  /* All child elements will automatically inherit this alignment */
+  .hero-align {
+    text-align: left;
+  }
+
+  /* Hero text alignment - easily change alignment for entire hero section */
+  /* Change 'center' below to 'left', 'right', or 'justify' as needed */
+  /* All child elements will automatically inherit this alignment */
+  .hero-align-bullet {
+    justify-content: left;
+  }
+
+  .heading-xl {
+    @apply text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight;
+    color: hsl(var(--text-primary));
+  }
+
+  .heading-lg {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+    color: hsl(var(--text-primary));
+  }
+
+  .heading-md {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+    color: hsl(var(--text-primary));
+  }
+
+  .heading-sm {
+    @apply text-lg font-semibold;
+    color: hsl(var(--text-primary));
+  }
+
+  .body-lg {
+    @apply text-lg md:text-xl leading-relaxed;
+    color: hsl(var(--text-secondary));
+  }
+
+  .body-md {
+    @apply text-base md:text-lg leading-relaxed;
+    color: hsl(var(--text-secondary));
+  }
+
+  .body-sm {
+    @apply text-sm leading-relaxed;
+    color: hsl(var(--text-muted));
+  }
+
+  .cta-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-lg transition-all duration-200;
+    background-color: hsl(var(--cta-bg));
+    color: hsl(var(--cta-text));
+  }
+
+  .cta-primary:hover {
+    background-color: hsl(var(--cta-hover));
+    transform: translateY(-1px);
+  }
+
+  .divider {
+    @apply w-full h-px;
+    background-color: hsl(var(--border));
   }
 }
 
@@ -1141,6 +1246,21 @@ input[type="password"]:-webkit-autofill:active {
     box-shadow: var(--chat-shadow-lg);
   }
 
+  /* Position chat history popover on the right side of chat sidebar */
+  /* Chat sidebar is 500px wide, popover is 320px (w-80), position from right edge of sidebar */
+  [data-radix-popover-content].chat-history-popover {
+    left: auto !important;
+    right: 1rem !important;
+    transform: translateX(0) !important;
+  }
+  
+  /* On mobile, the chat is full screen, so position from right edge */
+  @media (max-width: 767px) {
+    [data-radix-popover-content].chat-history-popover {
+      right: 1rem !important;
+    }
+  }
+
   .text-vertical {
     writing-mode: vertical-rl;
     text-orientation: mixed;
@@ -1179,6 +1299,33 @@ input[type="password"]:-webkit-autofill:active {
     animation: typing-dot 1.4s ease-in-out infinite;
   }
 
+  /* Wave animations for landing page */
+  @keyframes wave {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(-25px);
+    }
+  }
+
+  @keyframes wave-reverse {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(25px);
+    }
+  }
+
+  .animate-wave {
+    animation: wave 20s ease-in-out infinite;
+  }
+
+  .animate-wave-reverse {
+    animation: wave-reverse 25s ease-in-out infinite;
+  }
+
   /* Make bullet points (dots) bigger in chat messages */
   .markdown-content ul li::marker {
     font-size: 18px;
@@ -1205,6 +1352,27 @@ input[type="password"]:-webkit-autofill:active {
 
     .sidebar {
       display: none;
+    }
+  }
+
+  /* Prevent sticky hover states on touch devices */
+  /* Only apply hover styles on devices that actually support hover */
+  @media (hover: none) {
+    button:hover,
+    button:focus-visible:hover {
+      background-color: inherit !important;
+    }
+  }
+
+  /* Touch-friendly button - prevents sticky hover */
+  .touch-safe-button {
+    touch-action: manipulation;
+  }
+
+  @media (hover: none) {
+    .touch-safe-button:hover {
+      background-color: inherit !important;
+      color: inherit !important;
     }
   }
 }
