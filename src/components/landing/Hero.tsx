@@ -572,7 +572,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
               <span 
                 className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0 relative z-10"
                 style={{
-                  backgroundImage: 'linear-gradient(84deg, hsl(var(--secondary)), hsl(var(--secondary)) 92%)',
+                  backgroundImage: 'linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)',
                 }}
               />
               <span className="uppercase font-medium text-[10px] md:text-[12px] text-foreground relative z-10">{topBannerText}</span>
