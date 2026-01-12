@@ -468,7 +468,7 @@ export const ChatInput = ({ value, onChange, onSend, disabled }: ChatInputProps)
               disabled={disabled}
               className="flex-1 bg-transparent border-0 resize-none text-sm placeholder:text-muted-foreground focus:outline-none pr-2 mb-2 overflow-y-auto"
               rows={3}
-              style={{ minHeight: '72px', maxHeight: '320px', overscrollBehavior: 'none' }} // keep 320px
+              style={{ minHeight: '72px', maxHeight: '320px', overscrollBehavior: 'none', fontSize: '16px' }} // fontSize: 16px prevents zoom on iOS when focusing input
             />
           
           {/* Send button with full radius */}

@@ -49,13 +49,20 @@ export const ChatSidebar = () => {
   // Use a ref to track the last loaded conversation to prevent unnecessary reloads
   const lastLoadedConversationId = useRef<string | null>(null);
   
-  // Handle mobile viewport height to account for browser UI bars
+  // Handle mobile viewport height to account for browser UI bars and keyboard
   useEffect(() => {
     if (!isMobile) return;
 
     const updateViewportHeight = () => {
-      // Use window.innerHeight which accounts for browser UI bars
-      setViewportHeight(`${window.innerHeight}px`);
+      // Use visualViewport.height if available (accounts for keyboard)
+      // This gives us the actual visible area when keyboard is open
+      if (window.visualViewport) {
+        // Use visualViewport.height which automatically excludes keyboard
+        setViewportHeight(`${window.visualViewport.height}px`);
+      } else {
+        // Fallback for browsers without visualViewport support
+        setViewportHeight(`${window.innerHeight}px`);
+      }
     };
 
     // Set initial height
@@ -65,17 +72,29 @@ export const ChatSidebar = () => {
     window.addEventListener('resize', updateViewportHeight);
     window.addEventListener('orientationchange', updateViewportHeight);
 
-    // Also listen for visual viewport changes (more accurate for mobile)
+    // Listen for visual viewport changes (accounts for keyboard appearing/disappearing)
+    // This is the key event that fires when keyboard opens/closes
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewportHeight);
+      const handleVisualViewportResize = () => {
+        updateViewportHeight();
+        // Small delay to ensure keyboard animation completes
+        setTimeout(updateViewportHeight, 100);
+      };
+      
+      window.visualViewport.addEventListener('resize', handleVisualViewportResize);
+      window.visualViewport.addEventListener('scroll', handleVisualViewportResize);
+      
+      return () => {
+        window.removeEventListener('resize', updateViewportHeight);
+        window.removeEventListener('orientationchange', updateViewportHeight);
+        window.visualViewport?.removeEventListener('resize', handleVisualViewportResize);
+        window.visualViewport?.removeEventListener('scroll', handleVisualViewportResize);
+      };
     }
 
     return () => {
       window.removeEventListener('resize', updateViewportHeight);
       window.removeEventListener('orientationchange', updateViewportHeight);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewportHeight);
-      }
     };
   }, [isMobile]);
   
@@ -615,7 +634,8 @@ export const ChatSidebar = () => {
             // Prevent browser UI from overlapping
             position: 'fixed',
             top: 0,
-            bottom: 0,
+            // Ensure chat stays within visible viewport when keyboard appears
+            overflow: 'hidden',
           }}
         >
           <div className="h-full bg-card flex flex-col overflow-hidden">
