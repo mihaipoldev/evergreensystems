@@ -38,6 +38,7 @@ export const ChatSidebar = () => {
   const [loading, setLoading] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<string>('100dvh');
 
   // Swipe-to-close state for mobile
   const touchStartX = useRef<number | null>(null);
@@ -47,6 +48,36 @@ export const ChatSidebar = () => {
   // Load conversation when currentConversationId changes
   // Use a ref to track the last loaded conversation to prevent unnecessary reloads
   const lastLoadedConversationId = useRef<string | null>(null);
+  
+  // Handle mobile viewport height to account for browser UI bars
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const updateViewportHeight = () => {
+      // Use window.innerHeight which accounts for browser UI bars
+      setViewportHeight(`${window.innerHeight}px`);
+    };
+
+    // Set initial height
+    updateViewportHeight();
+
+    // Update on resize (when browser bars show/hide)
+    window.addEventListener('resize', updateViewportHeight);
+    window.addEventListener('orientationchange', updateViewportHeight);
+
+    // Also listen for visual viewport changes (more accurate for mobile)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewportHeight);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateViewportHeight);
+      window.removeEventListener('orientationchange', updateViewportHeight);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewportHeight);
+      }
+    };
+  }, [isMobile]);
   
   useEffect(() => {
     // Only load if conversation ID actually changed and we're not currently typing
@@ -575,9 +606,17 @@ export const ChatSidebar = () => {
         <SheetContent
           side="right"
           className={cn(
-            "w-screen h-screen max-w-none p-0 rounded-none border-0 z-[70]",
+            "w-screen max-w-none p-0 rounded-none border-0 z-[70]",
             "md:hidden" // Only show on mobile
           )}
+          style={{
+            height: viewportHeight,
+            maxHeight: viewportHeight,
+            // Prevent browser UI from overlapping
+            position: 'fixed',
+            top: 0,
+            bottom: 0,
+          }}
         >
           <div className="h-full bg-card flex flex-col overflow-hidden">
             {chatContent}
