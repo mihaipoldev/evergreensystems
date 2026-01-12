@@ -369,7 +369,7 @@
   }
 
   .section-spacing {
-    @apply py-4 md:py-16;
+    @apply py-4 md:py-16 px-3 md:px-0;
   }
 
   /* Hero text alignment - easily change alignment for entire hero section */

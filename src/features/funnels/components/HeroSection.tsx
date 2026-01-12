@@ -13,15 +13,15 @@ const fadeInUp = {
 
 const HeroSection = () => {
   return (
-    <section className="pt-32 md:pt-40 py-4 md:py-8 text-center">
+    <section className="pt-28 md:pt-40 py-6 md:py-8 text-center px-1 md:px-0">
       {/* Headline */}
       <motion.div 
-        className="max-w-5xl mx-auto mb-10"
+        className="max-w-5xl mx-auto mb-6 md:mb-10"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
       >
-        <h1 className="heading-xl text-[20px] md:text-[60px] font-bold md:mb-6 mb-4">
+        <h1 className="heading-xl text-[25px] md:text-[60px] font-bold md:mb-6 mb-4">
           We Build & Run Outbound Systems That <b className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Books Qualified Sales Calls</b>
         </h1>
         <p className="body-lg text-[14px] md:text-[16px] px-4 md:px-0 max-w-2xl mx-auto">
@@ -31,7 +31,7 @@ const HeroSection = () => {
 
       {/* VSL Video Player */}
       <motion.div 
-        className="max-w-4xl mx-auto mb-10 md:mb-10 md:px-0 px-3"
+        className="max-w-4xl mx-auto mb-6 md:mb-10 md:px-0 px-3"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
@@ -72,7 +72,7 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
       >
-        <p className="heading-sm text-muted-foreground/80 max-w-2xl mx-auto mt-4">
+        <p className="text-muted-foreground/80 max-w-2xl mx-auto mt-4">
           10 booked calls a month <b className="text-primary">guaranteed!</b>
         </p>
 

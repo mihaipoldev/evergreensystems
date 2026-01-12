@@ -36,7 +36,7 @@ export function AdminHeader() {
   
   return (
     <header className={cn(
-      "ml-0 md:ml-64 fixed top-0 left-0 right-0 z-50 flex h-[56px] md:h-[81px] items-center gap-2 bg-background p-2",
+      "backdrop-blur-xl ml-0 md:ml-64 fixed top-0 left-0 right-0 z-50 flex h-[56px] md:h-[81px] items-center gap-2 p-2",
       isIntelRoute ? "px-2 md:px-6 lg:px-8" : "px-2 md:px-10 lg:px-12 border-b border-border/50"
     )}>
       <div className="flex items-center gap-2 w-full max-w-[1400px] mx-auto">
@@ -52,7 +52,7 @@ export function AdminHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-full hover:bg-muted/50"
+                  className="h-9 w-9 rounded-full hover:bg-primary/10"
                 >
                   <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-all duration-200 hover:bg-primary/90">
                     <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
@@ -86,7 +86,7 @@ export function AdminHeader() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full hover:bg-muted/50"
+                className="h-9 w-9 rounded-full hover:bg-muted/50 hover:text-foreground"
               >
                 <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
               </Button>

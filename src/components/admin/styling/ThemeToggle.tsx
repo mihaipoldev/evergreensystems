@@ -37,7 +37,7 @@ export function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-full hover:bg-muted/50"
+          className="h-9 w-9 rounded-full hover:bg-muted/50 hover:text-foreground"
         >
           <FontAwesomeIcon icon={themeIcon} className="h-4 w-4" />
         </Button>

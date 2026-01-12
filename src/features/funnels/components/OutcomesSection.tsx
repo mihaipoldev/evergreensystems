@@ -13,14 +13,14 @@ const fadeInUp = {
 
 const OutcomesSection = () => {
   return (
-    <section id="outcomes" className="section-spacing md:px-0 px-3">
+    <section id="outcomes" className="section-spacing">
       <div className="max-w-3xl mx-auto">
         {/* Section Header */}
         <motion.div 
-          className="text-center mb-10"
+          className="text-center md:mb-10 mb-6"
           {...fadeInUp}
         >
-          <h2 className="heading-lg mb-4">
+          <h2 className="heading-md md:heading-lg mb-4">
             Get Consistent, Qualified Sales Calls
           </h2>
           <p className="heading-sm text-muted-foreground font-normal">
@@ -30,7 +30,7 @@ const OutcomesSection = () => {
 
         {/* Benefits */}
         <motion.div 
-          className="space-y-4 mb-10"
+          className="md:space-y-4 space-y-2 md:mb-10 mb-6"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
@@ -43,7 +43,7 @@ const OutcomesSection = () => {
           ].map((benefit, index) => (
             <motion.div 
               key={index} 
-              className="p-5 rounded-xl bg-secondary/20 border border-border/50 hover:border-primary/30 transition-colors"
+              className="md:p-5 p-3 rounded-xl bg-secondary/20 border border-border/50 hover:border-primary/30 transition-colors"
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0 }
@@ -62,20 +62,20 @@ const OutcomesSection = () => {
 
         {/* Core Value Prop */}
         <motion.div 
-          className="mb-10"
+          className="md:mb-10 mb-6"
           {...fadeInUp}
         >
-          <p className="body-lg text-center font-medium text-foreground">
+          <p className="md:body-lg body-md text-center font-medium text-foreground">
             We build and run the entire outbound system for you — end-to-end.
           </p>
-          <p className="body-md text-center mt-3">
+          <p className="md:body-md body-sm text-center mt-3">
             You only show up to qualified calls booked directly on your calendar.
           </p>
         </motion.div>
 
         {/* Qualifier */}
         <motion.div 
-          className="bg-muted/50 rounded-lg p-5 border border-border/50"
+          className="bg-muted/50 rounded-lg md:p-5 p-3 border border-border/50"
           {...fadeInUp}
         >
           <p className="body-sm text-center text-foreground/80">

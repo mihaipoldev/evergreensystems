@@ -50,15 +50,15 @@ const benchmarks = [
 
 const BenchmarksSection = () => {
   return (
-    <section id="expected-outcomes" className="section-spacing md:px-0 px-3">
+    <section id="expected-outcomes" className="section-spacing">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div 
-          className="text-center mb-12"
+          className="text-center md:mb-12 mb-6"
           {...fadeInUp}
         >
-          <h2 className="heading-lg mb-2">Expected Outcomes</h2>
-          <p className="body-lg text-foreground/80 max-w-2xl mx-auto">
+          <h2 className="md:heading-lg heading-md md:mb-2 mb-3">Expected Outcomes</h2>
+          <p className="md:body-lg body-md text-foreground/80 max-w-2xl mx-auto">
             What this system is designed to optimize for
           </p>
         </motion.div>
@@ -68,7 +68,7 @@ const BenchmarksSection = () => {
           
           {/* Benchmarks Grid */}
           <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+            className="grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 gap-4 md:mb-12 mb-4"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
@@ -84,7 +84,7 @@ const BenchmarksSection = () => {
                 }}
                 transition={{ duration: 0.4 }}
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between md:mb-4 mb-1">
                   <p className="text-xs font-semibold text-primary uppercase tracking-wider">
                     {benchmark.title}
                   </p>
@@ -93,11 +93,11 @@ const BenchmarksSection = () => {
                   </div>
                 </div>
                 
-                <p className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                <p className="text-2xl md:text-4xl font-bold text-foreground md:mb-2 mb-3">
                   {benchmark.value}
                 </p>
                 
-                <p className="body-sm font-medium text-foreground mb-3">
+                <p className="md:body-sm text-sm font-medium text-foreground md:mb-3 mb-2">
                   {benchmark.description}
                 </p>
                 
@@ -116,7 +116,7 @@ const BenchmarksSection = () => {
             className="text-center"
             {...fadeInUp}
           >
-            <p className="body-lg font-semibold text-foreground max-w-2xl mx-auto">
+            <p className="md:body-lg body-sm font-semibold text-foreground max-w-2xl mx-auto px-3 md:px-0">
               This is not a "blast leads and pray" model. It is a system designed to create <span className="text-primary">reliable sales conversations</span>, not vanity metrics.
             </p>
           </motion.div>

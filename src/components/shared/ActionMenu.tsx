@@ -63,7 +63,7 @@ export function ActionMenu({
 
           const className = cn(
             "cursor-pointer !rounded-none px-4 py-2",
-            item.active && "text-primary bg-primary/10",
+            item.active && "!text-primary !bg-primary/10 hover:!text-primary hover:!bg-primary/20 focus:!text-primary focus:!bg-primary/20",
             item.destructive && "text-destructive focus:text-destructive",
             item.disabled && "opacity-50 cursor-not-allowed"
           );

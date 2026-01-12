@@ -569,7 +569,7 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
     <div 
       ref={containerRef} 
       data-chat-messages-container
-      className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-7 pt-20 pb-4 space-y-4 -mb-8"
+      className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-7 pt-24 pb-4 space-y-4 -mb-8"
       style={{ overscrollBehavior: 'none' }}
     >
       {messages.map((message, index) => {

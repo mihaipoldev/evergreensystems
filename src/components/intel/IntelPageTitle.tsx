@@ -179,7 +179,7 @@ export function IntelPageTitle() {
   }
 
   return (
-    <span className="md:font-bold text-foreground text-lg md:text-2xl">
+    <span className="md:font-bold text-foreground text-lg md:text-xl">
       {title}
     </span>
   );

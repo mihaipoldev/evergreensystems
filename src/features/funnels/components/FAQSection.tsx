@@ -44,10 +44,10 @@ const faqs = [
 
 const FAQSection = () => {
   return (
-    <section className="section-spacing md:px-0 px-3">
-      <div className="max-w-3xl mx-auto">
+    <section className="section-spacing">
+      <div className="max-w-3xl mx-auto px-3 md:px-0">
         <motion.h2 
-          className="heading-lg mb-10 text-center"
+          className="md:heading-lg heading-md md:mb-10 mb-6 text-center"
           {...fadeInUp}
         >
           Frequently Asked Questions
@@ -66,11 +66,11 @@ const FAQSection = () => {
               value={`item-${index}`}
               className="border-b border-border"
             >
-              <AccordionTrigger className="text-left py-5 hover:no-underline">
-                <span className="heading-sm font-medium pr-4">{faq.question}</span>
+              <AccordionTrigger className="text-left md:py-5 py-4 hover:no-underline">
+                <span className="md:heading-sm text-sm font-medium md:pr-4 pr-2">{faq.question}</span>
               </AccordionTrigger>
-              <AccordionContent className="pb-5">
-                <p className="body-md leading-[26px] text-foreground">{faq.answer}</p>
+              <AccordionContent className="md:pb-5 pb-4">
+                <p className="md:body-md body-sm md:leading-[26px] leading-relaxed text-foreground">{faq.answer}</p>
               </AccordionContent>
             </AccordionItem>
           ))}

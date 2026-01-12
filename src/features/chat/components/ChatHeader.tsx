@@ -29,9 +29,9 @@ export const ChatHeader = ({
   const { setIsOpen, activeContexts } = useChatContext();
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-20 pb-8"
+    <div className="absolute top-0 left-0 right-0 z-20 pb-4"
     style={{
-      background: 'linear-gradient(to bottom, hsl(var(--card)) 0%, hsla(var(--card) / 1) 60%, transparent 100%)'
+      background: 'linear-gradient(to bottom, hsl(var(--card)) 0%, hsla(var(--card) / 1) 75%, transparent 100%)'
     }}
     >
       {/* Title bar */}
