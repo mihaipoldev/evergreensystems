@@ -3,6 +3,7 @@ import { Navbar } from '@/components/landing/Navbar';
 import { Hero } from '@/components/landing/Hero'; // Keep Hero static - it's above the fold
 import { AnalyticsTracker } from '@/components/landing/AnalyticsTracker';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AnimatedGlowOrbs } from '@/components/landing/AnimatedGlowOrbs';
 
 // Dynamic imports for below-fold components with loading states
 const Logos = dynamic(() => import('@/components/landing/Logos').then(mod => ({ default: mod.Logos })), {
@@ -618,7 +619,9 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         <ErrorBoundary>
           <Navbar sections={sections} headerSection={headerSection} />
         </ErrorBoundary>
-        <main className="w-full">
+        <main className="w-full relative">
+          
+
           {/* Render sections dynamically in order from database */}
           {sections.length > 0 ? (
             sections

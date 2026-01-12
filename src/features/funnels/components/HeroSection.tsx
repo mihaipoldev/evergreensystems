@@ -13,7 +13,7 @@ const fadeInUp = {
 
 const HeroSection = () => {
   return (
-    <section className="section-spacing pt-20 md:pt-40 py-6 md:py-8 text-center">
+    <section className="section-spacing pt-24 md:pt-40 py-6 md:py-8 text-center">
       {/* Headline */}
       <motion.div 
         className="max-w-5xl mx-auto mb-6 md:mb-10"

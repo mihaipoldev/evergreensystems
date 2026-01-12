@@ -30,6 +30,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { hslToHex } from '@/lib/color-utils';
 import { RichText } from '@/components/ui/RichText';
 import { MediaRenderer } from '@/components/MediaRenderer';
@@ -513,13 +514,12 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
   }, [videoId]);
 
   return (
-    <section className="relative flex items-center justify-center pt-[100px] md:pt-[112px] overflow-x-hidden pb-16 overflow-y-visible">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-radial" />
+    <section className="relative flex items-center justify-center pt-[80px] md:pt-[124px] overflow-x-hidden md:pb-8 pb-4 overflow-y-visible">
+
       
       {/* Animated Glow Orbs */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl"
+        className="absolute top-2/4 left-1/4 md:h-72 w-50 h-50 rounded-full blur-3xl"
         style={{
           backgroundColor: '#446F94',
           opacity: 0.2,
@@ -531,7 +531,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
         transition={{ duration: 8, repeat: Infinity }}
       />
       <motion.div
-        className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl"
+        className="absolute bottom-1/4 right-1/4 md:w-72 md:h-72 w-60 h-40 rounded-full blur-3xl"
         style={{
           backgroundColor: '#D4932C',
           opacity: 0.2,
@@ -559,7 +559,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
               <div
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: 'linear-gradient(84deg, hsl(var(--secondary)), hsl(var(--primary)) 92%)',
+                  background: 'linear-gradient(84deg, hsl(var(--primary)/50%), hsl(var(--secondary)/50%) 92%)',
                   padding: '1px',
                   WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                   WebkitMaskComposite: 'xor',
@@ -572,25 +572,24 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
               <span 
                 className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0 relative z-10"
                 style={{
-                  backgroundImage: 'linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)',
+                  backgroundImage: 'linear-gradient(84deg, hsl(var(--secondary)), hsl(var(--secondary)) 92%)',
                 }}
               />
-              <span className="uppercase text-foreground relative z-10">{topBannerText}</span>
+              <span className="uppercase font-medium text-[10px] md:text-[12px] text-foreground relative z-10">{topBannerText}</span>
             </div>
           </motion.div>
         )}
 
         {/* Headline */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
+          className="max-w-5xl mx-auto mb-4 md:mb-6"
         >
-          <RichText
-            as="h1"
-            text={title}
-            className="text-2xl md:text-5xl uppercase font-bold text-foreground leading-tight mb-4"
-          />
+        <h1 className="heading-2xl leading-tight md:leading-none text-[22px] md:text-[50px] font-bold">
+          We Build & Run Outbound Systems That <b className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Books Qualified Sales Calls</b>
+        </h1>
         </motion.div>
 
         {/* Subheadline */}
@@ -602,7 +601,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           <RichText
             as="p"
             text={subtitle}
-            className="font-regular text-[14px] sm:text-[16px] text-foreground max-w-2xl mx-auto mb-4"
+            className="font-regular text-[14px] md:text-[15px] text-foreground max-w-2xl mx-auto mb-8 md:mb-8 "
           />
         </motion.div>
 
@@ -738,7 +737,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="relative w-full mb-6 flex justify-center"
+          className="relative w-full mb-8 md:mb-8 flex justify-center"
         >
           {/* Gradient Background Container */}
           <div
@@ -811,12 +810,12 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                   <Button
                     asChild
                     className={cn(
-                      "h-16 px-12 font-semibold whitespace-nowrap text-[15px] md:text-[16px] transition-all duration-150",
+                      "h-14 px-12 font-semibold whitespace-nowrap text-[15px] md:text-[16px] transition-all duration-150",
                       button.style === "primary" || !button.style
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        ? "bg-primary hover:bg-primary text-primary-foreground"
                         : button.style === "secondary"
-                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        ? "bg-secondary hover:bg-secondary text-secondary-foreground"
+                        : "bg-primary hover:bg-primary text-primary-foreground"
                     )}
                   >
                     <Link 
@@ -827,20 +826,19 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
                         e.stopPropagation();
                         handleHeroCTAClick(button);
                       }}
+                      className="flex items-center"
                     >
-                      {button.icon && (
-                        <FontAwesomeIcon
-                          icon={button.icon as any}
-                          className="h-4 w-4 mr-2"
-                        />
-                      )}
                       {button.label}
+                      <FontAwesomeIcon
+                        icon={(button.icon as any) || faArrowRight}
+                        className="ml-2 h-5 w-5"
+                      />
                     </Link>
                   </Button>
                 </motion.div>
                 {button.subtitle && (
-                  <p className="text-sm text-muted-foreground mt-4 text-center max-w-xs">
-                    {button.subtitle}
+                  <p className="text-sm text-muted-foreground mt-4 text-center max-w-ms">
+                    See if this system makes sense for your business.
                   </p>
                 )}
               </div>

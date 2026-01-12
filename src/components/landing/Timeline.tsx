@@ -121,7 +121,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center md:mb-16 mb-8"
         >
           {eyebrow && (
             <span className="text-primary text-sm font-medium uppercase tracking-wider">
@@ -139,7 +139,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
           {/* Timeline Line */}
           <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/50 via-primary to-primary/50" />
 
-          <div className="space-y-12 lg:space-y-0">
+          <div className="md:space-y-12 space-y-4 lg:space-y-0">
             {steps.map((step, index) => (
               <motion.div
                 key={step.title}
@@ -154,7 +154,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
                 {/* Content */}
                 <div className={`lg:w-1/2 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:pl-12'}`}>
                   <div
-                    className={`relative overflow-hidden bg-gradient-to-br from-card/50 via-card/55 to-card/50 border border-border rounded-2xl p-6 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300 ${
+                    className={`relative overflow-hidden bg-gradient-to-br rounded-2xl p-6 transition-all duration-300 ${
                       index % 2 === 0 ? 'lg:ml-auto' : 'lg:mr-auto'
                     } max-w-md`}
                     style={{ boxShadow: '0 0 20px hsl(var(--muted) / 0.1)' }}

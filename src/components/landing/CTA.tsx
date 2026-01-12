@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { RichText } from '@/components/ui/RichText';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMousePointer } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
 import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
@@ -113,14 +113,15 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
                   >
                     <Button
                       asChild
+                      size="xl"
                       className={cn(
-                        "relative h-14 px-8 font-semibold whitespace-nowrap text-base transition-all duration-150",
+                        "relative px-12 font-semibold whitespace-nowrap text-base transition-all duration-150",
                         "border-2",
                         button.style === "primary" || !button.style
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
+                          ? "bg-primary hover:bg-primary text-primary-foreground border-primary/20 hover:border-primary/40"
                           : button.style === "secondary"
-                          ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground border-secondary/20 hover:border-secondary/40"
-                          : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary/20 hover:border-primary/40"
+                          ? "bg-secondary hover:bg-secondary text-secondary-foreground border-secondary/20 hover:border-secondary/40"
+                          : "bg-primary hover:bg-primary text-primary-foreground border-primary/20 hover:border-primary/40"
                       )}
                     >
                       <Link 
@@ -128,15 +129,13 @@ export const CTA = ({ section, ctaButtons }: CTAProps) => {
                         target="_blank" 
                         rel="noopener noreferrer"
                         onClick={() => handleCTAClick(button)}
-                        className="flex items-center justify-center gap-2"
+                        className="flex items-center justify-center"
                       >
-                        {button.icon && (
-                          <FontAwesomeIcon
-                            icon={button.icon as any}
-                            className="h-4 w-4"
-                          />
-                        )}
                         {button.label}
+                        <FontAwesomeIcon
+                          icon={(button.icon as any) || faArrowRight}
+                          className="ml-2 h-5 w-5"
+                        />
                       </Link>
                     </Button>
                   </motion.div>

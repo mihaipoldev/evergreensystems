@@ -99,7 +99,7 @@ export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center md:mb-16 mb-8"
         >
           {section?.eyebrow && (
             <span className="text-primary text-sm font-medium uppercase tracking-wider">
@@ -121,19 +121,19 @@ export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
         >
           <Accordion 
             type="multiple" 
-            className="space-y-4" 
+            className="space-y-3" 
             onValueChange={handleFAQOpen as (value: string[]) => void}
           >
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={faq.id}
                 value={`item-${faq.id}`}
-                className="border border-border rounded-xl px-6 bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300"
+                className="border border-border/70 rounded-xl md:p-6 px-4 bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-100"
               >
-                <AccordionTrigger className="text-left text-lg text-foreground py-5 [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:no-underline transition-all">
+                <AccordionTrigger className="text-left md:text-lg text-base text-foreground md:py-0 py-4 [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:no-underline transition-all">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="pb-5 text-md">
+                <AccordionContent className="md:pb-0 pb-4 md:pt-3 pt-0 text-md">
                   <RichText
                     text={faq.answer}
                     as="div"

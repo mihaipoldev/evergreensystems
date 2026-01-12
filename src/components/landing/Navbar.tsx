@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
+import { MobileNavMenu } from './MobileNavMenu';
 
 type Section = {
   id: string;
@@ -130,12 +131,14 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     const targetElement = document.getElementById(targetId);
     
     if (targetElement) {
-      const navbarHeight = 80; // Height of the navbar
-      const offset = 20; // Additional offset for better spacing
-      const targetPosition = targetElement.offsetTop - navbarHeight - offset;
+      const headerHeight = 100;
+      const offset = 20;
+      const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+      // Reduce offset slightly to ensure we land within the activation zone
+      const offsetPosition = elementPosition - headerHeight - offset - 30;
       
       window.scrollTo({
-        top: targetPosition,
+        top: Math.max(0, offsetPosition),
         behavior: 'smooth',
       });
     }
@@ -236,7 +239,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
         const element = document.getElementById(link.sectionId);
         if (element) {
           const { offsetTop, offsetHeight } = element;
-          const sectionTop = offsetTop - 200; // Offset for navbar and some padding
+          const sectionTop = offsetTop - 150; // Match scroll offset (100 header + 20 padding + 30 adjustment)
           const sectionBottom = offsetTop + offsetHeight - 100;
           
           // Section is active if scroll position is within its bounds
@@ -282,17 +285,6 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     };
   }, [navLinks]);
 
-  // Determine if navbar should have blurred background
-  // - When scrolled: always blurred
-  // - When menu is open on mobile at top: blurred (even if not scrolled)
-  const shouldBlur = scrolled || (isMobile && isOpen && !scrolled);
-  
-  const navClassName = `fixed top-0 left-0 right-0 z-50 transition-all duration-150 ${
-    shouldBlur
-      ? 'bg-[#fefefecc] backdrop-blur-[5px] dark:bg-[#0a0a0acc] dark:backdrop-blur-[5px]'
-      : 'bg-transparent backdrop-blur-0 dark:bg-transparent dark:backdrop-blur-0'
-  }`;
-
   return (
     <motion.nav
       initial={false}
@@ -301,99 +293,101 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
         opacity: 1 
       }}
       transition={{ duration: 0.15, ease: 'easeInOut' }}
-      className={navClassName}
+      className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8"
     >
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="w-full md:max-w-2xl md:mx-auto">
+        <div className={`rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300 ${
+          scrolled 
+            ? 'bg-background/50 backdrop-blur-lg md:shadow-sm border-b md:border border-white/20' 
+            : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
+        }`}>
           {/* Logo */}
-          <a
-            href="#"
-            className="flex items-center gap-2"
-          >
-            <span className="text-foreground font-semibold text-lg" style={{ fontFamily: 'var(--font-family-public-heading), var(--font-gotham), system-ui, sans-serif' }}>Evergreen Systems</span>
-          </a>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Link
+              href="/"
+              className="ml-3 text-lg font-bold text-primary"
+            >
+              Evergreen Sys.
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-4 flex-1 justify-center">
             {navLinks.map((link) => {
               const isActive = activeSection === link.sectionId;
               return (
-                <motion.a
+                <a
                   key={link.name}
                   href={link.href}
                   onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className={`relative text-md font-medium group transition-colors duration-200 ${
+                  className={`nav-link-no-shift text-sm transition-colors whitespace-nowrap cursor-pointer ${
                     isActive
-                      ? 'text-primary'
-                      : 'text-foreground hover:text-primary'
+                      ? "text-foreground font-bold"
+                      : "text-muted-foreground font-normal"
                   }`}
-                  style={{ fontFamily: 'var(--font-family-public-body), var(--font-lato), system-ui, sans-serif' }}
+                  data-text={link.name}
                 >
                   {link.name}
-                  {isActive && (
-                    <motion.span
-                      layoutId="activeSection"
-                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 600, damping: 35 }}
-                    />
-                  )}
-                </motion.a>
+                </a>
               );
             })}
-            {/* Header Section CTA Buttons */}
-            {headerButtons.length > 0 ? (
-              headerButtons.map((button) => {
-                const isAnchorLink = button.url.startsWith('#');
-                return (
-                  <motion.div key={button.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                    <Button 
-                      asChild
-                      className={cn(
-                        "px-5",
-                        button.style === "primary" || !button.style
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                          : button.style === "secondary"
-                          ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                          : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                      )}
-                    >
-                      <Link 
-                        href={button.url}
-                        {...(isAnchorLink ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-                        onClick={(e) => {
-                          if (isAnchorLink) {
-                            handleSmoothScroll(e, button.url);
-                          }
-                          trackEvent({
-                            event_type: "link_click",
-                            entity_type: "cta_button",
-                            entity_id: button.id,
-                            metadata: {
-                              location: "navbar",
-                              href: button.url,
-                              label: button.label,
-                            },
-                          });
-                        }}
-                      >
-                        {button.icon && (
-                          <FontAwesomeIcon
-                            icon={button.icon as any}
-                            className="h-4 w-4 mr-2"
-                          />
-                        )}
-                        {button.label}
-                      </Link>
-                    </Button>
-                  </motion.div>
-                );
-              })
-            ) : null}
           </div>
 
+          {/* Header Section CTA Buttons */}
+          {headerButtons.length > 0 && (
+            <div className="hidden md:flex flex-shrink-0">
+              {headerButtons.map((button) => {
+                const isAnchorLink = button.url.startsWith('#');
+                return (
+                  <Button 
+                    key={button.id}
+                    asChild
+                    variant="default"
+                    size="sm"
+                    className={cn(
+                      "rounded-full border-gray-300 flex items-center gap-2",
+                      button.style === "primary" || !button.style
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : button.style === "secondary"
+                        ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    )}
+                  >
+                    <Link 
+                      href={button.url}
+                      {...(isAnchorLink ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                      onClick={(e) => {
+                        if (isAnchorLink) {
+                          handleSmoothScroll(e, button.url);
+                        }
+                        trackEvent({
+                          event_type: "link_click",
+                          entity_type: "cta_button",
+                          entity_id: button.id,
+                          metadata: {
+                            location: "navbar",
+                            href: button.url,
+                            label: button.label,
+                          },
+                        });
+                      }}
+                    >
+                      {button.icon && (
+                        <FontAwesomeIcon
+                          icon={button.icon as any}
+                          className="h-4 w-4"
+                        />
+                      )}
+                      <span className="text-sm font-medium">{button.label}</span>
+                    </Link>
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="flex-shrink-0 md:hidden flex items-center gap-2">
             <button
               className="text-foreground"
               onClick={() => setIsOpen(!isOpen)}
@@ -405,85 +399,13 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden pb-4"
-          >
-            <div className="flex flex-col gap-4">
-              {navLinks.map((link) => {
-                const isActive = activeSection === link.sectionId;
-                return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    className={`text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                    style={{ fontFamily: 'var(--font-family-public-body), var(--font-lato), system-ui, sans-serif' }}
-                    onClick={(e) => {
-                      handleSmoothScroll(e, link.href);
-                      setIsOpen(false);
-                    }}
-                  >
-                    {link.name}
-                  </a>
-                );
-              })}
-              {/* Header Section CTA Buttons - Mobile */}
-              {headerButtons.length > 0 ? (
-                headerButtons.map((button) => {
-                  const isAnchorLink = button.url.startsWith('#');
-                  return (
-                    <Button 
-                      key={button.id}
-                      asChild
-                      className={cn(
-                        "w-full",
-                        button.style === "primary" || !button.style
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                          : button.style === "secondary"
-                          ? "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                          : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                      )}
-                    >
-                      <Link 
-                        href={button.url}
-                        {...(isAnchorLink ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-                        onClick={(e) => {
-                          if (isAnchorLink) {
-                            handleSmoothScroll(e, button.url);
-                          }
-                          setIsOpen(false);
-                          trackEvent({
-                            event_type: "link_click",
-                            entity_type: "cta_button",
-                            entity_id: button.id,
-                            metadata: {
-                              location: "navbar-mobile",
-                              href: button.url,
-                              label: button.label,
-                            },
-                          });
-                        }}
-                      >
-                        {button.icon && (
-                          <FontAwesomeIcon
-                            icon={button.icon as any}
-                            className="h-4 w-4 mr-2"
-                          />
-                        )}
-                        {button.label}
-                      </Link>
-                    </Button>
-                  );
-                })
-              ) : null}
-            </div>
-          </motion.div>
+          <MobileNavMenu
+            navLinks={navLinks}
+            activeSection={activeSection}
+            headerButtons={headerButtons}
+            handleSmoothScroll={handleSmoothScroll}
+            onLinkClick={() => setIsOpen(false)}
+          />
         )}
       </div>
     </motion.nav>

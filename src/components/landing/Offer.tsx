@@ -75,7 +75,7 @@ export const Offer = ({ section, offerFeatures = [] }: OfferProps) => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center md:mb-16 mb-8"
         >
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -111,7 +111,7 @@ export const Offer = ({ section, offerFeatures = [] }: OfferProps) => {
         </motion.div>
 
         {/* Offer Features Grid - 2x2 layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6 gap-4">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
@@ -121,29 +121,29 @@ export const Offer = ({ section, offerFeatures = [] }: OfferProps) => {
               transition={{ delay: index * 0.1, duration: 0.5 }}
               className="relative"
             >
-              <div className="relative h-full rounded-2xl border border-border bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-300 p-6 overflow-hidden">
+              <div className="relative h-full rounded-2xl border border-border/70 bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-100 md:p-6 p-4 overflow-hidden">
                 <div className="relative z-10 flex items-start gap-4">
                   {/* Icon Container - Circular with blue border */}
                   <motion.div
                     whileHover={{ rotate: [0, -10, 10, -10, 0] }}
                     transition={{ duration: 0.4 }}
-                    className="w-14 h-14 rounded-full bg-card border-2 border-primary/30 flex items-center justify-center flex-shrink-0"
+                    className="md:w-14 md:h-14 w-12 h-12 rounded-full bg-card border-2 border-primary/30 flex items-center justify-center flex-shrink-0"
                   >
                     <FontAwesomeIcon
                       icon={feature.icon}
-                      className="w-7 h-7 text-primary"
+                      className="md:w-7 md:h-7 w-5 h-5 text-primary"
                     />
                   </motion.div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-foreground text-xl font-semibold mb-2">
+                    <h3 className="text-foreground text-lg font-semibold mb-2">
                       {feature.title}
                     </h3>
                     <RichText
                       as="p"
                       text={feature.description}
-                      className="text-muted-foreground text-sm leading-relaxed"
+                      className="text-muted-foreground text-xs leading-relaxed"
                     />
                   </div>
                 </div>

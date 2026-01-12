@@ -870,8 +870,12 @@ input[type="password"]:-webkit-autofill:active {
   font-weight: inherit;
 }
 
+/* Gradient markers (primary to secondary) inherit weight from parent */
+.rich-text-content span.bg-gradient-to-r {
+  font-weight: inherit;
+}
+
 /* Color markers inherit weight from parent */
-.rich-text-content span.text-primary,
 .rich-text-content span.text-secondary {
   font-weight: inherit;
 }
@@ -879,6 +883,21 @@ input[type="password"]:-webkit-autofill:active {
 /* Bold markers make text heavier than parent */
 .rich-text-content strong {
   font-weight: 900;
+}
+
+/* Prevent layout shift when navigation text becomes bold */
+.nav-link-no-shift {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-link-no-shift::before {
+  content: attr(data-text);
+  font-weight: 700;
+  visibility: hidden;
+  display: block;
+  height: 0;
+  overflow: hidden;
 }
 
 /* Code Editor Fixes - Fix cursor alignment and font rendering */

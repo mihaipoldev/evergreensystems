@@ -155,7 +155,7 @@ export const Results = memo(({ section }: ResultsProps) => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center md:mb-16 mb-8"
         >
           {section?.eyebrow && (
             <span className="text-primary text-sm font-medium uppercase tracking-wider">
@@ -180,7 +180,7 @@ export const Results = memo(({ section }: ResultsProps) => {
               transition={{ delay: index * 0.1 }}
               className="relative group"
             >
-              <div className="border-glow rounded-2xl bg-card p-8 h-full">
+              <div className="border-glow md:rounded-2xl rounded-lg bg-card md:p-8 p-4 h-full">
                 {/* Glow Effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 

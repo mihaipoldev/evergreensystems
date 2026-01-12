@@ -11,8 +11,8 @@ export function formatRichText(text: string): string {
     // Process bold before italic to avoid conflicts
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // Process primary and secondary highlights (color only, inherit weight)
-    .replace(/\[\[(.*?)\]\]/g, '<span class="text-primary">$1</span>')
+    // Process primary highlight with gradient (primary to secondary)
+    .replace(/\[\[(.*?)\]\]/g, '<span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">$1</span>')
     .replace(/\{\{(.*?)\}\}/g, '<span class="text-secondary">$1</span>')
     // Convert newlines to <br /> tags
     .replace(/\n/g, '<br />');

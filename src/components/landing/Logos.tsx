@@ -44,7 +44,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
   const sortedSoftwares = [...softwares].sort((a, b) => a.section_software.order - b.section_software.order);
 
   return (
-    <section id="logos" className="py-16 relative">
+    <section id="logos" className="py-12 relative">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0 }}
@@ -54,11 +54,11 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
           <RichText
             as="p"
             text={title}
-            className="text-center text-sm text-muted-foreground mb-10 tracking-wider"
+            className="text-center md:text-sm text-[12px] text-muted-foreground md:mb-8 mb-6 tracking-wider"
           />
         </motion.div>
 
-        <div className="space-y-10 relative">
+        <div className="space-y-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
               return (
                 <div
                   key={`row1-${software.id}`}
-                  className="flex items-center gap-2 opacity-40 mx-10"
+                  className="flex items-center gap-2 opacity-40 md:mx-10 mx-4"
                 >
                   {displayIcon ? (
                     <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center flex-shrink-0 overflow-hidden border border-muted-foreground/10">
@@ -104,7 +104,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                       </span>
                     </div>
                   )}
-                  <span className="text-foreground font-medium text-lg whitespace-nowrap">{software.name}</span>
+                  <span className="text-foreground font-medium md:text-lg text-base whitespace-nowrap">{software.name}</span>
                 </div>
               );
             })}
@@ -155,7 +155,7 @@ export const Logos = ({ section, softwares = [] }: LogosProps) => {
                       </span>
                     </div>
                   )}
-                  <span className="text-foreground font-medium text-lg whitespace-nowrap">{software.name}</span>
+                  <span className="text-foreground font-medium text-lg text-base whitespace-nowrap">{software.name}</span>
                 </div>
               );
             })}
