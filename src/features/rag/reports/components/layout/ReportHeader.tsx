@@ -38,7 +38,24 @@ export const ReportHeader = ({
   evaluationVerdict,
   evaluationQuickStats,
 }: ReportHeaderProps) => {
+  // Format date to match niche intelligence report format (e.g., "Jan 15, 2024")
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return dateString; // Return original if invalid
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return dateString; // Return original if error
+    }
+  };
 
+  const formattedDate = formatDate(generatedAt);
 
   return (
     <motion.header
@@ -63,7 +80,7 @@ export const ReportHeader = ({
         <div className="text-right">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
-            <span>{generatedAt}</span>
+            <span>{formattedDate}</span>
           </div>
         </div>
       </div>

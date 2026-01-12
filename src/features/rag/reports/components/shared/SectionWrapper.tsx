@@ -29,24 +29,24 @@ export const SectionWrapper = ({
     >
       {/* Section Header */}
       <div className="mb-8">
-        <div className="flex items-baseline gap-4 mb-3">
-          <span className="text-3xl font-display font-light text-accent">
+        <div className="flex items-baseline gap-2 md:gap-4 mb-3">
+          <span className="text-lg md:text-3xl font-display font-light text-accent">
             {number}
           </span>
-          <h2 className="text-2xl md:text-3xl font-display font-semibold text-primary">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-display font-semibold text-primary">
             {title}
           </h2>
         </div>
         {subtitle && (
-          <p className="text-muted-foreground font-body pl-12">{subtitle}</p>
+          <p className="text-muted-foreground font-body pl-0 md:pl-12 text-sm md:text-base">{subtitle}</p>
         )}
-        <div className="mt-4 pl-12">
-          <div className="w-16 h-0.5 bg-accent" />
+        <div className="mt-4 pl-0 md:pl-12">
+          <div className="w-12 md:w-16 h-0.5 bg-accent" />
         </div>
       </div>
 
       {/* Section Content */}
-      <div className="pl-12">{children}</div>
+      <div className="pl-0 md:pl-12">{children}</div>
     </motion.section>
   );
 };

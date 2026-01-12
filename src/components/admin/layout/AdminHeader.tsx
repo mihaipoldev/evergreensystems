@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faPlus, faBook, faFolder, faChartLine, faArrowRightArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPlus, faBook, faFolder, faChartLine, faArrowRightArrowLeft, faPrint, faExternalLink } from "@fortawesome/free-solid-svg-icons";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { KnowledgeBaseModal } from "@/features/rag/knowledge-bases/components/KnowledgeBaseModal";
 import { ProjectModal } from "@/features/rag/projects/components/ProjectModal";
@@ -23,6 +23,11 @@ export function AdminHeader() {
   const isIntelRoute = pathname?.startsWith("/intel") ?? false;
   const [isKnowledgeBaseModalOpen, setIsKnowledgeBaseModalOpen] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  
+  // Check if we're on a report result page
+  const isReportResultPage = Boolean(pathname?.includes("/intel/research/") && pathname?.includes("/result"));
+  // Extract reportId (runId) from pathname: /intel/research/{id}/result
+  const reportId = isReportResultPage && pathname ? pathname.split("/intel/research/")[1]?.split("/result")[0] : null;
   
   useEffect(() => {
     const mountDuration = getDuration(mountStartTime.current);
@@ -92,6 +97,21 @@ export function AdminHeader() {
               </Button>
             }
             items={[
+              ...(isReportResultPage && reportId
+                ? [
+                    {
+                      label: "Print Report",
+                      icon: <FontAwesomeIcon icon={faPrint} className="h-4 w-4" />,
+                      onClick: () => window.print(),
+                    },
+                    {
+                      label: "Full Report",
+                      icon: <FontAwesomeIcon icon={faExternalLink} className="h-4 w-4" />,
+                      href: `/reports/${reportId}`,
+                    },
+                    { separator: true },
+                  ]
+                : []),
               {
                 label: isIntelRoute ? "Admin" : "Intelligence",
                 icon: <FontAwesomeIcon icon={faArrowRightArrowLeft} className="h-4 w-4" />,

@@ -112,25 +112,27 @@ export const NicheEvaluation = ({ data, reportId }: NicheEvaluationProps) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className={`rounded-xl p-6 border-2 ${config.bgColor} ${config.borderColor} mb-8`}
+          className={`rounded-xl p-4 md:p-6 border-2 ${config.bgColor} ${config.borderColor} mb-8 overflow-hidden`}
         >
-          <div className="flex items-center gap-4">
-            <div className={`p-4 rounded-full ${config.bgColor}`}>
-              <FontAwesomeIcon icon={Icon} className={`w-10 h-10 ${config.iconColor}`} />
+          <div className="flex flex-col md:flex-row items-start md:items-center md:gap-4 gap-1">
+            <div className={`p-1 md:p-4 rounded-full ${config.bgColor} flex-shrink-0`}>
+              <FontAwesomeIcon icon={Icon} className={`w-8 h-8 md:w-10 md:h-10 ${config.iconColor}`} />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-2">
-                <h2 className={`text-3xl font-display font-bold ${config.textColor}`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-baseline gap-2 md:gap-4 mb-2">
+                <h2 className={`text-xl md:text-3xl font-display font-bold ${config.textColor} break-words`}>
                   {verdictLabel}
                 </h2>
-                <span className={`text-4xl font-display font-bold ${config.textColor}`}>
-                  {verdictScore.toFixed(1)}
-                </span>
-                <span className="text-lg text-muted-foreground">/100</span>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-2xl md:text-4xl font-display font-bold ${config.textColor}`}>
+                    {verdictScore.toFixed(1)}
+                  </span>
+                  <span className="text-sm md:text-lg text-muted-foreground">/100</span>
+                </div>
               </div>
-              <p className="text-foreground font-body">{verdictRecommendation}</p>
+              <p className="text-sm md:text-base text-foreground font-body break-words">{verdictRecommendation}</p>
             </div>
-            <div className="hidden md:block text-right">
+            <div className="hidden md:block text-right flex-shrink-0">
               <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
                 Priority Level
               </span>

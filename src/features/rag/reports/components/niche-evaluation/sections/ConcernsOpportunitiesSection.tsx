@@ -47,7 +47,7 @@ export const ConcernsOpportunitiesSection = ({ data, sectionNumber }: ConcernsOp
               Critical Concerns
             </h3>
           </div>
-          <InsightList items={criticalConcerns} type="warning" />
+          <InsightList items={criticalConcerns} type="critical" />
         </motion.div>
 
         {/* Key Opportunities */}

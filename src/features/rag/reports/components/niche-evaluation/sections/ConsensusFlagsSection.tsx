@@ -74,7 +74,7 @@ export const ConsensusFlagsSection = ({ data, sectionNumber }: ConsensusFlagsSec
           </h3>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {consensusFlags.map((item: any, index: number) => {
               const modelsCount = Array.isArray(item.models) ? item.models.length : (item.mentioned_by || 0);
               const totalModels = 3; // Total number of evaluators
@@ -85,21 +85,21 @@ export const ConsensusFlagsSection = ({ data, sectionNumber }: ConsensusFlagsSec
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-card rounded-lg p-5 border border-border report-shadow"
+                  className="bg-card rounded-lg p-4 md:p-5 border border-border report-shadow overflow-hidden"
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 gap-2">
                     <span
-                      className={`text-xs px-2 py-1 rounded-md border ${
+                      className={`text-xs px-2 py-1 rounded-md border flex-shrink-0 ${
                         categoryColors[item.category] || "bg-muted border-border text-muted-foreground"
                       }`}
                     >
                       {formatFlagName(item.category || "")}
                     </span>
-                    <span className="text-xs text-muted-foreground font-body">
+                    <span className="text-xs text-muted-foreground font-body whitespace-nowrap">
                       {modelsCount}/{totalModels} models
                     </span>
                   </div>
-                  <p className="text-lg font-display font-semibold text-foreground">
+                  <p className="text-base md:text-lg font-display font-semibold text-foreground break-words">
                     {formatFlagName(item.flag || "")}
                   </p>
                 </motion.div>
@@ -125,7 +125,7 @@ export const ConsensusFlagsSection = ({ data, sectionNumber }: ConsensusFlagsSec
             </h3>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(flagsByCategory).map(([category, categoryFlags]: [string, any], catIndex: number) => (
               <motion.div
                 key={category}
@@ -133,7 +133,7 @@ export const ConsensusFlagsSection = ({ data, sectionNumber }: ConsensusFlagsSec
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: catIndex * 0.05 }}
-                className="bg-card rounded-lg p-4 border border-border report-shadow"
+                className="bg-card rounded-lg p-4 border border-border report-shadow overflow-hidden"
               >
                 <h4
                   className={`text-xs px-2 py-1 rounded-md border inline-block mb-4 ${
@@ -144,11 +144,11 @@ export const ConsensusFlagsSection = ({ data, sectionNumber }: ConsensusFlagsSec
                 </h4>
                 <ul className="space-y-2">
                   {(Array.isArray(categoryFlags) ? categoryFlags : []).map((item: any, index: number) => (
-                    <li key={index} className="flex items-center justify-between">
-                      <span className="text-sm font-body text-foreground">
+                    <li key={index} className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-body text-foreground break-words flex-1 min-w-0">
                         {formatFlagName(item.flag || "")}
                       </span>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded flex-shrink-0">
                         {item.mentioned_by || 0}x
                       </span>
                     </li>

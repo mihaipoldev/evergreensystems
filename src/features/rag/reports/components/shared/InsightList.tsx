@@ -9,7 +9,7 @@ import {
   faBullseye 
 } from "@fortawesome/free-solid-svg-icons";
 
-type InsightType = "success" | "warning" | "info" | "target";
+type InsightType = "success" | "warning" | "info" | "target" | "critical";
 
 // Helper function to extract text from string or object
 const getItemText = (item: string | Record<string, any>): string => {
@@ -38,6 +38,7 @@ const iconMap = {
   warning: faExclamationTriangle,
   info: faInfoCircle,
   target: faBullseye,
+  critical: faExclamationTriangle,
 };
 
 const colorMap = {
@@ -45,6 +46,7 @@ const colorMap = {
   warning: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800",
   info: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800",
   target: "text-accent dark:text-accent bg-accent/10 dark:bg-accent/20 border-accent/20 dark:border-accent/30",
+  critical: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800",
 };
 
 export const InsightList = ({

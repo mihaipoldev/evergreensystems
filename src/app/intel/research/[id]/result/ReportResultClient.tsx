@@ -220,7 +220,7 @@ export function ReportResultClient({ initialReportData, runId, workflowName, wor
 
   return (
     <ReportLayout sections={allSections} showTableOfContents={false} reportId={runId}>
-      <div className="-mx-8 dark:-mx-0 rounded-2xl border border-border/60 bg-white px-8 py-8 shadow-sm dark:border-transparent dark:bg-transparent dark:shadow-none dark:px-0 dark:py-0 print:border-transparent print:shadow-none">
+      <div className="-mx-8 dark:-mx-0 rounded-none md:rounded-2xl border border-border/60 bg-white px-8 md:px-8 py-8 md:pt-8 pt-3 shadow-none md:shadow-sm dark:border-transparent dark:bg-transparent dark:shadow-none dark:px-0 dark:py-0 print:border-transparent print:shadow-none">
         <ReportHeader
           title={reportTitle}
           geo={reportData.meta.input.geo}

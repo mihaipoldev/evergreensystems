@@ -3,8 +3,7 @@
 import { useState, useEffect, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faPrint, faTimes, faExternalLink } from "@fortawesome/free-solid-svg-icons";
-import Link from "next/link";
+import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { TableOfContents } from "./TableOfContents";
 
 interface Section {
@@ -58,26 +57,6 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
 
   return (
     <div className="min-h-screen bg-background -mx-4 md:-mx-6 lg:-mx-8">
-      {/* Mobile Header - only show menu button if table of contents is enabled */}
-      {showTableOfContents && (
-        <div className="lg:hidden fixed top-[81px] left-0 right-0 z-40 bg-background/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between no-print">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-md hover:bg-muted transition-colors"
-          >
-            <FontAwesomeIcon icon={faBars} className="w-5 h-5" />
-          </button>
-          <span className="text-sm font-display font-semibold text-foreground">
-            Niche Intelligence Report
-          </span>
-          <button
-            onClick={() => window.print()}
-            className="p-2 rounded-md hover:bg-muted transition-colors"
-          >
-            <FontAwesomeIcon icon={faPrint} className="w-5 h-5" />
-          </button>
-        </div>
-      )}
 
       {/* Mobile Sidebar Overlay */}
       {showTableOfContents && (
@@ -129,29 +108,7 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
 
         {/* Main Content */}
         <main className={`flex-1 min-h-screen ${showTableOfContents ? 'lg:ml-[280px]' : ''}`}>
-          <div className={`max-w-4xl mx-auto px-6 py-8 ${showTableOfContents ? 'pt-20 lg:pt-8' : 'pt-0'}`}>
-            {/* Action Buttons - Desktop */}
-            <div className="hidden lg:flex justify-end gap-6 mb-4 no-print pb-3">
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground rounded-md transition-colors"
-              >
-                <FontAwesomeIcon icon={faPrint} className="w-4 h-4" />
-                Print Report
-              </button>
-              {reportId && (
-                <Link
-                  href={`/reports/${reportId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm font-body text-muted-foreground hover:text-foreground rounded-md transition-colors"
-                >
-                  <FontAwesomeIcon icon={faExternalLink} className="w-4 h-4" />
-                  Full Report
-                </Link>
-              )}
-            </div>
-
+          <div className={`max-w-4xl mx-auto px-6 py-0`}>
             {children}
           </div>
         </main>

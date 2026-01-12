@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore example and documentation folders (same as tsconfig.json)
+    "example/**/*",
+    "example-websites/**/*",
+    "docs/example/**/*",
+    "ONLY AS AN EXAMPLE/**/*",
+    "ONLY AS EXAMPLE 2/**/*",
   ]),
   {
     files: ["tailwind.config.js", "postcss.config.js"],

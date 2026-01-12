@@ -45,15 +45,15 @@ const ScoreGauge = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * radius;
   const numericScore = Math.max(0, Math.min(100, Number(score) || 0));
   const strokeDashoffset = circumference - (numericScore / 100) * circumference;
-  const svgSize = 140;
+  const svgSize = 120;
   const center = svgSize / 2;
   
   const category = getFitScoreCategory(numericScore, null);
   const colorClasses = getFitScoreColorClasses(category);
 
   return (
-    <div className="relative inline-block" style={{ width: svgSize, height: svgSize }}>
-      <svg className="transform -rotate-90" style={{ width: svgSize, height: svgSize }}>
+    <div className="relative inline-block w-[120px] h-[120px] md:w-[140px] md:h-[140px]">
+      <svg className="transform -rotate-90 w-full h-full">
         <circle
           cx={center}
           cy={center}
@@ -89,7 +89,7 @@ const ScoreGauge = ({ score }: { score: number }) => {
           transition={{ delay: 0.5 }}
           className="text-center"
         >
-          <div className={`text-4xl font-display font-bold ${colorClasses}`}>
+          <div className={`text-2xl md:text-4xl font-display font-bold ${colorClasses}`}>
             {Math.round(numericScore)}
           </div>
           <div className="text-xs text-muted-foreground font-body uppercase tracking-wider mt-1">
@@ -183,30 +183,30 @@ export const IndividualScoresSection = ({ data, sectionNumber }: IndividualScore
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.15 }}
-              className={`bg-gradient-to-br ${gradient} rounded-xl p-6 border report-shadow hover:shadow-lg transition-all duration-300`}
+              className={`bg-gradient-to-br ${gradient} rounded-xl p-4 md:p-6 border report-shadow hover:shadow-lg transition-all duration-300 overflow-hidden`}
             >
               {/* Model Header */}
-              <div className="mb-6 text-center">
-                <h3 className="text-xl font-display font-semibold text-foreground mb-1">
+              <div className="mb-4 md:mb-6 text-center">
+                <h3 className="text-lg md:text-xl font-display font-semibold text-foreground mb-1 break-words">
                   {agentName}
                 </h3>
-                <p className="text-xs text-muted-foreground font-body uppercase tracking-wider">
+                <p className="text-xs text-muted-foreground font-body uppercase tracking-wider break-words">
                   {modelName || "AI Evaluator"}
                 </p>
               </div>
 
               {/* Score Gauge */}
-              <div className="flex justify-center mb-6">
+              <div className="flex justify-center mb-4 md:mb-6">
                 <ScoreGauge score={displayScore} />
               </div>
 
               {/* Verdict */}
               {verdict && (
-                <div className="bg-card/30 rounded-lg p-4 border border-border/50">
+                <div className="bg-card/30 rounded-lg p-3 md:p-4 border border-border/50">
                   <p className="text-xs uppercase tracking-wider text-muted-foreground font-body mb-2">
                     Verdict
                   </p>
-                  <p className="text-sm font-body leading-relaxed text-foreground">
+                  <p className="text-sm font-body leading-relaxed text-foreground break-words">
                     {verdict}
                   </p>
                 </div>
