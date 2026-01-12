@@ -65,7 +65,7 @@ export function IntelLayout({
                       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_bottom_left,_hsl(var(--primary)/0.1),_transparent_60%)] pointer-events-none" />
                     </>
                   )}
-                  <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[100px] md:pt-[81px] relative z-10">
+                  <div className="mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[56px] md:pt-[81px] relative z-10">
                     <div className="relative flex flex-col pb-0 space-y-4 pt-0 md:pt-2 md:space-y-6 min-w-0">
                       {children}
                     </div>
