@@ -121,7 +121,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center md:mb-16 mb-8"
+          className="text-center md:mb-28 mb-16"
         >
           {eyebrow && (
             <span className="text-primary text-sm font-medium uppercase tracking-wider">
@@ -137,7 +137,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
 
         <div className="relative">
           {/* Timeline Line */}
-          <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/50 via-primary to-primary/50" />
+          <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/50 via-primary to-primary/50 -mt-10" />
 
           <div className="md:space-y-12 space-y-4 lg:space-y-0">
             {steps.map((step, index) => (
@@ -154,7 +154,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
                 {/* Content */}
                 <div className={`lg:w-1/2 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:pl-12'}`}>
                   <div
-                    className={`relative overflow-hidden bg-gradient-to-br rounded-2xl p-6 transition-all duration-300 ${
+                    className={`relative overflow-hidden bg-gradient-to-br md:-mt-20 rounded-2xl p-6 transition-all duration-300 ${
                       index % 2 === 0 ? 'lg:ml-auto' : 'lg:mr-auto'
                     } max-w-md`}
                     style={{ boxShadow: '0 0 20px hsl(var(--muted) / 0.1)' }}
@@ -196,7 +196,7 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
                 </div>
 
                 {/* Center Icon (Desktop) */}
-                <div className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-primary border-4 border-background" />
+                <div className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-primary border-4 border-background -mt-20" />
 
                 {/* Spacer */}
                 <div className="lg:w-1/2" />
