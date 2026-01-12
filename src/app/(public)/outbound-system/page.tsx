@@ -29,12 +29,12 @@ export default function OutboundSystemPage() {
       <div className="relative z-10">
         <Header />
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-primary/5 pointer-events-none"></div>
           <HeroSection />
         </div>
 
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/transparent via-transparent to-primary/10 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none"></div>
           <OutcomesSection />
         </div>
 

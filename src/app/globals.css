@@ -369,7 +369,7 @@
   }
 
   .section-spacing {
-    @apply py-4 md:py-16 px-3 md:px-0;
+    @apply py-4 md:py-16 px-4 md:px-0;
   }
 
   /* Hero text alignment - easily change alignment for entire hero section */
@@ -1355,12 +1355,11 @@ input[type="password"]:-webkit-autofill:active {
     }
   }
 
-  /* Prevent sticky hover states on touch devices */
-  /* Only apply hover styles on devices that actually support hover */
+  /* Prevent sticky hover states on touch devices - fix transparent background on mobile */
   @media (hover: none) {
-    button:hover,
-    button:focus-visible:hover {
-      background-color: inherit !important;
+    /* Force primary buttons to maintain their background on hover on touch devices */
+    button[class*="bg-primary"]:hover {
+      background-color: hsl(var(--primary)) !important;
     }
   }
 

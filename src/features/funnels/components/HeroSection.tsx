@@ -13,7 +13,7 @@ const fadeInUp = {
 
 const HeroSection = () => {
   return (
-    <section className="pt-28 md:pt-40 py-6 md:py-8 text-center px-1 md:px-0">
+    <section className="section-spacing pt-20 md:pt-40 py-6 md:py-8 text-center">
       {/* Headline */}
       <motion.div 
         className="max-w-5xl mx-auto mb-6 md:mb-10"
@@ -21,17 +21,17 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
       >
-        <h1 className="heading-xl text-[25px] md:text-[60px] font-bold md:mb-6 mb-4">
-          We Build & Run Outbound Systems That <b className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Books Qualified Sales Calls</b>
+        <h1 className="heading-2xl leading-tight md:leading-none text-[24px] md:text-[60px] font-bold md:mb-6 mb-3">
+          We Build & Run Outbound <br /> Systems That <b className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Books <br /> Qualified Sales Calls</b>
         </h1>
-        <p className="body-lg text-[14px] md:text-[16px] px-4 md:px-0 max-w-2xl mx-auto">
+        <p className="body-lg text-[14px] md:text-[16px] max-w-2xl mx-auto">
           An always-on outbound system powered by AI-driven enrichment—so every sales conversation starts with real context, not guesswork.
         </p>
       </motion.div>
 
       {/* VSL Video Player */}
       <motion.div 
-        className="max-w-4xl mx-auto mb-6 md:mb-10 md:px-0 px-3"
+        className="max-w-4xl mx-auto mb-6 md:mb-10 md:px-0"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
@@ -60,7 +60,7 @@ const HeroSection = () => {
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
           className="inline-block"
         >
-          <Button variant="cta" size="xl" className="hover:bg-primary hover:-translate-y-0">
+          <Button variant="cta" size="xl" className="hover:-translate-y-0">
             Book a Qualification Call
             <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />
           </Button>

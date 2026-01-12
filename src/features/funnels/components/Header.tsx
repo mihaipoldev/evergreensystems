@@ -34,9 +34,9 @@ const Header = () => {
   ];
 
   return (
-    <header className="fixed md:top-8 top-6 left-0 right-0 z-50 w-full px-4 md:px-8">
-      <div className="max-w-2xl mx-auto">
-        <nav className="bg-white/30 backdrop-blur-md rounded-full p-2 shadow-sm border border-white/20 flex items-center justify-between gap-6">
+    <header className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8">
+      <div className="w-full md:max-w-2xl md:mx-auto">
+        <nav className="bg-background/70 backdrop-blur-lg rounded-none md:rounded-full p-3 md:p-2 md:shadow-sm border-b md:border border-white/20 md:border-white/20 flex items-center justify-between gap-6">
           {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link href="/" className="ml-3 text-lg font-bold text-primary">
@@ -63,7 +63,7 @@ const Header = () => {
           </div>
 
           {/* CTA Button */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 md:mr-0 mr-3">
             <Button
               variant="default"
               size="sm"

@@ -80,7 +80,7 @@ const FinalCTASection = () => {
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className="inline-block"
             >
-              <Button variant="cta" size="xl" className="shadow-lg hover:bg-primary hover:shadow-xl transition-shadow hover:-translate-y-0">
+              <Button variant="cta" size="xl" className="shadow-lg hover:shadow-xl transition-shadow hover:-translate-y-0">
                 Book a Strategy Call
                 <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />
               </Button>
