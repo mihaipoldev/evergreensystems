@@ -122,7 +122,7 @@ export const FAQ = memo(({ faqs = [], section, waveGradientEnabled = false }: FA
         >
           <Accordion 
             type="multiple" 
-            className="space-y-0" 
+            className="space-y-1" 
             onValueChange={handleFAQOpen as (value: string[]) => void}
           >
             {faqs.map((faq, index) => (
