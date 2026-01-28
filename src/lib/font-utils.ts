@@ -76,9 +76,9 @@ export function generateFontCSS(fonts: FontConfig): string {
 
 /**
  * Generate complete CSS for landing page fonts
- * Only applies to .preset-landing-page, not :root to avoid affecting admin panel
+ * Only applies to .preset-landing-page or .preset-outbound-system, not :root to avoid affecting admin panel
  */
-export function generateLandingFontCSS(fonts: FontConfig): string {
+export function generateLandingFontCSS(fonts: FontConfig, route: '/' | '/outbound-system' = '/'): string {
   if (!fonts.landing) {
     return "";
   }
@@ -86,8 +86,11 @@ export function generateLandingFontCSS(fonts: FontConfig): string {
   const headingVar = getFontVariableLightweight(fonts.landing.heading);
   const bodyVar = getFontVariableLightweight(fonts.landing.body);
 
-  // Only set CSS variables on .preset-landing-page, not :root
+  // Determine which preset class to target based on route
+  const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
+
+  // Only set CSS variables on the appropriate preset class, not :root
   // This prevents landing page fonts from affecting admin panel
-  return `.preset-landing-page,.preset-landing-page *{--font-family-public-heading:var(${headingVar});--font-family-public-body:var(${bodyVar});}html.preset-landing-page body,html.preset-landing-page body *,.preset-landing-page body,.preset-landing-page body *{font-family:var(${bodyVar}),system-ui,sans-serif!important;}html.preset-landing-page body h1,html.preset-landing-page body h2,html.preset-landing-page body h3,html.preset-landing-page body h4,html.preset-landing-page body h5,html.preset-landing-page body h6,.preset-landing-page h1,.preset-landing-page h2,.preset-landing-page h3,.preset-landing-page h4,.preset-landing-page h5,.preset-landing-page h6{font-family:var(${headingVar}),system-ui,sans-serif!important;}`;
+  return `.${presetClass},.${presetClass} *{--font-family-public-heading:var(${headingVar});--font-family-public-body:var(${bodyVar});}html.${presetClass} body,html.${presetClass} body *,.${presetClass} body,.${presetClass} body *{font-family:var(${bodyVar}),system-ui,sans-serif!important;}html.${presetClass} body h1,html.${presetClass} body h2,html.${presetClass} body h3,html.${presetClass} body h4,html.${presetClass} body h5,html.${presetClass} body h6,.${presetClass} h1,.${presetClass} h2,.${presetClass} h3,.${presetClass} h4,.${presetClass} h5,.${presetClass} h6{font-family:var(${headingVar}),system-ui,sans-serif!important;}`;
 }
 

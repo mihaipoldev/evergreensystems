@@ -43,7 +43,7 @@ const OutcomesSection = () => {
           ].map((benefit, index) => (
             <motion.div 
               key={index} 
-              className="md:p-5 p-3 rounded-xl bg-secondary/20 border border-border/50 hover:border-primary/30 transition-colors"
+              className="md:p-5 p-3 rounded-xl bg-primary/10 border border-border/50 hover:border-primary/30 transition-colors"
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0 }

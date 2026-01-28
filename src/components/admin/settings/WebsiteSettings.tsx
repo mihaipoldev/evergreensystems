@@ -60,6 +60,7 @@ type Color = {
 
 interface WebsiteSettingsProps {
   environment?: 'production' | 'development';
+  route?: '/' | '/outbound-system';
   selectedPresetId?: string | 'new' | null;
   onPresetApplied?: () => void;
   renameTrigger?: string | null; // When this changes to a preset ID, trigger rename
@@ -70,7 +71,7 @@ interface WebsiteSettingsProps {
   activePresetId?: string | null; // The currently active preset ID for this environment (from parent)
 }
 
-export function WebsiteSettings({ environment = 'production', selectedPresetId: externalSelectedPresetId, onPresetApplied, renameTrigger, onApplyRequest, onPresetNameUpdated, presetNameUpdateTrigger, isApplying = false, activePresetId: externalActivePresetId }: WebsiteSettingsProps) {
+export function WebsiteSettings({ environment = 'production', route = '/', selectedPresetId: externalSelectedPresetId, onPresetApplied, renameTrigger, onApplyRequest, onPresetNameUpdated, presetNameUpdateTrigger, isApplying = false, activePresetId: externalActivePresetId }: WebsiteSettingsProps) {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -92,7 +93,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [presetToDelete, setPresetToDelete] = useState<string | null>(null);
   const [activePresetIdForEnvironment, setActivePresetIdForEnvironment] = useState<string | null>(null);
-  const [dotsEnabled, setDotsEnabled] = useState<boolean>(true);
+  const [dotsEnabled, setDotsEnabled] = useState<boolean>(false);
   const [waveGradientEnabled, setWaveGradientEnabled] = useState<boolean>(false);
   const [noiseTextureEnabled, setNoiseTextureEnabled] = useState<boolean>(false);
   const [isGeneratingName, setIsGeneratingName] = useState<boolean>(false);
@@ -103,7 +104,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
   // Apply fonts to CSS variables for landing page
   const applyFontsToCSS = (fonts: FontConfig) => {
     if (typeof document === "undefined" || !document.head) return;
-    const css = generateLandingFontCSS(fonts);
+    const css = generateLandingFontCSS(fonts, route);
     
     if (!css) return;
     
@@ -129,18 +130,23 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           }
         });
         
-        // Apply fonts via CSS - the generateLandingFontCSS already scopes to .preset-landing-page
+        // Apply fonts via CSS - update to use route-specific preset class
         // Do NOT set root-level CSS variables as that would affect admin panel
         if (fonts.landing && document.head) {
+          // Update CSS to target the correct preset class based on route
+          const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
+          // Replace preset-landing-page with the correct class
+          const routeSpecificCSS = css.replace(/\.preset-landing-page/g, `.${presetClass}`).replace(/html\.preset-landing-page/g, `html.${presetClass}`);
+          
           // Check if style already exists to avoid duplicates
           const existingStyle = document.getElementById("landing-font-family-client");
           if (existingStyle) {
-            existingStyle.textContent = css;
+            existingStyle.textContent = routeSpecificCSS;
           } else {
             // Inject style tag with scoped CSS
             const style = document.createElement("style");
             style.id = "landing-font-family-client";
-            style.textContent = css;
+            style.textContent = routeSpecificCSS;
             if (document.head) {
               document.head.appendChild(style);
             }
@@ -193,17 +199,18 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           }
         });
         
-        // Apply brand color variables ONLY to landing page preset - NOT to :root
+        // Apply brand color variables to the appropriate preset class based on route
         // This prevents affecting the admin panel
+        const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
         if (document.head) {
           // Check if style already exists to avoid duplicates
           const existingStyle = document.getElementById("website-primary-color-client");
           if (existingStyle) {
-            existingStyle.textContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{--brand-h:${color.h}!important;--brand-s:${color.s}!important;--brand-l:${color.l}!important;--primary:${cssValue}!important;}`;
+            existingStyle.textContent = `.${presetClass},.${presetClass} *,.${presetClass}.dark,.${presetClass}.dark *{--brand-h:${color.h}!important;--brand-s:${color.s}!important;--brand-l:${color.l}!important;--primary:${cssValue}!important;}`;
           } else {
             const style = document.createElement("style");
             style.id = "website-primary-color-client";
-            style.textContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{--brand-h:${color.h}!important;--brand-s:${color.s}!important;--brand-l:${color.l}!important;--primary:${cssValue}!important;}`;
+            style.textContent = `.${presetClass},.${presetClass} *,.${presetClass}.dark,.${presetClass}.dark *{--brand-h:${color.h}!important;--brand-s:${color.s}!important;--brand-l:${color.l}!important;--primary:${cssValue}!important;}`;
             document.head.appendChild(style);
           }
           
@@ -260,17 +267,18 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           }
         });
         
-        // Apply secondary color variable ONLY to landing page preset - NOT to :root
+        // Apply secondary color variable to the appropriate preset class based on route
         // This prevents affecting the admin panel
+        const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
         if (document.head) {
           // Check if style already exists to avoid duplicates
           const existingStyle = document.getElementById("website-secondary-color-client");
           if (existingStyle) {
-            existingStyle.textContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{--secondary:${cssValue}!important;}`;
+            existingStyle.textContent = `.${presetClass},.${presetClass} *,.${presetClass}.dark,.${presetClass}.dark *{--secondary:${cssValue}!important;}`;
           } else {
             const style = document.createElement("style");
             style.id = "website-secondary-color-client";
-            style.textContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{--secondary:${cssValue}!important;}`;
+            style.textContent = `.${presetClass},.${presetClass} *,.${presetClass}.dark,.${presetClass}.dark *{--secondary:${cssValue}!important;}`;
             document.head.appendChild(style);
           }
           
@@ -334,11 +342,12 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           presetIdToLoad = externalSelectedPresetId;
           setSelectedPresetId(externalSelectedPresetId);
         } else {
-          // Load website settings for selected environment (to get active preset)
+          // Load website settings for selected environment and route (to get active preset)
           const { data: settings } = await (supabase
             .from("website_settings") as any)
             .select("preset_id")
             .eq("environment", environment)
+            .eq("route", route)
             .maybeSingle();
 
           if (settings?.preset_id) {
@@ -410,17 +419,17 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
                 const stylingOptions = typeof preset.styling_options === 'string' 
                   ? JSON.parse(preset.styling_options) 
                   : preset.styling_options;
-                setDotsEnabled(stylingOptions?.dots_enabled !== false); // Default to true if not present
+                setDotsEnabled(stylingOptions?.dots_enabled === true); // Default to false if not present
                 setWaveGradientEnabled(stylingOptions?.wave_gradient_enabled === true); // Default to false if not present
                 setNoiseTextureEnabled(stylingOptions?.noise_texture_enabled === true); // Default to false if not present
               } catch (e) {
-                // If parsing fails, default to true for dots, false for others
-                setDotsEnabled(true);
+                // If parsing fails, default to false for all
+                setDotsEnabled(false);
                 setWaveGradientEnabled(false);
                 setNoiseTextureEnabled(false);
               }
             } else {
-              setDotsEnabled(true); // Default to true if not present
+              setDotsEnabled(false); // Default to false if not present
               setWaveGradientEnabled(false); // Default to false if not present
               setNoiseTextureEnabled(false); // Default to false if not present
             }
@@ -442,7 +451,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
     };
 
     loadData();
-  }, [environment, externalSelectedPresetId]);
+  }, [environment, route, externalSelectedPresetId]);
 
   // Set up Supabase real-time subscription for presets
   useEffect(() => {
@@ -583,7 +592,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
         });
       });
     };
-  }, [environment]);
+  }, [environment, route]);
 
   const handleThemeChange = (newTheme: string) => {
     setWebsiteTheme(newTheme);
@@ -691,7 +700,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
         admin: getDefaultFontFamily().admin,
         landing: getDefaultFontFamily().landing,
       });
-      setDotsEnabled(true);
+      setDotsEnabled(false);
       setWaveGradientEnabled(false);
       setNoiseTextureEnabled(false);
       setIsDirty(false);
@@ -760,17 +769,17 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
             const stylingOptions = typeof preset.styling_options === 'string' 
               ? JSON.parse(preset.styling_options) 
               : preset.styling_options;
-            setDotsEnabled(stylingOptions?.dots_enabled !== false); // Default to true if not present
+            setDotsEnabled(stylingOptions?.dots_enabled === true); // Default to false if not present
             setWaveGradientEnabled(stylingOptions?.wave_gradient_enabled === true); // Default to false if not present
             setNoiseTextureEnabled(stylingOptions?.noise_texture_enabled === true); // Default to false if not present
           } catch (e) {
-            // If parsing fails, default to true for dots, false for others
-            setDotsEnabled(true);
+            // If parsing fails, default to false for all
+            setDotsEnabled(false);
             setWaveGradientEnabled(false);
             setNoiseTextureEnabled(false);
           }
         } else {
-          setDotsEnabled(true); // Default to true if not present
+          setDotsEnabled(false); // Default to false if not present
           setWaveGradientEnabled(false); // Default to false if not present
           setNoiseTextureEnabled(false); // Default to false if not present
         }
@@ -890,11 +899,13 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
 
       if (updateError) throw updateError;
 
-      // Update or create website_settings for environment
+      // Use upsert to handle both insert and update cases, avoiding 409 conflicts
+      // For composite unique constraints, we need to check first and then update or insert
       const { data: existing } = await (supabase
         .from("website_settings") as any)
         .select("id")
         .eq("environment", environment)
+        .eq("route", route)
         .maybeSingle();
 
       if (existing) {
@@ -909,10 +920,34 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           .from("website_settings") as any)
           .insert({
             environment,
+            route,
             preset_id: presetId,
           });
         
-        if (error) throw error;
+        if (error) {
+          // If insert fails with 409, try update in case record was created between check and insert
+          if (error.code === '23505') {
+            const { data: retryExisting } = await (supabase
+              .from("website_settings") as any)
+              .select("id")
+              .eq("environment", environment)
+              .eq("route", route)
+              .maybeSingle();
+            
+            if (retryExisting) {
+              const { error: updateError } = await (supabase
+                .from("website_settings") as any)
+                .update({ preset_id: presetId })
+                .eq("id", retryExisting.id);
+              
+              if (updateError) throw updateError;
+            } else {
+              throw error;
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       setIsDirty(false);
@@ -1135,7 +1170,7 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           secondary_color_s: currentPreset.secondary_color_s,
           secondary_color_l: currentPreset.secondary_color_l,
           font_family: currentPreset.font_family,
-          styling_options: currentPreset.styling_options || { dots_enabled: true, wave_gradient_enabled: false, noise_texture_enabled: false },
+          styling_options: currentPreset.styling_options || { dots_enabled: false, wave_gradient_enabled: false, noise_texture_enabled: false },
         })
         .select()
         .single();
@@ -1318,11 +1353,13 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
 
       if (createError) throw createError;
 
-      // Update or create website_settings for environment
+      // Use upsert to handle both insert and update cases, avoiding 409 conflicts
+      // For composite unique constraints, we need to check first and then update or insert
       const { data: existing } = await (supabase
         .from("website_settings") as any)
         .select("id")
         .eq("environment", environment)
+        .eq("route", route)
         .maybeSingle();
 
       if (existing) {
@@ -1337,10 +1374,34 @@ export function WebsiteSettings({ environment = 'production', selectedPresetId: 
           .from("website_settings") as any)
           .insert({
             environment,
+            route,
             preset_id: newPreset.id,
           });
         
-        if (error) throw error;
+        if (error) {
+          // If insert fails with 409, try update in case record was created between check and insert
+          if (error.code === '23505') {
+            const { data: retryExisting } = await (supabase
+              .from("website_settings") as any)
+              .select("id")
+              .eq("environment", environment)
+              .eq("route", route)
+              .maybeSingle();
+            
+            if (retryExisting) {
+              const { error: updateError } = await (supabase
+                .from("website_settings") as any)
+                .update({ preset_id: newPreset.id })
+                .eq("id", retryExisting.id);
+              
+              if (updateError) throw updateError;
+            } else {
+              throw error;
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       // Reload presets and update selected, sorted by name

@@ -1,10 +1,23 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { parseFontFamily, generateLandingFontCSS } from "@/lib/font-utils";
+import { headers } from "next/headers";
 
 export async function WebsiteFontStyle() {
   // Determine environment based on NODE_ENV
   const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
+  
+  // Determine route from headers
+  let route: '/' | '/outbound-system' = '/';
+  try {
+    const headersList = await headers();
+    const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
+    if (pathname.includes("/outbound-system")) {
+      route = '/outbound-system';
+    }
+  } catch {
+    // Default to landing page if headers unavailable
+  }
   
   // Fallback to database if no cookie
   let supabase;
@@ -25,6 +38,7 @@ export async function WebsiteFontStyle() {
       )
     `)
     .eq("environment", environment)
+    .eq("route", route)
     .maybeSingle();
 
   let fontFamily = null;
@@ -43,7 +57,7 @@ export async function WebsiteFontStyle() {
   }
 
   const fonts = parseFontFamily(fontFamily);
-  const css = generateLandingFontCSS(fonts);
+  const css = generateLandingFontCSS(fonts, route);
 
   if (!css) {
     return null;

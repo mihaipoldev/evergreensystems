@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check, Plus, MoreHorizontal, Moon, Sun, Monitor, Pencil, Copy, Trash2, CheckCircle, Sparkles } from "lucide-react";
+import { Check, Plus, MoreHorizontal, Moon, Sun, Monitor, Pencil, Copy, Trash2, CheckCircle, Sparkles, ArrowUpDown } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar as faStarRegular } from "@fortawesome/free-regular-svg-icons";
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons";
@@ -14,6 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Preset = {
   id: string;
@@ -22,7 +28,10 @@ type Preset = {
   secondary_color_hex: string | null;
   theme: string | null;
   favorite?: boolean;
+  created_at?: string;
 };
+
+type SortOption = "name" | "created_at";
 
 interface PresetManagerProps {
   presets: Preset[];
@@ -59,67 +68,119 @@ export function PresetManager({
   onActivatePreset,
   onToggleFavorite,
 }: PresetManagerProps) {
-  // Sort presets: favorites first (by name), then non-favorites (by name)
+  const [sortBy, setSortBy] = useState<SortOption>("name");
+
+  // Sort presets: favorites first (sorted by selected option), then non-favorites (sorted by selected option)
   const sortedPresets = useMemo(() => {
+    const sortFunction = (a: Preset, b: Preset) => {
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      } else {
+        // Sort by created_at (newest first)
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bDate - aDate; // Descending order (newest first)
+      }
+    };
+
     const favorites = presets
       .filter(p => p.favorite)
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+      .sort(sortFunction);
     const nonFavorites = presets
       .filter(p => !p.favorite)
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+      .sort(sortFunction);
     return [...favorites, ...nonFavorites];
-  }, [presets]);
+  }, [presets, sortBy]);
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border shrink-0">
-        <h2 className="text-lg font-semibold mb-1">Preset Manager</h2>
-        <p className="text-xs text-muted-foreground">
-          Select a preset to preview or apply
-        </p>
-      </div>
-
-      {/* New Preset Section - Fixed */}
-      <div className="p-4 border-b border-border shrink-0 space-y-2">
-        <button
-          onClick={onCreateNew}
-          className={cn(
-            "w-full p-3 rounded-lg border-2 border-dashed border-border/50 bg-card/50 hover:border-primary/50 hover:bg-card transition-all duration-200 text-left group flex items-center justify-between gap-3"
-          )}
-        >
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-md border-2 border-border bg-muted flex items-center justify-center group-hover:border-primary/50 transition-colors shrink-0">
-              <Plus className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Preset Manager</h2>
+          <TooltipProvider>
+            <div className="flex items-center gap-1">
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full hover:bg-muted/50 hover:text-foreground"
+                      >
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sort presets</p>
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("name")}
+                    className={cn(
+                      "cursor-pointer",
+                      sortBy === "name" && "text-primary !hover:text-primary font-medium"
+                    )}
+                  >
+                    Sort by name
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("created_at")}
+                    className={cn(
+                      "cursor-pointer",
+                      sortBy === "created_at" && "text-primary !hover:text-primary font-medium"
+                    )}
+                  >
+                    Sort by created date
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onCreateNew}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full hover:bg-muted/50 hover:text-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>New Preset</p>
+                </TooltipContent>
+              </Tooltip>
+              {onGeneratePreset && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onGeneratePreset();
+                      }}
+                      disabled={isGeneratingPreset}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full hover:bg-muted/50 hover:text-foreground"
+                    >
+                      <Sparkles className={cn("h-4 w-4", isGeneratingPreset && "animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isGeneratingPreset ? "Generating..." : "Generate with AI"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm group-hover:text-primary transition-colors">
-                New Preset
-              </div>
-            </div>
-          </div>
-        </button>
-        
-        {/* Generate with AI Button */}
-        {onGeneratePreset && (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onGeneratePreset();
-            }}
-            disabled={isGeneratingPreset}
-            variant="outline"
-            className="w-full"
-            size="sm"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            {isGeneratingPreset ? "Generating..." : "Generate with AI"}
-          </Button>
-        )}
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* Preset Cards List - Scrollable */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 py-4 px-2 space-y-1">
         {/* Preset Cards */}
         {sortedPresets.map((preset) => {
           const isSelected = selectedPresetId === preset.id;
@@ -131,10 +192,10 @@ export function PresetManager({
             <div
               key={preset.id}
               className={cn(
-                "w-full p-3 rounded-lg border-2 bg-card transition-all duration-200 group relative flex items-center gap-2",
+                "w-full p-3 rounded-lg transition-all duration-200 group relative flex items-center gap-2",
                 isSelected
                   ? "border-primary ring-2 ring-primary/20 shadow-md"
-                  : "border-border/50 hover:border-primary/30 hover:shadow-sm"
+                  : "hover:border-primary/30"
               )}
             >
               <button
@@ -201,7 +262,7 @@ export function PresetManager({
                   {/* Primary Color (left) */}
                   <div
                     className={cn(
-                      "w-6 h-6 rounded-md border-0 transition-all duration-200",
+                      "w-6 h-6 rounded-full border-0 transition-all duration-200",
                       isSelected
                         ? "border-white shadow-md"
                         : "border-white/80 group-hover:border-white"
@@ -213,7 +274,7 @@ export function PresetManager({
                   {/* Secondary Color (right) */}
                   <div
                     className={cn(
-                      "w-6 h-6 rounded-md border-0 transition-all duration-200",
+                      "w-6 h-6 rounded-full border-0 transition-all duration-200",
                       isSelected
                         ? "border-white shadow-md"
                         : "border-white/80 group-hover:border-white"
@@ -231,7 +292,7 @@ export function PresetManager({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 shrink-0"
+                        className="!h-6 !w-6 hover:bg-transparent rounded-full hover:bg-muted/50 hover:text-foreground shrink-0 p-0"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="h-4 w-4" />

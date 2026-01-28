@@ -168,6 +168,7 @@ export const Results = memo(({ section }: ResultsProps) => {
             className="text-2xl md:text-5xl font-bold text-foreground mt-4 leading-tight"
           />
         </motion.div>
+        
 
         {/* Main Results Cards */}
         <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -180,7 +181,7 @@ export const Results = memo(({ section }: ResultsProps) => {
               transition={{ delay: index * 0.1 }}
               className="relative group"
             >
-              <div className="border-glow md:rounded-2xl rounded-lg bg-card md:p-8 p-4 h-full">
+              <div className="md:rounded-2xl rounded-lg bg-card md:p-8 p-4 h-full">
                 {/* Glow Effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 

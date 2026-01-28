@@ -155,12 +155,30 @@ export function AppearanceSettingsV2() {
     }
     
     try {
+      // CRITICAL: Delete old cookies with all possible attribute combinations
+      const cookieNames = ['primary-color-hsl', 'brand-color-h', 'brand-color-s', 'brand-color-l'];
+      const deletionStrategies = [
+        '',
+        '; path=/',
+        '; path=/; domain=localhost',
+        '; path=/; domain=' + window.location.hostname,
+        '; path=/; SameSite=Lax',
+        '; path=/; SameSite=None; Secure',
+      ];
+      
+      cookieNames.forEach(name => {
+        deletionStrategies.forEach(attrs => {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT${attrs}`;
+        });
+      });
+      
       const expires = new Date();
       expires.setFullYear(expires.getFullYear() + 1);
-      document.cookie = `primary-color-hsl=${encodeURIComponent(cssValue)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `brand-color-h=${encodeURIComponent(color.hsl.h.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `brand-color-s=${encodeURIComponent(color.hsl.s.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `brand-color-l=${encodeURIComponent(color.hsl.l.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      // Don't URL-encode - HSL values are safe for cookies
+      document.cookie = `primary-color-hsl=${cssValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `brand-color-h=${color.hsl.h}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `brand-color-s=${color.hsl.s}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `brand-color-l=${color.hsl.l}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
     } catch (e) {
       // Cookie setting failed
     }
@@ -225,15 +243,33 @@ export function AppearanceSettingsV2() {
     }
     
     // Save to cookie for instant access on next page load (server-side)
-    // Cookie expires in 1 year
+    // CRITICAL: First delete old cookie, then set new one WITHOUT encoding
     try {
+      // Delete old accent cookie with all possible attributes
+      const deletionStrategies = [
+        '',
+        '; path=/',
+        '; path=/; domain=localhost',
+        '; path=/; domain=' + window.location.hostname,
+        '; path=/; SameSite=Lax',
+        '; path=/; SameSite=None; Secure',
+      ];
+      
+      deletionStrategies.forEach(attrs => {
+        document.cookie = `accent-color-hsl=; expires=Thu, 01 Jan 1970 00:00:00 GMT${attrs}`;
+        document.cookie = `accent-color-h=; expires=Thu, 01 Jan 1970 00:00:00 GMT${attrs}`;
+        document.cookie = `accent-color-s=; expires=Thu, 01 Jan 1970 00:00:00 GMT${attrs}`;
+        document.cookie = `accent-color-l=; expires=Thu, 01 Jan 1970 00:00:00 GMT${attrs}`;
+      });
+      
       const expires = new Date();
       expires.setFullYear(expires.getFullYear() + 1);
-      document.cookie = `accent-color-hsl=${encodeURIComponent(cssValue)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      // Also save accent color variables to cookies
-      document.cookie = `accent-color-h=${encodeURIComponent(color.hsl.h.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `accent-color-s=${encodeURIComponent(color.hsl.s.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `accent-color-l=${encodeURIComponent(color.hsl.l.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      // Don't URL-encode HSL values
+      document.cookie = `accent-color-hsl=${cssValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      // Also save accent color variables to cookies (numbers don't need encoding)
+      document.cookie = `accent-color-h=${color.hsl.h}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `accent-color-s=${color.hsl.s}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `accent-color-l=${color.hsl.l}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
     } catch (e) {
       // Cookie setting failed
     }

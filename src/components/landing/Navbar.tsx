@@ -298,7 +298,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
       <div className="w-full md:max-w-2xl md:mx-auto">
         <div className={`rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300 ${
           scrolled 
-            ? 'bg-background/50 backdrop-blur-lg md:shadow-sm border-b md:border border-white/20' 
+            ? 'bg-background/80 backdrop-blur-lg md:shadow-sm' 
             : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
         }`}>
           {/* Logo */}

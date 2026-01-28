@@ -279,7 +279,7 @@ export async function proxy(request: NextRequest) {
               // Build CSS string safely
               const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
               // Use immediate execution - set colors before any CSS loads
-              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+${JSON.stringify(primaryValue)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+${JSON.stringify(hslH)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+${JSON.stringify(hslS)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+${JSON.stringify(hslL)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
               const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;
               colorApplied = true;
@@ -347,24 +347,10 @@ export async function proxy(request: NextRequest) {
                   hsl: userColor ? `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%` : null
                 });
                 
-                // Also set this theme as active since it exists
-                try {
-                  await (supabase
-                    .from("user_settings") as any)
-                    .upsert(
-                      {
-                        user_id: user.id,
-                        active_theme_id: defaultTheme.id,
-                      },
-                      {
-                        onConflict: "user_id",
-                      }
-                    );
-                  console.log('[COLOR DEBUG] Set Default Theme as active');
-                } catch {
-                  // Silently ignore if update fails
-                  console.error('[COLOR DEBUG] Failed to set Default Theme as active');
-                }
+                // CRITICAL: Do NOT set Default Theme as active in database
+                // This is only a fallback for color injection - user's selected theme should remain active
+                // Only AppearanceSettings component should change active_theme_id when user explicitly selects a theme
+                console.log('[COLOR DEBUG] Using Default Theme color as fallback (NOT changing active_theme_id in database)');
               } catch (error) {
                 // If color query fails, continue without color
                 userColor = null;
@@ -465,7 +451,7 @@ export async function proxy(request: NextRequest) {
               // Build CSS string safely
               const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
               // Use immediate execution - set colors before any CSS loads
-              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+${JSON.stringify(primaryValue)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+${JSON.stringify(hslH)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+${JSON.stringify(hslS)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+${JSON.stringify(hslL)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
               const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;
             }
@@ -512,24 +498,10 @@ export async function proxy(request: NextRequest) {
                 hsl: userColor ? `${userColor.hsl_h} ${userColor.hsl_s}% ${userColor.hsl_l}%` : null
               });
               
-              // Also set this theme as active since it exists
-              try {
-                await (supabase
-                  .from("user_settings") as any)
-                  .upsert(
-                    {
-                      user_id: user.id,
-                      active_theme_id: defaultTheme.id,
-                    },
-                    {
-                      onConflict: "user_id",
-                    }
-                  );
-                console.log('[COLOR DEBUG] Set Default Theme as active');
-              } catch {
-                // Silently ignore if update fails
-                console.error('[COLOR DEBUG] Failed to set Default Theme as active');
-              }
+              // CRITICAL: Do NOT set Default Theme as active in database
+              // This is only a fallback for color injection - user's selected theme should remain active
+              // Only AppearanceSettings component should change active_theme_id when user explicitly selects a theme
+              console.log('[COLOR DEBUG] Using Default Theme color as fallback (NOT changing active_theme_id in database)');
             } catch (error) {
               // If color query fails, continue without color
               userColor = null;
@@ -685,7 +657,7 @@ export async function proxy(request: NextRequest) {
               // Build CSS string safely
               const cssContent = `:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}`;
               // Use immediate execution - set colors before any CSS loads
-              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+encodeURIComponent(${JSON.stringify(primaryValue)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+encodeURIComponent(${JSON.stringify(hslH)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+encodeURIComponent(${JSON.stringify(hslS)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+encodeURIComponent(${JSON.stringify(hslL)})+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
+              const blockingScript = `<script>(function(){var d=document,r=d.documentElement;if(r){r.style.setProperty('--brand-h',${JSON.stringify(hslH)},'important');r.style.setProperty('--brand-s',${JSON.stringify(hslS)},'important');r.style.setProperty('--brand-l',${JSON.stringify(hslL)},'important');r.style.setProperty('--primary',${JSON.stringify(primaryValue)},'important');}var s=d.createElement('style');s.id='primary-color-blocking';s.textContent=${JSON.stringify(cssContent)};if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(d.documentElement){d.documentElement.insertBefore(s,d.documentElement.firstChild);}else{var a=0;function c(){a++;if(d.head){d.head.insertBefore(s,d.head.firstChild);}else if(a<100){setTimeout(c,1);}else{d.documentElement.appendChild(s);}}c();}try{var e=new Date();e.setFullYear(e.getFullYear()+1);document.cookie='primary-color-hsl='+${JSON.stringify(primaryValue)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-h='+${JSON.stringify(hslH)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-s='+${JSON.stringify(hslS)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';document.cookie='brand-color-l='+${JSON.stringify(hslL)}+'; expires='+e.toUTCString()+'; path=/; SameSite=Lax';}catch(x){}})();</script>`;
               const styleTag = `<style id="primary-color-inline">:root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;}</style>`;
               colorInjection = blockingScript + styleTag;
             }

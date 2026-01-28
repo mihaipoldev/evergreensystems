@@ -57,7 +57,7 @@ const WhatYouGetSection = () => {
               {deliverables.map((item, index) => (
                 <motion.div 
                   key={index} 
-                  className="flex items-start gap-3 md:p-4 p-3 rounded-xl bg-background/70 backdrop-blur-sm border border-border/30 hover:border-primary/30 hover:bg-background transition-all group"
+                  className="flex items-start gap-3 md:p-4 p-3 rounded-xl bg-background/70 backdrop-blur-sm border border-border/70 hover:border-primary/30 hover:bg-background transition-all group"
                   variants={{
                     hidden: { opacity: 0, y: 20 },
                     visible: { opacity: 1, y: 0 }

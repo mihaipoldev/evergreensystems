@@ -11,12 +11,30 @@ const fadeInUp = {
 
 const WhyOutboundSection = () => {
   return (
-    <section id="why-outbound" className="section-spacing">
-      <div className="max-w-5xl mx-auto">
+    <section id="why-outbound" className="relative section-spacing dark:bg-muted/15 bg-muted/80 overflow-hidden">
+      {/* Top Decorative Separator - Clean Diagonal Cut */}
+      <div className="absolute top-0 left-0 right-0 h-12 md:h-16 pointer-events-none">
+        <div className="absolute inset-0 bg-background" 
+          style={{
+            clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 100%)'
+          }}
+        />
+      </div>
+
+      {/* Bottom Decorative Separator - Clean Diagonal Cut */}
+      <div className="absolute bottom-0 left-0 right-0 h-12 md:h-16 pointer-events-none">
+        <div className="absolute inset-0 bg-background"
+          style={{
+            clipPath: 'polygon(0 30%, 100% 0, 100% 100%, 0 100%)'
+          }}
+        />
+      </div>
+
+      <div className="max-w-5xl mx-auto relative z-10 md:pt-20 pt-12 md:pb-20 pb-12 md:px-6 px-4">
         
         {/* Main Card Container */}
         <motion.div 
-          className="bg-gradient-to-br from-secondary/10 to-transparent rounded-2xl border border-border/50 md:p-8 p-4 md:p-16"
+          className="rounded-2xl md:p-12 p-6 py-12"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
@@ -88,10 +106,10 @@ const WhyOutboundSection = () => {
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/50 md:mb-16 mb-8"></div>
+          <div className="border-t border-border/50 md:mb-16 mb-8 max-w-4xl mx-auto"></div>
 
           {/* The Problem with Traditional Lead Gen */}
-          <div>
+          <div className="max-w-4xl mx-auto">
             <motion.h2 
               className="md:heading-lg heading-md md:mb-6 mb-4 hero-align"
               {...fadeInUp}
@@ -206,10 +224,10 @@ const WhyOutboundSection = () => {
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/50 md:mb-16 mb-8 md:mt-16 mt-8"></div>
+          <div className="border-t border-border/50 md:mb-16 mb-8 md:mt-16 mt-8 max-w-4xl mx-auto"></div>
 
           {/* How the System Works - Enrichment */}
-          <div className="md:mb-16 mb-8">
+          <div className="md:mb-16 mb-8 max-w-4xl mx-auto">
             <motion.h3 
               className="md:heading-lg heading-md md:mb-6 mb-4"
               {...fadeInUp}
@@ -262,10 +280,10 @@ const WhyOutboundSection = () => {
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/50 md:mb-16 mb-8"></div>
+          <div className="border-t border-border/50 md:mb-16 mb-8 max-w-4xl mx-auto"></div>
 
           {/* Sending Infrastructure */}
-          <div className="md:mb-8 mb-6">
+          <div className="md:mb-8 mb-6 max-w-4xl mx-auto">
             <motion.h3 
               className="md:heading-lg heading-md md:mb-6 mb-4"
               {...fadeInUp}
@@ -330,7 +348,7 @@ const WhyOutboundSection = () => {
 
           {/* Why This Matters - Enhanced */}
           <motion.div 
-            className="relative"
+            className="relative max-w-4xl mx-auto"
             {...fadeInUp}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl" />

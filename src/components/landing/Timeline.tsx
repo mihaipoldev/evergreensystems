@@ -157,7 +157,6 @@ export const Timeline = ({ section, timelineItems = [] }: TimelineProps) => {
                     className={`relative overflow-hidden bg-gradient-to-br md:-mt-20 rounded-2xl p-6 transition-all duration-300 ${
                       index % 2 === 0 ? 'lg:ml-auto' : 'lg:mr-auto'
                     } max-w-md`}
-                    style={{ boxShadow: '0 0 20px hsl(var(--muted) / 0.1)' }}
                   >
                     {/* Hover Glow */}
                     <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-muted/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

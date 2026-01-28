@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PublicThemeProvider } from "./PublicThemeProvider";
+import { headers } from "next/headers";
 
 export async function PublicThemeProviderWrapper({ children }: { children: React.ReactNode }) {
   let theme = "dark"; // Default theme
@@ -9,6 +10,18 @@ export async function PublicThemeProviderWrapper({ children }: { children: React
     
     // Determine environment based on NODE_ENV
     const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
+    
+    // Determine route from headers
+    let route: '/' | '/outbound-system' = '/';
+    try {
+      const headersList = await headers();
+      const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
+      if (pathname.includes("/outbound-system")) {
+        route = '/outbound-system';
+      }
+    } catch {
+      // Default to landing page if headers unavailable
+    }
     
     // Get website settings with preset join (public read access, no auth required)
     const { data: settings } = await (supabase
@@ -20,6 +33,7 @@ export async function PublicThemeProviderWrapper({ children }: { children: React
         )
       `)
       .eq("environment", environment)
+      .eq("route", route)
       .maybeSingle();
 
     // Get theme from preset

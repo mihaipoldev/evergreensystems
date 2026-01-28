@@ -38,9 +38,10 @@ type OfferFeatureWithSection = OfferFeatureBase & {
 type OfferProps = {
   section?: Section;
   offerFeatures?: OfferFeatureWithSection[];
+  waveGradientEnabled?: boolean;
 };
 
-export const Offer = ({ section, offerFeatures = [] }: OfferProps) => {
+export const Offer = ({ section, offerFeatures = [], waveGradientEnabled = false }: OfferProps) => {
   // If no features, don't render the section
   if (!offerFeatures || offerFeatures.length === 0) {
     return null;
@@ -121,7 +122,11 @@ export const Offer = ({ section, offerFeatures = [] }: OfferProps) => {
               transition={{ delay: index * 0.1, duration: 0.5 }}
               className="relative"
             >
-              <div className="relative h-full rounded-2xl border border-border/70 bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-100 md:p-6 p-4 overflow-hidden">
+              <div className={`relative h-full rounded-2xl transition-all duration-100 md:p-6 p-4 overflow-hidden ${
+                waveGradientEnabled 
+                  ? 'bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60' 
+                  : 'bg-card/80 border border-border/50 hover:border-primary/30 hover:shadow-md'
+              }`}>
                 <div className="relative z-10 flex items-start gap-4">
                   {/* Icon Container - Circular with blue border */}
                   <motion.div

@@ -197,6 +197,8 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
   const hasTrackedPlayRef = useRef<boolean>(false); // Track if we've already recorded the first play
   const wistiaHandlerBoundRef = useRef<boolean>(false); // Track if we've already bound the Wistia handler
   const isTrackingRef = useRef<boolean>(false); // Prevent concurrent tracking calls
+  const [primaryColor, setPrimaryColor] = useState<string>('hsl(var(--primary) / 0.2)');
+  const [secondaryColor, setSecondaryColor] = useState<string>('hsl(var(--secondary) / 0.2)');
   
   // Use section data if available, otherwise use defaults
   const title = section?.title || 'Your Entire Outbound System\nFully Automated.';
@@ -513,6 +515,39 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
     };
   }, [videoId]);
 
+  // Update glow orb colors from CSS variables
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateColors = () => {
+      const root = document.documentElement;
+      const computedStyle = getComputedStyle(root);
+      const primary = computedStyle.getPropertyValue('--primary').trim();
+      const secondary = computedStyle.getPropertyValue('--secondary').trim();
+      
+      // Format as hsl() with opacity
+      setPrimaryColor(`hsl(${primary} / 0.2)`);
+      setSecondaryColor(`hsl(${secondary} / 0.2)`);
+    };
+
+    updateColors();
+
+    // Watch for changes to CSS variables
+    const observer = new MutationObserver(updateColors);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+
+    // Also listen for custom events that might indicate color changes
+    window.addEventListener('colorsUpdated', updateColors);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('colorsUpdated', updateColors);
+    };
+  }, []);
+
   return (
     <section className="relative flex items-center justify-center pt-[80px] md:pt-[124px] overflow-x-hidden md:pb-8 pb-4 overflow-y-visible">
 
@@ -521,8 +556,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
       <motion.div
         className="absolute top-2/4 left-1/4 md:h-72 w-50 h-50 rounded-full blur-3xl"
         style={{
-          backgroundColor: '#446F94',
-          opacity: 0.2,
+          backgroundColor: primaryColor,
         }}
         animate={{
           scale: [1, 1.2, 1],
@@ -533,8 +567,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
       <motion.div
         className="absolute bottom-1/4 right-1/4 md:w-72 md:h-72 w-60 h-40 rounded-full blur-3xl"
         style={{
-          backgroundColor: '#D4932C',
-          opacity: 0.2,
+          backgroundColor: secondaryColor,
         }}
         animate={{
           scale: [1.2, 1, 1.2],

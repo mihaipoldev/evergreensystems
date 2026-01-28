@@ -82,8 +82,16 @@ export function AppearanceSettings() {
 
   // Apply color to CSS variable
   const applyColorToCSS = (color: Color | null) => {
-    if (!color || typeof document === "undefined") return;
+    if (!color || typeof document === "undefined") {
+      console.log('[COLOR DEBUG] AppearanceSettings.applyColorToCSS - Called with null/undefined color or no document');
+      return;
+    }
     const cssValue = hslToCssString(color.hsl.h, color.hsl.s, color.hsl.l);
+    console.log('[COLOR DEBUG] AppearanceSettings.applyColorToCSS - Applying color:', {
+      hex: color.hex,
+      hsl: { h: color.hsl.h, s: color.hsl.s, l: color.hsl.l },
+      cssValue: cssValue
+    });
     
     // Use a function to apply the style, and ensure it runs after any pending DOM operations
     const applyStyle = () => {
@@ -95,12 +103,14 @@ export function AppearanceSettings() {
         // Remove old primary-color-client if it exists (to avoid duplicates)
         const oldStyle = document.getElementById("primary-color-client");
         if (oldStyle) {
+          console.log('[COLOR DEBUG] AppearanceSettings.applyStyle - Removing old primary-color-client style tag');
           try {
             if (oldStyle.parentNode) {
               oldStyle.remove();
             }
           } catch (e) {
             // Ignore removal errors
+            console.error('[COLOR DEBUG] AppearanceSettings.applyStyle - Error removing old style:', e);
           }
         }
         
@@ -108,6 +118,8 @@ export function AppearanceSettings() {
         const style = document.createElement("style");
         style.id = "primary-color-client";
         style.textContent = styleText;
+        
+        console.log('[COLOR DEBUG] AppearanceSettings.applyStyle - Creating new primary-color-client style tag');
         
         if (document.head) {
           document.head.appendChild(style);
@@ -117,20 +129,44 @@ export function AppearanceSettings() {
           if (sessionStyle) {
             try {
               sessionStyle.textContent = styleText;
+              console.log('[COLOR DEBUG] AppearanceSettings.applyStyle - Updated primary-color-session style tag');
             } catch (e) {
               // Ignore update errors
+              console.error('[COLOR DEBUG] AppearanceSettings.applyStyle - Error updating session style:', e);
             }
           }
+          
+          // Log computed values after applying
+          setTimeout(() => {
+            try {
+              const computedStyle = window.getComputedStyle(document.documentElement);
+              const brandH = computedStyle.getPropertyValue('--brand-h').trim();
+              const brandS = computedStyle.getPropertyValue('--brand-s').trim();
+              const brandL = computedStyle.getPropertyValue('--brand-l').trim();
+              const primary = computedStyle.getPropertyValue('--primary').trim();
+              console.log('[COLOR DEBUG] AppearanceSettings.applyStyle - Computed CSS values after apply:', {
+                '--brand-h': brandH,
+                '--brand-s': brandS,
+                '--brand-l': brandL,
+                '--primary': primary,
+                'expected': cssValue
+              });
+            } catch (e) {
+              console.error('[COLOR DEBUG] AppearanceSettings.applyStyle - Error reading computed styles:', e);
+            }
+          }, 10);
         }
       } catch (error) {
-        console.error("Error applying color to CSS:", error);
+        console.error('[COLOR DEBUG] AppearanceSettings.applyStyle - Error applying color to CSS:', error);
       }
     };
     
     // Apply immediately
+    console.log('[COLOR DEBUG] AppearanceSettings.applyColorToCSS - Calling applyStyle() immediately');
     applyStyle();
     
     // Also apply after a short delay to ensure it overrides any server styles that load late
+    console.log('[COLOR DEBUG] AppearanceSettings.applyColorToCSS - Scheduling applyStyle() with setTimeout(0)');
     setTimeout(applyStyle, 0);
     
     // Save to sessionStorage for InstantColorApply fallback
@@ -142,16 +178,51 @@ export function AppearanceSettings() {
     
     // Save to cookie for instant access on next page load (server-side)
     // Cookie expires in 1 year
+    console.log('[COLOR DEBUG] AppearanceSettings.setColor - Setting cookies:', {
+      cssValue,
+      colorHsl: color.hsl
+    });
     try {
+      // CRITICAL: Delete old cookies with all possible attribute combinations
+      // Try multiple variations to ensure deletion
+      const cookieNames = ['primary-color-hsl', 'accent-color-hsl', 'brand-color-h', 'brand-color-s', 'brand-color-l'];
+      const deletionStrategies = [
+        '',  // No attributes
+        '; path=/',
+        '; path=/; domain=localhost',
+        '; path=/; domain=' + window.location.hostname,
+        '; path=/; SameSite=Lax',
+        '; path=/; SameSite=None; Secure',
+      ];
+      
+      cookieNames.forEach(name => {
+        deletionStrategies.forEach(attrs => {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT${attrs}`;
+        });
+      });
+      
+      console.log('[COLOR DEBUG] AppearanceSettings.setColor - Deleted all old cookie variations');
+      
       const expires = new Date();
       expires.setFullYear(expires.getFullYear() + 1);
-      document.cookie = `primary-color-hsl=${encodeURIComponent(cssValue)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      // Also save brand color variables to cookies
-      document.cookie = `brand-color-h=${encodeURIComponent(color.hsl.h.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `brand-color-s=${encodeURIComponent(color.hsl.s.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      document.cookie = `brand-color-l=${encodeURIComponent(color.hsl.l.toString())}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      // CRITICAL: Don't URL-encode HSL values - they're safe for cookies and encoding breaks Next.js cookie parser
+      document.cookie = `primary-color-hsl=${cssValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      console.log('[COLOR DEBUG] AppearanceSettings.setColor - Primary cookie set (after deleting old):', `primary-color-hsl=${cssValue}`);
+      
+      // Also save brand color variables to cookies (numbers don't need encoding)
+      document.cookie = `brand-color-h=${color.hsl.h}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `brand-color-s=${color.hsl.s}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      document.cookie = `brand-color-l=${color.hsl.l}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      
+      // Verify cookie was set
+      const allCookies = document.cookie;
+      const primaryCookie = allCookies.match(/primary-color-hsl=([^;]*)/);
+      console.log('[COLOR DEBUG] AppearanceSettings.setColor - Cookie verification:', {
+        found: !!primaryCookie,
+        value: primaryCookie ? decodeURIComponent(primaryCookie[1]) : 'NOT FOUND'
+      });
     } catch (e) {
-      // Cookie setting failed
+      console.log('[COLOR DEBUG] AppearanceSettings.setColor - Cookie setting failed:', e);
     }
   };
 
@@ -351,8 +422,9 @@ export function AppearanceSettings() {
         .eq("id", theme.primary_color_id)
         .single();
 
+      let selected = null;
       if (color) {
-        const selected = dbColorToComponent(color);
+        selected = dbColorToComponent(color);
         setSelectedColor(selected);
         applyColorToCSS(selected);
       }
@@ -372,6 +444,11 @@ export function AppearanceSettings() {
 
       if (settingsError) throw settingsError;
 
+      console.log('[COLOR DEBUG] AppearanceSettings - Theme selected:', {
+        themeId,
+        selectedColor: selected
+      });
+      
       setActiveThemeId(themeId);
 
       toast({

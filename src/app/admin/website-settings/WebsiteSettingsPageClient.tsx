@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { PresetManager } from "@/components/admin/settings/PresetManager";
 import { WebsiteSettings } from "@/components/admin/settings/WebsiteSettings";
+import { RouteSelector } from "@/components/admin/settings/RouteSelector";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,17 @@ type Preset = {
 export function WebsiteSettingsPageClient() {
   const { toast } = useToast();
   const [activeEnvironment, setActiveEnvironment] = useState<'production' | 'development'>('development');
+  
+  // Initialize activeRoute from localStorage, default to '/'
+  const [activeRoute, setActiveRoute] = useState<'/' | '/outbound-system'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedRoute = localStorage.getItem('website-settings-active-route');
+      if (savedRoute === '/' || savedRoute === '/outbound-system') {
+        return savedRoute;
+      }
+    }
+    return '/';
+  });
   const [presets, setPresets] = useState<Preset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
@@ -52,7 +64,7 @@ export function WebsiteSettingsPageClient() {
         // Load all presets
         const { data: presetsData, error: presetsError } = await (supabase
           .from("website_settings_presets") as any)
-          .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+          .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
           .order("name", { ascending: true });
 
         if (presetsError) {
@@ -65,11 +77,12 @@ export function WebsiteSettingsPageClient() {
           setPresets(sortedPresets);
         }
 
-        // Load active preset for current environment
+        // Load active preset for current environment and route
         const { data: settings } = await (supabase
           .from("website_settings") as any)
           .select("preset_id")
           .eq("environment", activeEnvironment)
+          .eq("route", activeRoute)
           .maybeSingle();
 
         if (settings?.preset_id) {
@@ -87,7 +100,7 @@ export function WebsiteSettingsPageClient() {
     };
 
     loadData();
-  }, [activeEnvironment]);
+  }, [activeEnvironment, activeRoute]);
 
   // Set up Supabase real-time subscription for presets
   useEffect(() => {
@@ -129,7 +142,7 @@ export function WebsiteSettingsPageClient() {
             try {
               const { data: presetsData, error } = await (supabase
                 .from("website_settings_presets") as any)
-                .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+                .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
                 .order("name", { ascending: true });
 
               if (error) {
@@ -175,20 +188,32 @@ export function WebsiteSettingsPageClient() {
     setSelectedPresetId(null);
   };
 
+  const handleRouteChange = (route: '/' | '/outbound-system') => {
+    setActiveRoute(route);
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('website-settings-active-route', route);
+    }
+    // Reset selection - will be updated by useEffect
+    setSelectedPresetId(null);
+  };
+
   const handlePresetSelect = (presetId: string) => {
     setSelectedPresetId(presetId);
   };
 
-  const applyPresetToEnvironment = async (presetId: string, environment: 'production' | 'development') => {
+  const applyPresetToEnvironment = async (presetId: string, environment: 'production' | 'development', route: '/' | '/outbound-system') => {
     try {
       setIsApplying(true);
       const supabase = createClient();
 
-      // Update or create website_settings for environment
+      // Use upsert to handle both insert and update cases, avoiding 409 conflicts
+      // For composite unique constraints, we need to check first and then update or insert
       const { data: existing } = await (supabase
         .from("website_settings") as any)
         .select("id")
         .eq("environment", environment)
+        .eq("route", route)
         .maybeSingle();
 
       if (existing) {
@@ -203,20 +228,44 @@ export function WebsiteSettingsPageClient() {
           .from("website_settings") as any)
           .insert({
             environment: environment,
+            route: route,
             preset_id: presetId,
           });
         
-        if (error) throw error;
+        if (error) {
+          // If insert fails with 409, try update in case record was created between check and insert
+          if (error.code === '23505') {
+            const { data: retryExisting } = await (supabase
+              .from("website_settings") as any)
+              .select("id")
+              .eq("environment", environment)
+              .eq("route", route)
+              .maybeSingle();
+            
+            if (retryExisting) {
+              const { error: updateError } = await (supabase
+                .from("website_settings") as any)
+                .update({ preset_id: presetId })
+                .eq("id", retryExisting.id);
+              
+              if (updateError) throw updateError;
+            } else {
+              throw error;
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       setActivePresetId(presetId);
-      if (environment === activeEnvironment) {
+      if (environment === activeEnvironment && route === activeRoute) {
         setSelectedPresetId(presetId);
       }
       
       toast({
         title: "Preset applied",
-        description: `The preset has been applied to ${environment} environment.`,
+        description: `The preset has been applied to ${environment} environment for ${route === '/' ? 'Landing Page' : 'Outbound Systems'}.`,
       });
     } catch (error) {
       console.error("Error applying preset:", error);
@@ -235,7 +284,7 @@ export function WebsiteSettingsPageClient() {
 
     // If preset is already active, deactivate it
     if (selectedPresetId === activePresetId) {
-      await deactivatePresetFromEnvironment(activeEnvironment);
+      await deactivatePresetFromEnvironment(activeEnvironment, activeRoute);
       return;
     }
 
@@ -247,24 +296,25 @@ export function WebsiteSettingsPageClient() {
     }
 
     // Apply directly for development
-    await applyPresetToEnvironment(selectedPresetId, activeEnvironment);
+    await applyPresetToEnvironment(selectedPresetId, activeEnvironment, activeRoute);
   };
 
-  const deactivatePresetFromEnvironment = async (environment: 'production' | 'development') => {
+  const deactivatePresetFromEnvironment = async (environment: 'production' | 'development', route: '/' | '/outbound-system') => {
     try {
       setIsApplying(true);
       const supabase = createClient();
 
-      // Delete the website_settings entry for this environment
+      // Delete the website_settings entry for this environment and route
       const { error } = await (supabase
         .from("website_settings") as any)
         .delete()
-        .eq("environment", environment);
+        .eq("environment", environment)
+        .eq("route", route);
 
       if (error) throw error;
 
       setActivePresetId(null);
-      if (environment === activeEnvironment) {
+      if (environment === activeEnvironment && route === activeRoute) {
         // Select the first preset if available
         if (presets.length > 0) {
           setSelectedPresetId(presets[0].id);
@@ -275,7 +325,7 @@ export function WebsiteSettingsPageClient() {
       
       toast({
         title: "Preset deactivated",
-        description: `The preset has been deactivated from ${environment} environment.`,
+        description: `The preset has been deactivated from ${environment} environment for ${route === '/' ? 'Landing Page' : 'Outbound Systems'}.`,
       });
     } catch (error) {
       console.error("Error deactivating preset:", error);
@@ -292,7 +342,7 @@ export function WebsiteSettingsPageClient() {
   const handleConfirmProductionApply = async () => {
     if (!pendingPresetId) return;
     setShowProductionConfirm(false);
-    await applyPresetToEnvironment(pendingPresetId, 'production');
+    await applyPresetToEnvironment(pendingPresetId, 'production', activeRoute);
     setPendingPresetId(null);
   };
 
@@ -319,7 +369,7 @@ export function WebsiteSettingsPageClient() {
       // Get current preset data
       const { data: currentPreset } = await (supabase
         .from("website_settings_presets") as any)
-        .select("theme, primary_color_hex, primary_color_h, primary_color_s, primary_color_l, secondary_color_hex, secondary_color_h, secondary_color_s, secondary_color_l, font_family, name")
+        .select("theme, primary_color_hex, primary_color_h, primary_color_s, primary_color_l, secondary_color_hex, secondary_color_h, secondary_color_s, secondary_color_l, font_family, styling_options, name")
         .eq("id", presetId)
         .single();
 
@@ -358,6 +408,13 @@ export function WebsiteSettingsPageClient() {
       // Create duplicate with numbered suffix
       const duplicateName = maxNumber === 1 ? `${baseName} 2` : `${baseName} ${maxNumber}`;
       
+      // Prepare styling_options - default to dots_enabled: false if not present
+      const stylingOptions = currentPreset.styling_options 
+        ? (typeof currentPreset.styling_options === 'string' 
+            ? JSON.parse(currentPreset.styling_options) 
+            : currentPreset.styling_options)
+        : { dots_enabled: false, wave_gradient_enabled: false, noise_texture_enabled: false };
+
       const { data: newPreset, error: createError } = await (supabase
         .from("website_settings_presets") as any)
         .insert({
@@ -372,8 +429,9 @@ export function WebsiteSettingsPageClient() {
           secondary_color_s: currentPreset.secondary_color_s,
           secondary_color_l: currentPreset.secondary_color_l,
           font_family: currentPreset.font_family,
+          styling_options: stylingOptions,
         })
-        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
         .single();
 
       if (createError) throw createError;
@@ -381,7 +439,7 @@ export function WebsiteSettingsPageClient() {
       // Reload presets
       const { data: presetsData } = await (supabase
         .from("website_settings_presets") as any)
-        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
         .order("name", { ascending: true });
 
       if (presetsData) {
@@ -469,7 +527,7 @@ export function WebsiteSettingsPageClient() {
           font_family: fontJson,
           styling_options: stylingOptions,
         })
-        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
         .single();
 
       if (createError) throw createError;
@@ -477,7 +535,7 @@ export function WebsiteSettingsPageClient() {
       // Reload presets
       const { data: presetsData } = await (supabase
         .from("website_settings_presets") as any)
-        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
         .order("name", { ascending: true });
 
       if (presetsData) {
@@ -649,10 +707,10 @@ export function WebsiteSettingsPageClient() {
     try {
       const supabase = createClient();
       
-      // Check if preset is being used by any environment
+      // Check if preset is being used by any environment and route
       const { data: settingsUsingPreset } = await (supabase
         .from("website_settings") as any)
-        .select("environment")
+        .select("environment, route")
         .eq("preset_id", presetId);
 
       // Allow deletion in development even if active, but block in production
@@ -670,13 +728,14 @@ export function WebsiteSettingsPageClient() {
           return;
         }
 
-        // If in development and preset is active, remove it from website_settings first
+        // If in development and preset is active for current route, remove it from website_settings first
         if (activeEnvironment === 'development') {
           await (supabase
             .from("website_settings") as any)
             .delete()
             .eq("preset_id", presetId)
-            .eq("environment", 'development');
+            .eq("environment", 'development')
+            .eq("route", activeRoute);
         }
       }
 
@@ -691,7 +750,7 @@ export function WebsiteSettingsPageClient() {
       // Reload presets
       const { data: presetsData } = await (supabase
         .from("website_settings_presets") as any)
-        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+        .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
         .order("name", { ascending: true });
 
       if (presetsData) {
@@ -771,18 +830,22 @@ export function WebsiteSettingsPageClient() {
               }
 
               // Apply directly for development
-              await applyPresetToEnvironment(presetId, activeEnvironment);
+              await applyPresetToEnvironment(presetId, activeEnvironment, activeRoute);
             }}
             onToggleFavorite={handleToggleFavorite}
             />
           </div>
-          {/* Environment Toggle below Preset Manager */}
-          <div className="p-4 border-t border-border shrink-0">
+          {/* Route Selector and Environment Toggle */}
+          <div className="p-3 border-t border-border shrink-0 space-y-2">
+            <RouteSelector
+              activeRoute={activeRoute}
+              onRouteChange={handleRouteChange}
+            />
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleEnvironmentChange('development')}
                 className={cn(
-                  "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                  "flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   activeEnvironment === 'development'
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -793,7 +856,7 @@ export function WebsiteSettingsPageClient() {
               <button
                 onClick={() => handleEnvironmentChange('production')}
                 className={cn(
-                  "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                  "flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   activeEnvironment === 'production'
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -810,6 +873,7 @@ export function WebsiteSettingsPageClient() {
           <div className="p-6">
             <WebsiteSettings
               environment={activeEnvironment}
+              route={activeRoute}
               selectedPresetId={selectedPresetId}
               renameTrigger={renameTrigger}
               presetNameUpdateTrigger={presetNameUpdateTrigger}
@@ -822,9 +886,9 @@ export function WebsiteSettingsPageClient() {
                   if (activeEnvironment === 'production') {
                     // For production, we'll handle deactivation differently - maybe show a confirmation
                     // For now, just deactivate it
-                    deactivatePresetFromEnvironment(activeEnvironment);
+                    deactivatePresetFromEnvironment(activeEnvironment, activeRoute);
                   } else {
-                    deactivatePresetFromEnvironment(activeEnvironment);
+                    deactivatePresetFromEnvironment(activeEnvironment, activeRoute);
                   }
                   return;
                 }
@@ -837,7 +901,7 @@ export function WebsiteSettingsPageClient() {
                 }
 
                 // Apply directly for development
-                applyPresetToEnvironment(presetId, activeEnvironment);
+                applyPresetToEnvironment(presetId, activeEnvironment, activeRoute);
               }}
               onPresetNameUpdated={(presetId: string, newName: string) => {
                 // Update presets state immediately when name is updated from WebsiteSettings
@@ -860,7 +924,7 @@ export function WebsiteSettingsPageClient() {
                 // Reload presets list
                 const { data: presetsData } = await (supabase
                   .from("website_settings_presets") as any)
-                  .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite")
+                  .select("id, name, primary_color_hex, secondary_color_hex, theme, favorite, created_at")
                   .order("name", { ascending: true });
 
                 if (presetsData) {
@@ -875,6 +939,7 @@ export function WebsiteSettingsPageClient() {
                   .from("website_settings") as any)
                   .select("preset_id")
                   .eq("environment", activeEnvironment)
+                  .eq("route", activeRoute)
                   .maybeSingle();
 
                 if (settings?.preset_id) {

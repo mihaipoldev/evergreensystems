@@ -240,8 +240,9 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
   const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
   
   // Get website settings with preset to fetch styling_options
+  // Filter by route '/' for landing page
   const supabase = await createClient();
-  let dotsEnabled = true; // Default to true if not found
+  let dotsEnabled = false; // Default to false if not found
   let waveGradientEnabled = false; // Default to false if not found
   let noiseTextureEnabled = false; // Default to false if not found
   try {
@@ -254,6 +255,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         )
       `)
       .eq("environment", environment)
+      .eq("route", '/') // Filter by landing page route
       .maybeSingle();
 
     // Extract styling_options from preset
@@ -267,12 +269,13 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
           const stylingOptions = typeof preset.styling_options === 'string' 
             ? JSON.parse(preset.styling_options) 
             : preset.styling_options;
-          dotsEnabled = stylingOptions?.dots_enabled !== false; // Default to true if not present
-          waveGradientEnabled = stylingOptions?.wave_gradient_enabled === true; // Default to false if not present
-          noiseTextureEnabled = stylingOptions?.noise_texture_enabled === true; // Default to false if not present
+          // Only enable if explicitly set to true
+          dotsEnabled = stylingOptions?.dots_enabled === true;
+          waveGradientEnabled = stylingOptions?.wave_gradient_enabled === true;
+          noiseTextureEnabled = stylingOptions?.noise_texture_enabled === true;
         } catch (e) {
-          // If parsing fails, default to true for dots, false for others
-          dotsEnabled = true;
+          // If parsing fails, default to false for all
+          dotsEnabled = false;
           waveGradientEnabled = false;
           noiseTextureEnabled = false;
         }
@@ -413,7 +416,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         return <Value key={section.id} section={section} offerFeatures={(section.features || []) as any} />;
       
       case 'offer':
-        return <Offer key={section.id} section={section} offerFeatures={(section.features || []) as any} />;
+        return <Offer key={section.id} section={section} offerFeatures={(section.features || []) as any} waveGradientEnabled={waveGradientEnabled} />;
       
       case 'testimonials':
         return (
@@ -436,6 +439,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
             key={section.id}
             faqs={section.faqItems || []}
             section={section}
+            waveGradientEnabled={waveGradientEnabled}
           />
         );
       

@@ -31,9 +31,10 @@ type Section = {
 type FAQProps = {
   faqs?: FAQItem[];
   section?: Section;
+  waveGradientEnabled?: boolean;
 };
 
-export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
+export const FAQ = memo(({ faqs = [], section, waveGradientEnabled = false }: FAQProps) => {
   // If no FAQs, don't render the section
   if (!faqs || faqs.length === 0) {
     return null;
@@ -94,7 +95,7 @@ export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
 
   return (
     <section id="faq" className="py-12 md:py-20 relative">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -121,19 +122,23 @@ export const FAQ = memo(({ faqs = [], section }: FAQProps) => {
         >
           <Accordion 
             type="multiple" 
-            className="space-y-3" 
+            className="space-y-0" 
             onValueChange={handleFAQOpen as (value: string[]) => void}
           >
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={faq.id}
                 value={`item-${faq.id}`}
-                className="border border-border/70 rounded-xl md:p-6 px-4 bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60 transition-all duration-100"
+                className={`rounded-xl transition-all duration-100 ${
+                  waveGradientEnabled 
+                    ? 'border-none bg-gradient-to-br from-card/50 via-card/55 to-card/50 hover:border-primary/20 hover:from-card/60 hover:via-card/65 hover:to-card/60' 
+                    : 'bg-card/80 border-none hover:border-primary/30'
+                }`}
               >
-                <AccordionTrigger className="text-left md:text-lg text-base text-foreground md:py-0 py-4 [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:no-underline transition-all">
+                <AccordionTrigger className="text-left md:text-lg text-base text-foreground md:p-6 px-4 py-4 w-full [&>svg]:text-muted-foreground [&>svg:hover]:text-muted-foreground hover:no-underline transition-all cursor-pointer">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="md:pb-0 pb-4 md:pt-3 pt-0 text-md">
+                <AccordionContent className="md:pb-6 pb-4 md:pt-0 pt-0 md:px-6 px-4 text-md">
                   <RichText
                     text={faq.answer}
                     as="div"

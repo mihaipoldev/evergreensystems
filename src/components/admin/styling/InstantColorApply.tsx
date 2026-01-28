@@ -6,12 +6,10 @@ export function InstantColorApply() {
   // Script that runs before React hydrates, using cookies and sessionStorage as fallback
   const scriptContent = `
     (function() {
-      // Check if color was already applied by middleware or AdminColorStyle
-      if (document.getElementById('primary-color-inline') || 
-          document.getElementById('primary-color-blocking') || 
-          document.getElementById('primary-color-script')) {
-        return; // Already applied
-      }
+      console.log('[COLOR DEBUG] InstantColorApply - Starting color restoration');
+      // CRITICAL: Always restore colors from cookies/sessionStorage on page load
+      // This ensures colors persist on refresh, even if server-side styles exist
+      // We'll update or create style tags as needed
       
       // Try to get primary color from cookie first (fastest, available immediately)
       let savedColor = null;
@@ -49,7 +47,10 @@ export function InstantColorApply() {
         }
       } catch (e) {
         // Cookie parsing failed
+        console.log('[COLOR DEBUG] InstantColorApply - Cookie parsing failed:', e);
       }
+      
+      console.log('[COLOR DEBUG] InstantColorApply - Primary color from cookie:', savedColor);
       
       // Fallback to sessionStorage if no cookie
       if (!savedColor) {
@@ -73,8 +74,12 @@ export function InstantColorApply() {
           }
         } catch (e) {
           // sessionStorage not available
+          console.log('[COLOR DEBUG] InstantColorApply - sessionStorage read failed:', e);
         }
       }
+      
+      console.log('[COLOR DEBUG] InstantColorApply - Final primary color:', savedColor);
+      console.log('[COLOR DEBUG] InstantColorApply - Final accent color:', savedAccentColor);
       
       if (savedColor) {
         try {
@@ -84,46 +89,56 @@ export function InstantColorApply() {
           
           if (hslMatch) {
             const [, h, s, l] = hslMatch;
-            // Set brand color variables
+            // Set brand color variables immediately via inline styles
             root.style.setProperty('--brand-h', h, 'important');
             root.style.setProperty('--brand-s', s, 'important');
             root.style.setProperty('--brand-l', l, 'important');
-          }
-          
-          // Also set primary (for backward compatibility)
-          root.style.setProperty('--primary', savedColor, 'important');
-          
-          // Also apply to html element directly
-          var html = document.getElementsByTagName('html')[0];
-          if (html && hslMatch) {
-            const [, h, s, l] = hslMatch;
-            html.style.setProperty('--brand-h', h, 'important');
-            html.style.setProperty('--brand-s', s, 'important');
-            html.style.setProperty('--brand-l', l, 'important');
-            html.style.setProperty('--primary', savedColor, 'important');
-          }
-          
-          // Inject style tag at the very beginning of head with maximum specificity
-          var style = document.createElement('style');
-          style.id = 'primary-color-session';
-          if (hslMatch) {
-            const [, h, s, l] = hslMatch;
-            style.textContent = ':root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:' + h + '!important;--brand-s:' + s + '!important;--brand-l:' + l + '!important;--primary:' + savedColor + '!important;}';
-          } else {
-            style.textContent = ':root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *{--primary:' + savedColor + '!important;}';
-          }
-          
-          // Insert immediately - this must be first in head
-          if (document.head) {
-            if (document.head.firstChild) {
-              document.head.insertBefore(style, document.head.firstChild);
+            root.style.setProperty('--primary', savedColor, 'important');
+            
+            // Also apply to html element directly
+            var html = document.getElementsByTagName('html')[0];
+            if (html) {
+              html.style.setProperty('--brand-h', h, 'important');
+              html.style.setProperty('--brand-s', s, 'important');
+              html.style.setProperty('--brand-l', l, 'important');
+              html.style.setProperty('--primary', savedColor, 'important');
+            }
+            
+            // Update or create style tag - check for existing ones first
+            var existingStyle = document.getElementById('primary-color-session') ||
+                               document.getElementById('primary-color-inline-server') ||
+                               document.getElementById('primary-color-client');
+            
+            // Use maximum specificity to override default CSS
+            var maxSpecificitySelector = 'html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,body.preset-admin,body.preset-admin.dark,body.preset-admin *,body.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *';
+            var styleText = maxSpecificitySelector + '{--brand-h:' + h + '!important;--brand-s:' + s + '!important;--brand-l:' + l + '!important;--primary:' + savedColor + '!important;}';
+            
+            if (existingStyle) {
+              // Update existing style tag
+              console.log('[COLOR DEBUG] InstantColorApply - Updating existing style tag:', existingStyle.id);
+              existingStyle.textContent = styleText;
             } else {
-              document.head.appendChild(style);
+              console.log('[COLOR DEBUG] InstantColorApply - Creating new style tag');
+              // Create new style tag at the very beginning of head
+              var style = document.createElement('style');
+              style.id = 'primary-color-session';
+              style.textContent = styleText;
+              
+              if (document.head) {
+                if (document.head.firstChild) {
+                  document.head.insertBefore(style, document.head.firstChild);
+                } else {
+                  document.head.appendChild(style);
+                }
+              }
             }
           }
         } catch (e) {
           // Error applying color, ignore
+          console.error('[COLOR DEBUG] InstantColorApply - Error applying primary color:', e);
         }
+      } else {
+        console.log('[COLOR DEBUG] InstantColorApply - No saved primary color found');
       }
       
       // Secondary color is not applied dynamically - it comes from CSS defaults in globals.css
@@ -136,52 +151,85 @@ export function InstantColorApply() {
           
           if (accentHslMatch) {
             const [, h, s, l] = accentHslMatch;
-            // Set accent color variables
+            // Set accent color variables immediately via inline styles
             root.style.setProperty('--accent-h', h, 'important');
             root.style.setProperty('--accent-s', s, 'important');
             root.style.setProperty('--accent-l', l, 'important');
             root.style.setProperty('--accent', savedAccentColor, 'important');
-          }
-          
-          // Also apply to html element directly
-          var html = document.getElementsByTagName('html')[0];
-          if (html && accentHslMatch) {
-            const [, h, s, l] = accentHslMatch;
-            html.style.setProperty('--accent-h', h, 'important');
-            html.style.setProperty('--accent-s', s, 'important');
-            html.style.setProperty('--accent-l', l, 'important');
-            html.style.setProperty('--accent', savedAccentColor, 'important');
-          }
-          
-          // Inject style tag for accent color
-          var accentStyle = document.createElement('style');
-          accentStyle.id = 'accent-color-session';
-          if (accentHslMatch) {
-            const [, h, s, l] = accentHslMatch;
-            accentStyle.textContent = ':root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--accent-h:' + h + '!important;--accent-s:' + s + '!important;--accent-l:' + l + '!important;--accent:' + savedAccentColor + '!important;}';
-          } else {
-            accentStyle.textContent = ':root,:root *,html,html *,body,body *,.preset-admin,.preset-admin *{--accent:' + savedAccentColor + '!important;}';
-          }
-          
-          // Insert after primary color style
-          if (document.head) {
-            const primaryStyle = document.getElementById('primary-color-session');
-            if (primaryStyle && primaryStyle.nextSibling) {
-              document.head.insertBefore(accentStyle, primaryStyle.nextSibling);
-            } else if (primaryStyle) {
-              document.head.insertBefore(accentStyle, primaryStyle);
+            
+            // Also apply to html element directly
+            var html = document.getElementsByTagName('html')[0];
+            if (html) {
+              html.style.setProperty('--accent-h', h, 'important');
+              html.style.setProperty('--accent-s', s, 'important');
+              html.style.setProperty('--accent-l', l, 'important');
+              html.style.setProperty('--accent', savedAccentColor, 'important');
+            }
+            
+            // Update or create accent color style tag
+            var existingAccentStyle = document.getElementById('accent-color-session') ||
+                                     document.getElementById('accent-color-inline-server') ||
+                                     document.getElementById('accent-color-client');
+            
+            // Use maximum specificity to override default CSS
+            var maxSpecificitySelector = 'html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,body.preset-admin,body.preset-admin.dark,body.preset-admin *,body.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *';
+            var accentStyleText = maxSpecificitySelector + '{--accent-h:' + h + '!important;--accent-s:' + s + '!important;--accent-l:' + l + '!important;--accent:' + savedAccentColor + '!important;}';
+            
+            if (existingAccentStyle) {
+              // Update existing accent style tag
+              console.log('[COLOR DEBUG] InstantColorApply - Updating existing accent style tag:', existingAccentStyle.id);
+              existingAccentStyle.textContent = accentStyleText;
             } else {
-              if (document.head.firstChild) {
-                document.head.insertBefore(accentStyle, document.head.firstChild);
-              } else {
-                document.head.appendChild(accentStyle);
+              console.log('[COLOR DEBUG] InstantColorApply - Creating new accent style tag');
+              // Create new accent style tag
+              var accentStyle = document.createElement('style');
+              accentStyle.id = 'accent-color-session';
+              accentStyle.textContent = accentStyleText;
+              
+              // Insert after primary color style
+              if (document.head) {
+                const primaryStyle = document.getElementById('primary-color-session') ||
+                                    document.getElementById('primary-color-inline-server') ||
+                                    document.getElementById('primary-color-client');
+                if (primaryStyle && primaryStyle.nextSibling) {
+                  document.head.insertBefore(accentStyle, primaryStyle.nextSibling);
+                } else if (primaryStyle) {
+                  document.head.insertBefore(accentStyle, primaryStyle);
+                } else {
+                  if (document.head.firstChild) {
+                    document.head.insertBefore(accentStyle, document.head.firstChild);
+                  } else {
+                    document.head.appendChild(accentStyle);
+                  }
+                }
               }
             }
           }
         } catch (e) {
           // Error applying accent color, ignore
+          console.error('[COLOR DEBUG] InstantColorApply - Error applying accent color:', e);
         }
+      } else {
+        console.log('[COLOR DEBUG] InstantColorApply - No saved accent color found');
       }
+      // Log computed CSS values to verify colors are applied
+      try {
+        var computedStyle = window.getComputedStyle(document.documentElement);
+        var brandH = computedStyle.getPropertyValue('--brand-h').trim();
+        var brandS = computedStyle.getPropertyValue('--brand-s').trim();
+        var brandL = computedStyle.getPropertyValue('--brand-l').trim();
+        var primary = computedStyle.getPropertyValue('--primary').trim();
+        console.log('[COLOR DEBUG] InstantColorApply - Computed CSS values:', {
+          '--brand-h': brandH,
+          '--brand-s': brandS,
+          '--brand-l': brandL,
+          '--primary': primary
+        });
+      } catch (e) {
+        console.log('[COLOR DEBUG] InstantColorApply - Could not read computed styles:', e);
+      }
+      
+      console.log('[COLOR DEBUG] InstantColorApply - Color restoration complete');
     })();
   `;
 

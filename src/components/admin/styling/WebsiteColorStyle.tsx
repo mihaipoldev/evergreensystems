@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 
 export async function WebsiteColorStyle() {
   // ALWAYS check database first - cookies are just for optimization
@@ -13,6 +14,18 @@ export async function WebsiteColorStyle() {
   
   // Determine environment based on NODE_ENV
   const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
+  
+  // Determine route from headers
+  let route: '/' | '/outbound-system' = '/';
+  try {
+    const headersList = await headers();
+    const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
+    if (pathname.includes("/outbound-system")) {
+      route = '/outbound-system';
+    }
+  } catch {
+    // Default to landing page if headers unavailable
+  }
   
   // Get website settings with preset join (public read access, no auth required)
   const { data: settings } = await (supabase
@@ -29,6 +42,7 @@ export async function WebsiteColorStyle() {
       )
     `)
     .eq("environment", environment)
+    .eq("route", route)
     .maybeSingle();
 
   let primaryColor = null;
@@ -61,7 +75,7 @@ export async function WebsiteColorStyle() {
   }
 
   if (primaryColor || secondaryColor) {
-    return renderColorScript(primaryColor, secondaryColor);
+    return renderColorScript(primaryColor, secondaryColor, route);
   }
 
   return null;
@@ -69,7 +83,8 @@ export async function WebsiteColorStyle() {
 
 function renderColorScript(
   primaryColor: { hsl_h: number; hsl_s: number; hsl_l: number } | null,
-  secondaryColor: { hsl_h: number; hsl_s: number; hsl_l: number } | null
+  secondaryColor: { hsl_h: number; hsl_s: number; hsl_l: number } | null,
+  route: '/' | '/outbound-system' = '/'
 ) {
   // Return style tag - Next.js will move it to head automatically
   // Apply ONLY to landing page preset - NOT to :root to avoid affecting admin
@@ -92,7 +107,9 @@ function renderColorScript(
     return null;
   }
   
-  const cssContent = `.preset-landing-page,.preset-landing-page *,.preset-landing-page.dark,.preset-landing-page.dark *{${cssParts.join('')}}`;
+  // Determine which preset class to target based on route
+  const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
+  const cssContent = `.${presetClass},.${presetClass} *,.${presetClass}.dark,.${presetClass}.dark *{${cssParts.join('')}}`;
   
   return (
     <style

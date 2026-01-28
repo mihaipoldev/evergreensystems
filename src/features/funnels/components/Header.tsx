@@ -1,11 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
 
+const SCROLL_THRESHOLD = 12;
+
 const Header = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > SCROLL_THRESHOLD);
+    };
+    handleScroll(); // initial check (e.g. load with hash)
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Helper function to handle smooth scroll for anchor links
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
@@ -36,7 +50,11 @@ const Header = () => {
   return (
     <header className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8">
       <div className="w-full md:max-w-2xl md:mx-auto">
-        <nav className="bg-muted/70 backdrop-blur-lg rounded-none md:rounded-full p-3 md:p-2 md:shadow-sm border-b md:border border-white/20 md:border-white/20 flex items-center justify-between gap-6">
+        <nav
+          className={`bg-background/70 backdrop-blur-lg rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-shadow duration-200 ${
+            isScrolled ? "md:shadow-sm" : "md:shadow-none"
+          }`}
+        >
           {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link href="/" className="ml-3 text-lg font-bold text-primary">

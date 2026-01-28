@@ -139,6 +139,7 @@ export interface Database {
           id: string; // UUID
           environment: string; // 'production' or 'development'
           preset_id: string | null;
+          route: string | null; // Route path (e.g., '/', '/outbound-system')
           created_at: string;
           updated_at: string;
         };
@@ -146,6 +147,7 @@ export interface Database {
           id?: string; // UUID
           environment: string; // 'production' or 'development'
           preset_id?: string | null;
+          route?: string | null; // Route path (e.g., '/', '/outbound-system')
           created_at?: string;
           updated_at?: string;
         };
@@ -153,6 +155,7 @@ export interface Database {
           id?: string; // UUID
           environment?: string; // 'production' or 'development'
           preset_id?: string | null;
+          route?: string | null; // Route path (e.g., '/', '/outbound-system')
           created_at?: string;
           updated_at?: string;
         };

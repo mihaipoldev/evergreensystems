@@ -90,9 +90,7 @@ Heading font: Select ONE font ID that matches the preset's personality. Be thoug
 Body font: Select ONE font ID that pairs beautifully with your heading font. Ensure excellent readability. Create interesting but harmonious pairings - serif headings with sans-serif body, or contrasting sans-serif styles. Avoid matching the heading and body fonts unless it truly fits the design.
 
 STYLING OPTIONS (choose thoughtfully based on preset style):
-- dots_enabled: 
-  * true for: vibrant presets, modern tech-focused designs, playful/bold aesthetics
-  * false for: calm/minimal presets, elegant/sophisticated designs, traditional aesthetics
+- dots_enabled: ALWAYS set to false. Do not enable dots decoration.
 - wave_gradient_enabled:
   * true for: very vibrant presets with bold colors, modern/experimental designs
   * false for: calm presets, minimal designs, professional/corporate aesthetics
@@ -115,7 +113,7 @@ CRITICAL: You MUST return ONLY a valid JSON object with this EXACT structure. No
   "theme": "light" or "dark",
   "heading_font": "font-id-from-list",
   "body_font": "font-id-from-list",
-  "dots_enabled": true or false,
+  "dots_enabled": false (always),
   "wave_gradient_enabled": true or false,
   "noise_texture_enabled": true or false,
   "name": "Preset Name Here"
@@ -231,7 +229,8 @@ CRITICAL: You MUST return ONLY a valid JSON object with this EXACT structure. No
     }
 
     // Validate boolean fields
-    presetData.dots_enabled = Boolean(presetData.dots_enabled);
+    // Always set dots_enabled to false (regardless of AI response)
+    presetData.dots_enabled = false;
     presetData.wave_gradient_enabled = Boolean(presetData.wave_gradient_enabled);
     presetData.noise_texture_enabled = Boolean(presetData.noise_texture_enabled);
 
