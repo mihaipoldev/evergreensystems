@@ -13,6 +13,8 @@ export type Run = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  execution_id?: string | null;
+  execution_url?: string | null;
   // Extended fields from joins (not in DB)
   workflow_name?: string | null;
   workflow_label?: string | null;

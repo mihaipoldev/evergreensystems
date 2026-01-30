@@ -35,6 +35,9 @@ type FAQProps = {
 };
 
 export const FAQ = memo(({ faqs = [], section, waveGradientEnabled = false }: FAQProps) => {
+  // Track which FAQs were previously open to detect newly opened ones (must be before any return)
+  const prevOpenRef = React.useRef<Set<string>>(new Set());
+
   // If no FAQs, don't render the section
   if (!faqs || faqs.length === 0) {
     return null;
@@ -42,9 +45,6 @@ export const FAQ = memo(({ faqs = [], section, waveGradientEnabled = false }: FA
 
   // Use section title if available
   const title = section?.title || 'Frequently asked [[questions]]';
-
-  // Track which FAQs were previously open to detect newly opened ones
-  const prevOpenRef = React.useRef<Set<string>>(new Set());
 
   // Handle FAQ click tracking
   const handleFAQOpen = (values: string[]) => {

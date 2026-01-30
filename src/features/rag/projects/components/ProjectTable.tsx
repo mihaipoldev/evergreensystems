@@ -212,7 +212,7 @@ export function ProjectTable({
                       </span>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="pt-2 space-y-2">
+                      <div className="pt-1 space-y-2">
                         {verdictProjects.map((project) => {
                           const projectType = project.project_type_id ? projectTypeMap.get(project.project_type_id) : null;
                           const projectIndex = projects.findIndex(p => p.id === project.id);

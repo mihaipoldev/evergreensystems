@@ -163,7 +163,7 @@ export function AnalyticsContent() {
     }
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [scope]);
 
   // Only show full skeleton on initial load, not on scope changes

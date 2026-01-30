@@ -177,7 +177,7 @@ export function BulkGenerateReportModal({
       const workflowIds = junctionData.map((item: any) => item.workflow_id);
       const { data: workflowsData, error: workflowsError } = await supabase
         .from("workflows")
-        .select("id, name, label, description, icon, enabled, estimated_cost, estimated_time_minutes, input_schema, default_ai_model, knowledge_base_target, target_knowledge_base_id, created_at, updated_at")
+        .select("id, slug, name, description, icon, enabled, estimated_cost, estimated_time_minutes, input_schema, default_ai_model, knowledge_base_target, target_knowledge_base_id, created_at, updated_at")
         .in("id", workflowIds)
         .eq("enabled", true);
 
@@ -205,8 +205,8 @@ export function BulkGenerateReportModal({
           if (workflow) {
             return {
               id: workflow.id,
-              name: workflow.name,
-              label: workflow.label || workflow.name,
+              slug: workflow.slug,
+              name: workflow.name || workflow.slug,
               description: workflow.description,
               icon: workflow.icon,
               estimated_cost: workflow.estimated_cost,

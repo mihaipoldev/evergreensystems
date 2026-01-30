@@ -22,8 +22,8 @@ type ReportData = {
     }[] | null;
     workflows: {
       id: string;
+      slug: string;
       name: string;
-      label: string;
     } | null;
   } | null;
 } | null;
@@ -63,8 +63,8 @@ export async function GET(
           ),
           workflows (
             id,
-            name,
-            label
+            slug,
+            name
           )
         )
       `)
@@ -92,8 +92,8 @@ export async function GET(
             ),
             workflows (
               id,
-              name,
-              label
+              slug,
+              name
             )
           )
         `)
@@ -127,8 +127,8 @@ export async function GET(
             ),
             workflows (
               id,
-              name,
-              label
+              slug,
+              name
             )
           )
         `)
@@ -153,8 +153,8 @@ export async function GET(
               ),
               workflows (
                 id,
-                name,
-                label
+                slug,
+                name
               )
             )
           `)
@@ -191,8 +191,8 @@ export async function GET(
       run: data.rag_runs ? {
         id: data.rag_runs.id,
         workflow_id: data.rag_runs.workflow_id,
-        workflow_name: data.rag_runs.workflows?.name || null,
-        workflow_label: data.rag_runs.workflows?.label || null,
+        workflow_name: data.rag_runs.workflows?.slug || null,
+        workflow_label: data.rag_runs.workflows?.name || null,
         status: data.rag_runs.status,
         knowledge_base_id: data.rag_runs.knowledge_base_id,
         created_at: data.rag_runs.created_at,

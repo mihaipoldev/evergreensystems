@@ -43,7 +43,7 @@ export default async function StandaloneReportPage({ params }: ReportPageProps) 
   }
 
   // Build sections array dynamically to include lead_gen_scoring, research_links, and sources_used if present
-  let allSections = [...sections];
+  const allSections = [...sections];
   if (reportData.data.lead_gen_scoring) {
     allSections.push({ id: "lead-gen-scoring", number: "11", title: "Lead Gen Scoring" });
   }

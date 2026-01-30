@@ -55,7 +55,7 @@ export async function retrieveRelevantChunks(
 ): Promise<ChunkResult[]> {
   // Try regular client first to respect RLS
   const { createClient } = await import('@/lib/supabase/server');
-  let supabase = await createClient();
+  const supabase = await createClient();
 
   // Convert embedding array to PostgreSQL vector format string
   // Format: '[0.1,0.2,0.3,...]'
@@ -150,7 +150,7 @@ export async function retrieveRelevantChunksForProject(
 ): Promise<ChunkResult[]> {
   // Try regular client first to respect RLS
   const { createClient } = await import('@/lib/supabase/server');
-  let supabase = await createClient();
+  const supabase = await createClient();
 
   // Convert embedding array to PostgreSQL vector format string
   // Format: '[0.1,0.2,0.3,...]'
@@ -411,7 +411,7 @@ export async function retrieveRelevantChunksForKnowledgeBase(
   limit: number = 15
 ): Promise<ChunkResult[]> {
   const { createClient, createServiceRoleClient } = await import('@/lib/supabase/server');
-  let supabase = await createClient();
+  const supabase = await createClient();
   const embeddingString = `[${queryEmbedding.join(',')}]`;
 
   let data, error;

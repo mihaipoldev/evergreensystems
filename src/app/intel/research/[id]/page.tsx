@@ -29,19 +29,19 @@ export default async function RunDetailPage({ params }: RunDetailPageProps) {
   const { data: workflowData } = run.workflow_id
     ? await (supabase
         .from("workflows") as any)
-        .select("name, label")
+        .select("slug, name")
         .eq("id", run.workflow_id)
         .single()
     : { data: null };
 
   const kbDataTyped = kbData as { name: string } | null;
-  const workflowDataTyped = workflowData as { name: string; label: string | null } | null;
+  const workflowDataTyped = workflowData as { slug: string; name: string } | null;
 
   const runWithExtras = {
     ...run,
     knowledge_base_name: kbDataTyped?.name || null,
-    workflow_name: workflowDataTyped?.name || null,
-    workflow_label: workflowDataTyped?.label || null,
+    workflow_name: workflowDataTyped?.slug || null,
+    workflow_label: workflowDataTyped?.name || null,
   };
 
   return <RunDetailClient run={runWithExtras} />;

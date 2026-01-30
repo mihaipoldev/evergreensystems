@@ -282,7 +282,7 @@ export function ProjectDetailClient({
             {projectTypeConfig.tabs.map((tab) => (
               <TabsContent key={tab.id} value={tab.id} className="mt-0">
                 {tab.id === "documents" && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Document Stats - Always 4 cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       <StatCard
@@ -321,7 +321,7 @@ export function ProjectDetailClient({
                   </div>
                 )}
                 {tab.id === "runs" && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Research Stats - 4 cards for niche projects */}
                     {isNicheProject ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -16,6 +16,7 @@ import {
   ConcernsOpportunitiesSection,
   IndividualScoresSection,
 } from "./sections";
+import { SourcesUsedSection } from "../niche/sections";
 
 interface NicheEvaluationProps {
   data: ReportData;
@@ -23,50 +24,24 @@ interface NicheEvaluationProps {
 }
 
 export const NicheEvaluation = ({ data, reportId }: NicheEvaluationProps) => {
-  // Extract evaluation data - new structure is an array, get first element
+  // Evaluation lives in data.data.evaluation (new format) or data.data[0] / data.data (legacy)
   const dataAny = data.data as any;
-  
-  console.log("=== NicheEvaluation Debug ===");
-  console.log("1. Full data object:", data);
-  console.log("2. data.data:", dataAny);
-  console.log("3. Is Array?", Array.isArray(dataAny));
-  
-  // Handle array structure - get first element if it's an array
-  const evaluationData = Array.isArray(dataAny) ? dataAny[0] : (dataAny.evaluation || dataAny);
-  console.log("4. evaluationData:", evaluationData);
-  
-  // Get score_details from evaluation data
+  const evaluationData = Array.isArray(dataAny) ? dataAny[0] : (dataAny?.evaluation ?? dataAny);
+
   const scoreDetails = evaluationData?.score_details;
-  console.log("5. scoreDetails:", scoreDetails);
-  
-  // Get verdict data from evaluationData.verdict
   const verdict = evaluationData?.verdict;
-  console.log("6. verdict:", verdict);
   const verdictLabel = verdict?.label || "";
   const verdictScore = verdict?.score || 0;
   const verdictPriority = verdict?.priority || 0;
   const verdictRecommendation = verdict?.recommendation || "";
-  
-  // Get confidence fields from evaluationData.confidence object
+
   const confidenceObj = evaluationData?.confidence;
-  console.log("7. confidenceObj:", confidenceObj);
   const avgConfidence = confidenceObj?.average || 0;
   const confidenceLevel = confidenceObj?.level || "";
   const confidenceDescription = confidenceObj?.description || "Agreement level across AI evaluators";
-  
-  console.log("8. Final values:");
-  console.log("   - avgConfidence:", avgConfidence);
-  console.log("   - confidenceLevel:", confidenceLevel);
-  console.log("   - confidenceDescription:", confidenceDescription);
-  
-  // Format confidence display - show percentage if we have numeric confidence
+
   const confidence = avgConfidence > 0 ? `${avgConfidence}%` : "—";
-  console.log("   - confidence (formatted):", confidence);
-  
-  // Get score_spread from score_details
   const stdDev = scoreDetails?.score_spread ?? 0;
-  console.log("   - stdDev (score_spread):", stdDev);
-  console.log("=== End Debug ===");
 
   // Verdict configuration
   const verdictConfig = {
@@ -170,6 +145,11 @@ export const NicheEvaluation = ({ data, reportId }: NicheEvaluationProps) => {
       <SynthesisSection data={data} sectionNumber="01" />
       <ConcernsOpportunitiesSection data={data} sectionNumber="02" />
       <IndividualScoresSection data={data} sectionNumber="03" />
+
+      {/* Sources Used - same as full niche report */}
+      {data.meta.sources_used && data.meta.sources_used.length > 0 && (
+        <SourcesUsedSection sources={data.meta.sources_used} reportId={reportId} />
+      )}
     </>
   );
 };

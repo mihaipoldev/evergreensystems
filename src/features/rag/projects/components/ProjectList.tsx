@@ -532,6 +532,7 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
       <ProjectModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
+        initialProjectTypeId={projectTypeName === "niche" ? (selectedProjectTypeId ?? undefined) : undefined}
         onSuccess={() => {
           router.refresh();
         }}

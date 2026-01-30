@@ -107,7 +107,7 @@ export function WorkflowActionsMenu({
       <DeleteConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        entityName={workflow.label}
+        entityName={workflow.name}
         entityType="workflow"
         onConfirm={handleDelete}
         isDeleting={isDeleting}

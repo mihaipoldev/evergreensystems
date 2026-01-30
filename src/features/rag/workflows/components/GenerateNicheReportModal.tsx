@@ -295,7 +295,7 @@ export function GenerateNicheReportModal({
       }
 
       const workflow = workflows.find((w) => w.id === selectedWorkflow);
-      toast.success(`Workflow "${workflow?.label || 'Unknown'}" started successfully`);
+      toast.success(`Workflow "${workflow?.name || 'Unknown'}" started successfully`);
       
       // Close modal - the FloatingProgressIndicator will show progress
       onOpenChange(false);

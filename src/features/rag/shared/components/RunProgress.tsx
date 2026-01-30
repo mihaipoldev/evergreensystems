@@ -61,6 +61,16 @@ export function RunProgress({
   // Get status color class using utility
   const statusTextColor = getRunStatusColorClasses(status);
 
+  const progressBarClasses = cn("h-1.5", {
+    "[&>div]:bg-blue-600": effectiveStatusColor === "blue-600",
+    "[&>div]:bg-orange-600": effectiveStatusColor === "orange-600",
+    "[&>div]:bg-red-600": effectiveStatusColor === "red-600",
+    "[&>div]:bg-green-600": effectiveStatusColor === "green-600",
+    "[&>div]:bg-yellow-600": effectiveStatusColor === "yellow-600",
+    "[&>div]:bg-purple-600": effectiveStatusColor === "purple-600",
+    "[&>div]:bg-muted": effectiveStatusColor === "muted",
+  });
+
   return (
     <div className={cn("w-44 shrink-0 pr-8", className)}>
       <Tooltip>
@@ -73,36 +83,13 @@ export function RunProgress({
               )}
             </div>
             {(status !== "complete" && status !== "failed" && totalSteps > 0) && (
-              <Progress 
-                value={progress} 
-                className={cn("h-1.5", {
-                  "[&>div]:bg-blue-600": effectiveStatusColor === "blue-600",
-                  "[&>div]:bg-orange-600": effectiveStatusColor === "orange-600",
-                  "[&>div]:bg-red-600": effectiveStatusColor === "red-600",
-                  "[&>div]:bg-green-600": effectiveStatusColor === "green-600",
-                  "[&>div]:bg-yellow-600": effectiveStatusColor === "yellow-600",
-                  "[&>div]:bg-purple-600": effectiveStatusColor === "purple-600",
-                  "[&>div]:bg-muted": effectiveStatusColor === "muted",
-                })} 
-              />
+              <Progress value={progress} className={progressBarClasses} />
             )}
-            {(status === "complete" || status === "failed") && totalSteps > 0 && (
-              <Progress 
-                value={status === "complete" ? 100 : 0} 
-                className={cn(
-                  "h-1.5",
-                  {
-                    "[&>div]:bg-blue-600": effectiveStatusColor === "blue-600",
-                    "[&>div]:bg-orange-600": effectiveStatusColor === "orange-600",
-                    "[&>div]:bg-red-600": effectiveStatusColor === "red-600",
-                    "[&>div]:bg-green-600": effectiveStatusColor === "green-600",
-                    "[&>div]:bg-yellow-600": effectiveStatusColor === "yellow-600",
-                    "[&>div]:bg-purple-600": effectiveStatusColor === "purple-600",
-                    "[&>div]:bg-muted": effectiveStatusColor === "muted",
-                  },
-                  status === "complete" && "opacity-60"
-                )} 
-              />
+            {status === "complete" && totalSteps > 0 && (
+              <Progress value={100} className={cn(progressBarClasses, "opacity-60")} />
+            )}
+            {status === "failed" && (
+              <Progress value={100} className={progressBarClasses} />
             )}
           </div>
         </TooltipTrigger>

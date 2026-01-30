@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -101,7 +102,7 @@
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 95%;
 
-    --border: 0 0% 16%;
+    --border: 0 0% 22%;
     --input: 0 0% 22%;
     --input-background: 0 0% 10%;
     --ring: 0 0% 60.1%;
@@ -201,7 +202,7 @@
     --popover-foreground: 0 0% 95%;
 
     --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted-foreground: 0 0% 75%;
 
     --accent: 0 0% 16%;
     --accent-foreground: 0 0% 95%;
@@ -534,6 +535,43 @@
 /* Set it on :root first so it's available before Next.js sets it */
 :root {
   --font-geist-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* JSON/code textarea – JetBrains Mono + fallbacks (shared JsonTextarea) */
+.font-mono-code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+}
+
+/* JSON textarea – caret (cursor) uses foreground */
+textarea[data-json-textarea],
+textarea.json-textarea-fg {
+  caret-color: hsl(var(--foreground));
+}
+
+/* CodeMirror 6 (JsonCodeEditor) – transparent bg; do NOT set color so our HighlightStyle colors show */
+[data-json-code-editor] .cm-editor {
+  background: transparent !important;
+}
+[data-json-code-editor] .cm-editor,
+[data-json-code-editor] .cm-scroller,
+[data-json-code-editor] .cm-content {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+[data-json-code-editor] .cm-editor.cm-focused {
+  outline: none;
+}
+
+/* JSON code editor – caret (cursor) uses foreground */
+[data-json-code-editor] .cm-cursor {
+  border-left-color: hsl(var(--foreground)) !important;
+}
+
+/* JSON code editor – selection uses primary tint */
+[data-json-code-editor] .cm-selectionBackground,
+[data-json-code-editor] .cm-content ::selection {
+  background-color: hsl(var(--primary) / 0.25) !important;
 }
 
 /* Also set on html.preset-admin to ensure it's always available */
@@ -988,26 +1026,34 @@ input[type="password"]:-webkit-autofill:active {
   overflow: hidden;
 }
 
-/* Code Editor Fixes - Fix cursor alignment and font rendering */
-.w-tc-editor textarea,
-.w-tc-editor pre {
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+/* Code Editor (@uiw/react-textarea-code-editor) - monospace + selection alignment
+   Textarea and highlight layer (pre/code) must have identical font metrics or
+   selection and cursor will be misaligned. Use explicit font-size and same
+   font on both. */
+.w-tc-editor,
+.w-tc-editor .w-tc-editor-text,
+.w-tc-editor .w-tc-editor-preview,
+.w-tc-editor .w-tc-editor-preview pre,
+.w-tc-editor .w-tc-editor-preview pre code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0 !important;
   font-feature-settings: normal !important;
   font-variant-ligatures: none !important;
-  letter-spacing: 0 !important;
-  line-height: 1.5 !important;
   tab-size: 2 !important;
   -moz-tab-size: 2 !important;
+  box-sizing: border-box !important;
 }
 
-.w-tc-editor textarea {
+.w-tc-editor .w-tc-editor-text {
   caret-color: hsl(var(--foreground));
 }
 
-/* Ensure textarea and pre have matching font metrics for cursor alignment */
-.w-tc-editor pre code {
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
-  letter-spacing: 0 !important;
+/* Keep preview pre/code padding in sync with textarea (library uses same padding on both via inline styles; ensure pre doesn’t add extra spacing) */
+.w-tc-editor .w-tc-editor-preview pre {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Sidebar scrollbar - only show when scrolling, not on hover */
@@ -1092,7 +1138,20 @@ input[type="password"]:-webkit-autofill:active {
 
   html.preset-admin .font-mono-code,
   html.preset-admin .font-mono-code * {
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Force foreground text color on JSON textareas - highest specificity */
+  html.preset-admin textarea.font-mono-code,
+  html.preset-admin textarea[data-json-textarea],
+  html.preset-admin textarea.json-textarea-fg,
+  textarea.font-mono-code,
+  textarea[data-json-textarea],
+  textarea.json-textarea-fg {
+    color: hsl(var(--foreground)) !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    caret-color: hsl(var(--foreground));
   }
 
   /* RAG Drawer z-index override - must appear above modals (z-[100]) */

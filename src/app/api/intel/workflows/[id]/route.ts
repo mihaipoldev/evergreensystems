@@ -58,7 +58,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, label, description, icon, estimated_cost, estimated_time_minutes, default_ai_model, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
+    const { slug, name, description, icon, estimated_cost, estimated_time_minutes, default_ai_model, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
 
     // Validate default_ai_model if provided
     if (default_ai_model !== undefined) {
@@ -89,8 +89,8 @@ export async function PUT(
     }
 
     const updateData: Record<string, any> = {};
+    if (slug !== undefined) updateData.slug = slug;
     if (name !== undefined) updateData.name = name;
-    if (label !== undefined) updateData.label = label;
     if (description !== undefined) updateData.description = description || null;
     if (icon !== undefined) updateData.icon = icon || null;
     if (estimated_cost !== undefined) updateData.estimated_cost = estimated_cost !== null ? estimated_cost : null;
@@ -101,18 +101,18 @@ export async function PUT(
     if (knowledge_base_target !== undefined) updateData.knowledge_base_target = knowledge_base_target;
     if (target_knowledge_base_id !== undefined) updateData.target_knowledge_base_id = target_knowledge_base_id || null;
 
-    // If name is being updated, check for uniqueness
-    if (name !== undefined) {
+    // If slug is being updated, check for uniqueness
+    if (slug !== undefined) {
       const { data: existing } = await adminSupabase
         .from("workflows")
         .select("id")
-        .eq("name", name)
+        .eq("slug", slug)
         .neq("id", id)
         .single();
 
       if (existing) {
         return NextResponse.json(
-          { error: "A workflow with this name already exists" },
+          { error: "A workflow with this slug already exists" },
           { status: 400 }
         );
       }

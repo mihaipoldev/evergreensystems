@@ -20,12 +20,47 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
     return current ?? defaultValue;
   };
 
-  // Check if this is a niche evaluation report by checking for verdict and score_details at root
-  const isEvaluationReport = outputJson.verdict && outputJson.score_details && !outputJson.meta && !outputJson.niche_profile;
-  
-  if (isEvaluationReport) {
-    // For niche evaluation, return a minimal ReportData structure
-    // The actual evaluation data will be in data.evaluation
+  // New niche evaluation format: array [{ meta, data }] or single { meta, data } with evaluation inside data
+  const firstElement = Array.isArray(outputJson) && outputJson.length > 0 ? outputJson[0] : outputJson;
+  const evaluationPayload = firstElement?.meta && firstElement?.data && firstElement.data?.verdict
+    ? firstElement
+    : outputJson?.meta && outputJson?.data && outputJson.data?.verdict
+      ? outputJson
+      : null;
+
+  if (evaluationPayload) {
+    const meta = evaluationPayload.meta || {};
+    const innerData = evaluationPayload.data || {};
+    return {
+      meta: {
+        knowledge_base: meta.knowledge_base || "niche_fit_evaluation",
+        mode: meta.mode || "niche_fit_evaluation",
+        confidence: typeof meta.confidence === 'number' ? meta.confidence : 0,
+        generated_at: meta.generated_at || (typeof innerData.evaluation_timestamp === 'string' ? innerData.evaluation_timestamp.split('T')[0] : undefined) || new Date().toISOString().split('T')[0],
+        sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
+        input: meta.input
+          ? {
+              niche_name: meta.input.niche_name ?? "",
+              geo: meta.input.geo ?? "",
+              notes: meta.input.notes,
+              ai_model: meta.input.ai_model,
+            }
+          : {
+              niche_name: innerData.niche_name ?? "",
+              geo: "",
+              notes: undefined,
+              ai_model: undefined,
+            },
+      } as any,
+      data: {
+        evaluation: innerData,
+      } as any,
+    };
+  }
+
+  // Legacy niche evaluation: verdict and score_details at root, no meta
+  const isLegacyEvaluationReport = outputJson.verdict && outputJson.score_details && !outputJson.meta && !outputJson.niche_profile;
+  if (isLegacyEvaluationReport) {
     return {
       meta: {
         knowledge_base: "unknown",
@@ -38,7 +73,7 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
         },
       },
       data: {
-        evaluation: outputJson, // Pass the entire evaluation object
+        evaluation: outputJson,
       } as any,
     };
   }

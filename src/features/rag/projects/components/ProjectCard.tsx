@@ -52,7 +52,7 @@ export function ProjectCard({
   const statusColorClass = statusColors[project.status] || statusColors.draft;
 
   return (
-    <Card className="flex flex-col h-full border-none shadow-card-light hover:shadow-card hover:bg-card/70 transition-all duration-300 overflow-hidden">
+    <Card className="flex flex-col h-full border-none hover:bg-card/70 transition-all duration-300 overflow-hidden">
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-4 py-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">

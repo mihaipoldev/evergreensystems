@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
     if (search && search.trim() !== "") {
       const searchPattern = `%${search.trim()}%`;
-      query = query.or(`name.ilike.${searchPattern},label.ilike.${searchPattern}`);
+      query = query.or(`slug.ilike.${searchPattern},name.ilike.${searchPattern}`);
     }
 
     const { data, error } = await query.order("created_at", { ascending: false });
@@ -64,11 +64,11 @@ export async function POST(request: Request) {
     const adminSupabase = createServiceRoleClient();
 
     const body = await request.json();
-    const { name, label, description, icon, estimated_cost, estimated_time_minutes, default_ai_model, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
+    const { slug, name, description, icon, estimated_cost, estimated_time_minutes, default_ai_model, input_schema, enabled, knowledge_base_target, target_knowledge_base_id } = body;
 
-    if (!name || !label) {
+    if (!slug || !name) {
       return NextResponse.json(
-        { error: "name and label are required" },
+        { error: "slug and name are required" },
         { status: 400 }
       );
     }
@@ -99,16 +99,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if name already exists
+    // Check if slug already exists
     const { data: existing } = await adminSupabase
       .from("workflows")
       .select("id")
-      .eq("name", name)
+      .eq("slug", slug)
       .single();
 
     if (existing) {
       return NextResponse.json(
-        { error: "A workflow with this name already exists" },
+        { error: "A workflow with this slug already exists" },
         { status: 400 }
       );
     }
@@ -116,8 +116,8 @@ export async function POST(request: Request) {
     const { data, error } = await (adminSupabase
       .from("workflows") as any)
       .insert({
+        slug,
         name,
-        label,
         description: description || null,
         icon: icon || null,
         estimated_cost: estimated_cost !== undefined ? estimated_cost : null,

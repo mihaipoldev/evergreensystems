@@ -86,8 +86,11 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         ),
         workflows (
           id,
-          name,
-          label
+          slug,
+          name
+        ),
+        rag_run_outputs (
+          id
         )
       `)
       .eq("project_id", id)
@@ -292,13 +295,20 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         }
       }
     }
+
+    // report_id = first rag_run_outputs id (enables "View Result" when run is complete)
+    const runOutputs = run.rag_run_outputs;
+    const report_id =
+      Array.isArray(runOutputs) && runOutputs.length > 0
+        ? runOutputs[0].id
+        : runOutputs?.id ?? null;
     
     return {
       ...run,
       knowledge_base_name: run.rag_knowledge_bases?.name || null,
-      workflow_name: run.workflows?.name || null,
-      workflow_label: run.workflows?.label || null,
-      report_id: null, // Not loading rag_run_outputs
+      workflow_name: run.workflows?.slug || null,
+      workflow_label: run.workflows?.name || null,
+      report_id,
       fit_score,
       verdict,
     };

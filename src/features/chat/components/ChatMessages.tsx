@@ -312,7 +312,7 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
       // Reset flag when messages are cleared
       hasInitiallyScrolledRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [messages.length]);
 
   // Force scroll to absolute bottom when conversation is loaded
@@ -374,7 +374,7 @@ export const ChatMessages = ({ messages, isTyping, showSuggestedQuestions = fals
         });
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [shouldScrollToBottom, messages.length]);
 
   useEffect(() => {

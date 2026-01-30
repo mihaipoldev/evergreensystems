@@ -61,14 +61,14 @@ export async function GET(request: Request) {
     }
 
     // Query project_type_workflows
-    let query = adminSupabase
+    const query = adminSupabase
       .from("project_type_workflows")
       .select(`
         display_order,
         workflows (
           id,
+          slug,
           name,
-          label,
           description,
           icon,
           estimated_cost,

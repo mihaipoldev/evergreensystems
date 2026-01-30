@@ -47,14 +47,17 @@ const DEFAULT_REPORT_COMPONENT = NicheReport;
  * This provides backward compatibility for reports created before workflow tracking
  */
 function detectReportTypeFromData(data: ReportData): string {
+  // Check for niche evaluation (evaluation payload with verdict)
+  const dataAny = data.data as { evaluation?: { verdict?: unknown }; niche_profile?: unknown };
+  if (dataAny?.evaluation?.verdict) {
+    return "niche_fit_evaluation";
+  }
+
   // Check for niche_profile - indicates niche intelligence report
   if (data.data.niche_profile) {
     return "niche_intelligence";
   }
-  
-  // Add more detection logic here as new report types are added
-  // e.g., if (data.data.company_profile) return "company_intelligence";
-  
+
   // Default to niche_intelligence for backward compatibility
   return "niche_intelligence";
 }

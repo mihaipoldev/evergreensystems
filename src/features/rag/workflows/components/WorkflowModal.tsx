@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DialogFooter } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faKey, faChevronDown, faChevronUp, faCode } from "@fortawesome/free-solid-svg-icons";
+import { faKey, faCode, faSitemap } from "@fortawesome/free-solid-svg-icons";
+import { Loader2, Key, Settings, Maximize2 } from "lucide-react";
 import {
   RAGInput,
   RAGTextarea,
@@ -19,12 +21,10 @@ import {
   RAGSelectContent,
   RAGSelectItem,
   RAGSelectValue,
-  RAGModal,
 } from "@/features/rag/shared/components";
+import { ModalShell } from "@/components/shared/ModalShell";
+import { JsonCodeEditor } from "@/components/shared/JsonCodeEditor";
 import type { Workflow } from "../types";
-
-// Lazy load lightweight code editor for JSON content (no SSR)
-const CodeEditor = dynamic(() => import("@uiw/react-textarea-code-editor"), { ssr: false });
 
 /**
  * Convert object schema format to array format for preserving order.
@@ -88,8 +88,8 @@ export function WorkflowModal({
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const isEdit = !!initialData;
+  const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
-  const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
@@ -100,16 +100,17 @@ export function WorkflowModal({
   const [knowledgeBaseTarget, setKnowledgeBaseTarget] = useState<string>("knowledgebase");
   const [targetKnowledgeBaseId, setTargetKnowledgeBaseId] = useState<string>("");
   const [knowledgeBases, setKnowledgeBases] = useState<Array<{ id: string; name: string }>>([]);
-  const [errors, setErrors] = useState<{ name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string }>({});
+  const [errors, setErrors] = useState<{ slug?: string; name?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Secrets state
   const [webhookUrl, setWebhookUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [config, setConfig] = useState("");
-  const [secretsExpanded, setSecretsExpanded] = useState(false);
   const [hasSecrets, setHasSecrets] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState<"details" | "secrets">("details");
+  const [isInputSchemaFullscreen, setIsInputSchemaFullscreen] = useState(false);
+
   // Store the original JSON string to preserve key order
   const originalInputSchemaRef = useRef<string>("");
 
@@ -172,8 +173,8 @@ export function WorkflowModal({
 
             if (response.ok) {
               const latestData = await response.json();
+              setSlug(latestData.slug || "");
               setName(latestData.name || "");
-              setLabel(latestData.label || "");
               setDescription(latestData.description || "");
               setIcon(latestData.icon || "");
               setEstimatedCost(latestData.estimated_cost !== null ? latestData.estimated_cost.toString() : "");
@@ -205,8 +206,6 @@ export function WorkflowModal({
                   setWebhookUrl(secretsData.webhook_url);
                   setApiKey(secretsData.api_key || "");
                   setConfig(secretsData.config ? JSON.stringify(secretsData.config, null, 2) : "");
-                  // Auto-expand secrets section when secrets exist
-                  setSecretsExpanded(true);
                   console.log("Secrets populated - webhookUrl:", secretsData.webhook_url, "apiKey:", secretsData.api_key ? "***" : "");
                 } else {
                   console.log("No secrets found or webhook_url is empty");
@@ -216,8 +215,8 @@ export function WorkflowModal({
               }
             } else {
               // Fallback to initialData if fetch fails
+              setSlug(initialData.slug || "");
               setName(initialData.name || "");
-              setLabel(initialData.label || "");
               setDescription(initialData.description || "");
               setIcon(initialData.icon || "");
               setEstimatedCost(initialData.estimated_cost !== null ? initialData.estimated_cost.toString() : "");
@@ -252,8 +251,6 @@ export function WorkflowModal({
                     setWebhookUrl(secretsData.webhook_url);
                     setApiKey(secretsData.api_key || "");
                     setConfig(secretsData.config ? JSON.stringify(secretsData.config, null, 2) : "");
-                    // Auto-expand secrets section when secrets exist
-                    setSecretsExpanded(true);
                     console.log("Secrets populated (fallback) - webhookUrl:", secretsData.webhook_url);
                   }
                 } else {
@@ -266,8 +263,8 @@ export function WorkflowModal({
           } catch (error) {
             console.error("Error fetching latest workflow data:", error);
             // Fallback to initialData if fetch fails
+            setSlug(initialData.slug || "");
             setName(initialData.name || "");
-            setLabel(initialData.label || "");
             setDescription(initialData.description || "");
             setIcon(initialData.icon || "");
             setEstimatedCost(initialData.estimated_cost !== null ? initialData.estimated_cost.toString() : "");
@@ -302,8 +299,6 @@ export function WorkflowModal({
                   setWebhookUrl(secretsData.webhook_url);
                   setApiKey(secretsData.api_key || "");
                   setConfig(secretsData.config ? JSON.stringify(secretsData.config, null, 2) : "");
-                  // Auto-expand secrets section when secrets exist
-                  setSecretsExpanded(true);
                   console.log("Secrets populated (error fallback) - webhookUrl:", secretsData.webhook_url);
                 }
               } else {
@@ -318,8 +313,8 @@ export function WorkflowModal({
         fetchLatestData();
       } else {
         // Reset to defaults for create mode
+        setSlug("");
         setName("");
-        setLabel("");
         setDescription("");
         setIcon("");
         setEstimatedCost("");
@@ -334,20 +329,19 @@ export function WorkflowModal({
         setApiKey("");
         setConfig("");
         setHasSecrets(false);
-        setSecretsExpanded(false);
       }
       setErrors({});
     }
   }, [initialData?.id, open]);
 
   const handleSubmit = async () => {
-    const newErrors: { name?: string; label?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string } = {};
+    const newErrors: { slug?: string; name?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string } = {};
 
+    if (!slug.trim()) {
+      newErrors.slug = "Slug is required";
+    }
     if (!name.trim()) {
       newErrors.name = "Name is required";
-    }
-    if (!label.trim()) {
-      newErrors.label = "Label is required";
     }
     if (!defaultAiModel || !defaultAiModel.trim()) {
       newErrors.defaultAiModel = "Default AI model is required";
@@ -389,8 +383,8 @@ export function WorkflowModal({
       }
     }
 
-    // Validate secrets if secrets section is expanded and has values
-    if (secretsExpanded && webhookUrl.trim()) {
+    // Validate secrets if webhook URL is provided
+    if (webhookUrl.trim()) {
       try {
         new URL(webhookUrl.trim());
       } catch {
@@ -431,8 +425,8 @@ export function WorkflowModal({
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
+          slug: slug.trim(),
           name: name.trim(),
-          label: label.trim(),
           description: description.trim() || null,
           icon: icon.trim() || null,
           estimated_cost: estimatedCost.trim() ? parseFloat(estimatedCost) : null,
@@ -452,8 +446,8 @@ export function WorkflowModal({
 
       const result = await response.json();
       
-      // Save secrets if provided (only if secrets section was expanded and has webhook URL)
-      if (secretsExpanded && webhookUrl.trim()) {
+      // Save secrets if provided
+      if (webhookUrl.trim()) {
         try {
           const secretsResponse = await fetch(`/api/intel/workflows/${result.id}/secrets`, {
             method: "PUT",
@@ -548,8 +542,8 @@ export function WorkflowModal({
   };
 
   const handleClose = () => {
+    setSlug("");
     setName("");
-    setLabel("");
     setDescription("");
     setIcon("");
     setEstimatedCost("");
@@ -563,21 +557,26 @@ export function WorkflowModal({
     setWebhookUrl("");
     setApiKey("");
     setConfig("");
-    setSecretsExpanded(false);
     setHasSecrets(false);
+    setActiveTab("details");
+    setIsInputSchemaFullscreen(false);
     setErrors({});
     onOpenChange(false);
   };
 
   return (
-    <RAGModal
+    <ModalShell
       open={open}
       onOpenChange={handleClose}
-      title={isEdit ? "Edit Workflow" : "Create Workflow"}
+      title={name.trim() || slug.trim() || (isEdit ? "Edit Workflow" : "Create Workflow")}
+      titleIcon={<FontAwesomeIcon icon={faSitemap} className="w-5 h-5 md:w-6 md:h-6" />}
+      description="Configure workflow and knowledge base target"
+      maxWidth="4xl"
+      maxHeight="90vh"
+      showScroll
       footer={
-        <>
+        <DialogFooter>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -585,30 +584,43 @@ export function WorkflowModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting
-              ? isEdit
-                ? "Updating..."
-                : "Creating..."
-              : isEdit
-                ? "Update Workflow"
-                : "Create Workflow"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {isEdit ? "Updating..." : "Creating..."}
+              </>
+            ) : (
+              isEdit ? "Update Workflow" : "Create Workflow"
+            )}
           </Button>
-        </>
+        </DialogFooter>
       }
     >
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "details" | "secrets")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="details">
+            <Settings className="h-4 w-4 mr-2" />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="secrets">
+            <Key className="h-4 w-4 mr-2" />
+            Secrets
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="details" className="mt-4">
       <div className="space-y-4 md:space-y-5">
         {/* Name */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-name" className="text-sm md:text-base">
+          <Label htmlFor="workflow-name" className="text-sm">
             Name <span className="text-destructive">*</span>
           </Label>
           <RAGInput
             id="workflow-name"
-            placeholder="e.g., niche_intelligence"
+            placeholder="e.g., Niche Intelligence"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
@@ -621,29 +633,29 @@ export function WorkflowModal({
           )}
         </div>
 
-        {/* Label */}
+        {/* Slug */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-label" className="text-sm md:text-base">
-            Label <span className="text-destructive">*</span>
+          <Label htmlFor="workflow-slug" className="text-sm">
+            Slug <span className="text-destructive">*</span>
           </Label>
           <RAGInput
-            id="workflow-label"
-            placeholder="e.g., Niche Intelligence"
-            value={label}
+            id="workflow-slug"
+            placeholder="e.g., niche_intelligence"
+            value={slug}
             onChange={(e) => {
-              setLabel(e.target.value);
-              if (errors.label) setErrors({ ...errors, label: undefined });
+              setSlug(e.target.value);
+              if (errors.slug) setErrors({ ...errors, slug: undefined });
             }}
-            error={!!errors.label}
+            error={!!errors.slug}
           />
-          {errors.label && (
-            <p className="text-xs text-destructive">{errors.label}</p>
+          {errors.slug && (
+            <p className="text-xs text-destructive">{errors.slug}</p>
           )}
         </div>
 
         {/* Description */}
         <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
-          <Label htmlFor="workflow-description" className="text-sm md:text-base">Description</Label>
+          <Label htmlFor="workflow-description" className="text-sm">Description</Label>
           <RAGTextarea
             id="workflow-description"
             placeholder="Describe what this workflow does..."
@@ -656,7 +668,7 @@ export function WorkflowModal({
 
         {/* Knowledge Base Target */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-knowledge-base-target" className="text-sm md:text-base">
+          <Label htmlFor="workflow-knowledge-base-target" className="text-sm">
             Knowledge Base Target <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
@@ -687,7 +699,7 @@ export function WorkflowModal({
         {/* Target Knowledge Base ID - Only show when target is 'knowledgebase' */}
         {knowledgeBaseTarget === 'knowledgebase' && (
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="workflow-target-knowledge-base-id" className="text-sm md:text-base">
+            <Label htmlFor="workflow-target-knowledge-base-id" className="text-sm">
               Target Knowledge Base {knowledgeBaseTarget === 'knowledgebase' && <span className="text-destructive">*</span>}
             </Label>
             <RAGSelect
@@ -722,7 +734,7 @@ export function WorkflowModal({
 
         {/* Icon */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-icon" className="text-sm md:text-base">Icon</Label>
+          <Label htmlFor="workflow-icon" className="text-sm">Icon</Label>
           <RAGInput
             id="workflow-icon"
             placeholder="e.g., 📊, 👥"
@@ -733,7 +745,7 @@ export function WorkflowModal({
 
         {/* Estimated Cost */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-cost" className="text-sm md:text-base">Estimated Cost</Label>
+          <Label htmlFor="workflow-cost" className="text-sm">Estimated Cost</Label>
           <RAGInput
             id="workflow-cost"
             type="number"
@@ -746,7 +758,7 @@ export function WorkflowModal({
 
         {/* Estimated Time Minutes */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-time" className="text-sm md:text-base">Estimated Time (minutes)</Label>
+          <Label htmlFor="workflow-time" className="text-sm">Estimated Time (minutes)</Label>
           <RAGInput
             id="workflow-time"
             type="number"
@@ -758,7 +770,7 @@ export function WorkflowModal({
 
         {/* Default AI Model */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-default-ai-model" className="text-sm md:text-base">
+          <Label htmlFor="workflow-default-ai-model" className="text-sm">
             Default AI Model <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
@@ -789,53 +801,101 @@ export function WorkflowModal({
 
         {/* Input Schema */}
         <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="workflow-schema" className="text-sm md:text-base">Input Schema (JSON)</Label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleFormatInputSchema}
-              className="h-7 text-xs"
-            >
-              <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
-              Format JSON
-            </Button>
-          </div>
-          <div className={`border rounded-lg bg-background overflow-hidden ${errors.inputSchema ? "border-destructive" : "border-input"}`}>
-            {mounted && (
-              <CodeEditor
-                value={inputSchema}
-                language="json"
-                placeholder='[{"name": "field1", "type": "text"}, {"name": "field2", "type": "textarea"}]'
-                onChange={(evn) => {
-                  const newValue = evn.target.value;
-                  setInputSchema(newValue);
-                  // Update the ref to preserve the user's typed order
-                  originalInputSchemaRef.current = newValue;
-                  if (errors.inputSchema) setErrors({ ...errors, inputSchema: undefined });
-                }}
-                padding={12}
-                style={{
-                  minHeight: "160px",
-                  fontSize: "13px",
-                  fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace",
-                  lineHeight: "1.5",
-                  letterSpacing: "0",
-                  backgroundColor: "transparent",
-                }}
-                data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
-              />
-            )}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="workflow-schema" className="text-sm">Input Schema (JSON)</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsInputSchemaFullscreen(true)}
+                  className="h-7 text-xs hover:bg-transparent hover:text-foreground"
+                  title="Open in full screen"
+                >
+                  <Maximize2 className="h-3 w-3 mr-1.5" />
+                  Full Screen
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleFormatInputSchema}
+                  className="h-7 text-xs hover:bg-transparent hover:text-foreground"
+                >
+                  <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
+                  Format JSON
+                </Button>
+              </div>
+            </div>
+            <JsonCodeEditor
+              id="workflow-schema"
+              placeholder='[{"name": "field1", "type": "text"}, {"name": "field2", "type": "textarea"}]'
+              minHeight="200px"
+              className={errors.inputSchema ? "border-destructive" : ""}
+              value={inputSchema}
+              onChange={(newValue) => {
+                setInputSchema(newValue);
+                originalInputSchemaRef.current = newValue;
+                if (errors.inputSchema) setErrors({ ...errors, inputSchema: undefined });
+              }}
+              error={!!errors.inputSchema}
+            />
           </div>
           {errors.inputSchema && (
             <p className="text-xs text-destructive">{errors.inputSchema}</p>
           )}
         </div>
 
+        {/* Full Screen Input Schema Modal */}
+        <ModalShell
+          open={isInputSchemaFullscreen}
+          onOpenChange={setIsInputSchemaFullscreen}
+          title="Input Schema Editor"
+          maxWidth="6xl"
+          maxHeight="90vh"
+          showScroll
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleFormatInputSchema}
+                className="h-7 text-xs hover:bg-transparent hover:text-foreground"
+              >
+                <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
+                Format JSON
+              </Button>
+            </div>
+            <JsonCodeEditor
+              placeholder='[{"name": "field1", "type": "text"}, {"name": "field2", "type": "textarea"}]'
+              minHeight="80vh"
+              className="w-full"
+              value={inputSchema}
+              onChange={(newValue) => {
+                setInputSchema(newValue);
+                originalInputSchemaRef.current = newValue;
+                if (errors.inputSchema) setErrors({ ...errors, inputSchema: undefined });
+              }}
+              error={!!errors.inputSchema}
+            />
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsInputSchemaFullscreen(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </ModalShell>
+
         {/* Enabled */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-enabled" className="text-sm md:text-base">Status</Label>
+          <Label htmlFor="workflow-enabled" className="text-sm">Status</Label>
           <RAGSelect
             value={enabled ? "enabled" : "disabled"}
             onValueChange={(value) => {
@@ -851,126 +911,98 @@ export function WorkflowModal({
             </RAGSelectContent>
           </RAGSelect>
         </div>
+      </div>
+        </TabsContent>
 
-        {/* Secrets Section - Collapsible */}
-        <div className="border-t border-border/50 pt-3 md:pt-5">
-          <Collapsible open={secretsExpanded} onOpenChange={setSecretsExpanded}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-2.5 md:p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
-                <span className="font-medium text-xs md:text-sm">Secrets Configuration</span>
-                {hasSecrets && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-600/10 text-green-600 dark:text-green-400">
-                    Configured
-                  </span>
-                )}
-              </div>
-              <FontAwesomeIcon 
-                icon={secretsExpanded ? faChevronUp : faChevronDown} 
-                className="h-4 w-4 text-muted-foreground" 
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 md:space-y-4 pt-3 md:pt-4">
-              <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2.5 md:p-3 text-xs md:text-sm text-yellow-700 dark:text-yellow-400">
-                <strong>Security Notice:</strong> These secrets are stored securely and never exposed. 
-                Enter new values to update them.
-              </div>
-              
-              <div className="space-y-1.5 md:space-y-2">
-                <Label htmlFor="workflow-webhook-endpoint" className="text-sm md:text-base">
-                  Webhook URL <span className="text-destructive">*</span>
-                </Label>
-                <RAGInput
-                  id="workflow-webhook-endpoint"
-                  name="workflow-webhook-endpoint"
-                  type="text"
-                  autoComplete="one-time-code"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  placeholder="https://your-n8n-instance.com/webhook/..."
-                  value={webhookUrl}
-                  onChange={(e) => {
-                    setWebhookUrl(e.target.value);
-                    if (errors.webhookUrl) setErrors({ ...errors, webhookUrl: undefined });
-                  }}
-                  error={!!errors.webhookUrl}
-                />
-                {errors.webhookUrl && (
-                  <p className="text-xs text-destructive">{errors.webhookUrl}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  The n8n webhook endpoint URL for this workflow
-                </p>
-              </div>
-
-              <div className="space-y-1.5 md:space-y-2">
-                <Label htmlFor="workflow-api-key" className="text-sm md:text-base">API Key (optional)</Label>
-                <RAGInput
-                  id="workflow-api-key"
-                  name="workflow-api-key"
-                  type="password"
-                  autoComplete="new-password"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  placeholder="Enter API key if needed"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional API key for authentication
-                </p>
-              </div>
-
-              <div className="space-y-1.5 md:space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="secrets-config" className="text-sm md:text-base">Config (JSON, optional)</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleFormatConfig}
-                    className="h-7 text-xs"
-                  >
-                    <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
-                    Format JSON
-                  </Button>
-                </div>
-                <div className={`border rounded-lg bg-background overflow-hidden ${errors.config ? "border-destructive" : "border-input"}`}>
-                  {mounted && (
-                    <CodeEditor
-                      value={config}
-                      language="json"
-                      placeholder='{"key": "value"}'
-                      onChange={(evn) => {
-                        const newValue = evn.target.value;
-                        setConfig(newValue);
-                        if (errors.config) setErrors({ ...errors, config: undefined });
-                      }}
-                      padding={12}
-                      style={{
-                        minHeight: "100px",
-                        fontSize: "13px",
-                        fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace",
-                        lineHeight: "1.5",
-                        letterSpacing: "0",
-                        backgroundColor: "transparent",
-                      }}
-                      data-color-mode={mounted && resolvedTheme === "dark" ? "dark" : "light"}
-                    />
+        <TabsContent value="secrets" className="mt-4">
+          <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Key className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">Secrets Configuration</span>
+                  {hasSecrets && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-600/10 text-green-600 dark:text-green-400">
+                      Configured
+                    </span>
                   )}
                 </div>
-                {errors.config && (
-                  <p className="text-xs text-destructive">{errors.config}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Additional configuration as JSON object
-                </p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      </div>
-    </RAGModal>
+
+                <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400">
+                  <strong>Security Notice:</strong> These secrets are stored securely and never exposed.
+                  Enter new values to update them.
+                </div>
+
+                <div className="space-y-1.5 md:space-y-2">
+                  <Label htmlFor="workflow-webhook-endpoint" className="text-sm">
+                    Webhook URL <span className="text-destructive">*</span>
+                  </Label>
+                  <RAGInput
+                    id="workflow-webhook-endpoint"
+                    name="workflow-webhook-endpoint"
+                    type="text"
+                    autoComplete="one-time-code"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    placeholder="https://your-n8n-instance.com/webhook/..."
+                    value={webhookUrl}
+                    onChange={(e) => {
+                      setWebhookUrl(e.target.value);
+                      if (errors.webhookUrl) setErrors({ ...errors, webhookUrl: undefined });
+                    }}
+                    error={!!errors.webhookUrl}
+                  />
+                  {errors.webhookUrl && (
+                    <p className="text-xs text-destructive">{errors.webhookUrl}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 md:space-y-2">
+                  <Label htmlFor="workflow-api-key" className="text-sm">API Key (optional)</Label>
+                  <RAGInput
+                    id="workflow-api-key"
+                    name="workflow-api-key"
+                    type="password"
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    placeholder="Enter API key if needed"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5 md:space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="secrets-config" className="text-sm">Config (JSON, optional)</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleFormatConfig}
+                      className="h-7 text-xs hover:bg-transparent hover:text-foreground"
+                    >
+                      <FontAwesomeIcon icon={faCode} className="h-3 w-3 mr-1.5" />
+                      Format JSON
+                    </Button>
+                  </div>
+                  <JsonCodeEditor
+                    placeholder='{"key": "value"}'
+                    minHeight="140px"
+                    className="min-h-[100px]"
+                    value={config}
+                    onChange={(newValue) => {
+                      setConfig(newValue);
+                      if (errors.config) setErrors({ ...errors, config: undefined });
+                    }}
+                    error={!!errors.config}
+                  />
+                  {errors.config && (
+                    <p className="text-xs text-destructive">{errors.config}</p>
+                  )}
+                </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </ModalShell>
   );
 }
 

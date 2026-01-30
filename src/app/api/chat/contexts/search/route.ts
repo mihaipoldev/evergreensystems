@@ -144,7 +144,7 @@ export async function GET(request: Request) {
           Array.from(linkedDocMap.values()).flat()
         )];
         
-        let linkedDocCounts = new Map<string, number>();
+        const linkedDocCounts = new Map<string, number>();
         if (allLinkedDocIds.length > 0) {
           const { data: linkedDocs } = await (adminSupabase
             .from('rag_documents') as any)

@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     const projectIds = (data || []).map((p: any) => p.id);
 
     // Fetch Niche Intelligence verdict and fit score for niche projects if applicable
-    let nicheDataByProject: Map<string, {
+    const nicheDataByProject: Map<string, {
       verdict: "pursue" | "test" | "caution" | "avoid" | null;
       fit_score: number | null;
       updated_at: string | null;
@@ -88,11 +88,11 @@ export async function GET(request: Request) {
     }> = new Map();
 
     if (isNicheProjectType && projectIds.length > 0) {
-      // First, get the niche_fit_evaluation workflow ID
+      // First, get the niche_fit_evaluation workflow ID (identifier is in slug after name/label → name/slug migration)
       const { data: nicheFitEvalWorkflow } = await adminSupabase
         .from("workflows")
         .select("id")
-        .eq("name", "niche_fit_evaluation")
+        .eq("slug", "niche_fit_evaluation")
         .single();
 
       if (nicheFitEvalWorkflow) {
@@ -127,12 +127,12 @@ export async function GET(request: Request) {
             runsByProject.get(projectId)!.push(run);
           }
 
-          // Optimized: Extract evaluation result from metadata (matching extractWorkflowResult logic)
+          // Extract evaluation result from metadata (matching extractWorkflowResult;
+          // backfilled for legacy niche_fit_evaluation runs by migration 20260129100000)
           const processRunMetadata = (id: string, metadata: any, updatedAt: string | null, status: string): { id: string; verdict: "pursue" | "test" | "caution" | "avoid" | null; fit_score: number | null; updated_at: string | null; status: "complete" | "queued" | "collecting" | "ingesting" | "generating" | "processing" | "failed" } => {
             let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
             let fitScore: number | null = null;
-            
-            // Access evaluation_result from metadata
+
             const evaluationResult = metadata?.evaluation_result;
             
             if (evaluationResult && typeof evaluationResult === "object") {

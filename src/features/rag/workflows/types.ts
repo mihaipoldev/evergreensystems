@@ -1,7 +1,7 @@
 export type Workflow = {
   id: string;
+  slug: string;
   name: string;
-  label: string;
   description: string | null;
   icon: string | null;
   estimated_cost: number | null;

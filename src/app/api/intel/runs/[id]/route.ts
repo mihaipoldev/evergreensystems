@@ -26,8 +26,8 @@ export async function GET(
         ),
         workflows (
           id,
-          name,
-          label
+          slug,
+          name
         ),
         projects (
           id,
@@ -61,7 +61,8 @@ export async function GET(
       }
     }
 
-    // Extract fit_score and verdict from metadata if available
+    // Fit score and verdict from metadata.evaluation_result (backfilled for legacy
+    // niche_fit_evaluation runs by migration 20260129100000)
     const evaluationResult = runData.metadata?.evaluation_result;
     let fit_score: number | null = null;
     let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
@@ -90,8 +91,8 @@ export async function GET(
       ...runData,
       knowledge_base_name: runData.rag_knowledge_bases?.name || null,
       project_name: projectName,
-      workflow_name: runData.workflows?.name || null,
-      workflow_label: runData.workflows?.label || null,
+      workflow_name: runData.workflows?.slug || null,
+      workflow_label: runData.workflows?.name || null,
       report_id: null, // Not loading rag_run_outputs
       fit_score,
       verdict,

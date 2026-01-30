@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 export function StylePresetProvider() {
   const pathname = usePathname();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Safety check for client-side only
     if (typeof window === "undefined" || typeof document === "undefined") {
       return;

@@ -12,13 +12,14 @@ export async function getReportData(id: string): Promise<{
   workflowName: string | null;
   workflowLabel: string | null;
   projectName: string | null;
+  runStatus: string | null;
 }> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: "Unauthorized", workflowName: null, workflowLabel: null, projectName: null };
+      return { data: null, error: "Unauthorized", workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
     }
 
     // Try with regular client first (respects RLS)
@@ -39,8 +40,8 @@ export async function getReportData(id: string): Promise<{
           ),
           workflows (
             id,
-            name,
-            label
+            slug,
+            name
           ),
           projects (
             id,
@@ -70,8 +71,8 @@ export async function getReportData(id: string): Promise<{
             ),
             workflows (
               id,
-              name,
-              label
+              slug,
+              name
             ),
             projects (
               id,
@@ -107,8 +108,8 @@ export async function getReportData(id: string): Promise<{
             ),
             workflows (
               id,
-              name,
-              label
+              slug,
+              name
             ),
             projects (
               id,
@@ -137,8 +138,8 @@ export async function getReportData(id: string): Promise<{
               ),
               workflows (
                 id,
-                name,
-                label
+                slug,
+                name
               ),
               projects (
                 id,
@@ -156,17 +157,18 @@ export async function getReportData(id: string): Promise<{
 
     if (error) {
       if (error.code === "PGRST116") {
-        return { data: null, error: "Report not found", workflowName: null, workflowLabel: null, projectName: null };
+        return { data: null, error: "Report not found", workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
       }
-      return { data: null, error: error.message, workflowName: null, workflowLabel: null, projectName: null };
+      return { data: null, error: error.message, workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
     }
 
     const dataTyped = data as { 
       output_json: any;
       rag_runs?: {
+        status?: string;
         workflows?: {
+          slug: string;
           name: string;
-          label: string;
         } | null;
         projects?: {
           id: string;
@@ -176,12 +178,13 @@ export async function getReportData(id: string): Promise<{
     } | null;
     
     if (!dataTyped || !dataTyped.output_json) {
-      return { data: null, error: "Report data is missing", workflowName: null, workflowLabel: null, projectName: null };
+      return { data: null, error: "Report data is missing", workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
     }
 
-    // Extract workflow info from the query result
-    const workflowName = dataTyped.rag_runs?.workflows?.name || null;
-    const workflowLabel = dataTyped.rag_runs?.workflows?.label || null;
+    // Extract workflow info and run status from the query result
+    const workflowName = dataTyped.rag_runs?.workflows?.slug || null;
+    const workflowLabel = dataTyped.rag_runs?.workflows?.name || null;
+    const runStatus = dataTyped.rag_runs?.status ?? null;
     
     // Extract project name from the query result
     const projects = dataTyped.rag_runs?.projects;
@@ -190,7 +193,7 @@ export async function getReportData(id: string): Promise<{
       : projects?.name || null;
 
     const transformed = transformOutputJson(dataTyped.output_json);
-    return { data: transformed, error: null, workflowName, workflowLabel, projectName };
+    return { data: transformed, error: null, workflowName, workflowLabel, projectName, runStatus };
   } catch (error) {
     return {
       data: null,
@@ -198,6 +201,7 @@ export async function getReportData(id: string): Promise<{
       workflowName: null,
       workflowLabel: null,
       projectName: null,
+      runStatus: null,
     };
   }
 }

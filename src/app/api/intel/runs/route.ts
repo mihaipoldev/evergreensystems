@@ -29,8 +29,8 @@ export async function GET(request: Request) {
         ),
         workflows (
           id,
-          name,
-          label
+          slug,
+          name
         ),
         projects (
           id,
@@ -99,8 +99,8 @@ export async function GET(request: Request) {
         ...run,
         knowledge_base_name: run.rag_knowledge_bases?.name || null,
         project_name: projectName,
-        workflow_name: run.workflows?.name || null,
-        workflow_label: run.workflows?.label || null,
+        workflow_name: run.workflows?.slug || null,
+        workflow_label: run.workflows?.name || null,
         report_id: reportId,
       };
     });

@@ -19,7 +19,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { toast } from "sonner";
-import { faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faExternalLink, faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 type RunWithExtras = Run & {
   knowledge_base_name?: string | null;
@@ -348,6 +348,8 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
   // Estimate remaining time
   const estimatedRemaining = run.status === "complete"
     ? "Complete"
+    : run.status === "failed"
+    ? "—"
     : progress === 99
     ? "Almost Done"
     : estimateRemaining(elapsedTime, progress);
@@ -431,6 +433,18 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
       },
       disabled: !isComplete || !reportId,
     },
+    ...(run.execution_url
+      ? [
+          {
+            label: "View Execution",
+            icon: <FontAwesomeIcon icon={faExternalLink} className="h-4 w-4" />,
+            onClick: (e?: React.MouseEvent) => {
+              e?.stopPropagation();
+              window.open(run.execution_url!, "_blank");
+            },
+          },
+        ]
+      : []),
     { separator: true },
     {
       label: "Delete",
@@ -444,7 +458,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="bg-background relative">
       {/* Action Menu Button - Top Right of Page */}
       <div className="absolute top-4 right-4 z-10">
         <ActionMenu
@@ -478,25 +492,38 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="w-20 h-20 mx-auto mb-6 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center"
+              className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
+                run.status === "failed"
+                  ? "bg-red-600 dark:bg-red-500 text-background"
+                  : "bg-primary text-primary-foreground"
+              }`}
               style={{ 
-                boxShadow: "0 0 40px hsl(var(--primary) / 0.4)",
+                boxShadow: run.status === "failed"
+                  ? "0 0 40px hsl(0 72% 51% / 0.6)"
+                  : "0 0 40px hsl(var(--primary) / 0.4)",
               }}
             >
               <FontAwesomeIcon icon={faBrain} className="w-10 h-10" />
             </motion.div>
 
             {/* Title */}
-            <h1 
-              className="text-3xl md:text-4xl font-extrabold mb-3"
-              style={{
-                background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              {run.status === "complete" ? "Completed" : run.status === "failed" ? "Failed" : "Generating"} {runLabel}
+            <h1 className="text-3xl md:text-4xl font-extrabold mb-3">
+              {run.status === "failed" ? (
+                <span className="text-red-600 dark:text-red-500">
+                  Failed {runLabel}
+                </span>
+              ) : (
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  {run.status === "complete" ? "Completed" : "Generating"} {runLabel}
+                </span>
+              )}
             </h1>
 
             {/* Subject */}
@@ -537,7 +564,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
             transition={{ delay: 0.2 }}
             className="flex flex-col items-center mb-12"
           >
-            <CircularProgress percentage={progress} size={220} />
+            <CircularProgress percentage={progress} size={220} status={run.status} />
 
             {/* Time info */}
             <div className="flex items-center justify-center gap-8 mt-6">

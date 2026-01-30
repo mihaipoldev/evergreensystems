@@ -26,12 +26,13 @@ const sections = [
 type ReportResultClientProps = {
   initialReportData: ReportData;
   runId: string;
+  runStatus?: string | null;
   workflowName?: string | null;
   workflowLabel?: string | null;
   projectName?: string | null;
 };
 
-export function ReportResultClient({ initialReportData, runId, workflowName, workflowLabel, projectName }: ReportResultClientProps) {
+export function ReportResultClient({ initialReportData, runId, runStatus, workflowName, workflowLabel, projectName }: ReportResultClientProps) {
   const [reportData, setReportData] = useState<ReportData>(initialReportData);
 
   // Sync initial report data when prop changes
@@ -39,8 +40,14 @@ export function ReportResultClient({ initialReportData, runId, workflowName, wor
     setReportData(initialReportData);
   }, [initialReportData]);
 
-  // Set up Supabase real-time subscription for report updates
+  const isComplete = runStatus === "complete";
+
+  // Set up Supabase real-time subscription and polling only when run is not complete
   useEffect(() => {
+    if (isComplete) {
+      return;
+    }
+
     const supabase = createClient();
     let pollInterval: NodeJS.Timeout | null = null;
     let channel: RealtimeChannel | null = null;
@@ -84,8 +91,7 @@ export function ReportResultClient({ initialReportData, runId, workflowName, wor
       }
     };
     
-    // Set up polling as fallback (every 2 seconds) - only for active runs
-    // Check if the run is still in progress by looking at the run status
+    // Poll only when run is not complete (every 2 seconds)
     pollInterval = setInterval(fetchReportUpdate, 2000);
     
     // Function to set up the subscription
@@ -177,10 +183,10 @@ export function ReportResultClient({ initialReportData, runId, workflowName, wor
         }
       }
     };
-  }, [runId]);
+  }, [runId, isComplete]);
 
   // Build sections array dynamically to include lead_gen_scoring, research_links, and sources_used if present
-  let allSections = [...sections];
+  const allSections = [...sections];
   if (reportData.data.lead_gen_scoring) {
     allSections.push({ id: "lead-gen-scoring", number: "11", title: "Lead Gen Scoring" });
   }

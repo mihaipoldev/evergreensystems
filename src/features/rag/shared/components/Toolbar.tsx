@@ -198,7 +198,7 @@ export function Toolbar({
           </div>
 
           {/* Desktop: Search Input */}
-          <div className="hidden md:block relative w-72 bg-card/90 shadow-buttons rounded-md transition-all duration-300 focus-within:bg-card/100 focus-within:shadow-card">
+          <div className="hidden md:block relative w-72 bg-card/90 shadow-none rounded-md">
             <FontAwesomeIcon
               icon={faSearch}
               className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground z-10"
@@ -208,7 +208,7 @@ export function Toolbar({
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 h-10 bg-transparent border-0 text-foreground/80 focus:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="pl-9 h-10 bg-transparent border-0 !shadow-none dark:!shadow-none hover:!shadow-none dark:hover:!shadow-none text-foreground/80 focus:text-foreground focus:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </>

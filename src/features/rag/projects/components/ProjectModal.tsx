@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { DialogFooter } from "@/components/ui/dialog";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFolderOpen } from "@fortawesome/free-solid-svg-icons";
 import {
   RAGInput,
   RAGTextarea,
@@ -14,8 +17,8 @@ import {
   RAGSelectContent,
   RAGSelectItem,
   RAGSelectValue,
-  RAGModal,
 } from "@/features/rag/shared/components";
+import { ModalShell } from "@/components/shared/ModalShell";
 import type { Project } from "../types";
 import type { ProjectType } from "@/features/rag/project-type/types";
 
@@ -23,6 +26,8 @@ interface ProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: Project | null;
+  /** When creating, pre-select this project type (e.g. when opening from a niche-filtered list). */
+  initialProjectTypeId?: string;
   onSuccess?: (updatedData: Project) => void;
 }
 
@@ -30,6 +35,7 @@ export function ProjectModal({
   open,
   onOpenChange,
   initialData,
+  initialProjectTypeId,
   onSuccess,
 }: ProjectModalProps) {
   const router = useRouter();
@@ -138,8 +144,8 @@ export function ProjectModal({
 
         fetchLatestData();
       } else {
-        // Reset to defaults for create mode
-        setProjectTypeId("");
+        // Reset to defaults for create mode; pre-select project type when provided (e.g. niche from filtered list)
+        setProjectTypeId(initialProjectTypeId || "");
         setClientName("");
         setName("");
         setStatus("active");
@@ -149,7 +155,7 @@ export function ProjectModal({
       }
       setErrors({});
     }
-  }, [initialData?.id, open]);
+  }, [initialData?.id, initialProjectTypeId, open]);
 
   const handleSubmit = async () => {
     const newErrors: Record<string, string> = {};
@@ -263,15 +269,23 @@ export function ProjectModal({
     onOpenChange(false);
   };
 
+  const title = isEdit
+    ? (isClientType ? clientName : name) || "Edit Project"
+    : "Create Project";
+
   return (
-    <RAGModal
+    <ModalShell
       open={open}
       onOpenChange={handleClose}
-      title={isEdit ? "Edit Project" : "Create Project"}
+      title={title}
+      titleIcon={<FontAwesomeIcon icon={faFolderOpen} className="w-5 h-5 md:w-6 md:h-6" />}
+      description="Configure project type and details"
+      maxWidth="4xl"
+      maxHeight="90vh"
+      showScroll
       footer={
-        <>
+        <DialogFooter>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -279,7 +293,6 @@ export function ProjectModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -291,13 +304,13 @@ export function ProjectModal({
                 ? "Update Project"
                 : "Create Project"}
           </Button>
-        </>
+        </DialogFooter>
       }
     >
       <div className="space-y-4 md:space-y-5">
         {/* Project Type */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="project-type" className="text-sm md:text-base">
+          <Label htmlFor="project-type" className="text-sm">
             Project Type <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
@@ -332,10 +345,10 @@ export function ProjectModal({
 
         {/* Client Type Fields */}
         {isClientType && (
-          <div className="pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
+          <div className="space-y-4 md:space-y-5 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
             {/* Client Name */}
             <div className="space-y-1.5 md:space-y-2">
-              <Label htmlFor="client-name" className="text-sm md:text-base">
+              <Label htmlFor="client-name" className="text-sm">
                 Client Name <span className="text-destructive">*</span>
               </Label>
               <RAGInput
@@ -359,7 +372,7 @@ export function ProjectModal({
 
             {/* Project Status */}
             <div className="space-y-1.5 md:space-y-2">
-              <Label htmlFor="project-status" className="text-sm md:text-base">
+              <Label htmlFor="project-status" className="text-sm">
                 Project Status <span className="text-destructive">*</span>
               </Label>
               <RAGSelect
@@ -394,10 +407,10 @@ export function ProjectModal({
 
         {/* Niche Research Type Fields */}
         {isNicheType && (
-          <div className="pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
+          <div className="space-y-4 md:space-y-5 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
             {/* Name */}
             <div className="space-y-1.5 md:space-y-2">
-              <Label htmlFor="name" className="text-sm md:text-base">
+              <Label htmlFor="name" className="text-sm">
                 Name <span className="text-destructive">*</span>
               </Label>
               <RAGInput
@@ -421,7 +434,7 @@ export function ProjectModal({
 
             {/* Geography */}
             <div className="space-y-1.5 md:space-y-2">
-              <Label htmlFor="geography" className="text-sm md:text-base">Geography</Label>
+              <Label htmlFor="geography" className="text-sm">Geography</Label>
               <RAGInput
                 id="geography"
                 placeholder="e.g., United States"
@@ -433,7 +446,7 @@ export function ProjectModal({
 
             {/* Category */}
             <div className="space-y-1.5 md:space-y-2">
-              <Label htmlFor="category" className="text-sm md:text-base">Category</Label>
+              <Label htmlFor="category" className="text-sm">Category</Label>
               <RAGInput
                 id="category"
                 placeholder="e.g., Logistics"
@@ -447,7 +460,7 @@ export function ProjectModal({
 
         {/* Description */}
         <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
-          <Label htmlFor="project-description" className="text-sm md:text-base">Description</Label>
+          <Label htmlFor="project-description" className="text-sm">Description</Label>
           <RAGTextarea
             id="project-description"
             placeholder="Describe the project goals, scope, and expected outcomes..."
@@ -458,7 +471,7 @@ export function ProjectModal({
           />
         </div>
       </div>
-    </RAGModal>
+    </ModalShell>
   );
 }
 

@@ -19,7 +19,7 @@ export const RAGTextarea = forwardRef<
       className={cn(
         error
           ? "border-destructive"
-          : "shadow-buttons border-none bg-input-background/80",
+          : "border border-input !shadow-[0px_1px_1px_0px_hsl(var(--foreground)_/_0.08)] dark:!shadow-[0px_1px_1px_0px_hsl(var(--foreground)_/_0.08)] hover:!shadow-[0px_1px_1px_0px_hsl(var(--foreground)_/_0.16)] dark:hover:!shadow-[0px_1px_1px_0px_hsl(var(--foreground)_/_0.12)]",
         className
       )}
       {...props}

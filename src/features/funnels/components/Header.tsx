@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
@@ -9,7 +10,9 @@ import { faCalendar } from "@fortawesome/free-solid-svg-icons";
 const SCROLL_THRESHOLD = 12;
 
 const Header = () => {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
+  const isOutboundPage = pathname === "/outbound-system";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,11 +58,17 @@ const Header = () => {
             isScrolled ? "md:shadow-sm" : "md:shadow-none"
           }`}
         >
-          {/* Logo */}
+          {/* Logo: full page load when on outbound so landing preset (colors/fonts) loads correctly */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <Link href="/" className="ml-3 text-lg font-bold text-primary">
-              Evergreen Sys.
-            </Link>
+            {isOutboundPage ? (
+              <a href="/" className="ml-3 text-lg font-bold text-primary">
+                Evergreen Sys.
+              </a>
+            ) : (
+              <Link href="/" className="ml-3 text-lg font-bold text-primary">
+                Evergreen Sys.
+              </Link>
+            )}
           </div>
 
           {/* Navigation Links */}

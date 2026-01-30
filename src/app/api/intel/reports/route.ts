@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
-    let query = adminSupabase
+    const query = adminSupabase
       .from("rag_run_outputs")
       .select(`
         *,
@@ -30,8 +30,8 @@ export async function GET(request: Request) {
           ),
           workflows (
             id,
-            name,
-            label
+            slug,
+            name
           )
         )
       `);
@@ -53,8 +53,8 @@ export async function GET(request: Request) {
       run: report.rag_runs ? {
         ...report.rag_runs,
         knowledge_base_name: report.rag_runs.rag_knowledge_bases?.name || null,
-        workflow_name: report.rag_runs.workflows?.name || null,
-        workflow_label: report.rag_runs.workflows?.label || null,
+        workflow_name: report.rag_runs.workflows?.slug || null,
+        workflow_label: report.rag_runs.workflows?.name || null,
       } : null,
     }));
 

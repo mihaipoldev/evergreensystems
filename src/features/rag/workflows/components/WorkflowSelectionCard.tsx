@@ -121,7 +121,7 @@ export function WorkflowSelectionCard({
 
         {/* Title */}
         <h3 className="text-lg font-bold text-foreground mb-1.5">
-          {workflow.label}
+          {workflow.name}
         </h3>
 
         {/* Description */}

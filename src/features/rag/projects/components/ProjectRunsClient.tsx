@@ -30,9 +30,9 @@ type ProjectRunsClientProps = {
   projectId: string;
 };
 
-// Helper function to extract fit_score and verdict from metadata
+// Helper: fit score and verdict from metadata.evaluation_result (backfilled for legacy
+// niche_fit_evaluation runs by migration 20260129100000)
 const extractFitScoreAndVerdict = (runData: any): { fit_score: number | null; verdict: "pursue" | "test" | "caution" | "avoid" | null } => {
-  // Extract from metadata.evaluation_result
   const evaluationResult = runData.metadata?.evaluation_result;
   let fit_score: number | null = null;
   let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
@@ -70,7 +70,7 @@ export function ProjectRunsClient({
   const [runs, setRuns] = useState<RunWithExtras[]>(initialRuns);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [workflows, setWorkflows] = useState<Array<{ id: string; name: string; label: string }>>([]);
+  const [workflows, setWorkflows] = useState<Array<{ id: string; slug: string; name: string }>>([]);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
     "Workflow": [],
     "Status": [],
@@ -155,7 +155,8 @@ export function ProjectRunsClient({
           .select(`
             *,
             rag_knowledge_bases (name),
-            workflows (name, label)
+            workflows (slug, name),
+            rag_run_outputs (id)
           `)
           .eq('project_id', projectId)
           .order('created_at', { ascending: false });
@@ -168,8 +169,13 @@ export function ProjectRunsClient({
         if (runsData && runsData.length > 0) {
           const runsWithExtras: RunWithExtras[] = runsData.map((run: any) => {
             const kbName = run.rag_knowledge_bases?.name || null;
-            const workflowName = run.workflows?.name || null;
-            const workflowLabel = run.workflows?.label || null;
+            const workflowName = run.workflows?.slug || null;
+            const workflowLabel = run.workflows?.name || null;
+            const runOutputs = run.rag_run_outputs;
+            const report_id =
+              Array.isArray(runOutputs) && runOutputs.length > 0
+                ? runOutputs[0].id
+                : runOutputs?.id ?? null;
             
             // Extract fit_score and verdict from metadata
             const { fit_score, verdict } = extractFitScoreAndVerdict(run);
@@ -179,7 +185,7 @@ export function ProjectRunsClient({
               knowledge_base_name: kbName,
               workflow_name: workflowName,
               workflow_label: workflowLabel,
-              report_id: null, // Not loading rag_run_outputs
+              report_id,
               fit_score,
               verdict,
             };
@@ -210,7 +216,8 @@ export function ProjectRunsClient({
           .select(`
             *,
             rag_knowledge_bases (name),
-            workflows (name, label)
+            workflows (slug, name),
+            rag_run_outputs (id)
           `)
           .eq('id', runId)
           .single();
@@ -223,8 +230,13 @@ export function ProjectRunsClient({
         if (!runData) return null;
         
         const kbName = (runData as any).rag_knowledge_bases?.name || null;
-        const workflowName = (runData as any).workflows?.name || null;
-        const workflowLabel = (runData as any).workflows?.label || null;
+        const workflowName = (runData as any).workflows?.slug || null;
+        const workflowLabel = (runData as any).workflows?.name || null;
+        const runOutputs = (runData as any).rag_run_outputs;
+        const report_id =
+          Array.isArray(runOutputs) && runOutputs.length > 0
+            ? runOutputs[0].id
+            : runOutputs?.id ?? null;
         
         // Extract fit_score and verdict from metadata
         const { fit_score, verdict } = extractFitScoreAndVerdict(runData);
@@ -234,7 +246,7 @@ export function ProjectRunsClient({
           knowledge_base_name: kbName,
           workflow_name: workflowName,
           workflow_label: workflowLabel,
-          report_id: null, // Not loading rag_run_outputs
+          report_id,
           fit_score,
           verdict,
         };
@@ -484,7 +496,7 @@ export function ProjectRunsClient({
       label: "Workflow",
       options: workflows.map((workflow) => ({
         value: workflow.id,
-        label: workflow.label || workflow.name,
+        label: workflow.name || workflow.slug,
       })),
     },
     {
@@ -634,7 +646,7 @@ export function ProjectRunsClient({
   const sortOptions = ["Recent"];
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
       <Toolbar
         searchPlaceholder="Search researches..."
         onSearch={setSearchQuery}

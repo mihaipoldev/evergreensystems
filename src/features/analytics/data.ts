@@ -93,7 +93,7 @@ export async function getAnalyticsData(scope: string = "30"): Promise<AnalyticsD
 
     // Get all analytics events - select only needed columns
     // Note: Using select("*") to match API route behavior exactly
-    let eventsQuery = supabase
+    const eventsQuery = supabase
       .from("analytics_events")
       .select("*")
       .gte("created_at", lookbackISO);

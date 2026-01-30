@@ -19,6 +19,7 @@ import {
   faArrowUp,
   faArrowDown,
 } from "@fortawesome/free-solid-svg-icons";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   RAGInput,
   RAGTextarea,
@@ -27,8 +28,8 @@ import {
   RAGSelectContent,
   RAGSelectItem,
   RAGSelectValue,
-  RAGModal,
 } from "@/features/rag/shared/components";
+import { ModalShell } from "@/components/shared/ModalShell";
 import type { ProjectType } from "../types";
 import type { Workflow } from "@/features/rag/workflows/types";
 
@@ -358,7 +359,7 @@ export function ProjectTypeModal({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-foreground truncate">{wf.label}</div>
+            <div className="font-medium text-foreground truncate">{wf.name}</div>
             {wf.description && (
               <div className="text-sm text-muted-foreground truncate">
                 {wf.description}
@@ -418,14 +419,18 @@ export function ProjectTypeModal({
   );
 
   return (
-    <RAGModal
+    <ModalShell
       open={open}
       onOpenChange={handleClose}
-      title={isEdit ? "Edit Project Type" : "Create Project Type"}
+      title={name.trim() || label.trim() || (isEdit ? "Edit Project Type" : "Create Project Type")}
+      titleIcon={<FontAwesomeIcon icon={faSitemap} className="w-5 h-5 md:w-6 md:h-6" />}
+      description="Configure project type and linked workflows"
+      maxWidth="4xl"
+      maxHeight="90vh"
+      showScroll
       footer={
-        <>
+        <DialogFooter>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -433,7 +438,6 @@ export function ProjectTypeModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -445,13 +449,13 @@ export function ProjectTypeModal({
                 ? "Update Project Type"
                 : "Create Project Type"}
           </Button>
-        </>
+        </DialogFooter>
       }
     >
       <div className="space-y-4 md:space-y-5">
         {/* Name */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="project-type-name" className="text-sm md:text-base">
+          <Label htmlFor="project-type-name" className="text-sm">
             Name <span className="text-destructive">*</span>
           </Label>
           <RAGInput
@@ -471,7 +475,7 @@ export function ProjectTypeModal({
 
         {/* Label */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="project-type-label" className="text-sm md:text-base">
+          <Label htmlFor="project-type-label" className="text-sm">
             Label <span className="text-destructive">*</span>
           </Label>
           <RAGInput
@@ -491,7 +495,7 @@ export function ProjectTypeModal({
 
         {/* Description */}
         <div className="space-y-1.5 md:space-y-2 pt-2 md:pt-0 border-t border-border/50 md:border-t-0">
-          <Label htmlFor="project-type-description" className="text-sm md:text-base">Description</Label>
+          <Label htmlFor="project-type-description" className="text-sm">Description</Label>
           <RAGTextarea
             id="project-type-description"
             placeholder="Describe this project type..."
@@ -504,7 +508,7 @@ export function ProjectTypeModal({
 
         {/* Icon */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="project-type-icon" className="text-sm md:text-base">Icon</Label>
+          <Label htmlFor="project-type-icon" className="text-sm">Icon</Label>
           <RAGInput
             id="project-type-icon"
             placeholder="e.g., 📊, 📁, 🏢"
@@ -515,7 +519,7 @@ export function ProjectTypeModal({
 
         {/* Enabled */}
         <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="project-type-enabled" className="text-sm md:text-base">Status</Label>
+          <Label htmlFor="project-type-enabled" className="text-sm">Status</Label>
           <RAGSelect
             value={enabled ? "enabled" : "disabled"}
             onValueChange={(value) => {
@@ -535,7 +539,7 @@ export function ProjectTypeModal({
         {/* Workflow Linking Section - Only in edit mode */}
         {isEdit && (
           <div className="space-y-2 md:space-y-3 pt-3 md:pt-5 border-t border-border/50">
-            <Label className="text-sm md:text-base">Linked Workflows</Label>
+            <Label className="text-sm">Linked Workflows</Label>
             
             {isLoadingWorkflows ? (
               <div className="text-sm text-muted-foreground py-4 text-center">
@@ -597,7 +601,7 @@ export function ProjectTypeModal({
                           <span className="text-base shrink-0">{workflow.icon}</span>
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{workflow.label}</div>
+                          <div className="font-medium truncate">{workflow.name}</div>
                           {workflow.description && (
                             <div className="text-xs text-muted-foreground truncate">
                               {workflow.description}
@@ -613,7 +617,7 @@ export function ProjectTypeModal({
           </div>
         )}
       </div>
-    </RAGModal>
+    </ModalShell>
   );
 }
 

@@ -13,6 +13,7 @@ import {
   faLink,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   RAGInput,
   RAGTextarea,
@@ -21,9 +22,9 @@ import {
   RAGSelectContent,
   RAGSelectItem,
   RAGSelectValue,
-  RAGModal,
   LockedInput,
 } from "@/features/rag/shared/components";
+import { ModalShell } from "@/components/shared/ModalShell";
 import { uploadDocument, linkDocumentsToProject } from "../document-api";
 import { cn } from "@/lib/utils";
 import type { RAGDocument } from "../document-types";
@@ -329,15 +330,28 @@ export function DocumentModal({
     onOpenChange(false);
   };
 
+  const submitLabel =
+    sourceType === "link"
+      ? isSubmitting
+        ? "Linking..."
+        : "Link Documents"
+      : isSubmitting
+        ? "Uploading..."
+        : "Upload Document";
+
   return (
-    <RAGModal
+    <ModalShell
       open={open}
       onOpenChange={handleClose}
       title="Add Document"
+      titleIcon={<FontAwesomeIcon icon={faFileText} className="w-5 h-5 md:w-6 md:h-6" />}
+      description="Upload a file, add from URL, paste text, or link existing documents"
+      maxWidth="4xl"
+      maxHeight="90vh"
+      showScroll
       footer={
-        <>
+        <DialogFooter>
           <Button
-            className="shadow-buttons border-none bg-muted/20 hover:text-foreground hover:bg-muted/30 py-3 md:py-2"
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
@@ -345,22 +359,15 @@ export function DocumentModal({
             Cancel
           </Button>
           <Button
-            className="shadow-buttons border-none py-6 md:py-2"
             onClick={handleSubmit}
             disabled={isSubmitting || (sourceType === "link" && selectedDocumentIds.length === 0)}
           >
-            {isSubmitting
-              ? sourceType === "link"
-                ? "Linking..."
-                : "Uploading..."
-              : sourceType === "link"
-              ? "Link Documents"
-              : "Upload Document"}
+            {submitLabel}
           </Button>
-        </>
+        </DialogFooter>
       }
     >
-      <div className="space-y-4 md:space-y-6">
+      <div className="space-y-4 md:space-y-5">
         {/* Knowledge Base */}
         {knowledgeBaseId ? (
           <LockedInput
@@ -369,7 +376,7 @@ export function DocumentModal({
           />
         ) : (
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="kb-select" className="text-sm md:text-base">
+            <Label htmlFor="kb-select" className="text-sm">
               Knowledge Base <span className="text-destructive">*</span>
             </Label>
             <RAGSelect
@@ -402,7 +409,7 @@ export function DocumentModal({
 
         {/* Source Type */}
         <div className="space-y-2 md:space-y-3 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
-          <Label className="text-sm md:text-base">
+          <Label className="text-sm">
             Source Type <span className="text-destructive">*</span>
           </Label>
           <RadioGroup
@@ -450,8 +457,8 @@ export function DocumentModal({
                     errors.source 
                       ? "border-destructive" 
                       : isDragging
-                      ? "border-primary bg-accent/50"
-                      : "border-border hover:border-primary hover:bg-accent/50"
+                      ? "border-secondary bg-secondary/20"
+                      : "border-border hover:border-secondary hover:bg-secondary/20"
                   )}
                   onClick={() => fileInputRef.current?.click()}
                   onDragEnter={handleDragEnter}
@@ -463,7 +470,7 @@ export function DocumentModal({
                     icon={faUpload}
                     className={cn(
                       "h-8 w-8 mx-auto mb-2 transition-colors",
-                      isDragging ? "text-primary" : "text-muted-foreground"
+                      isDragging ? "text-secondary-foreground" : "text-muted-foreground"
                     )}
                   />
                   <p className="text-sm md:text-base font-medium">
@@ -565,7 +572,7 @@ export function DocumentModal({
         {/* Should Chunk - Hide when linking documents */}
         {sourceType !== "link" && (
           <div className="space-y-3 pb-2 pt-3 md:pt-0 border-t border-border/50 md:border-t-0">
-            <Label>Should Chunk</Label>
+            <Label className="text-sm">Should Chunk</Label>
             <RadioGroup
               value={shouldChunk ? "yes" : "no"}
               onValueChange={(value) => setShouldChunk(value === "yes")}
@@ -587,7 +594,7 @@ export function DocumentModal({
         )}
 
       </div>
-    </RAGModal>
+    </ModalShell>
   );
 }
 

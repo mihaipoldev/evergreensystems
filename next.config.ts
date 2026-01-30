@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const isDevelopment = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
+  // Use project directory as Turbopack root (avoids wrong root when multiple lockfiles exist)
+  turbopack: {
+    root: process.cwd(),
+  },
   // Image optimization configuration
   images: {
     // Allow images from Bunny CDN and other common domains

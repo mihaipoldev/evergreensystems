@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     });
 
     // Fetch referenced pages in a single query (instead of N+1)
-    let referencedPages: Record<string, { id: string; title: string }> = {};
+    const referencedPages: Record<string, { id: string; title: string }> = {};
     if (pageIds.size > 0) {
       const referencedPagesQueryStartTime = getTimestamp();
       const { data: pagesData, error: pagesDataError } = await supabase

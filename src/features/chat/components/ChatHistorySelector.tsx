@@ -102,7 +102,7 @@ export const ChatHistorySelector = () => {
     } else {
       setCurrentConversationTitle(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentConversationId]);
 
   // Prevent body scroll when scrolling inside history selector popover

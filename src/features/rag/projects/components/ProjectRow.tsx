@@ -16,6 +16,7 @@ import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
 import { FitScoreAndVerdict } from "@/features/rag/shared/components/FitScoreAndVerdict";
 import { statusColorMap } from "@/features/rag/shared/config/statusColors";
 import { useBulkSelection } from "@/features/rag/shared/contexts/BulkSelectionContext";
+import { shouldIgnoreRowClick } from "@/features/rag/shared/utils/dropdownClickGuard";
 import type { Project } from "../types";
 import type { ProjectType } from "@/features/rag/project-type/types";
 import { cn } from "@/lib/utils";
@@ -84,68 +85,49 @@ export function ProjectRow({
 
   const statusColor = getStatusColor(project.status);
 
-  const handleRowClick = (e: React.MouseEvent) => {
-    // Don't handle if clicking on links, buttons, or action menu
-    const target = e.target as HTMLElement;
-    if (
-      target.closest('a') ||
-      target.closest('button') ||
-      target.closest('[role="menu"]') ||
-      target.closest('[role="menuitem"]')
-    ) {
+  const projectHref = `/intel/projects/${project.id}`;
+
+  const handleLinkClick = (e: React.MouseEvent) => {
+    if (shouldIgnoreRowClick(e)) {
+      e.preventDefault();
+      e.stopPropagation();
       return;
     }
-
-    // Handle keyboard modifiers
     if (e.metaKey || e.ctrlKey) {
-      // CMD/Ctrl + Click: Toggle selection
       e.preventDefault();
-      e.stopPropagation();
       toggleSelection(project.id);
-      if (index !== undefined) {
-        lastSelectedIndexRef = index;
-      }
-    } else if (e.shiftKey && index !== undefined && projectIds.length > 0) {
-      // Shift + Click: Range selection
+      if (index !== undefined) lastSelectedIndexRef = index;
+      return;
+    }
+    if (e.shiftKey && index !== undefined && projectIds.length > 0) {
       e.preventDefault();
-      e.stopPropagation();
       const currentIndex = index;
-      
-      // Find last selected index (either from ref or find in projectIds)
       let startIndex = lastSelectedIndexRef;
-      
-      // Validate that startIndex actually points to a selected item
       if (startIndex !== null && (!projectIds[startIndex] || !isSelected(projectIds[startIndex]))) {
         startIndex = null;
       }
-      
       if (startIndex === null) {
-        // Find the last selected item's index
         for (let i = currentIndex - 1; i >= 0; i--) {
           if (projectIds[i] && isSelected(projectIds[i])) {
             startIndex = i;
             break;
           }
         }
-        // If no previous selection found, just select current
         if (startIndex === null) {
           toggleSelection(project.id);
           lastSelectedIndexRef = currentIndex;
           return;
         }
-        // Update ref to the found index
         lastSelectedIndexRef = startIndex;
       }
-      
       selectRange(projectIds, startIndex, currentIndex);
       lastSelectedIndexRef = currentIndex;
     }
-    // Normal click: No change (still navigates via Link)
   };
 
   return (
     <>
-      {/* Mobile Layout */}
+      {/* Mobile Layout - whole row clickable */}
       <Card 
         className={cn(
           "md:hidden group cursor-pointer hover:bg-card/70 dark:hover:bg-muted/40 shadow-none md:shadow-card rounded-2xl transition-all border-2 p-3",
@@ -153,16 +135,11 @@ export function ProjectRow({
             ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80" 
             : "border-transparent"
         )}
-        onClick={handleRowClick}
       >
         <Link
-          href={`/intel/projects/${project.id}`}
+          href={projectHref}
           className="contents"
-          onClick={(e) => {
-            if ((e.target as HTMLElement).closest("[data-action-menu]")) {
-              e.preventDefault();
-            }
-          }}
+          onClick={handleLinkClick}
         >
           <div className="flex items-start gap-3">
             <div className="h-10 w-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
@@ -201,7 +178,7 @@ export function ProjectRow({
                 <div>{formattedDate}</div>
               </div>
             </div>
-            <div className="flex-shrink-0 ml-2" data-action-menu>
+            <div className="flex-shrink-0 ml-2" data-action-menu onClick={(e) => e.stopPropagation()}>
               <ProjectActionsMenu
                 project={project}
                 projectTypes={projectTypes}
@@ -214,95 +191,89 @@ export function ProjectRow({
         </Link>
       </Card>
 
-      {/* Desktop Layout */}
-      <Card 
+      {/* Desktop Layout - whole row clickable */}
+      <Link
+        href={projectHref}
         className={cn(
-          "hidden md:flex items-center gap-4 p-4 hover:bg-card/70 dark:hover:bg-muted/40 rounded-2xl shadow-light transition-all h-20 cursor-pointer border-2",
-          selected 
-            ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80" 
-            : "border-transparent"
+          "hidden md:block cursor-pointer rounded-lg border-2",
+          selected ? "border-primary/50" : "border-transparent"
         )}
-        onClick={handleRowClick}
+        onClick={handleLinkClick}
       >
-        {/* Icon + Name */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0">
-            {projectTypeIcon ? (
-              <span className="text-lg">{projectTypeIcon}</span>
-            ) : (
-              <FontAwesomeIcon
-                icon={faFolder}
-                className="h-4 w-4 text-primary"
-              />
-            )}
+        <Card 
+          className={cn(
+            "flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20",
+            selected ? "bg-primary/5 hover:border-primary/80" : ""
+          )}
+        >
+          {/* Icon + Name */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0">
+              {projectTypeIcon ? (
+                <span className="text-lg">{projectTypeIcon}</span>
+              ) : (
+                <FontAwesomeIcon
+                  icon={faFolder}
+                  className="h-4 w-4 text-primary"
+                />
+              )}
+            </div>
+            <div className={cn(
+              "min-w-0 flex flex-col h-full",
+              project.description ? "justify-start" : "justify-center"
+            )}>
+              <span className="font-medium text-foreground truncate">
+                {project.name}
+              </span>
+              {project.description && (
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{project.description}</p>
+              )}
+            </div>
           </div>
-          <div className={cn(
-            "min-w-0 flex flex-col h-full",
-            project.description ? "justify-start" : "justify-center"
-          )}>
+
+          {/* Conditional columns */}
+          {!isNicheProject && (
+            <>
+              {/* Status */}
+              <div className="w-24 shrink-0">
+                <StatusBadge 
+                  color={statusColor}
+                >
+                  {project.status}
+                </StatusBadge>
+              </div>
+            </>
+          )}
+
+          {isNicheProject && (
+            <>
+              {/* Niche Intelligence Fit Score & Verdict */}
+              <div className="w-32 shrink-0">
+                <FitScoreAndVerdict 
+                  fit_score={project.niche_intelligence_fit_score} 
+                  verdict={project.niche_intelligence_verdict}
+                  showVerdict={false}
+                  updatedAt={project.niche_intelligence_updated_at}
+                  runs={project.niche_intelligence_runs}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Updated */}
+          <div className="w-28 shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link 
-                  href={`/intel/projects/${project.id}`}
-                  className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
-                >
-                  {project.name}
-                </Link>
+                <p className="text-sm text-muted-foreground cursor-help inline-block">{formattedDate}</p>
               </TooltipTrigger>
-              <TooltipContent>
-                <p>{project.name}</p>
+              <TooltipContent align="center">
+                <p>{fullDateWithTime}</p>
               </TooltipContent>
             </Tooltip>
-            {project.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{project.description}</p>
-            )}
           </div>
-        </div>
 
-        {/* Conditional columns */}
-        {!isNicheProject && (
-          <>
-            {/* Status */}
-            <div className="w-24 shrink-0">
-              <StatusBadge 
-                color={statusColor}
-              >
-                {project.status}
-              </StatusBadge>
-            </div>
-          </>
-        )}
-
-        {isNicheProject && (
-          <>
-            {/* Niche Intelligence Fit Score & Verdict */}
-            <div className="w-32 shrink-0">
-              <FitScoreAndVerdict 
-                fit_score={project.niche_intelligence_fit_score} 
-                verdict={project.niche_intelligence_verdict}
-                showVerdict={false}
-                updatedAt={project.niche_intelligence_updated_at}
-                runs={project.niche_intelligence_runs}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Updated */}
-        <div className="w-28 shrink-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <p className="text-sm text-muted-foreground cursor-help inline-block">{formattedDate}</p>
-            </TooltipTrigger>
-            <TooltipContent align="center">
-              <p>{fullDateWithTime}</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        {/* Actions */}
-        <div className="w-20 shrink-0 flex items-center justify-end">
-          <div onClick={(e) => e.stopPropagation()}>
+          {/* Actions - exclude from row navigation */}
+          <div className="w-20 shrink-0 flex items-center justify-end" data-action-menu onClick={(e) => e.stopPropagation()}>
             <ProjectActionsMenu
               project={project}
               projectTypes={projectTypes}
@@ -311,8 +282,8 @@ export function ProjectRow({
               onEdit={onEdit}
             />
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Link>
     </>
   );
 }

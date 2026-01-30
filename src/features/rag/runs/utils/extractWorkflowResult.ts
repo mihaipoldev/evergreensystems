@@ -6,31 +6,26 @@ type WorkflowResult = {
 };
 
 /**
- * Extract workflow-specific result data from run metadata
- * Currently supports niche_fit_evaluation workflow
- * 
+ * Extract workflow-specific result data from run metadata.
+ * Currently supports niche_fit_evaluation workflow.
+ *
+ * Fit score and verdict come from metadata.evaluation_result (set when the run
+ * completes; for legacy niche_fit_evaluation runs, backfilled from
+ * rag_run_outputs.output_json by migration 20260129100000).
+ *
  * @param run - The run object with metadata
  * @returns Workflow result with verdict and score, or null if not available
  */
 export function extractWorkflowResult(run: Run): WorkflowResult | null {
-  // Debug logging
-  console.log("[extractWorkflowResult] Run ID:", run.id);
-  console.log("[extractWorkflowResult] Workflow name:", run.workflow_name);
-  console.log("[extractWorkflowResult] Workflow ID:", run.workflow_id);
-  console.log("[extractWorkflowResult] Metadata:", run.metadata);
-  
   // Only handle niche_fit_evaluation workflow for now
   if (run.workflow_name !== "niche_fit_evaluation") {
-    console.log("[extractWorkflowResult] Workflow name mismatch - expected 'niche_fit_evaluation', got:", run.workflow_name);
     return null;
   }
 
-  // Access evaluation_result from metadata
+  // Access evaluation_result from metadata (backfilled for legacy runs)
   const evaluationResult = run.metadata?.evaluation_result;
-  console.log("[extractWorkflowResult] Evaluation result:", evaluationResult);
-  
+
   if (!evaluationResult || typeof evaluationResult !== "object") {
-    console.log("[extractWorkflowResult] No evaluation_result found or invalid type");
     return null;
   }
 
@@ -56,12 +51,9 @@ export function extractWorkflowResult(run: Run): WorkflowResult | null {
 
   // Return null if we don't have at least one valid value
   if (verdict === null && score === null) {
-    console.log("[extractWorkflowResult] No valid verdict or score found");
     return null;
   }
 
-  const result = { verdict, score };
-  console.log("[extractWorkflowResult] Returning result:", result);
-  return result;
+  return { verdict, score };
 }
 

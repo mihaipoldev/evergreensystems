@@ -63,10 +63,10 @@ export function WorkflowCard({
             <TooltipProvider delayDuration={100}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <h3 className="font-bold text-foreground truncate hover:text-primary transition-colors cursor-pointer">{workflow.label}</h3>
+                  <h3 className="font-bold text-foreground truncate hover:text-primary transition-colors cursor-pointer">{workflow.name}</h3>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{workflow.label}</p>
+                  <p>{workflow.name}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

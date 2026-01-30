@@ -111,8 +111,8 @@ export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (workflow) =>
+          workflow.slug.toLowerCase().includes(query) ||
           workflow.name.toLowerCase().includes(query) ||
-          workflow.label.toLowerCase().includes(query) ||
           (workflow.description &&
             workflow.description.toLowerCase().includes(query))
       );
@@ -136,7 +136,7 @@ export function WorkflowList({ initialWorkflows }: WorkflowListProps) {
         );
         break;
       case "Name":
-        sorted.sort((a, b) => a.label.localeCompare(b.label));
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
         break;
       default:
         sorted.sort((a, b) => 

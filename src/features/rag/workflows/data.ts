@@ -61,15 +61,15 @@ export async function getWorkflowById(id: string): Promise<Workflow | null> {
 }
 
 /**
- * Get a single workflow by name
+ * Get a single workflow by slug
  * Uses service role client to bypass RLS for admin operations
  */
-export async function getWorkflowByName(name: string): Promise<Workflow | null> {
+export async function getWorkflowBySlug(slug: string): Promise<Workflow | null> {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("workflows")
     .select("*")
-    .eq("name", name)
+    .eq("slug", slug)
     .single();
 
   if (error) {

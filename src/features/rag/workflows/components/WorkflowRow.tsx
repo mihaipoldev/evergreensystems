@@ -2,11 +2,6 @@
 
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClock,
@@ -16,6 +11,7 @@ import {
 import { WorkflowActionsMenu } from "./WorkflowActionsMenu";
 import { StatusBadge } from "@/features/rag/shared/components/StatusBadge";
 import { statusColorMap } from "@/features/rag/shared/config/statusColors";
+import { shouldIgnoreRowClick } from "@/features/rag/shared/utils/dropdownClickGuard";
 import type { Workflow } from "../types";
 import { cn } from "@/lib/utils";
 
@@ -51,8 +47,9 @@ export function WorkflowRow({
           href={`/intel/workflows/${workflow.id}`}
           className="contents"
           onClick={(e) => {
-            if ((e.target as HTMLElement).closest("[data-action-menu]")) {
+            if (shouldIgnoreRowClick(e)) {
               e.preventDefault();
+              e.stopPropagation();
             }
           }}
         >
@@ -69,7 +66,7 @@ export function WorkflowRow({
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-base break-words">
-                {workflow.label}
+                {workflow.name}
               </div>
               {workflow.description && (
                 <div className="text-sm text-muted-foreground mt-0.5 break-words">
@@ -97,7 +94,7 @@ export function WorkflowRow({
                 <div>{formattedDate}</div>
               </div>
             </div>
-            <div className="flex-shrink-0 ml-2" data-action-menu>
+            <div className="flex-shrink-0 ml-2" data-action-menu onClick={(e) => e.stopPropagation()}>
               <WorkflowActionsMenu
                 workflow={workflow}
                 onDelete={onDelete}
@@ -108,92 +105,91 @@ export function WorkflowRow({
         </Link>
       </Card>
 
-      {/* Desktop Layout */}
-      <Card className="hidden md:flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20">
-        {/* Icon + Name */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-            {workflow.icon ? (
-              <span className="text-lg">{workflow.icon}</span>
+      {/* Desktop Layout - whole row clickable */}
+      <Link
+        href={`/intel/workflows/${workflow.id}`}
+        className="hidden md:block cursor-pointer"
+        onClick={(e) => {
+          if (shouldIgnoreRowClick(e)) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
+        <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20">
+          {/* Icon + Name */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+              {workflow.icon ? (
+                <span className="text-lg">{workflow.icon}</span>
+              ) : (
+                <FontAwesomeIcon
+                  icon={faSitemap}
+                  className="h-4 w-4 text-primary"
+                />
+              )}
+            </div>
+            <div className={cn(
+              "min-w-0 flex flex-col h-full",
+              workflow.description ? "justify-start" : "justify-center"
+            )}>
+              <span className="font-medium text-foreground truncate">
+                {workflow.name}
+              </span>
+              {workflow.description && (
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{workflow.description}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="w-24 shrink-0">
+            <StatusBadge 
+              color={statusColor}
+            >
+              {workflow.enabled ? "Enabled" : "Disabled"}
+            </StatusBadge>
+          </div>
+
+          {/* Cost */}
+          <div className="w-20 shrink-0">
+            {workflow.estimated_cost !== null ? (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <FontAwesomeIcon icon={faDollarSign} className="h-3.5 w-3.5" />
+                <span>${workflow.estimated_cost}</span>
+              </div>
             ) : (
-              <FontAwesomeIcon
-                icon={faSitemap}
-                className="h-4 w-4 text-primary"
-              />
+              <p className="text-sm text-muted-foreground">—</p>
             )}
           </div>
-          <div className={cn(
-            "min-w-0 flex flex-col h-full",
-            workflow.description ? "justify-start" : "justify-center"
-          )}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link 
-                  href={`/intel/workflows/${workflow.id}`}
-                  className="font-medium text-foreground truncate hover:text-primary transition-colors cursor-pointer"
-                >
-                  {workflow.label}
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{workflow.label}</p>
-              </TooltipContent>
-            </Tooltip>
-            {workflow.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{workflow.description}</p>
+
+          {/* Time */}
+          <div className="w-24 shrink-0">
+            {workflow.estimated_time_minutes !== null ? (
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                <span>{workflow.estimated_time_minutes} min</span>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">—</p>
             )}
           </div>
-        </div>
 
-        {/* Status */}
-        <div className="w-24 shrink-0">
-          <StatusBadge 
-            color={statusColor}
-          >
-            {workflow.enabled ? "Enabled" : "Disabled"}
-          </StatusBadge>
-        </div>
+          {/* Updated */}
+          <div className="w-28 shrink-0">
+            <p className="text-sm text-muted-foreground">{formattedDate}</p>
+          </div>
 
-        {/* Cost */}
-        <div className="w-20 shrink-0">
-          {workflow.estimated_cost !== null ? (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <FontAwesomeIcon icon={faDollarSign} className="h-3.5 w-3.5" />
-              <span>${workflow.estimated_cost}</span>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">—</p>
-          )}
-        </div>
-
-        {/* Time */}
-        <div className="w-24 shrink-0">
-          {workflow.estimated_time_minutes !== null ? (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
-              <span>{workflow.estimated_time_minutes} min</span>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">—</p>
-          )}
-        </div>
-
-        {/* Updated */}
-        <div className="w-28 shrink-0">
-          <p className="text-sm text-muted-foreground">{formattedDate}</p>
-        </div>
-
-        {/* Actions */}
-        <div className="w-20 shrink-0 flex items-center justify-end">
-          <div onClick={(e) => e.stopPropagation()}>
+          {/* Actions - exclude from row navigation */}
+          <div className="w-20 shrink-0 flex items-center justify-end" data-action-menu onClick={(e) => e.stopPropagation()}>
             <WorkflowActionsMenu
               workflow={workflow}
               onDelete={onDelete}
               onEdit={onEdit}
             />
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Link>
     </>
   );
 }

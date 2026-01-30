@@ -22,7 +22,7 @@ type RunResultPageProps = {
 
 export default async function RunResultPage({ params }: RunResultPageProps) {
   const { id } = await params; // This is the run_id
-  const { data: reportData, error, workflowName, workflowLabel, projectName } = await getReportData(id); // getReportData already supports run_id lookup
+  const { data: reportData, error, workflowName, workflowLabel, projectName, runStatus } = await getReportData(id); // getReportData already supports run_id lookup
 
   if (error === "Unauthorized") {
     return (
@@ -45,6 +45,7 @@ export default async function RunResultPage({ params }: RunResultPageProps) {
     <ReportResultClient 
       initialReportData={reportData} 
       runId={id}
+      runStatus={runStatus}
       workflowName={workflowName}
       workflowLabel={workflowLabel}
       projectName={projectName}

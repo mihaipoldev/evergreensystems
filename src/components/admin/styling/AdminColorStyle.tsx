@@ -35,8 +35,8 @@ export async function AdminColorStyle() {
         return null;
       };
       
-      let cookieColor = parseCookie('primary-color-hsl');
-      let cookieAccentColor = parseCookie('accent-color-hsl');
+      const cookieColor = parseCookie('primary-color-hsl');
+      const cookieAccentColor = parseCookie('accent-color-hsl');
       
       // Cookies are already decoded by parseCookie
       if (cookieColor) {
@@ -101,8 +101,8 @@ export async function AdminColorStyle() {
       };
       
       // Get raw cookie values - they might be URL-encoded
-      let cookieColor = parseCookie('primary-color-hsl');
-      let cookieAccentColor = parseCookie('accent-color-hsl');
+      const cookieColor = parseCookie('primary-color-hsl');
+      const cookieAccentColor = parseCookie('accent-color-hsl');
       
       console.log('[COLOR DEBUG] AdminColorStyle (SERVER) - Parsed cookie values:', {
         primary: cookieColor || 'NOT FOUND',
@@ -192,8 +192,8 @@ export async function AdminColorStyle() {
       };
       
       // Get raw cookie values
-      let cookieColor = parseCookie('primary-color-hsl');
-      let cookieAccentColor = parseCookie('accent-color-hsl');
+      const cookieColor = parseCookie('primary-color-hsl');
+      const cookieAccentColor = parseCookie('accent-color-hsl');
       
       console.log('[COLOR DEBUG] AdminColorStyle (SERVER) - Parsed cookie values from headers:', {
         primary: cookieColor || 'NOT FOUND',

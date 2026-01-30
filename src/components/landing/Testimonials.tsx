@@ -91,24 +91,16 @@ const Avatar = memo(({ initials, avatarUrl }: { initials: string; avatarUrl?: st
 Avatar.displayName = 'Avatar';
 
 export const Testimonials = memo(({ testimonials = [], section }: TestimonialsProps) => {
-  // If no testimonials, don't render the section
-  if (!testimonials || testimonials.length === 0) {
-    return null;
-  }
-
-  // Use section title if available
-  const title = section?.title || 'Hear what others are [[saying]]';
-  
-  // Use provided testimonials
-  const displayTestimonials = testimonials;
-  
-  // Map database testimonials to display format - memoized to prevent recalculation
-  const mappedTestimonials = useMemo(() => displayTestimonials.map((t: any) => {
+  // Map database testimonials to display format - memoized (must be before any return)
+  type TestimonialInput = Testimonial & { name?: string; role?: string };
+  const mappedTestimonials = useMemo(
+    () =>
+      (testimonials ?? []).map((t: TestimonialInput) => {
     // If it's from database (has quote or author_name field), map the fields
     if (t.quote || t.author_name) {
       // Use correct database field names: author_name and author_role
       const name = t.author_name || t.name || 'Unknown';
-      const role = t.author_role || t.role || 'Customer';
+      const role = t.author_role ?? t.role ?? 'Customer';
       
       // Safely get initials from name
       const initials = name.split(' ')
@@ -137,7 +129,16 @@ export const Testimonials = memo(({ testimonials = [], section }: TestimonialsPr
     }
     // Otherwise it's already in the right format (hardcoded)
     return t;
-  }), [displayTestimonials]);
+  }),
+    [testimonials],
+  );
+
+  // If no testimonials, don't render the section
+  if (!testimonials || testimonials.length === 0) {
+    return null;
+  }
+
+  const title = section?.title || 'Hear what others are [[saying]]';
 
   return (
     <section id="testimonials" className="py-12 md:py-20 relative overflow-hidden">

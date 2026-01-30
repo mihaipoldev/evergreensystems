@@ -64,8 +64,8 @@ export async function getWorkflowsByProjectType(projectTypeName: string): Promis
       display_order,
       workflows (
         id,
+        slug,
         name,
-        label,
         description,
         icon,
         estimated_cost,

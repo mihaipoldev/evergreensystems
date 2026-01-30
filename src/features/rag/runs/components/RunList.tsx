@@ -123,7 +123,7 @@ export function RunList({ initialRuns }: RunListProps) {
   const [runs, setRuns] = useState<RunWithKB[]>(initialRuns);
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
-  const [workflows, setWorkflows] = useState<Array<{ id: string; name: string; label: string }>>([]);
+  const [workflows, setWorkflows] = useState<Array<{ id: string; slug: string; name: string }>>([]);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
   const [selectedSort, setSelectedSort] = useState<string>(() => getStoredSort());
   const [groupByStatus, setGroupByStatus] = useState(() => getStoredGroupByStatus());
@@ -141,7 +141,7 @@ export function RunList({ initialRuns }: RunListProps) {
       label: "Workflow",
       options: workflows.map((workflow) => ({
         value: workflow.id,
-        label: workflow.label || workflow.name,
+        label: workflow.name || workflow.slug,
       })),
     },
     {
