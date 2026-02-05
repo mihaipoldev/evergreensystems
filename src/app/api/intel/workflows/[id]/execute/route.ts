@@ -16,7 +16,7 @@ export async function POST(
 
     const { id: workflowId } = await params;
     const body = await request.json();
-    const { project_id, research_subject_id, workflow_id, input, ai_model } = body;
+    const { project_id, research_subject_id, workflow_id, input, ai_model, research_ai_model, synthesis_ai_model } = body;
 
     // Accept both project_id (new) and research_subject_id (backward compat)
     const effectiveProjectId = project_id || research_subject_id;
@@ -34,10 +34,10 @@ export async function POST(
     // Use service role client to access secrets and research data
     const adminSupabase = createServiceRoleClient();
 
-    // Fetch workflow to get knowledge_base_target, target_knowledge_base_id, and default_ai_model
+    // Fetch workflow to get knowledge_base_target, target_knowledge_base_id, default_ai_model, and default_synthesis_ai_model
     const { data: workflow, error: workflowError } = await (adminSupabase
       .from("workflows") as any)
-      .select("knowledge_base_target, target_knowledge_base_id, default_ai_model")
+      .select("knowledge_base_target, target_knowledge_base_id, default_ai_model, default_synthesis_ai_model")
       .eq("id", effectiveWorkflowId)
       .single();
 
@@ -65,6 +65,7 @@ export async function POST(
       knowledge_base_target: string; 
       target_knowledge_base_id: string | null;
       default_ai_model: string;
+      default_synthesis_ai_model: string | null;
     };
 
     // Fetch webhook URL from workflow_secrets
@@ -193,21 +194,44 @@ export async function POST(
       .update({ updated_at: new Date().toISOString() })
       .eq("id", effectiveProjectId);
 
-    // Use ai_model from request body, or fallback to workflow's default_ai_model
-    const effectiveAiModel = ai_model || workflowTyped.default_ai_model;
+    // Fetch all project document IDs (workspace + linked via project_documents)
+    const documentIds = new Set<string>();
+    // Linked documents from project_documents junction
+    const { data: linkedDocs } = await (adminSupabase
+      .from("project_documents") as any)
+      .select("document_id")
+      .eq("project_id", effectiveProjectId);
+    (linkedDocs || []).forEach((row: { document_id: string }) => {
+      if (row.document_id) documentIds.add(row.document_id);
+    });
+    // Workspace documents (in project's KB)
+    if (projectTyped.kb_id) {
+      const { data: workspaceDocs } = await (adminSupabase
+        .from("rag_documents") as any)
+        .select("id")
+        .eq("knowledge_base_id", projectTyped.kb_id)
+        .is("deleted_at", null);
+      (workspaceDocs || []).forEach((row: { id: string }) => {
+        if (row.id) documentIds.add(row.id);
+      });
+    }
 
-    // Prepare webhook payload - include run_id so external service can update run status
+    // Use research_ai_model or ai_model from request body, or fallback to workflow's default_ai_model
+    const effectiveResearchModel = research_ai_model || ai_model || workflowTyped.default_ai_model;
+    // Use synthesis_ai_model from request body, or fallback to workflow's default_synthesis_ai_model, then default_ai_model
+    const effectiveSynthesisModel = synthesis_ai_model || workflowTyped.default_synthesis_ai_model || workflowTyped.default_ai_model;
+
+    // Prepare webhook payload - Input is the single source for name/geography/category/description
+    // document_ids: webhook can fetch full docs from Supabase via id IN (...)
     const webhookPayload = {
-      Name: projectTyped.name || "",
-      Geography: projectTyped.geography || "",
-      Category: projectTyped.category || "",
-      Description: projectTyped.description || "",
       UserId: user.id,
       WorkflowId: effectiveWorkflowId,
       ProjectId: effectiveProjectId,
-      RunId: runId, // Include run_id in payload
-      ...(effectiveAiModel && { AiModel: effectiveAiModel }),
-      ...(input && { Input: input }),
+      RunId: runId,
+      DocumentIds: Array.from(documentIds),
+      ...(effectiveResearchModel && { ResearchAiModel: effectiveResearchModel }),
+      ...(effectiveSynthesisModel && { SynthesisAiModel: effectiveSynthesisModel }),
+      ...(input && Object.keys(input).length > 0 && { Input: input }),
     };
 
     // Send POST request to webhook

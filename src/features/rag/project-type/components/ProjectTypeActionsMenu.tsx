@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPencil, faTrash, faCopy } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { ProjectType } from "../types";
@@ -71,6 +71,19 @@ export function ProjectTypeActionsMenu({
         e?.stopPropagation();
         if (onEdit) {
           onEdit(projectType);
+        }
+      },
+    },
+    {
+      label: "Copy ID",
+      icon: <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />,
+      onClick: async (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(projectType.id);
+          toast.success("ID copied to clipboard");
+        } catch {
+          toast.error("Failed to copy ID");
         }
       },
     },

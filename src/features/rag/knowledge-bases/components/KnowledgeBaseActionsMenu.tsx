@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPencil, faTrash, faCopy } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { KnowledgeBase } from "../types";
@@ -75,6 +75,19 @@ export function KnowledgeBaseActionsMenu({
           onEdit(knowledgeBase);
         } else {
           router.push(`/intel/knowledge-bases/${knowledgeBase.id}/edit`);
+        }
+      },
+    },
+    {
+      label: "Copy ID",
+      icon: <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />,
+      onClick: async (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(knowledgeBase.id);
+          toast.success("ID copied to clipboard");
+        } catch {
+          toast.error("Failed to copy ID");
         }
       },
     },

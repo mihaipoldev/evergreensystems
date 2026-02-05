@@ -3,6 +3,10 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDatabase } from "@fortawesome/free-solid-svg-icons";
+import { usePageHeader } from "@/providers/PageHeaderProvider";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { KnowledgeBaseTable } from "./KnowledgeBaseTable";
@@ -117,6 +121,12 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
   useEffect(() => {
     hasLoadedFromStorage.current = true;
   }, []);
+
+  const { setHeader } = usePageHeader();
+  useEffect(() => {
+    setHeader({ breadcrumbItems: [{ label: "Knowledge Bases" }] });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   const filterCategories: FilterCategory[] = [
     {
@@ -397,6 +407,12 @@ export function KnowledgeBaseList({ initialKnowledge }: KnowledgeBaseListProps) 
   return (
     <>
       <div className="w-full space-y-3">
+        <PageTitle
+          icon={
+            <FontAwesomeIcon icon={faDatabase} className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+          }
+          title="Knowledge Bases"
+        />
         <Toolbar
           searchPlaceholder="Search knowledge bases..."
           searchValue={searchQuery}

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faDatabase,
   faFileText,
   faLayerGroup,
   faPlay,
   faSpinner,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
+import { usePageHeader } from "@/providers/PageHeaderProvider";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { KnowledgeBaseActionsMenu } from "@/features/rag/knowledge-bases/components/KnowledgeBaseActionsMenu";
 import { KnowledgeBaseModal } from "@/features/rag/knowledge-bases/components/KnowledgeBaseModal";
 import { KnowledgeBaseDocumentsClient } from "./KnowledgeBaseDocumentsClient";
@@ -32,6 +35,7 @@ export function KnowledgeBaseDetailClient({
 }: KnowledgeBaseDetailClientProps) {
   const [knowledge, setKnowledge] = useState(initialKnowledge);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { setHeader } = usePageHeader();
 
   const handleEdit = (knowledgeBase: KnowledgeBase) => {
     setKnowledge(knowledgeBase);
@@ -43,6 +47,23 @@ export function KnowledgeBaseDetailClient({
     setIsEditModalOpen(false);
   };
 
+  useEffect(() => {
+    setHeader({
+      breadcrumbItems: [
+        { href: "/intel/knowledge-bases", label: "Knowledge Bases" },
+        { label: knowledge.name },
+      ],
+      actions: (
+        <KnowledgeBaseActionsMenu
+          knowledgeBase={knowledge}
+          knowledgeBaseName={knowledge.name}
+          onEdit={handleEdit}
+        />
+      ),
+    });
+    return () => setHeader(null);
+  }, [knowledge, setHeader]);
+
   return (
     <>
       {/* Set chat context for this knowledge base */}
@@ -52,11 +73,13 @@ export function KnowledgeBaseDetailClient({
         knowledgeBaseDescription={knowledge.description || undefined}
       />
       <div className="w-full space-y-6">
-        <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{knowledge.name}</h1>
-            <p className="text-sm text-muted-foreground mb-2">Manage documents for this knowledge base.</p>
-            <div className="flex items-center gap-2 flex-wrap">
+        <PageTitle
+          icon={
+            <FontAwesomeIcon icon={faDatabase} className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+          }
+          title={knowledge.name}
+          meta={
+            <div className="flex items-center gap-2 flex-wrap text-foreground">
               {knowledge.kb_type && (
                 <Badge variant="outline" className="text-xs">
                   {knowledge.kb_type}
@@ -75,13 +98,8 @@ export function KnowledgeBaseDetailClient({
                 {knowledge.is_active ? "Active" : "Inactive"}
               </Badge>
             </div>
-          </div>
-          <KnowledgeBaseActionsMenu
-            knowledgeBase={knowledge}
-            knowledgeBaseName={knowledge.name}
-            onEdit={handleEdit}
-          />
-        </div>
+          }
+        />
 
         {/* Stats Grid */}
         <section className="relative">

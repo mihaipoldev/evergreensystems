@@ -6,6 +6,7 @@ type ReportData = {
   run_id: string;
   output_json: Record<string, any>;
   pdf_storage_path: string | null;
+  ui_schema: Record<string, any> | null;
   created_at: string;
   rag_runs: {
     id: string;
@@ -187,6 +188,7 @@ export async function GET(
       run_id: data.run_id,
       output_json: data.output_json,
       pdf_storage_path: data.pdf_storage_path,
+      ui_schema: data.ui_schema ?? null,
       created_at: data.created_at,
       run: data.rag_runs ? {
         id: data.rag_runs.id,
@@ -201,6 +203,117 @@ export async function GET(
           : data.rag_runs.rag_knowledge_bases?.name || null,
       } : null,
     }, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
+}
+
+/** Validate that a string is valid JSON; returns parsed object or null and error message */
+function parseJsonSafe(value: string): { data: unknown; error: null } | { data: null; error: string } {
+  if (value.trim() === "") {
+    return { data: null, error: "JSON cannot be empty when provided" };
+  }
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return { data: parsed, error: null };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Invalid JSON";
+    return { data: null, error: message };
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json().catch(() => ({})) as {
+      output_json?: string | Record<string, any>;
+      pdf_storage_path?: string | null;
+      ui_schema?: string | Record<string, any> | null;
+    };
+
+    const adminSupabase = createServiceRoleClient();
+
+    // Resolve output id (id might be run_id)
+    let outputId = id;
+    const byOutputId = await adminSupabase
+      .from("rag_run_outputs")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+    if (!byOutputId.data) {
+      const byRunId = await adminSupabase
+        .from("rag_run_outputs")
+        .select("id")
+        .eq("run_id", id)
+        .maybeSingle();
+      const runOutput = byRunId.data as { id: string } | null;
+      if (runOutput) {
+        outputId = runOutput.id;
+      }
+    }
+
+    const updatePayload: {
+      output_json?: Record<string, any>;
+      pdf_storage_path?: string | null;
+      ui_schema?: Record<string, any> | null;
+    } = {};
+
+    if (body.output_json !== undefined) {
+      const raw = typeof body.output_json === "string" ? body.output_json : JSON.stringify(body.output_json);
+      const result = parseJsonSafe(raw);
+      if (result.error) {
+        return NextResponse.json({ error: `output_json: ${result.error}` }, { status: 400 });
+      }
+      updatePayload.output_json = result.data as Record<string, any>;
+    }
+
+    if (body.pdf_storage_path !== undefined) {
+      updatePayload.pdf_storage_path = body.pdf_storage_path;
+    }
+
+    if (body.ui_schema !== undefined) {
+      if (body.ui_schema === null || body.ui_schema === "") {
+        updatePayload.ui_schema = null;
+      } else {
+        const raw = typeof body.ui_schema === "string" ? body.ui_schema : JSON.stringify(body.ui_schema);
+        const result = parseJsonSafe(raw);
+        if (result.error) {
+          return NextResponse.json({ error: `ui_schema: ${result.error}` }, { status: 400 });
+        }
+        updatePayload.ui_schema = result.data as Record<string, any>;
+      }
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    }
+
+    const { data, error } = await adminSupabase
+      .from("rag_run_outputs")
+      // @ts-expect-error - Supabase infers never for rag_run_outputs update; schema types may be out of sync
+      .update(updatePayload)
+      .eq("id", outputId)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

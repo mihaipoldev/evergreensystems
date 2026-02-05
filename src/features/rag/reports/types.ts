@@ -1,3 +1,63 @@
+/** Usage metrics from meta (duration, costs; tokens deprecated in favor of duration) */
+export type UsageMetrics = {
+  /** Duration in seconds (from workflow) */
+  duration_seconds?: number;
+  tokens?: {
+    total_input?: number;
+    total_output?: number;
+    total?: number;
+  };
+  costs?: {
+    research?: number;
+    agent_1?: number;
+    agent_2?: number;
+    agent_3?: number;
+    meta?: number;
+    total?: number;
+  };
+  per_evaluation?: {
+    total_cost?: number;
+    breakdown?: {
+      research?: number;
+      agents?: number;
+      meta?: number;
+    };
+  };
+};
+
+/** ICP report meta extensions (data_quality, focus) */
+export type ICPMetaExtension = {
+  focus?: string;
+  data_quality?: {
+    overall_confidence?: number;
+    confidence_methodology?: string;
+    validation_status?: string;
+    sources_total?: number;
+    sources_used?: string[];
+    last_updated?: string;
+    next_refresh_recommended?: string;
+    known_limitations?: string[];
+  };
+};
+
+/** ICP report data (buyer_icp, ops_outputs, etc.) - from DB output_json */
+export type ICPReportDataPayload = {
+  buyer_icp?: unknown;
+  ops_outputs?: unknown;
+  monitoring_alerts?: unknown;
+  market_sizing?: unknown;
+};
+
+/** Niche evaluation report data (multi-agent format) - decision_card, meta_synthesis, individual_evaluations */
+export type NicheEvaluationDataPayload = {
+  decision_card?: Record<string, unknown>;
+  meta_synthesis?: Record<string, unknown>;
+  quantitative_summary?: Record<string, unknown>;
+  evidence_summary?: Record<string, unknown>;
+  agent_consensus?: Record<string, unknown>;
+  individual_evaluations?: Record<string, Record<string, unknown>>;
+};
+
 export type ReportData = {
   meta: {
     knowledge_base: string;
@@ -11,7 +71,7 @@ export type ReportData = {
       notes?: string;
       ai_model?: string;
     };
-  };
+  } & ICPMetaExtension & { usage_metrics?: UsageMetrics };
   data: {
     niche_profile: {
       confidence: number;
@@ -256,6 +316,11 @@ export type ReportData = {
         key_reasons: string[];
       };
     };
+    /** ICP research report payload (when workflow is icp_research) */
+    buyer_icp?: unknown;
+    ops_outputs?: unknown;
+    monitoring_alerts?: unknown;
+    market_sizing?: unknown;
   };
 };
 

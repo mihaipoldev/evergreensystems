@@ -11,6 +11,7 @@ export type Workflow = {
   knowledge_base_target: string;
   target_knowledge_base_id: string | null;
   default_ai_model: string;
+  default_synthesis_ai_model: string | null;
   created_at: string;
   updated_at: string;
 };

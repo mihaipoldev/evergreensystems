@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +27,8 @@ type DeleteConfirmationDialogProps = {
   cancelLabel?: string;
   showDeleteDocumentsOption?: boolean;
   deleteDocumentsLabel?: string;
+  /** When true, the "delete associated documents" checkbox is checked by default when the dialog opens */
+  deleteDocumentsDefaultChecked?: boolean;
 };
 
 export function DeleteConfirmationDialog({
@@ -42,8 +44,18 @@ export function DeleteConfirmationDialog({
   cancelLabel = "Cancel",
   showDeleteDocumentsOption = false,
   deleteDocumentsLabel = "Also delete associated documents",
+  deleteDocumentsDefaultChecked = false,
 }: DeleteConfirmationDialogProps) {
-  const [deleteDocuments, setDeleteDocuments] = useState(false);
+  const [deleteDocuments, setDeleteDocuments] = useState(deleteDocumentsDefaultChecked);
+
+  // Sync checkbox when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setDeleteDocuments(deleteDocumentsDefaultChecked);
+    } else {
+      setDeleteDocuments(false);
+    }
+  }, [open, deleteDocumentsDefaultChecked]);
 
   // Reset checkbox when dialog closes
   const handleOpenChange = (newOpen: boolean) => {

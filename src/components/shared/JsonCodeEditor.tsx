@@ -4,15 +4,41 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { json } from "@codemirror/lang-json";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import { cn } from "@/lib/utils";
+
+const JSON_EDITOR_MONO_STYLE_ID = "json-code-editor-mono-font";
+let jsonEditorMonoRefCount = 0;
+
+/* Inject monospace font override – must run after preset-admin font styles (AdminFontStyle, etc.) */
+function useJsonEditorMonoFont() {
+  React.useEffect(() => {
+    jsonEditorMonoRefCount++;
+    let style = document.getElementById(JSON_EDITOR_MONO_STYLE_ID) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = JSON_EDITOR_MONO_STYLE_ID;
+      style.textContent = `html.preset-admin [data-json-code-editor],html.preset-admin [data-json-code-editor] *,html.preset-admin [data-json-code-editor] *::before,html.preset-admin [data-json-code-editor] *::after{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace!important}`;
+      document.head.appendChild(style);
+    }
+    return () => {
+      jsonEditorMonoRefCount--;
+      if (jsonEditorMonoRefCount <= 0) {
+        jsonEditorMonoRefCount = 0;
+        const el = document.getElementById(JSON_EDITOR_MONO_STYLE_ID);
+        if (el) el.remove();
+      }
+    };
+  }, []);
+}
 
 const CodeMirror = dynamic(
   () => import("@uiw/react-codemirror").then((mod) => mod.default),
   { ssr: false }
 );
 
-/* JSON syntax highlighting using design tokens (foreground, primary, success) */
+/* JSON syntax highlighting using design tokens */
 const jsonHighlightStyle = HighlightStyle.define([
   { tag: tags.propertyName, color: "hsl(var(--foreground))" },
   { tag: tags.string, color: "hsl(var(--primary))" },
@@ -34,6 +60,10 @@ export interface JsonCodeEditorProps {
   maxHeight?: string;
   id?: string;
   "data-testid"?: string;
+  /** When true, the editor is read-only (no edits). */
+  readOnly?: boolean;
+  /** When true, long lines wrap to fit the container width. */
+  lineWrapping?: boolean;
 }
 
 const JsonCodeEditor = React.forwardRef<HTMLDivElement, JsonCodeEditorProps>(
@@ -48,13 +78,21 @@ const JsonCodeEditor = React.forwardRef<HTMLDivElement, JsonCodeEditorProps>(
       height,
       maxHeight,
       id,
+      readOnly = false,
+      lineWrapping = false,
       ...rest
     },
     ref
   ) => {
+    useJsonEditorMonoFont();
+
     const extensions = React.useMemo(
-      () => [json(), syntaxHighlighting(jsonHighlightStyle)],
-      []
+      () => [
+        json(),
+        syntaxHighlighting(jsonHighlightStyle),
+        ...(lineWrapping ? [EditorView.lineWrapping] : []),
+      ],
+      [lineWrapping]
     );
 
     const handleChange = React.useCallback(
@@ -93,7 +131,9 @@ const JsonCodeEditor = React.forwardRef<HTMLDivElement, JsonCodeEditorProps>(
           minHeight={minHeight}
           height={height}
           maxHeight={maxHeight}
-          indentWithTab={true}
+          indentWithTab={!readOnly}
+          readOnly={readOnly}
+          editable={!readOnly}
           {...rest}
         />
       </div>

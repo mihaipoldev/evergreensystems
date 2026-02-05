@@ -23,6 +23,7 @@ type DocumentRowProps = {
   };
   knowledgeBaseName?: string;
   onView?: () => void;
+  onCopy?: () => void;
   onDownload?: () => void;
   onDelete?: () => void;
 };
@@ -31,6 +32,7 @@ export function DocumentRow({
   document,
   knowledgeBaseName,
   onView,
+  onCopy,
   onDownload,
   onDelete,
 }: DocumentRowProps) {
@@ -162,6 +164,7 @@ export function DocumentRow({
             <DocumentActionsMenu
               document={document}
               onView={onView}
+              onCopy={onCopy}
               onDownload={onDownload}
               onDelete={onDelete}
             />
@@ -262,6 +265,7 @@ export function DocumentRow({
             <DocumentActionsMenu
               document={document}
               onView={onView}
+              onCopy={onCopy}
               onDownload={onDownload}
               onDelete={onDelete}
             />

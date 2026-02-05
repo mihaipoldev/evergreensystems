@@ -2,25 +2,26 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGear } from "@fortawesome/free-solid-svg-icons";
 import { SettingsSidebar } from "@/components/admin/settings/SettingsSidebar";
 import { SettingsContent } from "@/components/admin/settings/SettingsContent";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type Section = "account" | "appearance" | "appearance-v2";
+type Section = "account" | "appearance-v2";
 
 const SETTINGS_TAB_STORAGE_KEY = "intel-settings-last-section";
 const DEFAULT_SECTION: Section = "account";
 
 const SECTION_URL_MAP: Record<Section, string> = {
   account: "account",
-  appearance: "appearance",
   "appearance-v2": "appearance-v2",
 };
 
 const URL_SECTION_MAP: Record<string, Section> = {
   account: "account",
-  appearance: "appearance",
   "appearance-v2": "appearance-v2",
 };
 
@@ -30,7 +31,7 @@ const URL_SECTION_MAP: Record<string, Section> = {
 function getStoredSettingsSection(): Section | null {
   if (typeof window === "undefined") return null;
   const stored = localStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
-  if (stored && (stored === "account" || stored === "appearance" || stored === "appearance-v2")) {
+  if (stored && (stored === "account" || stored === "appearance-v2")) {
     return stored as Section;
   }
   return null;
@@ -115,13 +116,18 @@ export function SettingsPageClient() {
 
   return (
     <>
-      <div>
+      <div className="w-full space-y-6">
+        <PageTitle
+          icon={
+            <FontAwesomeIcon icon={faGear} className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+          }
+          title="Settings"
+        />
         {isMobile ? (
           <div className="space-y-1 md:space-y-6">
             <Tabs value={activeSection} onValueChange={(value) => handleSectionChange(value as Section)}>
-              <TabsList className="grid w-full grid-cols-3 h-auto bg-transparent border-0">
+              <TabsList className="grid w-full grid-cols-2 h-auto bg-transparent border-0">
                 <TabsTrigger value="account" className="w-full">Account</TabsTrigger>
-                <TabsTrigger value="appearance" className="w-full">Appearance</TabsTrigger>
                 <TabsTrigger value="appearance-v2" className="w-full">Brand Colors</TabsTrigger>
               </TabsList>
             </Tabs>

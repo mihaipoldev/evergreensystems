@@ -112,7 +112,7 @@ export function IntelSidebarContent({
       {/* Navigation Section */}
       <ScrollAreaPrimitive.Root
         ref={scrollAreaRef}
-        className={cn("relative overflow-hidden flex-1 sidebar-scroll-area", isScrolling && "scrolling")}
+        className={cn("relative overflow-hidden flex-1 min-h-0 sidebar-scroll-area", isScrolling && "scrolling")}
       >
         <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] overflow-x-hidden">
           <nav className="px-4 py-4 space-y-2 min-w-0 overflow-x-hidden">

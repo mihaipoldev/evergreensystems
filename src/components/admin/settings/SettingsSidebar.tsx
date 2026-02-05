@@ -2,10 +2,10 @@
 
 import { ChevronRight } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faPalette, faPaintBrush } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faPaintBrush } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 
-type Section = "account" | "appearance" | "appearance-v2";
+type Section = "account" | "appearance-v2";
 
 interface SettingsSidebarProps {
   activeSection: Section;
@@ -23,12 +23,6 @@ const sections: Array<{
     label: "Account",
     icon: faUser,
     description: "Manage your profile and account",
-  },
-  {
-    id: "appearance",
-    label: "Appearance",
-    icon: faPalette,
-    description: "Theme & colors",
   },
   {
     id: "appearance-v2",

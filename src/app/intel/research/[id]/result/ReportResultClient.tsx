@@ -10,6 +10,25 @@ import { transformOutputJson } from "@/features/rag/reports/utils/transformOutpu
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+const DESCRIPTIVE_SECTIONS = [
+  { id: "basic-profile", number: "01", title: "Basic Profile" },
+  { id: "tam-analysis", number: "02", title: "TAM Analysis" },
+  { id: "what-they-sell", number: "03", title: "What They Sell" },
+  { id: "deal-economics", number: "04", title: "Deal Economics" },
+  { id: "technology-stack", number: "05", title: "Technology Stack" },
+  { id: "client-acquisition-dynamics", number: "06", title: "Client Acquisition Dynamics" },
+  { id: "shadow-competitors", number: "07", title: "Shadow Competitors" },
+  { id: "financial-reality", number: "08", title: "Financial Reality" },
+  { id: "market-maturity", number: "09", title: "Market Maturity" },
+  { id: "timing-intelligence", number: "10", title: "Timing Intelligence" },
+  { id: "pain-points", number: "11", title: "Pain Points" },
+  { id: "desired-outcomes", number: "12", title: "Desired Outcomes" },
+  { id: "kpis-that-matter", number: "13", title: "KPIs That Matter" },
+  { id: "how-they-position", number: "14", title: "How They Position" },
+  { id: "their-customer-language", number: "15", title: "Their Customer Language" },
+  { id: "buyer-psychology", number: "16", title: "Buyer Psychology" },
+];
+
 const sections = [
   { id: "niche-profile", number: "01", title: "Niche Profile" },
   { id: "market-intelligence", number: "02", title: "Market Intelligence" },
@@ -23,6 +42,33 @@ const sections = [
   { id: "messaging-inputs", number: "10", title: "Messaging Inputs" },
 ];
 
+const ICP_SECTIONS = [
+  { id: "quick-reference", number: "00", title: "Quick Reference" },
+  { id: "icp-overview", number: "01", title: "ICP Overview" },
+  { id: "target-segmentation", number: "02", title: "Target Segmentation" },
+  { id: "targeting-criteria", number: "03", title: "Targeting Criteria" },
+  { id: "triggers", number: "04", title: "Buying Triggers" },
+  { id: "buying-motivations-journey", number: "05", title: "Buying Motivations & Journey" },
+  { id: "competitive-context", number: "06", title: "Competitive Positioning" },
+  { id: "tactical-playbooks", number: "07", title: "Tactical Playbooks" },
+  { id: "data-quality", number: "08", title: "Data Quality & Sources" },
+];
+
+const OUTBOUND_SECTIONS = [
+  { id: "target-profile", number: "01", title: "Target Profile" },
+  { id: "targeting-strategy", number: "02", title: "Targeting Strategy" },
+  { id: "enrichment-requirements", number: "03", title: "Enrichment Requirements" },
+  { id: "segmentation-rules", number: "04", title: "Segmentation Rules" },
+  { id: "exclusion-rules", number: "05", title: "Exclusion Rules" },
+  { id: "title-packs", number: "06", title: "Title Packs" },
+  { id: "targeting-quick-reference", number: "07", title: "Targeting Quick Reference" },
+  { id: "our-positioning", number: "08", title: "Our Positioning" },
+  { id: "buyer-psychology", number: "09", title: "Buyer Psychology" },
+  { id: "objection-handling", number: "10", title: "Objection Handling" },
+  { id: "messaging-strategy", number: "11", title: "Messaging Strategy" },
+  { id: "sales-process", number: "12", title: "Sales Process" },
+];
+
 type ReportResultClientProps = {
   initialReportData: ReportData;
   runId: string;
@@ -30,9 +76,10 @@ type ReportResultClientProps = {
   workflowName?: string | null;
   workflowLabel?: string | null;
   projectName?: string | null;
+  runInput?: Record<string, unknown> | null;
 };
 
-export function ReportResultClient({ initialReportData, runId, runStatus, workflowName, workflowLabel, projectName }: ReportResultClientProps) {
+export function ReportResultClient({ initialReportData, runId, runStatus, workflowName, workflowLabel, projectName, runInput }: ReportResultClientProps) {
   const [reportData, setReportData] = useState<ReportData>(initialReportData);
 
   // Sync initial report data when prop changes
@@ -185,16 +232,50 @@ export function ReportResultClient({ initialReportData, runId, runStatus, workfl
     };
   }, [runId, isComplete]);
 
-  // Build sections array dynamically to include lead_gen_scoring, research_links, and sources_used if present
-  const allSections = [...sections];
-  if (reportData.data.lead_gen_scoring) {
-    allSections.push({ id: "lead-gen-scoring", number: "11", title: "Lead Gen Scoring" });
-  }
-  if (reportData.data.research_links) {
-    allSections.push({ id: "research-links", number: "12", title: "Research Links" });
-  }
-  if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
-    allSections.push({ id: "sources-used", number: "13", title: "Sources Used" });
+  // Normalize workflow for comparison (slug may have spaces from DB/API)
+  const normalizedWorkflow = (workflowName && typeof workflowName === "string")
+    ? workflowName.toLowerCase().replace(/-/g, "_").replace(/\s+/g, "_").trim()
+    : null;
+
+  const isOutbound = normalizedWorkflow === "outbound_strategy" || normalizedWorkflow === "lead_gen_targeting";
+  const isDescriptive = normalizedWorkflow === "descriptive_intelligence" || (reportData.data as Record<string, unknown>)?.basic_profile != null;
+  const baseSections =
+    normalizedWorkflow === "icp_research"
+      ? ICP_SECTIONS
+      : isDescriptive
+        ? DESCRIPTIVE_SECTIONS
+        : isOutbound
+          ? OUTBOUND_SECTIONS
+          : [...sections];
+  const allSections = [...baseSections];
+  if (isOutbound) {
+    const dataAny = reportData.data as Record<string, unknown>;
+    if (dataAny?.research_links) {
+      allSections.push({ id: "research-links", number: "13", title: "Research Links" });
+    }
+    if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
+      allSections.push({ id: "sources-used", number: "14", title: "Sources Used" });
+    }
+  } else if (isDescriptive) {
+    const dataAny = reportData.data as Record<string, unknown>;
+    if (dataAny?.research_links) {
+      allSections.push({ id: "research-links", number: "17", title: "Research Links" });
+    }
+    if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
+      allSections.push({ id: "sources-used", number: "18", title: "Sources Used" });
+    }
+  } else if (normalizedWorkflow !== "icp_research") {
+    if (reportData.data.lead_gen_scoring) {
+      allSections.push({ id: "lead-gen-scoring", number: "11", title: "Lead Gen Scoring" });
+    }
+    if (reportData.data.research_links) {
+      allSections.push({ id: "research-links", number: "12", title: "Research Links" });
+    }
+    if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
+      allSections.push({ id: "sources-used", number: "13", title: "Sources Used" });
+    }
+  } else if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
+    allSections.push({ id: "sources-used", number: "09", title: "Sources Used" });
   }
 
   // Extract evaluation data (if this is an evaluation report)
@@ -211,10 +292,11 @@ export function ReportResultClient({ initialReportData, runId, runStatus, workfl
                      reportData.meta.input.niche_name || 
                      "Report";
 
-  // Format confidence for display (handle both number and string cases)
+  // Format confidence for display (handle 0-1 scale, 0-100 scale, and string)
   const formatConfidence = (confidence: any): string => {
     if (typeof confidence === 'number') {
-      return `${(confidence * 100).toFixed(0)}%`;
+      const value = confidence <= 1 ? confidence * 100 : confidence;
+      return `${Math.round(value)}%`;
     }
     if (typeof confidence === 'string') {
       return confidence;
@@ -233,6 +315,8 @@ export function ReportResultClient({ initialReportData, runId, runStatus, workfl
           generatedAt={reportData.meta.generated_at}
           confidence={reportData.meta.confidence}
           headerConfig={headerConfig}
+          runInput={runInput ?? undefined}
+          usageMetrics={reportData.meta.usage_metrics}
           evaluationVerdict={evaluationVerdict}
           evaluationQuickStats={evaluationQuickStats}
         />

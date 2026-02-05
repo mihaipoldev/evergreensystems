@@ -79,6 +79,18 @@ export function ProjectDocumentsList({ projectId, initialDocuments }: ProjectDoc
     }
   };
 
+  const handleCopy = (doc: RAGDocument) => {
+    const text = doc.content || "";
+    if (!text) {
+      toast.error("No content to copy");
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => toast.success("Document copied to clipboard"),
+      () => toast.error("Failed to copy to clipboard")
+    );
+  };
+
   return (
     <div className="w-full space-y-6">
       <div className="space-y-3 md:space-y-4">
@@ -102,6 +114,7 @@ export function ProjectDocumentsList({ projectId, initialDocuments }: ProjectDoc
               <div key={document.id} className="group transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
                 <DocumentCard
                   document={document}
+                  onCopy={() => handleCopy(document)}
                   onDelete={() => handleRemove(document.id)}
                 />
               </div>

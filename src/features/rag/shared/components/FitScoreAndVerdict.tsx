@@ -24,9 +24,12 @@ type FitScoreAndVerdictProps = {
   showVerdict?: boolean; // Option to hide verdict badge
   updatedAt?: string | null; // Date when the fit score was calculated
   runs?: RunData[] | null; // All runs for this evaluation
+  compact?: boolean; // Smaller text for use in headers/summaries
+  /** Inline layout for headers: bigger score, smaller badge, aligned on same row */
+  variant?: "default" | "header";
 };
 
-export function FitScoreAndVerdict({ fit_score, verdict, className, showVerdict = true, updatedAt, runs }: FitScoreAndVerdictProps) {
+export function FitScoreAndVerdict({ fit_score, verdict, className, showVerdict = true, updatedAt, runs, compact, variant = "default" }: FitScoreAndVerdictProps) {
   const hasFitScore = fit_score !== null && fit_score !== undefined;
   const hasVerdict = verdict !== null && verdict !== undefined && showVerdict;
   const formattedScore = hasFitScore ? fit_score.toFixed(1) : null;
@@ -45,18 +48,28 @@ export function FitScoreAndVerdict({ fit_score, verdict, className, showVerdict 
     return <span className="text-sm text-muted-foreground">—</span>;
   }
 
+  const isHeader = variant === "header";
+  const scoreSize = compact ? "text-sm" : isHeader ? "text-lg" : "text-lg";
+  const badgeSize = isHeader ? "text-[10px] leading-tight px-1.5 py-0.5" : "text-xs px-2 py-0.5";
+
   const content = (
-    <div className={cn("flex flex-col gap-0.5", className)}>
+    <div
+      className={cn(
+        "flex gap-2",
+        isHeader ? "flex-row items-center" : "flex-col gap-0.5",
+        className
+      )}
+    >
       {hasFitScore && (
         <div className="flex items-center gap-1">
-          <span className={cn("text-lg font-semibold", colorClasses)}>
+          <span className={cn(scoreSize, "font-semibold", colorClasses)}>
             {formattedScore}
           </span>
           <span className="text-xs text-muted-foreground">/100</span>
         </div>
       )}
       {shouldShowBadge && (
-        <div className={cn("text-xs font-medium px-2 py-0.5 rounded w-fit border", badgeClasses)}>
+        <div className={cn("font-medium rounded w-fit border shrink-0", badgeSize, badgeClasses)}>
           {label}
         </div>
       )}

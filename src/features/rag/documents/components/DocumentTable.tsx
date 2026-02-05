@@ -11,6 +11,7 @@ interface DocumentTableProps {
   knowledgeBaseName?: string;
   hideKnowledgeBase?: boolean;
   onView?: (document: RAGDocument) => void;
+  onCopy?: (document: RAGDocument) => void;
   onDownload?: (document: RAGDocument) => void;
   onDelete?: (document: RAGDocument) => void;
 }
@@ -20,6 +21,7 @@ export function DocumentTable({
   knowledgeBaseName,
   hideKnowledgeBase = false,
   onView,
+  onCopy,
   onDownload,
   onDelete,
 }: DocumentTableProps) {
@@ -54,6 +56,7 @@ export function DocumentTable({
                 document={doc}
                 knowledgeBaseName={hideKnowledgeBase && !docWithKB.knowledge_base_name ? undefined : (docWithKB.knowledge_base_name || knowledgeBaseName)}
                 onView={onView ? () => onView(doc) : undefined}
+                onCopy={onCopy ? () => onCopy(doc) : undefined}
                 onDownload={onDownload ? () => onDownload(doc) : undefined}
                 onDelete={onDelete ? () => onDelete(doc) : undefined}
               />

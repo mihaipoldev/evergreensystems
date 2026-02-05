@@ -107,7 +107,8 @@ export async function GET(request: Request) {
             project_id,
             status,
             metadata,
-            updated_at
+            updated_at,
+            rag_run_outputs (id, output_json)
           `)
           .in("project_id", projectIds)
           .eq("workflow_id", (nicheFitEvalWorkflow as any).id)
@@ -115,6 +116,8 @@ export async function GET(request: Request) {
           .order("created_at", { ascending: false });
 
         if (!runsError && runsData) {
+          const { extractWorkflowResult } = await import("@/features/rag/runs/utils/extractWorkflowResult");
+
           // Group all runs by project (already sorted by created_at DESC)
           const runsByProject = new Map<string, typeof runsData>();
           for (const run of runsData) {
@@ -127,51 +130,30 @@ export async function GET(request: Request) {
             runsByProject.get(projectId)!.push(run);
           }
 
-          // Extract evaluation result from metadata (matching extractWorkflowResult;
-          // backfilled for legacy niche_fit_evaluation runs by migration 20260129100000)
-          const processRunMetadata = (id: string, metadata: any, updatedAt: string | null, status: string): { id: string; verdict: "pursue" | "test" | "caution" | "avoid" | null; fit_score: number | null; updated_at: string | null; status: "complete" | "queued" | "collecting" | "ingesting" | "generating" | "processing" | "failed" } => {
-            let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
-            let fitScore: number | null = null;
-
-            const evaluationResult = metadata?.evaluation_result;
-            
-            if (evaluationResult && typeof evaluationResult === "object") {
-              // Extract and normalize verdict
-              if (evaluationResult.verdict && typeof evaluationResult.verdict === "string") {
-                const normalizedVerdict = evaluationResult.verdict.toLowerCase();
-                if (normalizedVerdict === "pursue" || normalizedVerdict === "test" || normalizedVerdict === "caution" || normalizedVerdict === "avoid") {
-                  verdict = normalizedVerdict;
-                }
-              }
-              
-              // Extract score
-              if (typeof evaluationResult.score === "number") {
-                fitScore = evaluationResult.score;
-              } else if (typeof evaluationResult.score === "string") {
-                const parsedScore = parseFloat(evaluationResult.score);
-                if (!isNaN(parsedScore)) {
-                  fitScore = parsedScore;
-                }
-              }
-            }
-            
-            // Preserve the actual status from the database
+          // Extract evaluation result: NEW format (output_json) first, then OLD (metadata.evaluation_result)
+          const processRun = (run: any): { id: string; verdict: "pursue" | "test" | "caution" | "avoid" | null; fit_score: number | null; updated_at: string | null; status: "complete" | "queued" | "collecting" | "ingesting" | "generating" | "processing" | "failed" } => {
+            const id = run.id;
+            const updatedAt = run.updated_at || null;
+            const status = run.status || "complete";
+            const runOutputs = run.rag_run_outputs;
+            const outputJson =
+              Array.isArray(runOutputs) && runOutputs.length > 0
+                ? runOutputs[0]?.output_json
+                : runOutputs?.output_json ?? undefined;
+            const runWithOutput = { ...run, workflow_name: "niche_fit_evaluation", output_json: outputJson };
+            const result = extractWorkflowResult(runWithOutput);
+            const verdict = result?.verdict ?? null;
+            const fit_score = result?.score ?? null;
             const validStatuses = ["complete", "queued", "collecting", "ingesting", "generating", "processing", "failed"] as const;
-            const normalizedStatus = validStatuses.includes(status as any) ? status as typeof validStatuses[number] : "complete";
-            return { id, verdict, fit_score: fitScore, updated_at: updatedAt, status: normalizedStatus };
+            const normalizedStatus = validStatuses.includes(status) ? status : "complete";
+            return { id, verdict, fit_score, updated_at: updatedAt, status: normalizedStatus };
           };
 
           // Process all runs for each project
           for (const [projectId, runs] of runsByProject.entries()) {
             // Process all runs - include complete ones with data and in-progress ones
             const processedRuns = runs
-              .map(run => {
-                const id = (run as any).id;
-                const metadata = (run as any).metadata;
-                const updatedAt = (run as any).updated_at || null;
-                const status = (run as any).status || "complete";
-                return processRunMetadata(id, metadata, updatedAt, status);
-              })
+              .map((run) => processRun(run))
               .filter(run => {
                 // Include complete runs with data OR any in-progress runs (queued, collecting, ingesting, generating, processing)
                 const isComplete = run.status === "complete";

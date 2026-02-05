@@ -1,28 +1,37 @@
 import type { Run } from "../types";
+import { extractEvaluationResultFromOutput } from "./extractEvaluationResultFromOutput";
 
 type WorkflowResult = {
   verdict: "pursue" | "test" | "caution" | "avoid" | null;
   score: number | null;
 };
 
+type RunWithOutput = Run & { output_json?: unknown };
+
 /**
- * Extract workflow-specific result data from run metadata.
- * Currently supports niche_fit_evaluation workflow.
+ * Extract workflow-specific result data.
+ * Tries NEW format (output_json: decision_card, quantitative_summary) first,
+ * then falls back to OLD format (metadata.evaluation_result).
  *
- * Fit score and verdict come from metadata.evaluation_result (set when the run
- * completes; for legacy niche_fit_evaluation runs, backfilled from
- * rag_run_outputs.output_json by migration 20260129100000).
- *
- * @param run - The run object with metadata
+ * @param run - The run object with metadata; may include output_json from rag_run_outputs
  * @returns Workflow result with verdict and score, or null if not available
  */
-export function extractWorkflowResult(run: Run): WorkflowResult | null {
+export function extractWorkflowResult(run: RunWithOutput): WorkflowResult | null {
   // Only handle niche_fit_evaluation workflow for now
   if (run.workflow_name !== "niche_fit_evaluation") {
     return null;
   }
 
-  // Access evaluation_result from metadata (backfilled for legacy runs)
+  // 1. Try NEW format from output_json first (decision_card, quantitative_summary)
+  const outputJson = run.output_json;
+  if (outputJson) {
+    const fromOutput = extractEvaluationResultFromOutput(outputJson);
+    if (fromOutput && (fromOutput.score !== null || fromOutput.verdict !== null)) {
+      return fromOutput;
+    }
+  }
+
+  // 2. Fall back to OLD format: metadata.evaluation_result (backfilled for legacy runs)
   const evaluationResult = run.metadata?.evaluation_result;
 
   if (!evaluationResult || typeof evaluationResult !== "object") {

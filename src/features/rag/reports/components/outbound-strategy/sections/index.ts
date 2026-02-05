@@ -1,0 +1,12 @@
+export { TitlePacksSection } from "./TitlePacksSection";
+export { TargetProfileSection } from "./TargetProfileSection";
+export { SalesProcessSection } from "./SalesProcessSection";
+export { OurPositioningSection } from "./OurPositioningSection";
+export { BuyerPsychologySection } from "./BuyerPsychologySection";
+export { MessagingStrategySection } from "./MessagingStrategySection";
+export { ObjectionHandlingSection } from "./ObjectionHandlingSection";
+export { SegmentationRulesSection } from "./SegmentationRulesSection";
+export { TargetingStrategySection } from "./TargetingStrategySection";
+export { ExclusionRulesSection } from "./ExclusionRulesSection";
+export { EnrichmentRequirementsSection } from "./EnrichmentRequirementsSection";
+export { TargetingQuickReferenceSection } from "./TargetingQuickReferenceSection";

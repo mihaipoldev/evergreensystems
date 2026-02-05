@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ProjectList } from "@/features/rag/projects/components/ProjectList";
+import { ProjectsPageWithTabs } from "@/features/rag/projects/components/ProjectsPageWithTabs";
 import type { Project } from "@/features/rag/projects/types";
 
 type ProjectWithCount = Project & { document_count?: number };
@@ -59,7 +59,7 @@ function ProjectsPageContent() {
 
   return (
     <div className="w-full">
-      <ProjectList initialProjects={projects} />
+      <ProjectsPageWithTabs initialProjects={projects} />
     </div>
   );
 }

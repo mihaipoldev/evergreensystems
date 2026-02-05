@@ -4,12 +4,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown, faChevronRight, faFileText } from "@fortawesome/free-solid-svg-icons";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { DocumentTable } from "./DocumentTable";
 import { DocumentRow } from "./DocumentRow";
 import { DocumentModal } from "./DocumentModal";
@@ -370,6 +371,20 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
     setMarkdownModalOpen(true);
   };
 
+  const handleCopy = async (doc: RAGDocument) => {
+    const text = doc.content || "";
+    if (!text) {
+      toast.error("No content to copy");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Document copied to clipboard");
+    } catch (error) {
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
   const handleDownload = async (doc: RAGDocument) => {
     try {
       toast.loading("Downloading...", { id: "download" });
@@ -416,9 +431,19 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
     }
   };
 
+  const showPageTitle = !knowledgeBaseId && !projectId;
+
   return (
     <>
       <div className="w-full space-y-3">
+        {showPageTitle && (
+          <PageTitle
+            icon={
+              <FontAwesomeIcon icon={faFileText} className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+            }
+            title="Documents"
+          />
+        )}
         <Toolbar
           searchPlaceholder="Search documents..."
           searchValue={searchQuery}
@@ -503,6 +528,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
                               document={doc}
                               knowledgeBaseName={knowledgeBaseId && !docWithKB.knowledge_base_name ? undefined : (docWithKB.knowledge_base_name || knowledgeBaseName)}
                               onView={handleView ? () => handleView(doc) : undefined}
+                              onCopy={handleCopy ? () => handleCopy(doc) : undefined}
                               onDownload={handleDownload ? () => handleDownload(doc) : undefined}
                               onDelete={handleDelete ? () => handleDelete(doc) : undefined}
                             />
@@ -542,6 +568,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
                               document={doc}
                               knowledgeBaseName={knowledgeBaseId && !docWithKB.knowledge_base_name ? undefined : (docWithKB.knowledge_base_name || knowledgeBaseName)}
                               onView={handleView ? () => handleView(doc) : undefined}
+                              onCopy={handleCopy ? () => handleCopy(doc) : undefined}
                               onDownload={handleDownload ? () => handleDownload(doc) : undefined}
                               onDelete={handleDelete ? () => handleDelete(doc) : undefined}
                             />
@@ -559,6 +586,7 @@ export function DocumentList({ initialDocuments, knowledgeBaseId, knowledgeBaseN
               knowledgeBaseName={knowledgeBaseName}
               hideKnowledgeBase={!!knowledgeBaseId}
               onView={handleView}
+              onCopy={handleCopy}
               onDownload={handleDownload}
               onDelete={handleDelete}
             />

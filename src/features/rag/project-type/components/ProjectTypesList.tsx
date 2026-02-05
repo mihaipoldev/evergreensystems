@@ -4,6 +4,9 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTag } from "@fortawesome/free-solid-svg-icons";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { ProjectTypesTable } from "./ProjectTypesTable";
@@ -297,6 +300,12 @@ export function ProjectTypesList({ initialProjectTypes }: ProjectTypesListProps)
 
   return (
     <div className="w-full space-y-3">
+      <PageTitle
+        icon={
+          <FontAwesomeIcon icon={faTag} className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+        }
+        title="Project Types"
+      />
       <Toolbar
         searchPlaceholder="Search project types..."
         searchValue={searchQuery}

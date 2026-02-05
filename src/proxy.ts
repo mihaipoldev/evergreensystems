@@ -349,7 +349,7 @@ export async function proxy(request: NextRequest) {
                 
                 // CRITICAL: Do NOT set Default Theme as active in database
                 // This is only a fallback for color injection - user's selected theme should remain active
-                // Only AppearanceSettings component should change active_theme_id when user explicitly selects a theme
+                // Only the Settings UI should change active_theme_id when user explicitly selects a theme
                 console.log('[COLOR DEBUG] Using Default Theme color as fallback (NOT changing active_theme_id in database)');
               } catch (error) {
                 // If color query fails, continue without color
@@ -500,7 +500,7 @@ export async function proxy(request: NextRequest) {
               
               // CRITICAL: Do NOT set Default Theme as active in database
               // This is only a fallback for color injection - user's selected theme should remain active
-              // Only AppearanceSettings component should change active_theme_id when user explicitly selects a theme
+              // Only the Settings UI should change active_theme_id when user explicitly selects a theme
               console.log('[COLOR DEBUG] Using Default Theme color as fallback (NOT changing active_theme_id in database)');
             } catch (error) {
               // If color query fails, continue without color

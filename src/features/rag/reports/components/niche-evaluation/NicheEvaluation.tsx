@@ -3,47 +3,65 @@
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faChartBar,
-  faShieldHalved,
   faCheckCircle,
   faExclamationTriangle,
   faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import type { ReportData } from "../../types";
-import { StatCard } from "../shared/StatCard";
+import { ConfidenceBadge } from "../shared/ConfidenceBadge";
 import {
   SynthesisSection,
   ConcernsOpportunitiesSection,
   IndividualScoresSection,
+  ExecutiveSummarySection,
+  MetaSynthesisSection,
+  QuantitativeSummarySection,
+  IndividualAgentEvaluationsSection,
 } from "./sections";
-import { SourcesUsedSection } from "../niche/sections";
+import { SourcesUsedSection } from "../shared/SourcesUsedSection";
 
 interface NicheEvaluationProps {
   data: ReportData;
   reportId: string;
 }
 
+function getEvaluationData(data: ReportData) {
+  const dataAny = data.data as Record<string, unknown>;
+  const payload = Array.isArray(dataAny) ? (dataAny as unknown[])[0] : dataAny;
+  const payloadObj = payload as Record<string, unknown> | null;
+  const isNewFormat =
+    payloadObj?.decision_card ?? payloadObj?.meta_synthesis ?? payloadObj?.individual_evaluations;
+  if (isNewFormat) return { payload: payloadObj, isNewFormat: true };
+  const evaluation = payloadObj?.evaluation ?? payloadObj;
+  return { payload: evaluation as Record<string, unknown>, isNewFormat: false };
+}
+
 export const NicheEvaluation = ({ data, reportId }: NicheEvaluationProps) => {
-  // Evaluation lives in data.data.evaluation (new format) or data.data[0] / data.data (legacy)
-  const dataAny = data.data as any;
-  const evaluationData = Array.isArray(dataAny) ? dataAny[0] : (dataAny?.evaluation ?? dataAny);
+  const { payload, isNewFormat } = getEvaluationData(data);
 
-  const scoreDetails = evaluationData?.score_details;
-  const verdict = evaluationData?.verdict;
-  const verdictLabel = verdict?.label || "";
-  const verdictScore = verdict?.score || 0;
-  const verdictPriority = verdict?.priority || 0;
-  const verdictRecommendation = verdict?.recommendation || "";
+  // New format: decision_card
+  const decisionCard = isNewFormat ? (payload?.decision_card as Record<string, unknown>) : null;
+  const verdictLabel = decisionCard?.recommendation
+    ? String(decisionCard.recommendation)
+    : (payload?.verdict as { label?: string })?.label ?? "";
+  const verdictScore = decisionCard?.score
+    ? Number(decisionCard.score)
+    : Number((payload?.verdict as { score?: number })?.score ?? 0);
+  const verdictPriority = (payload?.verdict as { priority?: number })?.priority ?? 0;
+  const verdictRecommendation = decisionCard?.verdict
+    ? String(decisionCard.verdict)
+    : (payload?.verdict as { recommendation?: string })?.recommendation ?? "";
 
-  const confidenceObj = evaluationData?.confidence;
-  const avgConfidence = confidenceObj?.average || 0;
-  const confidenceLevel = confidenceObj?.level || "";
-  const confidenceDescription = confidenceObj?.description || "Agreement level across AI evaluators";
+  const confidenceObj = payload?.confidence as { average?: number } | number | undefined;
+  const avgConfidence =
+    typeof confidenceObj === "object" ? confidenceObj?.average ?? 0 : Number(confidenceObj ?? 0);
+  const confidenceValue =
+    avgConfidence > 0
+      ? avgConfidence
+      : decisionCard?.confidence != null
+        ? Number(decisionCard.confidence)
+        : data.meta.confidence ?? 0;
 
-  const confidence = avgConfidence > 0 ? `${avgConfidence}%` : "—";
-  const stdDev = scoreDetails?.score_spread ?? 0;
-
-  // Verdict configuration
   const verdictConfig = {
     PURSUE: {
       icon: faCheckCircle,
@@ -75,14 +93,16 @@ export const NicheEvaluation = ({ data, reportId }: NicheEvaluationProps) => {
     },
   };
 
-  const evalVerdictLabel = verdictLabel.toUpperCase();
-  const config = verdictConfig[evalVerdictLabel as keyof typeof verdictConfig] || verdictConfig.TEST;
+  const evalVerdictLabel = String(verdictLabel).toUpperCase();
+  const config = verdictConfig[evalVerdictLabel as keyof typeof verdictConfig] ?? verdictConfig.TEST;
   const Icon = config.icon;
+
+  const showHeader = verdictLabel || verdictScore > 0 || verdictRecommendation;
 
   return (
     <>
       {/* Verdict Hero Card */}
-      {verdict && (
+      {showHeader && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,61 +116,60 @@ export const NicheEvaluation = ({ data, reportId }: NicheEvaluationProps) => {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-baseline gap-2 md:gap-4 mb-2">
                 <h2 className={`text-xl md:text-3xl font-display font-bold ${config.textColor} break-words`}>
-                  {verdictLabel}
+                  {verdictLabel || "Evaluation"}
                 </h2>
                 <div className="flex items-baseline gap-1">
                   <span className={`text-2xl md:text-4xl font-display font-bold ${config.textColor}`}>
-                    {verdictScore.toFixed(1)}
+                    {verdictScore.toFixed(0)}
                   </span>
                   <span className="text-sm md:text-lg text-muted-foreground">/100</span>
                 </div>
               </div>
-              <p className="text-sm md:text-base text-foreground font-body break-words">{verdictRecommendation}</p>
+              <p className="text-sm md:text-base text-foreground font-body break-words">
+                {verdictRecommendation}
+              </p>
             </div>
-            <div className="hidden md:block text-right flex-shrink-0">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
-                Priority Level
-              </span>
-              <span className={`text-2xl font-display font-semibold ${config.textColor}`}>
-                #{verdictPriority}
-              </span>
-            </div>
+            {verdictPriority > 0 && (
+              <div className="hidden md:block text-right flex-shrink-0">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
+                  Priority Level
+                </span>
+                <span className={`text-2xl font-display font-semibold ${config.textColor}`}>
+                  #{verdictPriority}
+                </span>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
 
-      {/* Header Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16"
-      >
-        <StatCard
-          label="Model Confidence"
-          value={confidence}
-          icon={<FontAwesomeIcon icon={faShieldHalved} className="w-5 h-5" />}
-          description={confidenceDescription}
-          variant="highlight"
-        />
-        <StatCard
-          label="Score Deviation"
-          value={stdDev.toFixed(1)}
-          icon={<FontAwesomeIcon icon={faChartBar} className="w-5 h-5" />}
-          description="Variance in model scores"
-        />
-      </motion.div>
+      <ConfidenceBadge value={confidenceValue} />
 
-      {/* Sections */}
-      <SynthesisSection data={data} sectionNumber="01" />
-      <ConcernsOpportunitiesSection data={data} sectionNumber="02" />
-      <IndividualScoresSection data={data} sectionNumber="03" />
-
-      {/* Sources Used - same as full niche report */}
-      {data.meta.sources_used && data.meta.sources_used.length > 0 && (
-        <SourcesUsedSection sources={data.meta.sources_used} reportId={reportId} />
+      {isNewFormat ? (
+        <>
+          <ExecutiveSummarySection data={data} sectionNumber="01" />
+          <IndividualScoresSection data={data} sectionNumber="02" reportId={reportId} />
+          <MetaSynthesisSection data={data} sectionNumber="03" reportId={reportId} />
+          <QuantitativeSummarySection data={data} sectionNumber="04" />
+          <IndividualAgentEvaluationsSection data={data} sectionNumber="05" reportId={reportId} />
+          {data.meta.sources_used && data.meta.sources_used.length > 0 && (
+            <section id="research-sources" className="scroll-mt-8">
+              <SourcesUsedSection sources={data.meta.sources_used} reportId={reportId} />
+            </section>
+          )}
+        </>
+      ) : (
+        <>
+          <SynthesisSection data={data} sectionNumber="01" />
+          <ConcernsOpportunitiesSection data={data} sectionNumber="02" />
+          <IndividualScoresSection data={data} sectionNumber="03" />
+          {data.meta.sources_used && data.meta.sources_used.length > 0 && (
+            <section id="research-sources" className="scroll-mt-8">
+              <SourcesUsedSection sources={data.meta.sources_used} reportId={reportId} />
+            </section>
+          )}
+        </>
       )}
     </>
   );
 };
-

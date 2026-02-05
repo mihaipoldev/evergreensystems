@@ -177,7 +177,7 @@ export function BulkGenerateReportModal({
       const workflowIds = junctionData.map((item: any) => item.workflow_id);
       const { data: workflowsData, error: workflowsError } = await supabase
         .from("workflows")
-        .select("id, slug, name, description, icon, enabled, estimated_cost, estimated_time_minutes, input_schema, default_ai_model, knowledge_base_target, target_knowledge_base_id, created_at, updated_at")
+        .select("id, slug, name, description, icon, enabled, estimated_cost, estimated_time_minutes, input_schema, default_ai_model, default_synthesis_ai_model, knowledge_base_target, target_knowledge_base_id, created_at, updated_at")
         .in("id", workflowIds)
         .eq("enabled", true);
 
@@ -213,6 +213,7 @@ export function BulkGenerateReportModal({
               estimated_time_minutes: workflow.estimated_time_minutes,
               input_schema: workflow.input_schema,
               default_ai_model: workflow.default_ai_model || null,
+              default_synthesis_ai_model: workflow.default_synthesis_ai_model || null,
               enabled: workflow.enabled,
               knowledge_base_target: workflow.knowledge_base_target || 'workspace',
               target_knowledge_base_id: workflow.target_knowledge_base_id,
@@ -273,6 +274,10 @@ export function BulkGenerateReportModal({
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
 
+    const selectedWorkflow = workflows.find((w) => w.id === workflowId);
+    const researchAiModel = selectedWorkflow?.default_ai_model || null;
+    const synthesisAiModel = selectedWorkflow?.default_synthesis_ai_model || selectedWorkflow?.default_ai_model || null;
+
     // Generate reports sequentially
     for (let i = 0; i < selectedProjects.length; i++) {
       const project = selectedProjects[i];
@@ -291,11 +296,14 @@ export function BulkGenerateReportModal({
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
+            project_id: project.id,
             research_subject_id: project.id,
             research_subject_name: project.client_name || project.name || "",
             research_subject_geography: project.geography || null,
             research_subject_description: project.description || null,
             research_subject_category: project.category || null,
+            research_ai_model: researchAiModel,
+            synthesis_ai_model: synthesisAiModel,
           }),
         });
 

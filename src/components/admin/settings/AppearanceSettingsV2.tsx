@@ -108,37 +108,36 @@ export function AppearanceSettingsV2() {
   const applyPrimaryColorToCSS = (color: Color | null) => {
     if (!color || typeof document === "undefined") return;
     const cssValue = hslToCssString(color.hsl.h, color.hsl.s, color.hsl.l);
-    
+    const h = String(color.hsl.h);
+    const s = String(color.hsl.s);
+    const l = String(color.hsl.l);
+
+    // Apply directly to document root for immediate visual update (highest priority)
+    const root = document.documentElement;
+    root.style.setProperty("--brand-h", h, "important");
+    root.style.setProperty("--brand-s", s, "important");
+    root.style.setProperty("--brand-l", l, "important");
+    root.style.setProperty("--primary", cssValue, "important");
+
     const applyStyle = () => {
       try {
-        const styleText = `html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--brand-h:${color.hsl.h}!important;--brand-s:${color.hsl.s}!important;--brand-l:${color.hsl.l}!important;--primary:${cssValue}!important;}`;
+        const maxSpecificitySelector = "html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,body.preset-admin,body.preset-admin.dark,body.preset-admin *,body.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *";
+        const styleText = `${maxSpecificitySelector}{--brand-h:${color.hsl.h}!important;--brand-s:${color.hsl.s}!important;--brand-l:${color.hsl.l}!important;--primary:${cssValue}!important;}`;
         
-        const oldStyle = document.getElementById("primary-color-client");
-        if (oldStyle) {
-          try {
-            if (oldStyle.parentNode) {
-              oldStyle.remove();
-            }
-          } catch (e) {
-            // Ignore removal errors
-          }
+        // Update or create style tag - prefer updating existing to avoid accumulation
+        const styleIds = ["primary-color-client", "primary-color-session", "primary-color-inline-server", "primary-color-inline-sync"];
+        let existingStyle = null;
+        for (const id of styleIds) {
+          existingStyle = document.getElementById(id);
+          if (existingStyle) break;
         }
-        
-        const style = document.createElement("style");
-        style.id = "primary-color-client";
-        style.textContent = styleText;
-        
-        if (document.head) {
+        if (existingStyle) {
+          existingStyle.textContent = styleText;
+        } else if (document.head) {
+          const style = document.createElement("style");
+          style.id = "primary-color-client";
+          style.textContent = styleText;
           document.head.appendChild(style);
-          
-          const sessionStyle = document.getElementById("primary-color-session");
-          if (sessionStyle) {
-            try {
-              sessionStyle.textContent = styleText;
-            } catch (e) {
-              // Ignore update errors
-            }
-          }
         }
       } catch (error) {
         console.error("Error applying primary color to CSS:", error);
@@ -191,38 +190,36 @@ export function AppearanceSettingsV2() {
   const applyAccentColorToCSS = (color: Color | null) => {
     if (!color || typeof document === "undefined") return;
     const cssValue = hslToCssString(color.hsl.h, color.hsl.s, color.hsl.l);
-    
+    const h = String(color.hsl.h);
+    const s = String(color.hsl.s);
+    const l = String(color.hsl.l);
+
+    // Apply directly to document root for immediate visual update (highest priority)
+    const root = document.documentElement;
+    root.style.setProperty("--accent-h", h, "important");
+    root.style.setProperty("--accent-s", s, "important");
+    root.style.setProperty("--accent-l", l, "important");
+    root.style.setProperty("--accent", cssValue, "important");
+
     const applyStyle = () => {
       try {
-        const styleText = `html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *{--accent-h:${color.hsl.h}!important;--accent-s:${color.hsl.s}!important;--accent-l:${color.hsl.l}!important;--accent:${cssValue}!important;}`;
+        const maxSpecificitySelector = "html.preset-admin,html.preset-admin.dark,html.preset-admin *,html.preset-admin.dark *,body.preset-admin,body.preset-admin.dark,body.preset-admin *,body.preset-admin.dark *,.preset-admin,.preset-admin *,.preset-admin.dark,.preset-admin.dark *";
+        const styleText = `${maxSpecificitySelector}{--accent-h:${color.hsl.h}!important;--accent-s:${color.hsl.s}!important;--accent-l:${color.hsl.l}!important;--accent:${cssValue}!important;}`;
         
-        const oldStyle = document.getElementById("accent-color-client");
-        if (oldStyle) {
-          try {
-            if (oldStyle.parentNode) {
-              oldStyle.remove();
-            }
-          } catch (e) {
-            // Ignore removal errors
-          }
+        // Update or create style tag - prefer updating existing to avoid accumulation
+        const styleIds = ["accent-color-client", "accent-color-session", "accent-color-inline-server", "accent-color-inline-sync"];
+        let existingStyle = null;
+        for (const id of styleIds) {
+          existingStyle = document.getElementById(id);
+          if (existingStyle) break;
         }
-        
-        const style = document.createElement("style");
-        style.id = "accent-color-client";
-        style.textContent = styleText;
-        
-        if (document.head) {
+        if (existingStyle) {
+          existingStyle.textContent = styleText;
+        } else if (document.head) {
+          const style = document.createElement("style");
+          style.id = "accent-color-client";
+          style.textContent = styleText;
           document.head.appendChild(style);
-          
-          // Also update accent-color-session if it exists (for InstantColorApply)
-          const sessionStyle = document.getElementById("accent-color-session");
-          if (sessionStyle) {
-            try {
-              sessionStyle.textContent = styleText;
-            } catch (e) {
-              // Ignore update errors
-            }
-          }
         }
       } catch (error) {
         console.error("Error applying accent color to CSS:", error);

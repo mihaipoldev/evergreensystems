@@ -13,13 +13,14 @@ export async function getReportData(id: string): Promise<{
   workflowLabel: string | null;
   projectName: string | null;
   runStatus: string | null;
+  runInput: Record<string, unknown> | null;
 }> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: "Unauthorized", workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
+      return { data: null, error: "Unauthorized", workflowName: null, workflowLabel: null, projectName: null, runStatus: null, runInput: null };
     }
 
     // Try with regular client first (respects RLS)
@@ -34,6 +35,7 @@ export async function getReportData(id: string): Promise<{
           knowledge_base_id,
           project_id,
           created_at,
+          input,
           rag_knowledge_bases (
             id,
             name
@@ -64,8 +66,9 @@ export async function getReportData(id: string): Promise<{
             status,
             knowledge_base_id,
             project_id,
-            created_at,
-            rag_knowledge_bases (
+          created_at,
+          input,
+          rag_knowledge_bases (
               id,
               name
             ),
@@ -101,8 +104,9 @@ export async function getReportData(id: string): Promise<{
             status,
             knowledge_base_id,
             project_id,
-            created_at,
-            rag_knowledge_bases (
+          created_at,
+          input,
+          rag_knowledge_bases (
               id,
               name
             ),
@@ -125,29 +129,30 @@ export async function getReportData(id: string): Promise<{
           .from("rag_run_outputs")
           .select(`
             *,
-            rag_runs (
+          rag_runs (
+            id,
+            workflow_id,
+            status,
+            knowledge_base_id,
+            project_id,
+          created_at,
+          input,
+          rag_knowledge_bases (
               id,
-              workflow_id,
-              status,
-              knowledge_base_id,
-              project_id,
-              created_at,
-              rag_knowledge_bases (
-                id,
-                name
-              ),
-              workflows (
-                id,
-                slug,
-                name
-              ),
-              projects (
-                id,
-                name
-              )
+              name
+            ),
+            workflows (
+              id,
+              slug,
+              name
+            ),
+            projects (
+              id,
+              name
             )
-          `)
-          .eq("run_id", id)
+          )
+        `)
+        .eq("run_id", id)
           .maybeSingle();
       }
 
@@ -157,43 +162,52 @@ export async function getReportData(id: string): Promise<{
 
     if (error) {
       if (error.code === "PGRST116") {
-        return { data: null, error: "Report not found", workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
+        return { data: null, error: "Report not found", workflowName: null, workflowLabel: null, projectName: null, runStatus: null, runInput: null };
       }
-      return { data: null, error: error.message, workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
+      return { data: null, error: error.message, workflowName: null, workflowLabel: null, projectName: null, runStatus: null, runInput: null };
     }
 
-    const dataTyped = data as { 
+    const dataTyped = data as {
       output_json: any;
-      rag_runs?: {
-        status?: string;
-        workflows?: {
-          slug: string;
-          name: string;
-        } | null;
-        projects?: {
-          id: string;
-          name: string;
-        } | null;
-      } | null;
+      rag_runs?:
+        | {
+            status?: string;
+            input?: Record<string, unknown>;
+            workflows?: { slug: string; name: string } | null;
+            projects?: { id: string; name: string } | { id: string; name: string }[] | null;
+          }
+        | Array<{
+            status?: string;
+            input?: Record<string, unknown>;
+            workflows?: { slug: string; name: string } | null;
+            projects?: { id: string; name: string } | { id: string; name: string }[] | null;
+          }>
+        | null;
     } | null;
-    
+
     if (!dataTyped || !dataTyped.output_json) {
-      return { data: null, error: "Report data is missing", workflowName: null, workflowLabel: null, projectName: null, runStatus: null };
+      return { data: null, error: "Report data is missing", workflowName: null, workflowLabel: null, projectName: null, runStatus: null, runInput: null };
     }
 
-    // Extract workflow info and run status from the query result
-    const workflowName = dataTyped.rag_runs?.workflows?.slug || null;
-    const workflowLabel = dataTyped.rag_runs?.workflows?.name || null;
-    const runStatus = dataTyped.rag_runs?.status ?? null;
-    
-    // Extract project name from the query result
-    const projects = dataTyped.rag_runs?.projects;
-    const projectName = Array.isArray(projects) 
-      ? projects[0]?.name || null
-      : projects?.name || null;
+    // Resolve rag_runs (can be single object or array depending on PostgREST)
+    const ragRun = Array.isArray(dataTyped.rag_runs)
+      ? dataTyped.rag_runs[0]
+      : dataTyped.rag_runs ?? null;
+
+    // Extract workflow slug and normalize (lowercase, hyphens and spaces -> underscores) for consistent lookup
+    const rawSlug = ragRun?.workflows?.slug ?? null;
+    const workflowName = rawSlug
+      ? String(rawSlug).toLowerCase().replace(/-/g, "_").replace(/\s+/g, "_").trim() || null
+      : null;
+    const workflowLabel = ragRun?.workflows?.name ?? null;
+    const runStatus = ragRun?.status ?? null;
+
+    const projects = ragRun?.projects;
+    const projectName = Array.isArray(projects) ? projects[0]?.name ?? null : projects?.name ?? null;
 
     const transformed = transformOutputJson(dataTyped.output_json);
-    return { data: transformed, error: null, workflowName, workflowLabel, projectName, runStatus };
+    const runInput = (ragRun as { input?: Record<string, unknown> })?.input ?? null;
+    return { data: transformed, error: null, workflowName, workflowLabel, projectName, runStatus, runInput };
   } catch (error) {
     return {
       data: null,
@@ -202,6 +216,7 @@ export async function getReportData(id: string): Promise<{
       workflowLabel: null,
       projectName: null,
       runStatus: null,
+      runInput: null,
     };
   }
 }

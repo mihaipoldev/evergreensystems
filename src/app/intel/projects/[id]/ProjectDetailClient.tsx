@@ -6,17 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faCircleInfo,
+  faClock,
+  faDatabase,
+  faExclamationTriangle,
   faFileText,
   faLayerGroup,
   faPlay,
   faSpinner,
-  faExclamationTriangle,
   faWandMagicSparkles,
   faCalendar,
-  faClock,
-  faCircleInfo,
-  faDatabase,
 } from "@fortawesome/free-solid-svg-icons";
+import { usePageHeader } from "@/providers/PageHeaderProvider";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { ProjectActionsMenu } from "@/features/rag/projects/components/ProjectActionsMenu";
 import { ProjectModal } from "@/features/rag/projects/components/ProjectModal";
 import { GenerateReportModal } from "@/features/rag/workflows/components/GenerateReportModal";
@@ -73,6 +75,7 @@ export function ProjectDetailClient({
   const [project, setProject] = useState(initialProject);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [generateModalWorkflowId, setGenerateModalWorkflowId] = useState<string | null>(null);
   const [projectTypeName, setProjectTypeName] = useState<string | null>(initialProjectTypeName || null);
   const [runsCount, setRunsCount] = useState(initialRuns.length);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -136,132 +139,100 @@ export function ProjectDetailClient({
 
   const isNicheProject = projectTypeName === "niche";
   const displayName = isNicheProject ? project.name : (project.client_name || project.name || "");
+  const { setHeader } = usePageHeader();
+
+  useEffect(() => {
+    setHeader({
+      breadcrumbItems: [
+        { href: "/intel/projects", label: "Projects" },
+        { label: displayName || "Project" },
+      ],
+      actions: <ProjectActionsMenu project={project} onEdit={handleEdit} />,
+    });
+    return () => setHeader(null);
+  }, [displayName, project, setHeader]);
 
   return (
     <>
       <div className="w-full space-y-6">
-        <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
-          <div className="flex-1 min-w-0">
+        <PageTitle
+          icon={initialProjectType?.icon ? <span className="shrink-0">{initialProjectType.icon}</span> : undefined}
+          title={displayName || "Project"}
+          titleActions={
             <TooltipProvider delayDuration={100}>
-              <div className="flex items-start gap-2 mb-1 mt-1.5">
-                <h1 className="text-lg md:text-3xl font-bold text-foreground flex items-start gap-2">
-                  {initialProjectType?.icon && <span>{initialProjectType.icon}</span>}
-                  {displayName}
-                </h1>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className="md:h-8 hidden md:block text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="Project information"
-                    >
-                      <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    className="max-w-md" 
-                    side="bottom"
-                    sideOffset={8}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="shrink-0 md:h-8 hidden md:flex text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Project information"
                   >
-                    <div className="space-y-3 text-sm">
-                      <div>
-                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Name</p>
-                        <p className="text-foreground font-medium">{displayName || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Status</p>
-                        <StatusBadge 
-                          color={statusColorMap[project.status] || "muted"}
-                        >
-                          {project.status || "—"}
-                        </StatusBadge>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
-                        <p className="text-foreground font-medium">{project.category || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
-                        <p className="text-foreground font-medium">{project.geography || "—"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
-                        <p className="text-foreground font-medium">{project.description || "—"}</p>
-                      </div>
+                    <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  className="max-w-md"
+                  side="bottom"
+                  sideOffset={8}
+                >
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Name</p>
+                      <p className="text-foreground font-medium">{displayName || "—"}</p>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Status</p>
+                      <StatusBadge color={statusColorMap[project.status] || "muted"}>
+                        {project.status || "—"}
+                      </StatusBadge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
+                      <p className="text-foreground font-medium">{project.category || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
+                      <p className="text-foreground font-medium">{project.geography || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
+                      <p className="text-foreground font-medium">{project.description || "—"}</p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             </TooltipProvider>
-            
-            <div className="flex items-center gap-2 min-w-0">
+          }
+          meta={
+            <>
               {project.rag_knowledge_bases && (
-                <Link 
+                <Link
                   href={`/intel/knowledge-bases/${project.kb_id}`}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group min-w-0 max-w-full"
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group min-w-0 max-w-full"
                 >
                   <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="font-medium truncate min-w-0">{project.rag_knowledge_bases.name}</span>
                 </Link>
               )}
-            </div>
-            
-            {/* Research Dates (for niche projects) */}
-            {isNicheProject && (project.first_researched_at || project.last_researched_at) && (
-              <div className="flex flex-wrap items-center gap-4 mb-3 text-xs text-muted-foreground">
-                {project.first_researched_at && (
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faCalendar} className="h-3 w-3" />
-                    <span className="font-medium">First Researched:</span>
-                    <span>{formatDate(project.first_researched_at)}</span>
-                  </div>
-                )}
-                {project.last_researched_at && (
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faClock} className="h-3 w-3" />
-                    <span className="font-medium">Last Researched:</span>
-                    <span>{formatDate(project.last_researched_at)}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setIsGenerateModalOpen(true)}
-              className="hidden md:inline-flex relative h-10 w-10 p-0 overflow-hidden border-0 shadow-none transition-all duration-300 hover:scale-105 bg-primary hover:bg-primary text-accent-foreground"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 5px 6px -2px hsl(var(--accent) / 0.1), 0 3px 3px -2px hsl(var(--accent) / 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 3px 5px -2px hsl(var(--accent) / 0.0), 0 4px 6px -2px hsl(var(--accent) / 0.0)';
-              }}
-              title="Generate Report"
-            >
-              {/* Animated shimmer effect */}
-              <div 
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full" 
-                style={{
-                  animation: 'shimmer 8s infinite'
-                }}
-              />
-              <FontAwesomeIcon 
-                icon={faWandMagicSparkles} 
-                className="relative z-10 !h-5 !w-5 drop-shadow-lg" 
-                style={{ 
-                  fontSize: '20px', 
-                  width: '20px', 
-                  height: '20px',
-                  color: ''
-                }} 
-              />
-            </Button>
-            <ProjectActionsMenu
-              project={project}
-              onEdit={handleEdit}
-            />
-          </div>
-        </div>
+              {isNicheProject && (project.first_researched_at || project.last_researched_at) && (
+                <>
+                  {project.first_researched_at && (
+                    <span className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faCalendar} className="h-3 w-3" />
+                      <span>First: {formatDate(project.first_researched_at)}</span>
+                    </span>
+                  )}
+                  {project.last_researched_at && (
+                    <span className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faClock} className="h-3 w-3" />
+                      <span>Last: {formatDate(project.last_researched_at)}</span>
+                    </span>
+                  )}
+                </>
+              )}
+            </>
+          }
+        />
 
         {/* Tabs */}
         <section className="relative">
@@ -408,6 +379,15 @@ export function ProjectDetailClient({
                     <ProjectRunsClient
                       initialRuns={initialRuns}
                       projectId={project.id}
+                      projectTypeId={project.project_type_id || null}
+                      onGenerateClick={() => {
+                        setGenerateModalWorkflowId(null);
+                        setIsGenerateModalOpen(true);
+                      }}
+                      onGenerateWorkflowClick={(workflowId) => {
+                        setGenerateModalWorkflowId(workflowId);
+                        setIsGenerateModalOpen(true);
+                      }}
                     />
                   </div>
                 )}
@@ -426,7 +406,10 @@ export function ProjectDetailClient({
 
       <GenerateReportModal
         open={isGenerateModalOpen}
-        onOpenChange={setIsGenerateModalOpen}
+        onOpenChange={(open) => {
+          setIsGenerateModalOpen(open);
+          if (!open) setGenerateModalWorkflowId(null);
+        }}
         projectType={projectTypeName || null}
         projectTypeId={project.project_type_id || null}
         researchSubjectId={project.id}
@@ -434,6 +417,7 @@ export function ProjectDetailClient({
         researchSubjectGeography={project.geography || null}
         researchSubjectDescription={project.description || null}
         researchSubjectCategory={project.category || null}
+        initialWorkflowId={generateModalWorkflowId}
       />
 
       {/* Set chat context for this project */}

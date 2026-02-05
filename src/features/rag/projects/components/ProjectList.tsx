@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { usePageHeader } from "@/providers/PageHeaderProvider";
 import { Toolbar } from "@/features/rag/shared/components/Toolbar";
 import type { FilterCategory } from "@/features/rag/shared/components/RAGFilterMenu";
 import { ProjectTable } from "./ProjectTable";
@@ -142,6 +143,12 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
   useEffect(() => {
     hasLoadedFromStorage.current = true;
   }, []);
+
+  const { setHeader } = usePageHeader();
+  useEffect(() => {
+    setHeader({ breadcrumbItems: [{ label: "Projects" }] });
+    return () => setHeader(null);
+  }, [setHeader]);
 
   // Fetch project types
   useEffect(() => {
@@ -479,7 +486,7 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
   }, [filteredAndSortedProjects, selectedIds]);
 
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-4">
       <Toolbar
         searchPlaceholder="Search projects..."
         searchValue={searchQuery}

@@ -23,21 +23,51 @@ export const WORKFLOW_HEADER_CONFIG: Record<string, HeaderConfig> = {
     subtitle: "Comprehensive Market Intelligence & Strategic Targeting Analysis",
     showStatsCards: true,
   },
+  descriptive_intelligence: {
+    reportTypeLabel: "Niche Intelligence Report",
+    modeLabel: "Descriptive Intelligence Mode",
+    subtitle: "Comprehensive Market Intelligence & Niche Analysis",
+    showStatsCards: true,
+  },
   niche_fit_evaluation: {
     reportTypeLabel: "Niche Evaluation Report",
     modeLabel: "Strategic Assessment Mode",
     subtitle: "Detailed Niche Analysis & Opportunity Evaluation",
-    showStatsCards: false, // Evaluation reports might not need these stats
+    showStatsCards: false,
   },
-  // Add more workflow configurations here
+  icp_research: {
+    reportTypeLabel: "ICP Research Report",
+    modeLabel: "Customer Research Mode",
+    subtitle: "Ideal Customer Profile & Buyer Intelligence",
+    showStatsCards: false,
+  },
+  outbound_strategy: {
+    reportTypeLabel: "Outbound Strategy Report",
+    modeLabel: "Lead Gen Targeting Mode",
+    subtitle: "Comprehensive Outbound Sales Strategy & Targeting Playbook",
+    showStatsCards: true,
+  },
+  lead_gen_targeting: {
+    reportTypeLabel: "Outbound Strategy Report",
+    modeLabel: "Lead Gen Targeting Mode",
+    subtitle: "Comprehensive Outbound Sales Strategy & Targeting Playbook",
+    showStatsCards: true,
+  },
 };
 
+/** Normalize workflow slug for lookup (lowercase, hyphens and spaces -> underscores). */
+function normalizeSlug(slug: string | null): string | null {
+  if (!slug || typeof slug !== "string") return null;
+  return slug.toLowerCase().replace(/-/g, "_").replace(/\s+/g, "_").trim() || null;
+}
+
 /**
- * Get header configuration for a workflow
- * Falls back to a default config if workflow is not found
+ * Get header configuration for a workflow.
+ * Falls back to a default config if workflow is not found.
  */
 export function getHeaderConfigForWorkflow(workflowName: string | null): HeaderConfig {
-  if (!workflowName) {
+  const slug = normalizeSlug(workflowName);
+  if (!slug) {
     return {
       reportTypeLabel: "Report",
       modeLabel: "Analysis Mode",
@@ -47,10 +77,8 @@ export function getHeaderConfigForWorkflow(workflowName: string | null): HeaderC
   }
 
   return (
-    WORKFLOW_HEADER_CONFIG[workflowName] || {
-      reportTypeLabel: workflowName.split("_").map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(" ") + " Report",
+    WORKFLOW_HEADER_CONFIG[slug] || {
+      reportTypeLabel: slug.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ") + " Report",
       modeLabel: "Analysis Mode",
       subtitle: "Comprehensive Analysis Report",
       showStatsCards: false,

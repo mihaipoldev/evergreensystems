@@ -2,10 +2,11 @@
 
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { RunList } from "@/features/rag/runs/components/RunList";
+import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
 import type { Run } from "@/features/rag/runs/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { faFileAlt, faPlay, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
 type RunWithKB = Run & { knowledge_base_name?: string | null };
 
@@ -67,6 +68,12 @@ export default function ResearchReportsPage() {
 
   return (
     <div className="w-full space-y-6">
+      <PageTitle
+        icon={
+          <FontAwesomeIcon icon={faFileAlt} className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+        }
+        title="Research"
+      />
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard

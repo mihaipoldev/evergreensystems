@@ -12,10 +12,12 @@ import { shouldIgnoreRowClick } from "@/features/rag/shared/utils/dropdownClickG
 import type { Run } from "../types";
 import { getRunLabel } from "../types";
 import { extractWorkflowResult } from "../utils/extractWorkflowResult";
+import { extractUsageFromRun } from "../utils/extractUsageFromRun";
 import { cn } from "@/lib/utils";
 
 type RunRowProps = {
   run: Run & { 
+    output_json?: unknown;
     knowledge_base_name?: string | null; 
     report_id?: string | null;
     fit_score?: number | null;
@@ -23,12 +25,15 @@ type RunRowProps = {
   };
   onView?: () => void;
   onDelete?: () => void;
+  /** When "updated", shows updated_at as "Last updated" instead of created_at */
+  dateColumn?: "created" | "updated";
 };
 
 import { getRunStatusGradientClasses } from "@/features/rag/shared/utils/runStatusColors";
 
-export function RunRow({ run, onView, onDelete }: RunRowProps) {
-  const formattedDate = new Date(run.created_at).toLocaleDateString("en-US", {
+export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRowProps) {
+  const dateToShow = dateColumn === "updated" ? run.updated_at : run.created_at;
+  const formattedDate = new Date(dateToShow).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -63,6 +68,7 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
 
   // Extract workflow result for mobile layout
   const workflowResult = run.status === "complete" ? extractWorkflowResult(run) : null;
+  const { cost, duration } = extractUsageFromRun(run);
 
   return (
     <>
@@ -99,6 +105,17 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
                 )}
                 <div>
                   <RunProgress status={run.status} metadata={run.metadata} className="!w-full !pr-0" />
+                  {(cost != null || duration != null) && (
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 text-xs text-muted-foreground mt-1",
+                        cost != null && duration != null && "justify-between"
+                      )}
+                    >
+                      {duration != null && <span className="tabular-nums">{duration}</span>}
+                      {cost != null && <span className="font-medium tabular-nums text-foreground">${cost.toFixed(2)}</span>}
+                    </div>
+                  )}
                 </div>
                 <div>{formattedDate}</div>
               </div>
@@ -140,6 +157,15 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
             </div>
           </div>
 
+          {/* Usage (cost only) */}
+          <div className="w-20 shrink-0">
+            {cost != null && (
+              <span className="text-sm font-semibold tabular-nums text-foreground">
+                ${cost.toFixed(2)}
+              </span>
+            )}
+          </div>
+
           {/* Fit Score & Verdict */}
           <div className="w-28 shrink-0">
             {run.status === "complete" ? (
@@ -153,11 +179,25 @@ export function RunRow({ run, onView, onDelete }: RunRowProps) {
             ) : null}
           </div>
 
-          {/* Progress */}
-          <RunProgress 
-            status={run.status} 
-            metadata={run.metadata}
-          />
+          {/* Progress + Usage below */}
+          <div className="w-44 shrink-0 flex flex-col gap-1.5">
+            <RunProgress 
+              status={run.status} 
+              metadata={run.metadata}
+              className="!pr-0"
+            />
+            {(cost != null || duration != null) && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 text-xs text-muted-foreground",
+                  cost != null && duration != null && "justify-between"
+                )}
+              >
+                {duration != null && <span className="tabular-nums">{duration}</span>}
+                {cost != null && <span className="font-medium tabular-nums text-foreground">${cost.toFixed(2)}</span>}
+              </div>
+            )}
+          </div>
 
           {/* Created */}
           <div className="w-40 shrink-0">

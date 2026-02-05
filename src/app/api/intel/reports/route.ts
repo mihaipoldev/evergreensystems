@@ -1,7 +1,18 @@
-import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+/** Validate and parse JSON string for optional fields (empty = null) */
+function parseJsonOptional(value: string): { data: unknown; error: null } | { data: null; error: string } {
+  const trimmed = value?.trim() ?? "";
+  if (trimmed === "") return { data: null, error: null };
+  try {
+    return { data: JSON.parse(value) as unknown, error: null };
+  } catch (e) {
+    return { data: null, error: e instanceof Error ? e.message : "Invalid JSON" };
+  }
+}
+
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -10,55 +21,50 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const adminSupabase = createServiceRoleClient();
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
+    const body = await request.json().catch(() => ({})) as {
+      run_id: string;
+      output_json?: string | Record<string, any>;
+      pdf_storage_path?: string | null;
+      ui_schema?: string | Record<string, any> | null;
+    };
 
-    const query = adminSupabase
-      .from("rag_run_outputs")
-      .select(`
-        *,
-        rag_runs (
-          id,
-          workflow_id,
-          status,
-          knowledge_base_id,
-          created_at,
-          rag_knowledge_bases (
-            id,
-            name
-          ),
-          workflows (
-            id,
-            slug,
-            name
-          )
-        )
-      `);
-
-    if (search && search.trim() !== "") {
-      // Search in output_json or run info
-      // For now, we'll just order by created_at
+    if (!body.run_id) {
+      return NextResponse.json({ error: "run_id is required" }, { status: 400 });
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const outputJson =
+      body.output_json === undefined
+        ? {}
+        : typeof body.output_json === "string"
+          ? (() => {
+              const r = parseJsonOptional(body.output_json);
+              if (r.error) {
+                throw new Error(r.error);
+              }
+              return (r.data as Record<string, any>) ?? {};
+            })()
+          : body.output_json;
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    let uiSchema: Record<string, any> | null = null;
+    if (body.ui_schema !== undefined && body.ui_schema !== null && body.ui_schema !== "") {
+      const raw =
+        typeof body.ui_schema === "string" ? body.ui_schema : JSON.stringify(body.ui_schema);
+      const r = parseJsonOptional(raw);
+      if (r.error) {
+        return NextResponse.json({ error: `ui_schema: ${r.error}` }, { status: 400 });
+      }
+      uiSchema = r.data as Record<string, any>;
     }
 
-    // Transform data to include run and knowledge base info
-    const reportsWithRun = (data || []).map((report: any) => ({
-      ...report,
-      run: report.rag_runs ? {
-        ...report.rag_runs,
-        knowledge_base_name: report.rag_runs.rag_knowledge_bases?.name || null,
-        workflow_name: report.rag_runs.workflows?.slug || null,
-        workflow_label: report.rag_runs.workflows?.name || null,
-      } : null,
-    }));
+    const { createRunOutput } = await import("@/features/rag/runs-outputs/data");
+    const created = await createRunOutput({
+      run_id: body.run_id,
+      output_json: outputJson,
+      pdf_storage_path: body.pdf_storage_path ?? null,
+      ui_schema: uiSchema,
+    });
 
-    return NextResponse.json(reportsWithRun, { status: 200 });
+    return NextResponse.json(created, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

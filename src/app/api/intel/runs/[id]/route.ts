@@ -33,6 +33,10 @@ export async function GET(
           id,
           name
         ),
+        rag_run_outputs (
+          id,
+          output_json
+        )
       `)
       .eq("id", id)
       .single();
@@ -61,39 +65,30 @@ export async function GET(
       }
     }
 
-    // Fit score and verdict from metadata.evaluation_result (backfilled for legacy
-    // niche_fit_evaluation runs by migration 20260129100000)
-    const evaluationResult = runData.metadata?.evaluation_result;
-    let fit_score: number | null = null;
-    let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
-    
-    if (evaluationResult && typeof evaluationResult === "object") {
-      // Extract and normalize verdict
-      if (evaluationResult.verdict && typeof evaluationResult.verdict === "string") {
-        const normalizedVerdict = evaluationResult.verdict.toLowerCase();
-        if (normalizedVerdict === "pursue" || normalizedVerdict === "test" || normalizedVerdict === "caution" || normalizedVerdict === "avoid") {
-          verdict = normalizedVerdict;
-        }
-      }
-      
-      // Extract score
-      if (typeof evaluationResult.score === "number") {
-        fit_score = evaluationResult.score;
-      } else if (typeof evaluationResult.score === "string") {
-        const parsedScore = parseFloat(evaluationResult.score);
-        if (!isNaN(parsedScore)) {
-          fit_score = parsedScore;
-        }
-      }
-    }
+    const runOutputs = runData.rag_run_outputs;
+    const outputJson =
+      Array.isArray(runOutputs) && runOutputs.length > 0
+        ? runOutputs[0]?.output_json
+        : runOutputs?.output_json ?? undefined;
+    const report_id =
+      Array.isArray(runOutputs) && runOutputs.length > 0
+        ? runOutputs[0]?.id ?? null
+        : runOutputs?.id ?? null;
+
+    const { extractWorkflowResult } = await import("@/features/rag/runs/utils/extractWorkflowResult");
+    const runWithOutput = { ...runData, output_json: outputJson };
+    const workflowResult = extractWorkflowResult(runWithOutput);
+    const fit_score = workflowResult?.score ?? null;
+    const verdict = workflowResult?.verdict ?? null;
 
     const runWithExtras = {
       ...runData,
+      output_json: outputJson,
       knowledge_base_name: runData.rag_knowledge_bases?.name || null,
       project_name: projectName,
       workflow_name: runData.workflows?.slug || null,
       workflow_label: runData.workflows?.name || null,
-      report_id: null, // Not loading rag_run_outputs
+      report_id,
       fit_score,
       verdict,
     };

@@ -64,12 +64,18 @@ export async function POST(
       .single();
 
     if (contextError) {
-      // Check if it's a duplicate
+      // Duplicate: return existing row so add is idempotent
       if (contextError.code === '23505') {
-        return NextResponse.json(
-          { error: 'Context already exists in conversation' },
-          { status: 409 }
-        );
+        const { data: existing } = await (supabase
+          .from('chat_conversation_contexts') as any)
+          .select()
+          .eq('conversation_id', conversationId)
+          .eq('context_type', context_type)
+          .eq('context_id', context_id)
+          .single();
+        if (existing) {
+          return NextResponse.json(existing, { status: 200 });
+        }
       }
       console.error('Error adding context:', contextError);
       return NextResponse.json(

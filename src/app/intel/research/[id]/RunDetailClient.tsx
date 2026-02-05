@@ -20,6 +20,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { toast } from "sonner";
 import { faExternalLink, faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { usePageHeader } from "@/providers/PageHeaderProvider";
 
 type RunWithExtras = Run & {
   knowledge_base_name?: string | null;
@@ -103,6 +104,7 @@ function getStatusMessage(
 
 export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
   const router = useRouter();
+  const { setHeader } = usePageHeader();
   const [run, setRun] = useState<RunWithExtras>(initialRun);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -457,28 +459,34 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
     },
   ];
 
-  return (
-    <div className="bg-background relative">
-      {/* Action Menu Button - Top Right of Page */}
-      <div className="absolute top-4 right-4 z-10">
+  // Set page header with breadcrumbs and action menu
+  useEffect(() => {
+    setHeader({
+      breadcrumbItems: [
+        { href: "/intel/research", label: "Research" },
+        { label: subject },
+      ],
+      actions: (
         <ActionMenu
           trigger={
             <button
               onClick={(e) => e.stopPropagation()}
-              className="h-9 w-9 flex items-center justify-center shrink-0 cursor-pointer transition-colors hover:text-foreground text-foreground/80 bg-transparent hover:bg-transparent focus:bg-transparent focus:outline-none"
+              className="h-9 w-9 rounded-full hover:text-primary flex items-center justify-center shrink-0 cursor-pointer transition-all"
               aria-label="Actions"
             >
-              <FontAwesomeIcon
-                icon={faEllipsis}
-                className="h-5 w-5"
-              />
+              <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
             </button>
           }
           items={actionMenuItems}
           align="end"
         />
-      </div>
+      ),
+    });
+    return () => setHeader(null);
+  }, [subject, run.status, run.report_id, run.execution_url, run.id, setHeader]);
 
+  return (
+    <div className="bg-background relative">
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -509,9 +517,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
             {/* Title */}
             <h1 className="text-3xl md:text-4xl font-extrabold mb-3">
               {run.status === "failed" ? (
-                <span className="text-red-600 dark:text-red-500">
-                  Failed {runLabel}
-                </span>
+                <span className="text-red-600 dark:text-red-500">{runLabel}</span>
               ) : (
                 <span
                   style={{
@@ -521,7 +527,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
                     backgroundClip: "text",
                   }}
                 >
-                  {run.status === "complete" ? "Completed" : "Generating"} {runLabel}
+                  {runLabel}
                 </span>
               )}
             </h1>
@@ -608,7 +614,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mb-32"
+              className="mb-8"
             >
 
               <ProgressTimeline
@@ -635,6 +641,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
         isDeleting={isDeleting}
         showDeleteDocumentsOption={true}
         deleteDocumentsLabel="Also delete associated documents"
+        deleteDocumentsDefaultChecked={true}
       />
     </div>
   );

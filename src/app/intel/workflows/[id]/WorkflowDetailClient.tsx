@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,6 +9,7 @@ import {
   faDollarSign,
   faBrain,
 } from "@fortawesome/free-solid-svg-icons";
+import { usePageHeader } from "@/providers/PageHeaderProvider";
 import { WorkflowActionsMenu } from "@/features/rag/workflows/components/WorkflowActionsMenu";
 import { WorkflowModal } from "@/features/rag/workflows/components/WorkflowModal";
 import type { Workflow } from "@/features/rag/workflows/types";
@@ -23,6 +24,7 @@ export function WorkflowDetailClient({
 }: WorkflowDetailClientProps) {
   const [workflow, setWorkflow] = useState(initialWorkflow);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { setHeader } = usePageHeader();
 
   const enabledColorClass = workflow.enabled
     ? "bg-green-600/10 text-green-600 dark:text-green-400 border-green-600/20"
@@ -37,36 +39,41 @@ export function WorkflowDetailClient({
     setIsEditModalOpen(false);
   };
 
+  useEffect(() => {
+    setHeader({
+      breadcrumbItems: [
+        { href: "/intel/workflows", label: "Workflows" },
+        { label: workflow.name },
+      ],
+      actions: <WorkflowActionsMenu workflow={workflow} onEdit={handleEdit} />,
+    });
+    return () => setHeader(null);
+  }, [workflow, setHeader]);
+
   return (
     <>
       <div className="w-full space-y-6">
-        <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{workflow.name}</h1>
-            <p className="text-sm text-muted-foreground mb-2">Manage workflow configuration and settings.</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge
-                variant="secondary"
-                className={cn("text-xs", enabledColorClass)}
-              >
-                {workflow.enabled ? "Enabled" : "Disabled"}
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{workflow.name}</h1>
+          <p className="text-sm text-muted-foreground mb-2">Manage workflow configuration and settings.</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge
+              variant="secondary"
+              className={cn("text-xs", enabledColorClass)}
+            >
+              {workflow.enabled ? "Enabled" : "Disabled"}
+            </Badge>
+            {workflow.estimated_cost !== null && (
+              <Badge variant="outline" className="text-xs">
+                ${workflow.estimated_cost}
               </Badge>
-              {workflow.estimated_cost !== null && (
-                <Badge variant="outline" className="text-xs">
-                  ${workflow.estimated_cost}
-                </Badge>
-              )}
-              {workflow.estimated_time_minutes !== null && (
-                <Badge variant="outline" className="text-xs">
-                  {workflow.estimated_time_minutes} min
-                </Badge>
-              )}
-            </div>
+            )}
+            {workflow.estimated_time_minutes !== null && (
+              <Badge variant="outline" className="text-xs">
+                {workflow.estimated_time_minutes} min
+              </Badge>
+            )}
           </div>
-          <WorkflowActionsMenu
-            workflow={workflow}
-            onEdit={handleEdit}
-          />
         </div>
 
         {/* Workflow Details */}
@@ -96,7 +103,7 @@ export function WorkflowDetailClient({
                 </div>
               )}
 
-              {(workflow.estimated_cost !== null || workflow.estimated_time_minutes !== null || workflow.default_ai_model) && (
+              {(workflow.estimated_cost !== null || workflow.estimated_time_minutes !== null || workflow.default_ai_model || workflow.default_synthesis_ai_model) && (
                 <div className="pt-4 border-t border-border/50">
                   <div className="flex items-center gap-6 text-sm flex-wrap">
                     {workflow.estimated_cost !== null && (
@@ -117,7 +124,14 @@ export function WorkflowDetailClient({
                       <div className="flex items-center gap-2">
                         <FontAwesomeIcon icon={faBrain} className="h-4 w-4 text-muted-foreground" />
                         <span className="text-foreground font-medium">{workflow.default_ai_model}</span>
-                        <span className="text-muted-foreground">AI model</span>
+                        <span className="text-muted-foreground">Research AI model</span>
+                      </div>
+                    )}
+                    {workflow.default_synthesis_ai_model && (
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faBrain} className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-foreground font-medium">{workflow.default_synthesis_ai_model}</span>
+                        <span className="text-muted-foreground">Synthesis AI model</span>
                       </div>
                     )}
                   </div>

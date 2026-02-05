@@ -18,6 +18,7 @@ export async function GET(request: Request) {
     const projectId = searchParams.get("project_id");
     const subjectId = searchParams.get("subject_id"); // Backward compatibility
     const workflowId = searchParams.get("workflow_id");
+    const projectTypeId = searchParams.get("project_type_id");
 
     let query = adminSupabase
       .from("rag_runs")
@@ -60,6 +61,21 @@ export async function GET(request: Request) {
     const effectiveProjectId = projectId || subjectId;
     if (effectiveProjectId) {
       query = query.eq("project_id", effectiveProjectId);
+    }
+
+    // Filter by project_type_id: only runs whose project has this type
+    if (projectTypeId && !effectiveProjectId) {
+      const { data: projectsOfType } = await adminSupabase
+        .from("projects")
+        .select("id")
+        .eq("project_type_id", projectTypeId);
+      const projectIds = (projectsOfType || []).map((p: { id: string }) => p.id);
+      if (projectIds.length > 0) {
+        query = query.in("project_id", projectIds);
+      } else {
+        // No projects of this type - return empty by using impossible condition
+        query = query.eq("project_id", "00000000-0000-0000-0000-000000000000");
+      }
     }
 
     if (search && search.trim() !== "") {

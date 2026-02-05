@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,7 +99,7 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
   const [isGeneratingName, setIsGeneratingName] = useState<boolean>(false);
   const [isGeneratingNameInDialog, setIsGeneratingNameInDialog] = useState<boolean>(false);
   const [currentPresetFavorite, setCurrentPresetFavorite] = useState<boolean>(false);
-
+  const initialLoadDone = useRef(false);
 
   // Apply fonts to CSS variables for landing page
   const applyFontsToCSS = (fonts: FontConfig) => {
@@ -177,8 +177,7 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
     if (!color || typeof document === "undefined" || !document.head) return;
     const cssValue = hslToCssString(color.h, color.s, color.l);
     
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
+    const applyStyle = () => {
       try {
         // Remove existing injected style tags that might have !important
         const existingStyles = [
@@ -237,7 +236,12 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
         // Ignore DOM manipulation errors
         console.warn("Failed to apply primary color styles:", e);
       }
-    });
+    };
+    
+    // Apply immediately so color updates are visible without refresh
+    applyStyle();
+    // Also apply in rAF to override any late-loading server styles
+    requestAnimationFrame(applyStyle);
   };
 
   // Apply secondary color to CSS variable for landing page
@@ -245,8 +249,7 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
     if (!color || typeof document === "undefined" || !document.head) return;
     const cssValue = hslToCssString(color.h, color.s, color.l);
     
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
+    const applyStyle = () => {
       try {
         // Remove existing injected style tags that might have !important
         const existingStyles = [
@@ -302,7 +305,12 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
         // Ignore DOM manipulation errors
         console.warn("Failed to apply secondary color styles:", e);
       }
-    });
+    };
+    
+    // Apply immediately so color updates are visible without refresh
+    applyStyle();
+    // Also apply in rAF to override any late-loading server styles
+    requestAnimationFrame(applyStyle);
   };
 
   // Load colors and settings from database
@@ -318,7 +326,11 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
           return;
         }
 
-        setLoading(true);
+        // Only show loading skeleton on initial load, not when switching presets
+        // This ensures color updates are visible immediately when clicking preset cards
+        if (!initialLoadDone.current) {
+          setLoading(true);
+        }
 
         // Load all presets, sorted by name
         const { data: presetsData } = await (supabase
@@ -442,6 +454,7 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
         }
 
         setIsDirty(false);
+        initialLoadDone.current = true;
       } catch (error) {
         console.error("Error loading website data:", error);
       } finally {

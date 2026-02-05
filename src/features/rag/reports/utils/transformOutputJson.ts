@@ -20,40 +20,88 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
     return current ?? defaultValue;
   };
 
-  // New niche evaluation format: array [{ meta, data }] or single { meta, data } with evaluation inside data
+  // New niche evaluation format: array [{ meta, data }] or single { meta, data } with decision_card, meta_synthesis, individual_evaluations
   const firstElement = Array.isArray(outputJson) && outputJson.length > 0 ? outputJson[0] : outputJson;
-  const evaluationPayload = firstElement?.meta && firstElement?.data && firstElement.data?.verdict
-    ? firstElement
-    : outputJson?.meta && outputJson?.data && outputJson.data?.verdict
-      ? outputJson
-      : null;
+  const innerData = firstElement?.data ?? outputJson?.data;
+  const isNewEvaluationFormat =
+    firstElement?.meta &&
+    innerData &&
+    (innerData.decision_card ?? innerData.meta_synthesis ?? innerData.individual_evaluations) != null;
 
-  if (evaluationPayload) {
-    const meta = evaluationPayload.meta || {};
-    const innerData = evaluationPayload.data || {};
+  if (isNewEvaluationFormat) {
+    const meta = firstElement.meta || {};
+    const payload = firstElement?.meta && firstElement?.data ? firstElement : outputJson;
+    const data = payload.data || {};
     return {
       meta: {
         knowledge_base: meta.knowledge_base || "niche_fit_evaluation",
         mode: meta.mode || "niche_fit_evaluation",
-        confidence: typeof meta.confidence === 'number' ? meta.confidence : 0,
-        generated_at: meta.generated_at || (typeof innerData.evaluation_timestamp === 'string' ? innerData.evaluation_timestamp.split('T')[0] : undefined) || new Date().toISOString().split('T')[0],
+        confidence: typeof meta.confidence === "number" ? meta.confidence : 0,
+        generated_at:
+          meta.generated_at ||
+          (typeof data.evaluation_timestamp === "string" ? data.evaluation_timestamp.split("T")[0] : undefined) ||
+          new Date().toISOString().split("T")[0],
         sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
         input: meta.input
           ? {
-              niche_name: meta.input.niche_name ?? "",
-              geo: meta.input.geo ?? "",
+              niche_name: meta.input.niche_name ?? meta.input.name ?? "",
+              geo: meta.input.geo ?? meta.input.geography ?? "",
               notes: meta.input.notes,
               ai_model: meta.input.ai_model,
             }
           : {
-              niche_name: innerData.niche_name ?? "",
+              niche_name: data.niche_name ?? "",
               geo: "",
               notes: undefined,
               ai_model: undefined,
             },
+        evaluation_summary: meta.evaluation_summary,
+        usage_metrics: meta.usage_metrics,
+      } as any,
+      data: data as any,
+    };
+  }
+
+  // Legacy niche evaluation format: data.verdict
+  const evaluationPayload =
+    firstElement?.meta && firstElement?.data && firstElement.data?.verdict
+      ? firstElement
+      : outputJson?.meta && outputJson?.data && outputJson.data?.verdict
+        ? outputJson
+        : null;
+
+  if (evaluationPayload) {
+    const meta = evaluationPayload.meta || {};
+    const legacyInnerData = evaluationPayload.data || {};
+    return {
+      meta: {
+        knowledge_base: meta.knowledge_base || "niche_fit_evaluation",
+        mode: meta.mode || "niche_fit_evaluation",
+        confidence: typeof meta.confidence === "number" ? meta.confidence : 0,
+        generated_at:
+          meta.generated_at ||
+          (typeof legacyInnerData.evaluation_timestamp === "string"
+            ? legacyInnerData.evaluation_timestamp.split("T")[0]
+            : undefined) ||
+          new Date().toISOString().split("T")[0],
+        sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
+        input: meta.input
+          ? {
+              niche_name: meta.input.niche_name ?? meta.input.name ?? "",
+              geo: meta.input.geo ?? "",
+              notes: meta.input.notes,
+            ai_model: meta.input.ai_model,
+          }
+        : {
+            niche_name: legacyInnerData.niche_name ?? "",
+            geo: "",
+            notes: undefined,
+            ai_model: undefined,
+          },
+        usage_metrics: meta.usage_metrics,
       } as any,
       data: {
-        evaluation: innerData,
+        evaluation: legacyInnerData,
       } as any,
     };
   }
@@ -71,10 +119,206 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
           niche_name: outputJson.niche_name || "",
           geo: "",
         },
+        usage_metrics: (outputJson as any).meta?.usage_metrics,
       },
       data: {
         evaluation: outputJson,
       } as any,
+    };
+  }
+
+  // ICP research format (legacy): array [{ meta, data }] or single { meta, data } with data.buyer_icp
+  const icpPayloadLegacy =
+    firstElement?.meta && firstElement?.data && (firstElement.data as Record<string, unknown>)?.buyer_icp
+      ? firstElement
+      : (outputJson?.meta && (outputJson.data as Record<string, unknown>)?.buyer_icp ? outputJson : null);
+
+  if (icpPayloadLegacy) {
+    const icpMeta = icpPayloadLegacy.meta || {};
+    const icpDataQuality = icpMeta.data_quality || {};
+    const icpData = icpPayloadLegacy.data || {};
+    return {
+      meta: {
+        knowledge_base: icpMeta.knowledge_base || "icp_intelligence",
+        mode: icpMeta.mode || "customer_research",
+        confidence:
+          typeof icpMeta.confidence === "number"
+            ? icpMeta.confidence
+            : typeof icpDataQuality.overall_confidence === "number"
+              ? icpDataQuality.overall_confidence
+              : 0,
+        generated_at:
+          icpMeta.generated_at || new Date().toISOString().split("T")[0],
+        sources_used: Array.isArray(icpDataQuality.sources_used)
+          ? icpDataQuality.sources_used
+          : Array.isArray(icpMeta.sources_used)
+            ? icpMeta.sources_used
+            : undefined,
+        input: icpMeta.input
+          ? {
+              niche_name: icpMeta.input.niche_name ?? "",
+              geo: icpMeta.input.geo ?? icpMeta.input.geography ?? "",
+              notes: icpMeta.input.notes,
+              ai_model: icpMeta.input.ai_model,
+            }
+          : { niche_name: "", geo: "", notes: undefined, ai_model: undefined },
+        focus: icpMeta.focus,
+        data_quality: icpDataQuality,
+        usage_metrics: icpMeta.usage_metrics,
+      } as any,
+      data: {
+        buyer_icp: icpData.buyer_icp,
+        ops_outputs: icpData.ops_outputs,
+        monitoring_alerts: icpData.monitoring_alerts,
+        market_sizing: icpData.market_sizing,
+      } as any,
+    };
+  }
+
+  // ICP research format (new JSON): data.snapshot, data.buying_triggers, data.customer_segments at top level (no data.buyer_icp)
+  const rawData = (firstElement?.data ?? outputJson?.data) as Record<string, unknown> | undefined;
+  const hasNewIcpShape =
+    rawData?.snapshot != null &&
+    rawData?.buyer_icp == null &&
+    (firstElement?.meta ?? outputJson?.meta) != null;
+
+  if (hasNewIcpShape) {
+    const payload = (firstElement?.meta && firstElement?.data ? firstElement : outputJson) as {
+      meta: Record<string, any>;
+      data: Record<string, unknown>;
+    };
+    const icpMeta = payload.meta || {};
+    const d = payload.data || {};
+    const dataQuality =
+      icpMeta.data_quality ||
+      (icpMeta.sources_total != null || icpMeta.overall_confidence != null || icpMeta.next_refresh_recommended != null
+        ? {
+            sources_used: Array.isArray(icpMeta.sources_used) ? icpMeta.sources_used : undefined,
+            sources_total: icpMeta.sources_total,
+            overall_confidence: icpMeta.overall_confidence,
+            next_refresh_recommended: icpMeta.next_refresh_recommended,
+          }
+        : {});
+    const customerSegments = d.customer_segments as Record<string, unknown> | undefined;
+    const buyerIcp = {
+      snapshot: d.snapshot,
+      triggers: d.buying_triggers,
+      buying_committee: d.buying_committee,
+      purchase_journey: d.purchase_journey,
+      segments: customerSegments
+        ? {
+            primary: customerSegments.primary_segments ?? [],
+            secondary: customerSegments.secondary_segments ?? [],
+            avoid: customerSegments.avoid_segments ?? [],
+            assignment_logic: customerSegments.assignment_logic ?? { method: "", rules: [] },
+          }
+        : undefined,
+      competitive_context: d.competitive_alternatives,
+    };
+    return {
+      meta: {
+        knowledge_base: icpMeta.knowledge_base || "icp_intelligence",
+        mode: icpMeta.mode || "customer_intelligence",
+        confidence:
+          typeof icpMeta.confidence === "number"
+            ? icpMeta.confidence
+            : typeof dataQuality.overall_confidence === "number"
+              ? dataQuality.overall_confidence
+              : 0,
+        generated_at: icpMeta.generated_at || new Date().toISOString().split("T")[0],
+        sources_used:
+          Array.isArray(dataQuality.sources_used) ? dataQuality.sources_used : Array.isArray(icpMeta.sources_used) ? icpMeta.sources_used : undefined,
+        input: icpMeta.input
+          ? {
+              niche_name: icpMeta.input.niche_name ?? icpMeta.niche_name ?? "",
+              geo: icpMeta.input.geo ?? icpMeta.input.geography ?? "",
+              notes: icpMeta.input.notes,
+              ai_model: icpMeta.input.ai_model,
+            }
+          : { niche_name: (icpMeta as any).niche_name ?? "", geo: "", notes: undefined, ai_model: undefined },
+        focus: icpMeta.focus,
+        data_quality: dataQuality,
+        usage_metrics: icpMeta.usage_metrics,
+      } as any,
+      data: {
+        buyer_icp: buyerIcp,
+        ops_outputs: d.ops_outputs,
+        monitoring_alerts: d.monitoring_alerts,
+        market_sizing: d.market_sizing,
+        typical_customer_types: d.typical_customer_types,
+      } as any,
+    };
+  }
+
+  // Descriptive intelligence format: data.basic_profile or meta.mode === "descriptive_intelligence"
+  const descPayload = firstElement?.meta && firstElement?.data ? firstElement : outputJson;
+  const descMeta = descPayload?.meta;
+  const descData = (firstElement?.data ?? outputJson?.data) as Record<string, unknown> | undefined;
+  const isDescriptiveIntelligence =
+    descMeta != null &&
+    descData != null &&
+    (descData.basic_profile != null || descMeta.mode === "descriptive_intelligence");
+
+  if (isDescriptiveIntelligence) {
+    const meta = descMeta || {};
+    const data = descData || {};
+    return {
+      meta: {
+        knowledge_base: meta.knowledge_base || "niche_intelligence",
+        mode: meta.mode || "descriptive_intelligence",
+        confidence: typeof meta.confidence === "number" ? meta.confidence : 0,
+        generated_at: meta.generated_at || new Date().toISOString().split("T")[0],
+        sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
+        input: meta.input
+          ? {
+              niche_name: meta.input.niche_name ?? "",
+              geo: meta.input?.geo ?? "",
+              notes: meta.input?.notes,
+              ai_model: meta.input?.ai_model ?? meta.input?.synthesis_ai_model,
+            }
+          : { niche_name: "", geo: "", notes: undefined, ai_model: undefined },
+        focus: meta.focus,
+        market_value: meta.market_value,
+        usage_metrics: meta.usage_metrics,
+      } as any,
+      data: data as any,
+    };
+  }
+
+  // Outbound strategy format: data.title_packs or data.sales_process (lead_gen_targeting)
+  const obRawData = (firstElement?.data ?? outputJson?.data) as Record<string, unknown> | undefined;
+  const isOutboundStrategy =
+    (firstElement?.meta ?? outputJson?.meta) != null &&
+    obRawData != null &&
+    (obRawData.title_packs != null || obRawData.sales_process != null);
+
+  if (isOutboundStrategy) {
+    const payload = (firstElement?.meta && firstElement?.data ? firstElement : outputJson) as {
+      meta: Record<string, any>;
+      data: Record<string, unknown>;
+    };
+    const obMeta = payload.meta || {};
+    const obData = payload.data || {};
+    return {
+      meta: {
+        knowledge_base: obMeta.knowledge_base || "niche_intelligence",
+        mode: obMeta.mode || "lead_gen_targeting",
+        confidence: typeof obMeta.confidence === "number" ? obMeta.confidence : 0,
+        generated_at: obMeta.generated_at || new Date().toISOString().split("T")[0],
+        sources_used: Array.isArray(obMeta.sources_used) ? obMeta.sources_used : undefined,
+        input: obMeta.input
+          ? {
+              niche_name: obMeta.input.niche_name ?? "",
+              geo: obMeta.input?.geo ?? "",
+              notes: obMeta.input?.notes,
+              ai_model: obMeta.input?.ai_model,
+            }
+          : { niche_name: "", geo: "", notes: undefined, ai_model: undefined },
+        focus: obMeta.focus,
+        market_value: obMeta.market_value,
+        usage_metrics: obMeta.usage_metrics,
+      } as any,
+      data: obData as any,
     };
   }
 
@@ -97,6 +341,7 @@ export function transformOutputJson(outputJson: Record<string, any>): ReportData
       // Preserve additional meta fields that may exist in the JSON
       focus: meta.focus,
       market_value: meta.market_value,
+      usage_metrics: meta.usage_metrics,
     } as any,
     data: {
       niche_profile: {

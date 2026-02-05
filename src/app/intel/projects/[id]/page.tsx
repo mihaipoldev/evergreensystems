@@ -4,6 +4,7 @@ import { ProjectDetailClient } from "./ProjectDetailClient";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { RAGDocument } from "@/features/rag/documents/document-types";
 import type { RunWithExtras } from "@/features/rag/projects/config/ProjectTypeConfig";
+import { extractWorkflowResult } from "@/features/rag/runs/utils/extractWorkflowResult";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         updated_at,
         error,
         metadata,
+        execution_url,
         rag_knowledge_bases (
           id,
           name
@@ -90,7 +92,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           name
         ),
         rag_run_outputs (
-          id
+          id,
+          output_json
         )
       `)
       .eq("project_id", id)
@@ -271,40 +274,24 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   // Transform runs data to match RunWithExtras type
   const initialRuns: RunWithExtras[] = (runsData || []).map((run: any) => {
-    // Extract fit_score and verdict from metadata
-    const evaluationResult = run.metadata?.evaluation_result;
-    let fit_score: number | null = null;
-    let verdict: "pursue" | "test" | "caution" | "avoid" | null = null;
-    
-    if (evaluationResult && typeof evaluationResult === "object") {
-      // Extract and normalize verdict
-      if (evaluationResult.verdict && typeof evaluationResult.verdict === "string") {
-        const normalizedVerdict = evaluationResult.verdict.toLowerCase();
-        if (normalizedVerdict === "pursue" || normalizedVerdict === "test" || normalizedVerdict === "caution" || normalizedVerdict === "avoid") {
-          verdict = normalizedVerdict;
-        }
-      }
-      
-      // Extract score
-      if (typeof evaluationResult.score === "number") {
-        fit_score = evaluationResult.score;
-      } else if (typeof evaluationResult.score === "string") {
-        const parsedScore = parseFloat(evaluationResult.score);
-        if (!isNaN(parsedScore)) {
-          fit_score = parsedScore;
-        }
-      }
-    }
-
-    // report_id = first rag_run_outputs id (enables "View Result" when run is complete)
     const runOutputs = run.rag_run_outputs;
+    const outputJson =
+      Array.isArray(runOutputs) && runOutputs.length > 0
+        ? runOutputs[0]?.output_json
+        : runOutputs?.output_json ?? undefined;
     const report_id =
       Array.isArray(runOutputs) && runOutputs.length > 0
         ? runOutputs[0].id
         : runOutputs?.id ?? null;
+
+    const runWithOutput = { ...run, output_json: outputJson };
+    const workflowResult = extractWorkflowResult(runWithOutput);
+    const fit_score = workflowResult?.score ?? null;
+    const verdict = workflowResult?.verdict ?? null;
     
     return {
       ...run,
+      output_json: outputJson,
       knowledge_base_name: run.rag_knowledge_bases?.name || null,
       workflow_name: run.workflows?.slug || null,
       workflow_label: run.workflows?.name || null,

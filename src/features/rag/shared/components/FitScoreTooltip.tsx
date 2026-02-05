@@ -147,7 +147,7 @@ export function FitScoreTooltip({
                               <span className="text-muted-foreground font-medium">{statusLabel}...</span>
                             </div>
                           ) : (
-                            <>
+                            <div className="flex items-center gap-2 flex-wrap">
                               {runFormattedScore !== null && (
                                 <div className="flex items-center gap-1">
                                   <span className={cn("font-semibold", runColorClasses)}>
@@ -156,7 +156,12 @@ export function FitScoreTooltip({
                                   <span className="text-muted-foreground">/100</span>
                                 </div>
                               )}
-                            </>
+                              {(run.verdict || (run.fit_score != null && runCategory !== "avoid")) && (
+                                <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded border", getFitScoreBadgeClasses(runCategory))}>
+                                  {getFitScoreLabel(runCategory)}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                         {runHref && (

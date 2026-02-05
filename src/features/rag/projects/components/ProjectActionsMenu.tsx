@@ -7,7 +7,7 @@ import { DeleteConfirmationDialog } from "@/features/rag/shared/components/Delet
 import { GenerateReportModal } from "@/features/rag/workflows/components/GenerateReportModal";
 import { useBulkSelectionOptional } from "@/features/rag/shared/contexts/BulkSelectionContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faPencil, faTrash, faWandMagicSparkles, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPencil, faTrash, faWandMagicSparkles, faCheck, faCopy } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Project } from "../types";
@@ -108,6 +108,19 @@ export function ProjectActionsMenu({
           onEdit(project);
         } else {
           router.push(`/intel/projects/${project.id}/edit`);
+        }
+      },
+    },
+    {
+      label: "Copy ID",
+      icon: <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />,
+      onClick: async (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(project.id);
+          toast.success("ID copied to clipboard");
+        } catch {
+          toast.error("Failed to copy ID");
         }
       },
     },

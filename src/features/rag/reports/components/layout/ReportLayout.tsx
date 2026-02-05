@@ -97,7 +97,7 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
       <div className="flex relative">
         {/* Desktop Sidebar - positioned after IntelSidebar */}
         {showTableOfContents && (
-          <aside className="hidden lg:block fixed left-64 top-[81px] bottom-0 w-[280px] bg-sidebar p-6 overflow-y-auto no-print z-30">
+          <aside className="hidden lg:block fixed left-64 top-0 bottom-0 w-[280px] bg-sidebar p-6 overflow-y-auto no-print z-30">
             <TableOfContents
               sections={sections}
               activeSection={activeSection}
@@ -108,7 +108,7 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
 
         {/* Main Content */}
         <main className={`flex-1 min-h-screen ${showTableOfContents ? 'lg:ml-[280px]' : ''}`}>
-          <div className={`max-w-4xl mx-auto px-6 py-0`}>
+          <div className={`max-w-4xl mx-auto px-6 py-0 dark:pt-4`}>
             {children}
           </div>
         </main>

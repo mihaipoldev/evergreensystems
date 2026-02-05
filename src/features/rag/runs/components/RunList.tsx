@@ -22,6 +22,8 @@ type RunWithKB = Run & {
 
 type RunListProps = {
   initialRuns: RunWithKB[];
+  /** When set, refresh/poll uses this to filter runs by project type */
+  projectTypeId?: string | null;
 };
 
 const STORAGE_KEY_PREFIX = "research-";
@@ -118,7 +120,7 @@ function setStoredGroupByStatus(value: string): void {
   }
 }
 
-export function RunList({ initialRuns }: RunListProps) {
+export function RunList({ initialRuns, projectTypeId }: RunListProps) {
   const router = useRouter();
   const [runs, setRuns] = useState<RunWithKB[]>(initialRuns);
   // Initialize state from localStorage directly to avoid flash of default values
@@ -188,6 +190,11 @@ export function RunList({ initialRuns }: RunListProps) {
     setRuns(initialRuns);
   }, [initialRuns]);
 
+  // Build API URL for refresh (includes project_type_id when filtering)
+  const runsApiUrl = projectTypeId
+    ? `/api/intel/runs?project_type_id=${encodeURIComponent(projectTypeId)}`
+    : "/api/intel/runs";
+
   // Set up Supabase real-time subscription for all runs with polling fallback
   useEffect(() => {
     const supabase = createClient();
@@ -196,7 +203,7 @@ export function RunList({ initialRuns }: RunListProps) {
     // Function to refresh runs list
     const refreshRuns = async () => {
       try {
-        const response = await fetch("/api/intel/runs");
+        const response = await fetch(runsApiUrl);
         if (response.ok) {
           const data = await response.json();
           setRuns((prev) => {
@@ -235,6 +242,12 @@ export function RunList({ initialRuns }: RunListProps) {
         },
         async (payload) => {
           console.log('[RunList] Received real-time event:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
+          
+          // When filtering by project type, refresh full list to ensure correct filter
+          if (projectTypeId) {
+            refreshRuns();
+            return;
+          }
           
           if (payload.eventType === 'INSERT' && payload.new) {
             const newRun = payload.new as any;
@@ -318,7 +331,7 @@ export function RunList({ initialRuns }: RunListProps) {
       }
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [runsApiUrl]);
 
   const filteredAndSortedRuns = useMemo(() => {
     let filtered = runs;
@@ -483,7 +496,7 @@ export function RunList({ initialRuns }: RunListProps) {
   const sortOptions = ["Recent", "Knowledge Base"];
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
       <Toolbar
         searchPlaceholder="Search runs..."
         searchValue={searchQuery}

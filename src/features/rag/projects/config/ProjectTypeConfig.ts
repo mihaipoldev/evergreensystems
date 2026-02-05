@@ -1,6 +1,7 @@
 import type { Run } from "@/features/rag/runs/types";
 
 export type RunWithExtras = Run & { 
+  output_json?: unknown;
   knowledge_base_name?: string | null;
   workflow_name?: string | null;
   workflow_label?: string | null;

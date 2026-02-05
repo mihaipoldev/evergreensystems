@@ -14,6 +14,8 @@ interface GenerateReportModalProps {
   researchSubjectGeography?: string | null;
   researchSubjectDescription?: string | null;
   researchSubjectCategory?: string | null;
+  /** When provided, pre-selects this workflow when modal opens */
+  initialWorkflowId?: string | null;
   // Keep backward compatibility
   subjectType?: string | null;
   subjectTypeId?: string | null;
@@ -34,6 +36,7 @@ export function GenerateReportModal({
   researchSubjectGeography,
   researchSubjectDescription,
   researchSubjectCategory,
+  initialWorkflowId,
   // Backward compatibility
   subjectType,
   subjectTypeId,
@@ -81,6 +84,7 @@ export function GenerateReportModal({
                 researchSubjectGeography={researchSubjectGeography}
                 researchSubjectDescription={researchSubjectDescription}
                 researchSubjectCategory={researchSubjectCategory}
+                initialWorkflowId={initialWorkflowId}
               />
             ) : (
               // Future: Add other modal types here (e.g., GenerateCompanyReportModal)
@@ -94,6 +98,7 @@ export function GenerateReportModal({
                 researchSubjectGeography={researchSubjectGeography}
                 researchSubjectDescription={researchSubjectDescription}
                 researchSubjectCategory={researchSubjectCategory}
+                initialWorkflowId={initialWorkflowId}
               />
             )}
           </div>

@@ -142,7 +142,7 @@ export function ProjectRow({
           onClick={handleLinkClick}
         >
           <div className="flex items-start gap-3">
-            <div className="h-10 w-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+            <div className="h-10 w-8 rounded-lg bg-secondary overflow-hidden flex items-center justify-center flex-shrink-0">
               {projectTypeIcon ? (
                 <span className="text-lg">{projectTypeIcon}</span>
               ) : (
@@ -208,7 +208,7 @@ export function ProjectRow({
         >
           {/* Icon + Name */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0">
+            <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
               {projectTypeIcon ? (
                 <span className="text-lg">{projectTypeIcon}</span>
               ) : (

@@ -150,7 +150,7 @@ export function ProjectTable({
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="space-y-3">
+      <div className="space-y-2">
           {/* Table Header - Conditional */}
           {!groupByVerdict && (
             <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">

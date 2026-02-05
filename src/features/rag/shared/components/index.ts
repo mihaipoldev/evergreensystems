@@ -1,3 +1,4 @@
+export { PageTitle } from "./PageTitle";
 export { SectionHeader } from "./SectionHeader";
 export { StatCard } from "./StatCard";
 export { Toolbar } from "./Toolbar";

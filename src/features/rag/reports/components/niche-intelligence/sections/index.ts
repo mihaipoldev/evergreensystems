@@ -1,0 +1,15 @@
+export { BasicProfileSection } from "./BasicProfileSection";
+export { TamAnalysisSection } from "./TamAnalysisSection";
+export { WhatTheySellSection } from "./WhatTheySellSection";
+export { DealEconomicsSection } from "./DealEconomicsSection";
+export { ClientAcquisitionDynamicsSection } from "./ClientAcquisitionDynamicsSection";
+export { ShadowCompetitorsSection } from "./ShadowCompetitorsSection";
+export { FinancialRealitySection } from "./FinancialRealitySection";
+export { MarketMaturitySection } from "./MarketMaturitySection";
+export { PainPointsSection } from "./PainPointsSection";
+export { DesiredOutcomesSection } from "./DesiredOutcomesSection";
+export { KPIsThatMatterSection } from "./KPIsThatMatterSection";
+export { HowTheyPositionSection } from "./HowTheyPositionSection";
+export { TheirCustomerLanguageSection } from "./TheirCustomerLanguageSection";
+export { BuyerPsychologySection } from "./BuyerPsychologySection";
+export { ResearchLinksSection } from "./ResearchLinksSection";

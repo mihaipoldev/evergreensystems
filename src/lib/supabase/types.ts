@@ -703,6 +703,7 @@ export interface Database {
           run_id: string;
           output_json: Record<string, any>;
           pdf_storage_path: string | null;
+          ui_schema: Record<string, any> | null;
           created_at: string;
         };
         Insert: {
@@ -710,6 +711,7 @@ export interface Database {
           run_id: string;
           output_json?: Record<string, any>;
           pdf_storage_path?: string | null;
+          ui_schema?: Record<string, any> | null;
           created_at?: string;
         };
         Update: {
@@ -717,6 +719,7 @@ export interface Database {
           run_id?: string;
           output_json?: Record<string, any>;
           pdf_storage_path?: string | null;
+          ui_schema?: Record<string, any> | null;
           created_at?: string;
         };
       };

@@ -12,56 +12,90 @@ import {
   faWandSparkles,
 } from "@fortawesome/free-solid-svg-icons";
 import { WorkflowSelectionCard } from "./WorkflowSelectionCard";
+import { ProjectContextSelector } from "./ProjectContextSelector";
+import { CompanyContextDisplay } from "./CompanyContextDisplay";
 import { LockedInput } from "@/features/rag/shared/components";
 import { cn } from "@/lib/utils";
 import type { Workflow } from "../types";
 
+/** Context config inside document_context.contexts */
+interface ContextConfig {
+  name: string;
+  type: "project_context" | "company_context";
+  display_name?: string;
+  workflow_type?: string;
+  knowledge_base?: string;
+  document_ids?: string[];
+  placeholder?: string;
+  description?: string;
+  required?: boolean;
+  locked?: boolean;
+  [key: string]: unknown;
+}
+
+/** Form value for document_context: array of { name, display_name, document_ids } */
+export type DocumentContextValue = {
+  name: string;
+  display_name: string;
+  document_ids: string[];
+};
+
 /**
- * Schema field metadata structure
+ * Schema field metadata structure - preserves all fields from schema
  */
 interface SchemaField {
+  name?: string;
   type: string;
   required?: boolean;
   locked?: boolean;
+  display_name?: string;
+  placeholder?: string;
+  description?: string;
+  workflow_type?: string;
+  knowledge_base?: string;
+  document_ids?: string[];
+  /** For type "document_context": array of context configs */
+  contexts?: ContextConfig[];
+  [key: string]: unknown;
 }
 
 /**
  * Convert array schema format to object format for form rendering.
- * New format: [{"name": "field1", "type": "text", "required": true, "locked": false}, ...]
- * Object format: {"field1": {type: "text", required: true, locked: false}, ...}
+ * Preserves all schema fields (display_name, placeholder, workflow_type, document_ids, etc.)
  * Also handles backward compatibility with old object format.
  */
 function arraySchemaToObject(schema: any): Record<string, SchemaField> {
   if (!schema) return {};
-  
+
   // If it's already an object (old format), convert to new format
-  if (typeof schema === 'object' && !Array.isArray(schema) && schema !== null) {
+  if (typeof schema === "object" && !Array.isArray(schema) && schema !== null) {
     const converted: Record<string, SchemaField> = {};
     Object.entries(schema).forEach(([key, value]) => {
       converted[key] = {
-        type: typeof value === 'string' ? value : 'input',
-        required: true, // Default to required for backward compatibility
-        locked: false, // Default to unlocked for backward compatibility
+        type: typeof value === "string" ? value : "input",
+        required: true,
+        locked: false,
       };
     });
     return converted;
   }
-  
-  // If it's an array (new format), convert to object
+
+  // If it's an array (new format), convert to object and preserve all fields
   if (Array.isArray(schema)) {
     const obj: Record<string, SchemaField> = {};
     schema.forEach((field: any) => {
-      if (field && typeof field === 'object' && 'name' in field && 'type' in field) {
+      if (field && typeof field === "object" && "name" in field && "type" in field) {
         obj[field.name] = {
+          ...field,
           type: field.type,
-          required: field.required !== undefined ? field.required : true, // Default to required
-          locked: field.locked !== undefined ? field.locked : false, // Default to unlocked
+          required: field.required !== undefined ? field.required : true,
+          locked: field.locked !== undefined ? field.locked : false,
         };
       }
     });
     return obj;
   }
-  
+
   return {};
 }
 
@@ -75,6 +109,8 @@ interface GenerateNicheReportModalProps {
   researchSubjectGeography?: string | null;
   researchSubjectDescription?: string | null;
   researchSubjectCategory?: string | null;
+  /** When provided, pre-selects this workflow when modal opens */
+  initialWorkflowId?: string | null;
   // Keep backward compatibility
   subjectType?: string | null;
   subjectTypeId?: string | null;
@@ -90,6 +126,7 @@ export function GenerateNicheReportModal({
   researchSubjectGeography,
   researchSubjectDescription,
   researchSubjectCategory,
+  initialWorkflowId,
   // Backward compatibility
   subjectType,
   subjectTypeId,
@@ -102,7 +139,7 @@ export function GenerateNicheReportModal({
   const [error, setError] = useState<string | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [formValues, setFormValues] = useState<Record<string, string | string[] | DocumentContextValue[]>>({});
   const [isExecuting, setIsExecuting] = useState(false);
 
   // Use research subject name from props, with state to handle updates
@@ -150,7 +187,7 @@ export function GenerateNicheReportModal({
       setFormValues({
         geo: researchSubjectGeography || "",
       });
-      setSelectedWorkflow(null);
+      setSelectedWorkflow(initialWorkflowId || null);
     } else {
       // Reset state when modal closes
       setWorkflows([]);
@@ -159,7 +196,17 @@ export function GenerateNicheReportModal({
       setShowConfig(false);
       setFormValues({});
     }
-  }, [open, effectiveSubjectType, researchSubjectGeography]);
+  }, [open, effectiveSubjectType, researchSubjectGeography, initialWorkflowId]);
+
+  // When workflows load and initialWorkflowId is set, ensure that workflow is selected (in case it wasn't in list yet on first render)
+  useEffect(() => {
+    if (open && initialWorkflowId && workflows.length > 0) {
+      const exists = workflows.some((w) => w.id === initialWorkflowId);
+      if (exists) {
+        setSelectedWorkflow(initialWorkflowId);
+      }
+    }
+  }, [open, initialWorkflowId, workflows]);
 
   // Prefill form values when workflow is selected (always, not just when config is shown)
   useEffect(() => {
@@ -167,8 +214,28 @@ export function GenerateNicheReportModal({
       const workflow = workflows.find((w) => w.id === selectedWorkflow);
       if (workflow?.input_schema) {
         const schemaObj = arraySchemaToObject(workflow.input_schema);
-        const initialValues: Record<string, string> = {};
-        Object.keys(schemaObj).forEach((key) => {
+        const initialValues: Record<string, string | string[] | DocumentContextValue[]> = {};
+        Object.entries(schemaObj).forEach(([key, field]) => {
+          // document_context: build array from contexts (new schema format)
+          if (field.type === "document_context" && Array.isArray(field.contexts)) {
+            initialValues[key] = field.contexts.map((ctx) => ({
+              name: ctx.name,
+              display_name: ctx.display_name || ctx.name.replace(/_/g, " "),
+              document_ids:
+                ctx.type === "company_context" ? (ctx.document_ids ?? []) : [],
+            }));
+            return;
+          }
+          // company_context: use document_ids from schema (legacy top-level)
+          if (field.type === "company_context") {
+            initialValues[key] = field.document_ids ?? [];
+            return;
+          }
+          // project_context: leave empty for ProjectContextSelector to auto-select (legacy)
+          if (field.type === "project_context") {
+            initialValues[key] = [];
+            return;
+          }
           // Pre-fill name/niche_name with research subject name
           if ((key === "name" || key === "niche_name") && subjectName) {
             initialValues[key] = subjectName;
@@ -184,8 +251,7 @@ export function GenerateNicheReportModal({
           // Pre-fill category with research subject category
           else if (key === "category" && researchSubjectCategory) {
             initialValues[key] = researchSubjectCategory;
-          }
-          else {
+          } else {
             initialValues[key] = "";
           }
         });
@@ -252,18 +318,56 @@ export function GenerateNicheReportModal({
 
     // Validate required fields (only fields marked as required)
     const schemaObj = arraySchemaToObject(workflow.input_schema);
-    const requiredFields = Object.entries(schemaObj)
-      .filter(([_, field]) => field.required !== false) // Default to required if not specified
-      .map(([key]) => key);
-    const missingFields = requiredFields.filter((key) => !formValues[key]?.trim());
+    const missingFields: string[] = [];
+
+    for (const [key, field] of Object.entries(schemaObj)) {
+      const val = formValues[key];
+
+      // document_context: validate each context in the array
+      if (field.type === "document_context" && Array.isArray(field.contexts)) {
+        const docArr = (Array.isArray(val) ? val : []) as DocumentContextValue[];
+        for (const ctx of field.contexts) {
+          if (ctx.required === false) continue;
+          const ctxVal = docArr.find((c) => c.name === ctx.name);
+          if (ctx.type === "company_context") continue; // allow empty
+          if (ctx.type === "project_context") {
+            const ids = ctxVal?.document_ids ?? [];
+            if (ids.length === 0) {
+              missingFields.push(ctx.display_name || ctx.name);
+            }
+          }
+        }
+        continue;
+      }
+
+      // Skip non-required fields
+      if (field.required === false) continue;
+
+      // company_context (legacy): allow empty
+      if (field.type === "company_context") continue;
+
+      // project_context (legacy): require non-empty document_ids
+      if (field.type === "project_context") {
+        if (Array.isArray(val) && val.length === 0) {
+          missingFields.push(key);
+        }
+        continue;
+      }
+
+      // Standard fields: require non-empty string
+      if (!val || !String(val).trim()) {
+        missingFields.push(key);
+      }
+    }
     
     if (missingFields.length > 0) {
       toast.error(`Please fill in all required fields: ${missingFields.join(", ")}`);
       return;
     }
 
-    // Get the workflow's default AI model before entering try block
-    const aiModel = workflow.default_ai_model || null;
+    // Get the workflow's default AI models before entering try block
+    const researchAiModel = workflow.default_ai_model || null;
+    const synthesisAiModel = workflow.default_synthesis_ai_model || workflow.default_ai_model || null;
 
     setIsExecuting(true);
 
@@ -284,7 +388,8 @@ export function GenerateNicheReportModal({
           project_type_id: effectiveProjectTypeId || null,
           workflow_id: selectedWorkflow,
           input: formValues,
-          ai_model: aiModel,
+          research_ai_model: researchAiModel,
+          synthesis_ai_model: synthesisAiModel,
         }),
       });
 
@@ -339,13 +444,119 @@ export function GenerateNicheReportModal({
 
   // Helper to render form field based on schema
   const renderFormField = (fieldKey: string, field: SchemaField) => {
-    const value = formValues[fieldKey] || "";
-    const label = fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1).replace(/_/g, " ");
+    const value = formValues[fieldKey];
+    const label =
+      (field.display_name as string) ||
+      fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1).replace(/_/g, " ");
     const locked = isFieldLocked(fieldKey);
     const required = isFieldRequired(fieldKey);
-    
+
+    // document_context: grouped contexts (new schema format)
+    if (field.type === "document_context" && Array.isArray(field.contexts)) {
+      const docContextValues = (Array.isArray(value) ? value : []) as DocumentContextValue[];
+      return (
+        <div key={fieldKey} className="space-y-3 md:space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            {label}
+          </h3>
+          <div className="space-y-3 md:space-y-4">
+            {field.contexts.map((ctx, idx) => {
+              const ctxValue = docContextValues[idx] ?? {
+                name: ctx.name,
+                display_name: ctx.display_name || ctx.name.replace(/_/g, " "),
+                document_ids: ctx.type === "company_context" ? (ctx.document_ids ?? []) : [],
+              };
+              const ctxLabel = ctx.display_name || ctx.name.replace(/_/g, " ");
+              const ctxRequired = ctx.required !== false;
+              const ctxLocked = ctx.locked ?? false;
+
+              if (ctx.type === "project_context") {
+                return (
+                  <div key={ctx.name} className="space-y-1.5 md:space-y-2">
+                    <label className="text-xs md:text-sm font-medium text-muted-foreground">
+                      {ctxLabel}
+                      {ctxRequired && <span className="text-destructive ml-1">*</span>}
+                    </label>
+                    <ProjectContextSelector
+                      field={{ ...ctx, name: ctx.name }}
+                      projectId={researchSubjectId}
+                      value={Array.isArray(ctxValue.document_ids) ? ctxValue.document_ids : []}
+                      onChange={(documentIds) =>
+                        setFormValues((prev) => {
+                          const arr = [...((prev[fieldKey] as DocumentContextValue[]) ?? [])];
+                          while (arr.length <= idx) {
+                            arr.push({
+                              name: ctx.name,
+                              display_name: ctx.display_name || ctx.name.replace(/_/g, " "),
+                              document_ids: [],
+                            });
+                          }
+                          arr[idx] = { ...arr[idx], name: ctx.name, display_name: ctxLabel, document_ids: documentIds };
+                          return { ...prev, [fieldKey]: arr };
+                        })
+                      }
+                      disabled={ctxLocked}
+                    />
+                  </div>
+                );
+              }
+
+              if (ctx.type === "company_context") {
+                return (
+                  <div key={ctx.name} className="space-y-1.5 md:space-y-2">
+                    <label className="text-xs md:text-sm font-medium text-muted-foreground">
+                      {ctxLabel}
+                      {ctxRequired && <span className="text-destructive ml-1">*</span>}
+                    </label>
+                    <CompanyContextDisplay field={{ ...ctx, name: ctx.name }} />
+                  </div>
+                );
+              }
+
+              return null;
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // project_context: dropdown (legacy top-level)
+    if (field.type === "project_context") {
+      return (
+        <div key={fieldKey} className="space-y-1.5 md:space-y-2">
+          <label className="text-xs md:text-sm font-medium text-muted-foreground">
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </label>
+          <ProjectContextSelector
+            field={{ ...field, name: field.name ?? fieldKey }}
+            projectId={researchSubjectId}
+            value={(Array.isArray(value) ? value : []) as string[]}
+            onChange={(documentIds) =>
+              setFormValues((prev) => ({ ...prev, [fieldKey]: documentIds }))
+            }
+            disabled={locked}
+          />
+        </div>
+      );
+    }
+
+    // company_context: read-only display (legacy top-level)
+    if (field.type === "company_context") {
+      return (
+        <div key={fieldKey} className="space-y-1.5 md:space-y-2">
+          <label className="text-xs md:text-sm font-medium text-muted-foreground">
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </label>
+          <CompanyContextDisplay field={{ ...field, name: field.name ?? fieldKey }} />
+        </div>
+      );
+    }
+
     // Normalize field type (handle "inputs" -> "input", etc.)
     const normalizedType = field.type === "textarea" ? "textarea" : "input";
+    const stringValue = typeof value === "string" ? value : "";
 
     if (normalizedType === "textarea") {
       return (
@@ -355,7 +566,7 @@ export function GenerateNicheReportModal({
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
           <textarea
-            value={value}
+            value={stringValue}
             onChange={(e) => !locked && setFormValues((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
             placeholder={`Enter ${label.toLowerCase()}...`}
             disabled={locked}
@@ -379,7 +590,7 @@ export function GenerateNicheReportModal({
         </label>
         <input
           type="text"
-          value={value}
+          value={stringValue}
           onChange={(e) => !locked && setFormValues((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
           placeholder={`Enter ${label.toLowerCase()}...`}
           disabled={locked}
@@ -524,13 +735,33 @@ export function GenerateNicheReportModal({
               whileTap={{ scale: 0.98 }}
               onClick={handleExecuteWorkflow}
               disabled={
-                !selectedWorkflow || 
-                isExecuting || 
-                Object.entries(inputSchema).some(([key, field]) => {
-                  // Always check required fields - they should be prefilled when workflow is selected
-                  const isRequired = field.required !== false;
-                  return isRequired && !formValues[key]?.trim();
-                })
+                !selectedWorkflow ||
+                isExecuting ||
+                (() => {
+                  for (const [key, field] of Object.entries(inputSchema)) {
+                    const val = formValues[key];
+                    if (field.type === "document_context" && Array.isArray(field.contexts)) {
+                      const docArr = (Array.isArray(val) ? val : []) as DocumentContextValue[];
+                      for (const ctx of field.contexts) {
+                        if (ctx.required === false) continue;
+                        if (ctx.type === "company_context") continue;
+                        if (ctx.type === "project_context") {
+                          const ctxVal = docArr.find((c) => c.name === ctx.name);
+                          if (!ctxVal?.document_ids?.length) return true;
+                        }
+                      }
+                      continue;
+                    }
+                    if (field.required === false) continue;
+                    if (field.type === "company_context") continue;
+                    if (field.type === "project_context") {
+                      if (Array.isArray(val) && val.length === 0) return true;
+                      continue;
+                    }
+                    if (!val || !String(val).trim()) return true;
+                  }
+                  return false;
+                })()
               }
               className={cn(
                 "w-full py-3.5 md:py-3 rounded-lg font-semibold text-sm md:text-sm flex items-center justify-center gap-2 transition-all mt-4 md:mt-4",

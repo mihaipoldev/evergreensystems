@@ -7,6 +7,9 @@ import {
   faCalendar,
 } from "@fortawesome/free-solid-svg-icons";
 import type { HeaderConfig } from "./ReportHeaderConfig";
+import { RunInputTooltip } from "./RunInputTooltip";
+import { UsageMetricsSection } from "@/features/rag/reports/components/shared/UsageMetricsSection";
+import type { UsageMetrics } from "@/features/rag/reports/types";
 
 interface ReportHeaderProps {
   title: string;
@@ -14,6 +17,8 @@ interface ReportHeaderProps {
   generatedAt: string;
   confidence: number;
   headerConfig: HeaderConfig;
+  runInput?: Record<string, unknown> | null;
+  usageMetrics?: UsageMetrics | null;
   // Evaluation-specific props (kept for potential future use)
   evaluationVerdict?: {
     label: string;
@@ -35,6 +40,8 @@ export const ReportHeader = ({
   generatedAt,
   confidence,
   headerConfig,
+  runInput,
+  usageMetrics,
   evaluationVerdict,
   evaluationQuickStats,
 }: ReportHeaderProps) => {
@@ -77,7 +84,11 @@ export const ReportHeader = ({
             <p className="text-xs text-muted-foreground">{headerConfig.modeLabel}</p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="flex items-center gap-3">
+          {runInput && Object.keys(runInput).length > 0 && (
+            <RunInputTooltip runInput={runInput} />
+          )}
+          {usageMetrics && <UsageMetricsSection usageMetrics={usageMetrics} />}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
             <span>{formattedDate}</span>

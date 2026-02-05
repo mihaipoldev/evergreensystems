@@ -32,6 +32,12 @@ interface ToolbarProps {
     onClick: () => void;
     disabled?: boolean;
   };
+  /** Renders after Sort button (e.g. Generate button for project runs) */
+  actionAfterSort?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
   showProjectsToggle?: {
     show: boolean;
     onToggle: (show: boolean) => void;
@@ -75,6 +81,7 @@ export function Toolbar({
   selectedSort: controlledSelectedSort,
   primaryAction,
   secondaryAction,
+  actionAfterSort,
   showProjectsToggle,
   groupBySource,
   groupByStatus,
@@ -198,7 +205,7 @@ export function Toolbar({
           </div>
 
           {/* Desktop: Search Input */}
-          <div className="hidden md:block relative w-72 bg-card/90 shadow-none rounded-md">
+          <div className="hidden md:block relative w-72 bg-card/90 shadow-buttons rounded-md">
             <FontAwesomeIcon
               icon={faSearch}
               className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground z-10"
@@ -389,6 +396,25 @@ export function Toolbar({
             onSelect={groupByVerdict.onSelect}
             width="w-48"
           />
+        )}
+
+        {/* Action after Sort (e.g. Generate for project runs) - rightmost */}
+        {actionAfterSort && !actionAfterSort.disabled && (
+          <Button
+            onClick={actionAfterSort.onClick}
+            className="relative h-10 w-10 md:h-10 md:w-10 p-0 overflow-hidden border-0 shadow-none bg-transparent hover:bg-transparent md:bg-primary md:hover:bg-primary md:shadow-buttons md:hover:shadow-card transition-all duration-300 hover:scale-105 text-foreground/80 md:text-primary-foreground"
+            title={actionAfterSort.label}
+          >
+            <div
+              className="hidden md:block absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
+              style={{ animation: "shimmer 8s infinite" }}
+            />
+            <FontAwesomeIcon
+              icon={faWandMagicSparkles}
+              className="relative z-10 !h-4 !w-4 md:drop-shadow-lg"
+              style={{ fontSize: "16px", width: "16px", height: "16px" }}
+            />
+          </Button>
         )}
 
         {/* Primary Action */}

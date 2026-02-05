@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DialogFooter } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -95,12 +97,13 @@ export function WorkflowModal({
   const [estimatedCost, setEstimatedCost] = useState("");
   const [estimatedTimeMinutes, setEstimatedTimeMinutes] = useState("");
   const [defaultAiModel, setDefaultAiModel] = useState<string>("anthropic/claude-haiku-4.5");
+  const [defaultSynthesisAiModel, setDefaultSynthesisAiModel] = useState<string>("anthropic/claude-haiku-4.5");
   const [inputSchema, setInputSchema] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [knowledgeBaseTarget, setKnowledgeBaseTarget] = useState<string>("knowledgebase");
   const [targetKnowledgeBaseId, setTargetKnowledgeBaseId] = useState<string>("");
   const [knowledgeBases, setKnowledgeBases] = useState<Array<{ id: string; name: string }>>([]);
-  const [errors, setErrors] = useState<{ slug?: string; name?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string }>({});
+  const [errors, setErrors] = useState<{ slug?: string; name?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string; defaultSynthesisAiModel?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Secrets state
@@ -180,6 +183,7 @@ export function WorkflowModal({
               setEstimatedCost(latestData.estimated_cost !== null ? latestData.estimated_cost.toString() : "");
               setEstimatedTimeMinutes(latestData.estimated_time_minutes !== null ? latestData.estimated_time_minutes.toString() : "");
               setDefaultAiModel(latestData.default_ai_model || "anthropic/claude-haiku-4.5");
+              setDefaultSynthesisAiModel(latestData.default_synthesis_ai_model || latestData.default_ai_model || "anthropic/claude-haiku-4.5");
               // Convert to array format to preserve order
               const schemaString = stringifySchema(latestData.input_schema);
               setInputSchema(schemaString);
@@ -222,6 +226,7 @@ export function WorkflowModal({
               setEstimatedCost(initialData.estimated_cost !== null ? initialData.estimated_cost.toString() : "");
               setEstimatedTimeMinutes(initialData.estimated_time_minutes !== null ? initialData.estimated_time_minutes.toString() : "");
               setDefaultAiModel(initialData.default_ai_model || "anthropic/claude-haiku-4.5");
+              setDefaultSynthesisAiModel(initialData.default_synthesis_ai_model || initialData.default_ai_model || "anthropic/claude-haiku-4.5");
               // Convert to array format to preserve order
               const schemaString = stringifySchema(initialData.input_schema);
               setInputSchema(schemaString);
@@ -270,6 +275,7 @@ export function WorkflowModal({
             setEstimatedCost(initialData.estimated_cost !== null ? initialData.estimated_cost.toString() : "");
             setEstimatedTimeMinutes(initialData.estimated_time_minutes !== null ? initialData.estimated_time_minutes.toString() : "");
             setDefaultAiModel(initialData.default_ai_model || "anthropic/claude-haiku-4.5");
+            setDefaultSynthesisAiModel(initialData.default_synthesis_ai_model || initialData.default_ai_model || "anthropic/claude-haiku-4.5");
             // Convert to array format to preserve order
             const schemaString = stringifySchema(initialData.input_schema);
             setInputSchema(schemaString);
@@ -277,7 +283,7 @@ export function WorkflowModal({
             setEnabled(initialData.enabled !== undefined ? initialData.enabled : true);
             setKnowledgeBaseTarget(initialData.knowledge_base_target || "knowledgebase");
             setTargetKnowledgeBaseId(initialData.target_knowledge_base_id || "");
-            
+
             // Try to fetch secrets even if workflow fetch failed
             try {
               const supabase = createClient();
@@ -320,6 +326,7 @@ export function WorkflowModal({
         setEstimatedCost("");
         setEstimatedTimeMinutes("");
         setDefaultAiModel("anthropic/claude-haiku-4.5");
+        setDefaultSynthesisAiModel("anthropic/claude-haiku-4.5");
         setInputSchema("");
         originalInputSchemaRef.current = "";
         setEnabled(true);
@@ -334,8 +341,19 @@ export function WorkflowModal({
     }
   }, [initialData?.id, open]);
 
+  const validModels = [
+    'anthropic/claude-sonnet-4.5',
+    'anthropic/claude-haiku-4.5',
+    'google/gemini-3-flash-preview',
+    'google/gemini-3-pro-preview',
+    'openai/gpt-4o-mini',
+    'openai/gpt-4o',
+    'openai/gpt-5-mini',
+    'openai/gpt-5.2'
+  ];
+
   const handleSubmit = async () => {
-    const newErrors: { slug?: string; name?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string } = {};
+    const newErrors: { slug?: string; name?: string; inputSchema?: string; webhookUrl?: string; config?: string; knowledgeBaseTarget?: string; targetKnowledgeBaseId?: string; defaultAiModel?: string; defaultSynthesisAiModel?: string } = {};
 
     if (!slug.trim()) {
       newErrors.slug = "Slug is required";
@@ -344,21 +362,14 @@ export function WorkflowModal({
       newErrors.name = "Name is required";
     }
     if (!defaultAiModel || !defaultAiModel.trim()) {
-      newErrors.defaultAiModel = "Default AI model is required";
-    } else {
-      const validModels = [
-        'anthropic/claude-sonnet-4.5',
-        'anthropic/claude-haiku-4.5',
-        'google/gemini-3-flash-preview',
-        'google/gemini-3-pro-preview',
-        'openai/gpt-4o-mini',
-        'openai/gpt-4o',
-        'openai/gpt-5-mini',
-        'openai/gpt-5.2'
-      ];
-      if (!validModels.includes(defaultAiModel)) {
-        newErrors.defaultAiModel = "Invalid AI model selected";
-      }
+      newErrors.defaultAiModel = "Default Research AI model is required";
+    } else if (!validModels.includes(defaultAiModel)) {
+      newErrors.defaultAiModel = "Invalid Research AI model selected";
+    }
+    if (!defaultSynthesisAiModel || !defaultSynthesisAiModel.trim()) {
+      newErrors.defaultSynthesisAiModel = "Default Synthesis AI model is required";
+    } else if (!validModels.includes(defaultSynthesisAiModel)) {
+      newErrors.defaultSynthesisAiModel = "Invalid Synthesis AI model selected";
     }
     if (!knowledgeBaseTarget || !['knowledgebase', 'client', 'project'].includes(knowledgeBaseTarget)) {
       newErrors.knowledgeBaseTarget = "Knowledge base target is required and must be one of: knowledgebase, client, project";
@@ -432,6 +443,7 @@ export function WorkflowModal({
           estimated_cost: estimatedCost.trim() ? parseFloat(estimatedCost) : null,
           estimated_time_minutes: estimatedTimeMinutes.trim() ? parseInt(estimatedTimeMinutes, 10) : null,
           default_ai_model: defaultAiModel.trim(),
+          default_synthesis_ai_model: defaultSynthesisAiModel.trim(),
           input_schema: parsedInputSchema,
           enabled,
           knowledge_base_target: knowledgeBaseTarget,
@@ -549,6 +561,7 @@ export function WorkflowModal({
     setEstimatedCost("");
     setEstimatedTimeMinutes("");
     setDefaultAiModel("anthropic/claude-haiku-4.5");
+    setDefaultSynthesisAiModel("anthropic/claude-haiku-4.5");
     setInputSchema("");
     originalInputSchemaRef.current = "";
     setEnabled(true);
@@ -666,6 +679,17 @@ export function WorkflowModal({
           />
         </div>
 
+        {/* Icon */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-icon" className="text-sm">Icon</Label>
+          <RAGInput
+            id="workflow-icon"
+            placeholder="e.g., 📊, 👥"
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
+          />
+        </div>
+
         {/* Knowledge Base Target */}
         <div className="space-y-1.5 md:space-y-2">
           <Label htmlFor="workflow-knowledge-base-target" className="text-sm">
@@ -732,17 +756,6 @@ export function WorkflowModal({
           </div>
         )}
 
-        {/* Icon */}
-        <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-icon" className="text-sm">Icon</Label>
-          <RAGInput
-            id="workflow-icon"
-            placeholder="e.g., 📊, 👥"
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-          />
-        </div>
-
         {/* Estimated Cost */}
         <div className="space-y-1.5 md:space-y-2">
           <Label htmlFor="workflow-cost" className="text-sm">Estimated Cost</Label>
@@ -768,10 +781,10 @@ export function WorkflowModal({
           />
         </div>
 
-        {/* Default AI Model */}
+        {/* Default Research AI Model */}
         <div className="space-y-1.5 md:space-y-2">
           <Label htmlFor="workflow-default-ai-model" className="text-sm">
-            Default AI Model <span className="text-destructive">*</span>
+            Default Research AI Model <span className="text-destructive">*</span>
           </Label>
           <RAGSelect
             value={defaultAiModel}
@@ -796,6 +809,37 @@ export function WorkflowModal({
           </RAGSelect>
           {errors.defaultAiModel && (
             <p className="text-xs text-destructive">{errors.defaultAiModel}</p>
+          )}
+        </div>
+
+        {/* Default Synthesis AI Model */}
+        <div className="space-y-1.5 md:space-y-2">
+          <Label htmlFor="workflow-default-synthesis-ai-model" className="text-sm">
+            Default Synthesis AI Model <span className="text-destructive">*</span>
+          </Label>
+          <RAGSelect
+            value={defaultSynthesisAiModel}
+            onValueChange={(value) => {
+              setDefaultSynthesisAiModel(value);
+              if (errors.defaultSynthesisAiModel) setErrors({ ...errors, defaultSynthesisAiModel: undefined });
+            }}
+          >
+            <RAGSelectTrigger id="workflow-default-synthesis-ai-model" error={!!errors.defaultSynthesisAiModel}>
+              <RAGSelectValue placeholder="Select AI model" />
+            </RAGSelectTrigger>
+            <RAGSelectContent>
+              <RAGSelectItem value="anthropic/claude-sonnet-4.5">anthropic/claude-sonnet-4.5</RAGSelectItem>
+              <RAGSelectItem value="anthropic/claude-haiku-4.5">anthropic/claude-haiku-4.5</RAGSelectItem>
+              <RAGSelectItem value="google/gemini-3-flash-preview">google/gemini-3-flash-preview</RAGSelectItem>
+              <RAGSelectItem value="google/gemini-3-pro-preview">google/gemini-3-pro-preview</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-4o-mini">openai/gpt-4o-mini</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-4o">openai/gpt-4o</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-5-mini">openai/gpt-5-mini</RAGSelectItem>
+              <RAGSelectItem value="openai/gpt-5.2">openai/gpt-5.2</RAGSelectItem>
+            </RAGSelectContent>
+          </RAGSelect>
+          {errors.defaultSynthesisAiModel && (
+            <p className="text-xs text-destructive">{errors.defaultSynthesisAiModel}</p>
           )}
         </div>
 
@@ -894,23 +938,16 @@ export function WorkflowModal({
         </ModalShell>
 
         {/* Enabled */}
-        <div className="space-y-1.5 md:space-y-2">
-          <Label htmlFor="workflow-enabled" className="text-sm">Status</Label>
-          <RAGSelect
-            value={enabled ? "enabled" : "disabled"}
-            onValueChange={(value) => {
-              setEnabled(value === "enabled");
-            }}
-          >
-            <RAGSelectTrigger id="workflow-enabled">
-              <RAGSelectValue placeholder="Select status" />
-            </RAGSelectTrigger>
-            <RAGSelectContent>
-              <RAGSelectItem value="enabled">Enabled</RAGSelectItem>
-              <RAGSelectItem value="disabled">Disabled</RAGSelectItem>
-            </RAGSelectContent>
-          </RAGSelect>
-        </div>
+        <Card>
+          <CardContent className="flex flex-row items-center justify-between py-4 px-4 md:p-6">
+            <Label htmlFor="workflow-enabled" className="text-sm font-medium">Status</Label>
+            <Switch
+              id="workflow-enabled"
+              checked={enabled}
+              onCheckedChange={setEnabled}
+            />
+          </CardContent>
+        </Card>
       </div>
         </TabsContent>
 

@@ -10,6 +10,34 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+let modalScrollLockCount = 0;
+let savedHtmlOverflow = "";
+let savedBodyOverflow = "";
+
+/** Lock body/html scroll when modal is open (prevents scrolling content behind the modal) */
+function useScrollLock(open: boolean) {
+  React.useEffect(() => {
+    if (!open) return;
+    const html = document.documentElement;
+    const body = document.body;
+    if (modalScrollLockCount === 0) {
+      savedHtmlOverflow = html.style.overflow;
+      savedBodyOverflow = body.style.overflow;
+    }
+    modalScrollLockCount++;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      modalScrollLockCount--;
+      if (modalScrollLockCount <= 0) {
+        modalScrollLockCount = 0;
+        html.style.overflow = savedHtmlOverflow;
+        body.style.overflow = savedBodyOverflow;
+      }
+    };
+  }, [open]);
+}
+
 export interface ModalShellProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,6 +51,8 @@ export interface ModalShellProps {
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl" | "6xl" | "7xl" | "full";
   maxHeight?: "none" | "90vh";
   showScroll?: boolean;
+  /** When true, the body area has no padding (e.g. for document view with its own content padding). */
+  noBodyPadding?: boolean;
 }
 
 const maxWidthMap = {
@@ -50,7 +80,9 @@ export function ModalShell({
   maxWidth = "lg",
   maxHeight = "none",
   showScroll = false,
+  noBodyPadding = false,
 }: ModalShellProps) {
+  useScrollLock(open);
   const maxWidthClass = maxWidthMap[maxWidth];
   const maxHeightClass = maxHeight === "90vh" ? "max-h-[90vh]" : "";
 
@@ -89,7 +121,9 @@ export function ModalShell({
         className={cn(
           maxWidthClass,
           maxHeightClass,
-          "p-0 gap-0 [&>button]:z-20 rounded-xl bg-card dark:bg-background",
+          "p-0 gap-0 rounded-xl bg-card dark:bg-background",
+          "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
+          "[&>button]:z-20 [&>button]:focus-visible:outline-none [&>button]:focus-visible:ring-0 [&>button]:focus-visible:ring-offset-0",
           contentClassName
         )}
         style={{
@@ -136,7 +170,7 @@ export function ModalShell({
           <div
             className={cn(
               showScroll ? "flex-1 min-h-0 overflow-y-auto" : "",
-              "p-4 md:p-6"
+              noBodyPadding ? "p-0" : "p-4 md:p-6"
             )}
           >
             {children}

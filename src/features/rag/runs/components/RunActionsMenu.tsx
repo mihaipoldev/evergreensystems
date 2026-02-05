@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
+import { ViewOutputJsonModal } from "./ViewOutputJsonModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faEye, faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faCode, faCopy, faEllipsis, faEye, faExternalLink, faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Run } from "../types";
@@ -22,6 +23,7 @@ export function RunActionsMenu({
 }: RunActionsMenuProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showViewJsonModal, setShowViewJsonModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isComplete = run.status === "complete";
@@ -69,7 +71,7 @@ export function RunActionsMenu({
 
   const items = [
     {
-      label: "View Progress",
+      label: "Progress",
       icon: <FontAwesomeIcon icon={faEye} className="h-4 w-4" />,
       href: `/intel/research/${run.id}`,
       onClick: (e?: React.MouseEvent) => {
@@ -77,7 +79,7 @@ export function RunActionsMenu({
       },
     },
     {
-      label: "View Result",
+      label: "Result",
       icon: <FontAwesomeIcon icon={faFileAlt} className="h-4 w-4" />,
       href: isComplete && reportId ? `/intel/research/${run.id}/result` : undefined,
       onClick: (e?: React.MouseEvent) => {
@@ -88,6 +90,44 @@ export function RunActionsMenu({
         }
       },
       disabled: !isComplete || !reportId,
+    },
+    ...(run.execution_url
+      ? [
+          {
+            label: "Execution",
+            icon: <FontAwesomeIcon icon={faExternalLink} className="h-4 w-4" />,
+            onClick: (e?: React.MouseEvent) => {
+              e?.stopPropagation();
+              window.open(run.execution_url!, "_blank");
+            },
+          },
+        ]
+      : []),
+    {
+      label: "Output JSON",
+      icon: <FontAwesomeIcon icon={faCode} className="h-4 w-4" />,
+      onClick: (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (isComplete && reportId) {
+          setShowViewJsonModal(true);
+        } else {
+          toast.info("Output JSON will be available after the run completes");
+        }
+      },
+      disabled: !isComplete || !reportId,
+    },
+    {
+      label: "Copy ID",
+      icon: <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />,
+      onClick: async (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(run.id);
+          toast.success("ID copied to clipboard");
+        } catch {
+          toast.error("Failed to copy ID");
+        }
+      },
     },
     { separator: true },
     {
@@ -128,7 +168,16 @@ export function RunActionsMenu({
         isDeleting={isDeleting}
         showDeleteDocumentsOption={true}
         deleteDocumentsLabel="Also delete associated documents"
+        deleteDocumentsDefaultChecked={true}
       />
+
+      {reportId && (
+        <ViewOutputJsonModal
+          open={showViewJsonModal}
+          onOpenChange={setShowViewJsonModal}
+          reportId={reportId}
+        />
+      )}
     </>
   );
 }

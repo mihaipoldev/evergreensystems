@@ -25,6 +25,7 @@ type DocumentCardProps = {
   };
   knowledgeBaseName?: string;
   onView?: () => void;
+  onCopy?: () => void;
   onDownload?: () => void;
   onDelete?: () => void;
 };
@@ -33,6 +34,7 @@ export function DocumentCard({
   document,
   knowledgeBaseName,
   onView,
+  onCopy,
   onDownload,
   onDelete,
 }: DocumentCardProps) {
@@ -146,6 +148,7 @@ export function DocumentCard({
           <DocumentActionsMenu
             document={document}
             onView={onView}
+            onCopy={onCopy}
             onDownload={onDownload}
             onDelete={onDelete}
           />

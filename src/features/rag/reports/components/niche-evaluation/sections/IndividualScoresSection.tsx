@@ -8,22 +8,25 @@ import {
   faChartBar,
 } from "@fortawesome/free-solid-svg-icons";
 import { SectionWrapper } from "../../shared/SectionWrapper";
-import { StatCard } from "../../shared/StatCard";
+import { DimensionScoreBar } from "../../shared/DimensionScoreBar";
 import type { ReportData } from "../../../types";
+import { normalizeAgentEvaluation } from "../../../utils/normalizeAgentEvaluation";
 import {
   getFitScoreCategory,
   getFitScoreColorClasses,
+  getFitScoreLabel,
+  getFitScoreBadgeClasses,
   type FitScoreCategory,
 } from "../../../../shared/utils/fitScoreColors";
 
 interface IndividualScoresSectionProps {
   data: ReportData;
   sectionNumber: string;
+  reportId?: string;
 }
 
 /**
  * Returns gradient classes for card background based on fit score category
- * Uses fit score colors with gradient styling and dark mode support
  */
 function getCardGradientClasses(category: FitScoreCategory): string {
   switch (category) {
@@ -47,13 +50,17 @@ const ScoreGauge = ({ score }: { score: number }) => {
   const strokeDashoffset = circumference - (numericScore / 100) * circumference;
   const svgSize = 120;
   const center = svgSize / 2;
-  
+
   const category = getFitScoreCategory(numericScore, null);
   const colorClasses = getFitScoreColorClasses(category);
 
   return (
     <div className="relative inline-block w-[120px] h-[120px] md:w-[140px] md:h-[140px]">
-      <svg className="transform -rotate-90 w-full h-full">
+      <svg
+        viewBox={`0 0 ${svgSize} ${svgSize}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="transform -rotate-90 w-full h-full block"
+      >
         <circle
           cx={center}
           cy={center}
@@ -76,9 +83,7 @@ const ScoreGauge = ({ score }: { score: number }) => {
           whileInView={{ strokeDashoffset }}
           viewport={{ once: true }}
           transition={{ duration: 1.5, ease: "easeOut" }}
-          style={{
-            strokeDasharray: circumference,
-          }}
+          style={{ strokeDasharray: circumference }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
@@ -101,36 +106,180 @@ const ScoreGauge = ({ score }: { score: number }) => {
   );
 };
 
-export const IndividualScoresSection = ({ data, sectionNumber }: IndividualScoresSectionProps) => {
-  const dataAny = data.data as any;
-  // Handle array structure - get first element if it's an array
-  const evaluationData = Array.isArray(dataAny) ? dataAny[0] : (dataAny.evaluation || dataAny);
-  
-  // Get score_details from evaluation data
-  const scoreDetails = evaluationData?.score_details;
+function getCategoryFromRecommendation(rec: string): FitScoreCategory {
+  const r = String(rec || "").toLowerCase();
+  if (r === "pursue") return "pursue";
+  if (r === "test") return "test";
+  if (r === "caution") return "caution";
+  if (r === "avoid") return "avoid";
+  if (r === "ideal") return "ideal";
+  return "test";
+}
 
-  // Get individual_scores from score_details
-  const individualScores = scoreDetails?.individual_scores;
+function getRecommendationVerdictConfig(recommendation: string) {
+  const r = String(recommendation || "").toUpperCase();
+  if (r === "PURSUE") return "border-green-500/50";
+  if (r === "TEST") return "border-amber-500/50";
+  if (r === "CAUTION") return "border-orange-500/50";
+  if (r === "AVOID") return "border-red-500/50";
+  return "border-border";
+}
 
-  if (!individualScores) {
-    return null;
+function AgentConsensusCard({
+  agent,
+  index,
+  allAgree,
+  getRecommendationVerdictConfig,
+  getCardGradientClasses,
+  getFitScoreCategory,
+}: {
+  agent: { key: string; label: string; data: Record<string, unknown> };
+  index: number;
+  allAgree: boolean;
+  getRecommendationVerdictConfig: (r: string) => string;
+  getCardGradientClasses: (c: FitScoreCategory) => string;
+  getFitScoreCategory: (s: number, _: null) => FitScoreCategory;
+}) {
+  const agentData = agent.data;
+  const score = Number(agentData.overall_fit_score ?? 0);
+  const confidence = Number(agentData.confidence_score ?? 0);
+  const recommendation = String(agentData.recommendation ?? "");
+  const oneLine = agentData.one_line_summary as string | undefined;
+  const dimBreakdown = agentData.dimension_scores_breakdown as
+    | Record<string, number | { score?: number }>
+    | undefined;
+  const category = getFitScoreCategory(score, null);
+  const gradient = getCardGradientClasses(category);
+  const borderClass = allAgree ? "ring-2 ring-green-500/30" : "";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1 }}
+      className={`bg-gradient-to-br ${gradient} rounded-xl p-4 md:p-6 border report-shadow overflow-hidden ${borderClass} ${getRecommendationVerdictConfig(recommendation)}`}
+    >
+      <div className="mb-4 text-center">
+        <h3 className="text-lg font-display font-semibold text-foreground">
+          {agent.label}
+        </h3>
+        <div className="flex items-center justify-center gap-2 mt-1">
+          <span className="text-2xl font-display font-bold">{score}</span>
+          <span className="text-sm text-muted-foreground">/100</span>
+          <span className="text-xs text-muted-foreground">
+            • {confidence}% conf
+          </span>
+        </div>
+        {recommendation && (
+          <span
+            className={`inline-flex items-center mt-2 rounded-full border px-2 py-0.5 text-xs font-semibold ${getFitScoreBadgeClasses(getCategoryFromRecommendation(recommendation))}`}
+          >
+            {getFitScoreLabel(getCategoryFromRecommendation(recommendation))}
+          </span>
+        )}
+      </div>
+
+      {dimBreakdown && (
+        <div className="space-y-3 mb-4">
+          {Object.entries(dimBreakdown).map(([dim, val]) => {
+            const s = typeof val === "object" ? Number(val?.score ?? 0) : Number(val);
+            return (
+              <DimensionScoreBar
+                key={dim}
+                label={dim}
+                score={s}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {oneLine && (
+        <p className="text-xs text-muted-foreground font-body">
+          {oneLine}
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
+export const IndividualScoresSection = ({
+  data,
+  sectionNumber,
+  reportId,
+}: IndividualScoresSectionProps) => {
+  const dataAny = data.data as Record<string, unknown>;
+  const payload = Array.isArray(dataAny) ? (dataAny as unknown[])[0] : dataAny;
+  const payloadObj = payload as Record<string, unknown> | null;
+
+  const individualEvals = payloadObj?.individual_evaluations as Record<
+    string,
+    Record<string, unknown>
+  > | undefined;
+
+  if (individualEvals && Object.keys(individualEvals).length > 0) {
+    const agents = [
+      { key: "agent_1", label: "Agent 1", data: normalizeAgentEvaluation(individualEvals.agent_1 as Record<string, unknown>) ?? individualEvals.agent_1 },
+      { key: "agent_2", label: "Agent 2", data: normalizeAgentEvaluation(individualEvals.agent_2 as Record<string, unknown>) ?? individualEvals.agent_2 },
+      { key: "agent_3", label: "Agent 3", data: normalizeAgentEvaluation(individualEvals.agent_3 as Record<string, unknown>) ?? individualEvals.agent_3 },
+    ].filter((a) => a.data);
+
+    if (agents.length === 0) return null;
+
+    const recommendations = agents
+      .map((a) => String((a.data?.recommendation as string) ?? "").toUpperCase())
+      .filter(Boolean);
+    const allAgree =
+      recommendations.length >= 2 &&
+      recommendations.every((r) => r === recommendations[0]);
+
+    return (
+      <SectionWrapper
+        id="agent-consensus"
+        number={sectionNumber}
+        title="Agent Consensus"
+        subtitle="Multi-agent evaluation with dimension scores and recommendations"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {agents.map((agent, index) => (
+            <AgentConsensusCard
+              key={agent.key}
+              agent={agent}
+              index={index}
+              allAgree={allAgree}
+              getRecommendationVerdictConfig={getRecommendationVerdictConfig}
+              getCardGradientClasses={getCardGradientClasses}
+              getFitScoreCategory={getFitScoreCategory}
+            />
+          ))}
+        </div>
+      </SectionWrapper>
+    );
   }
 
-  // Get stats from score_details
-  const stdDev = scoreDetails?.score_spread ?? 0;
-  const rawAverage = scoreDetails?.raw_average ?? 0;
-  const adjustedAverage = scoreDetails?.adjusted_average ?? 0;
+  const evaluationData = payloadObj?.evaluation ?? payloadObj;
+  const scoreDetails = (evaluationData as Record<string, unknown>)?.score_details as
+    | Record<string, unknown>
+    | undefined;
+  const individualScores = scoreDetails?.individual_scores as Record<
+    string,
+    Record<string, unknown>
+  > | undefined;
 
-  // Extract models using new structure (agent1, agent2, agent3)
+  if (!individualScores) return null;
+
+  const stdDev = Number(scoreDetails?.score_spread ?? scoreDetails?.std_dev ?? 0);
+  const rawAverage = Number(scoreDetails?.raw_average ?? 0);
+  const adjustedAverage = Number(scoreDetails?.adjusted_average ?? 0);
+
   const models = [
     { key: "agent1", data: individualScores.agent1 },
     { key: "agent2", data: individualScores.agent2 },
     { key: "agent3", data: individualScores.agent3 },
-  ].filter((model) => model.data);
+  ].filter((m) => m.data);
 
-  if (models.length === 0) {
-    return null;
-  }
+  if (models.length === 0) return null;
 
   return (
     <SectionWrapper
@@ -139,41 +288,38 @@ export const IndividualScoresSection = ({ data, sectionNumber }: IndividualScore
       title="Individual Model Scores"
       subtitle="Multi-model AI evaluation with consensus scoring and variance analysis"
     >
-      {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          label="Raw Average"
-          value={rawAverage.toFixed(1)}
-          icon={<FontAwesomeIcon icon={faCalculator} className="w-5 h-5" />}
-        />
-        <StatCard
-          label="Adjusted Average"
-          value={adjustedAverage.toFixed(1)}
-          icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
-          variant="highlight"
-        />
-        <StatCard
-          label="Standard Deviation"
-          value={stdDev.toFixed(1)}
-          icon={<FontAwesomeIcon icon={faChartBar} className="w-5 h-5" />}
-        />
+      <div className="flex flex-wrap gap-6 mb-8">
+        <div className="flex items-center gap-3">
+          <FontAwesomeIcon icon={faCalculator} className="w-5 h-5 text-accent" />
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Raw Average</p>
+            <p className="text-xl font-semibold">{rawAverage.toFixed(1)}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <FontAwesomeIcon icon={faChartLine} className="w-5 h-5 text-accent" />
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Adjusted Average</p>
+            <p className="text-xl font-semibold">{adjustedAverage.toFixed(1)}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <FontAwesomeIcon icon={faChartBar} className="w-5 h-5 text-accent" />
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Standard Deviation</p>
+            <p className="text-xl font-semibold">{stdDev.toFixed(1)}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Model Score Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {models.map((model, index) => {
-          const scoreData = model.data;
+          const scoreData = model.data as Record<string, unknown>;
           const rawScore = Number(scoreData.raw) || 0;
-          const adjustedScore = Number(scoreData.adjusted) || 0;
-          const verdict = scoreData.verdict || "";
-          const agentName = scoreData.agent || scoreData.role || "Evaluator";
-          const modelName = scoreData.model || "";
-          
-          // Always use raw score for display
-          const displayScore = rawScore;
+          const verdict = String(scoreData.verdict ?? "");
+          const agentName = String(scoreData.agent ?? scoreData.role ?? "Evaluator");
+          const modelName = String(scoreData.model ?? "AI Evaluator");
           const category = getFitScoreCategory(rawScore, null);
-          
-          // Get gradient based on fit score category
           const gradient = getCardGradientClasses(category);
 
           return (
@@ -185,24 +331,21 @@ export const IndividualScoresSection = ({ data, sectionNumber }: IndividualScore
               transition={{ delay: index * 0.15 }}
               className={`bg-gradient-to-br ${gradient} rounded-xl p-4 md:p-6 border report-shadow hover:shadow-lg transition-all duration-300 overflow-hidden`}
             >
-              {/* Model Header */}
               <div className="mb-4 md:mb-6 text-center">
                 <h3 className="text-lg md:text-xl font-display font-semibold text-foreground mb-1 break-words">
                   {agentName}
                 </h3>
                 <p className="text-xs text-muted-foreground font-body uppercase tracking-wider break-words">
-                  {modelName || "AI Evaluator"}
+                  {modelName}
                 </p>
               </div>
 
-              {/* Score Gauge */}
-              <div className="flex justify-center mb-4 md:mb-6">
-                <ScoreGauge score={displayScore} />
+              <div className="w-full flex items-center justify-center mb-4 md:mb-6">
+                <ScoreGauge score={rawScore} />
               </div>
 
-              {/* Verdict */}
               {verdict && (
-                <div className="bg-card/30 rounded-lg p-3 md:p-4 border border-border/50">
+                <div className="p-2">
                   <p className="text-xs uppercase tracking-wider text-muted-foreground font-body mb-2">
                     Verdict
                   </p>
@@ -218,4 +361,3 @@ export const IndividualScoresSection = ({ data, sectionNumber }: IndividualScore
     </SectionWrapper>
   );
 };
-
