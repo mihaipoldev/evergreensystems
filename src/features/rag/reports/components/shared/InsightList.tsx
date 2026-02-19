@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
+  faClock,
   faExclamationTriangle,
   faInfoCircle,
   faBullseye,
@@ -13,8 +14,10 @@ import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 export type InsightListType =
   | "default"
   | "accent"
+  | "accentSubtle"
   | "primary"
   | "green"
+  | "amber"
   | "warning"
   | "danger"
   | "info"
@@ -45,8 +48,10 @@ interface InsightListProps {
 const iconMap: Record<InsightListType, IconDefinition> = {
   default: faInfoCircle,
   accent: faBullseye,
+  accentSubtle: faBullseye,
   primary: faBullseye,
   green: faCheck,
+  amber: faClock,
   warning: faExclamationTriangle,
   danger: faExclamationTriangle,
   info: faInfoCircle,
@@ -58,8 +63,10 @@ const iconMap: Record<InsightListType, IconDefinition> = {
 const colorMap: Record<Exclude<InsightListType, "success" | "target" | "critical">, string> = {
   default: "text-muted-foreground bg-muted/50 border-border",
   accent: "text-accent dark:text-accent bg-accent/10 dark:bg-accent/20 border-accent/20 dark:border-accent/30",
+  accentSubtle: "text-accent dark:text-accent bg-accent/5 dark:bg-accent/10 border-accent/15 dark:border-accent/20",
   primary: "text-primary bg-primary/10 border-primary/20",
   green: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800",
+  amber: "text-amber-700 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-950/30 border-amber-200/60 dark:border-amber-800/50",
   warning: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800",
   danger: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800",
   info: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800",
@@ -69,7 +76,7 @@ function resolveType(type: InsightListType): Exclude<InsightListType, "success" 
   if (type === "success") return "green";
   if (type === "target") return "accent";
   if (type === "critical") return "danger";
-  return type;
+  return type as Exclude<InsightListType, "success" | "target" | "critical">;
 }
 
 export const InsightList = ({

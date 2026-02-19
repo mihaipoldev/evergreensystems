@@ -60,7 +60,7 @@ type Color = {
 
 interface WebsiteSettingsProps {
   environment?: 'production' | 'development';
-  route?: '/' | '/outbound-system';
+  route?: string;
   selectedPresetId?: string | 'new' | null;
   onPresetApplied?: () => void;
   renameTrigger?: string | null; // When this changes to a preset ID, trigger rename

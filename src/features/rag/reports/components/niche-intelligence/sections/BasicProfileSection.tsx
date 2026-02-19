@@ -48,11 +48,12 @@ export const BasicProfileSection = ({ profile, sectionNumber = "01" }: BasicProf
         </ContentCard>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
-          label="Name"
-          value={getText(profile.name, "—")}
-          icon={<FontAwesomeIcon icon={faBox} className="w-5 h-5" />}
+          label="Market Value"
+          value={getText(profile.market_value, "—")}
+          icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
+          variant="highlight"
         />
         <StatCard
           label="Category"
@@ -63,12 +64,6 @@ export const BasicProfileSection = ({ profile, sectionNumber = "01" }: BasicProf
           label="Primary Focus"
           value={getText(profile.primary_focus, "—")}
           icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
-        />
-        <StatCard
-          label="Market Value"
-          value={getText(profile.market_value, "—")}
-          icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
-          variant="highlight"
         />
       </div>
     </SectionWrapper>

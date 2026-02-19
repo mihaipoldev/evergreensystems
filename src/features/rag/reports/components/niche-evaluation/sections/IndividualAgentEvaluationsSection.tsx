@@ -2,16 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { SectionWrapper } from "../../shared/SectionWrapper";
-import {
-  getStoredCollapsibleState,
-  setStoredCollapsibleState,
-  getReportGroupId,
-} from "@/lib/collapsible-persistence";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Card, CardContent } from "@/components/ui/card";
+import { ReportCollapsibleCard } from "../../shared/ReportCollapsibleCard";
 import { InsightList } from "../../shared/InsightList";
 import { DimensionScoreBar } from "../../shared/DimensionScoreBar";
 import {
@@ -20,7 +12,8 @@ import {
 } from "../../../../shared/utils/fitScoreColors";
 import type { FitScoreCategory } from "../../../../shared/utils/fitScoreColors";
 import type { ReportData } from "../../../types";
-import { normalizeAgentEvaluation } from "../../../utils/normalizeAgentEvaluation";
+import { normalizeAgentEvaluation } from "../normalizeAgentEvaluation";
+import { getReportGroupId, getStoredCollapsibleState, setStoredCollapsibleState } from "@/lib/collapsible-persistence";
 
 function getCategoryFromRecommendation(rec: string): FitScoreCategory {
   const r = String(rec || "").toLowerCase();
@@ -42,20 +35,28 @@ function safeStr(x: unknown): string {
   return String(x ?? "");
 }
 
-const AGENT_LABELS: Record<string, string> = {
+const DEFAULT_AGENT_LABELS: Record<string, string> = {
   agent_1: "Agent 1 - Market & Operational Reality",
   agent_2: "Agent 2 - Psychology & Positioning",
   agent_3: "Agent 3 - Strategic Assessment",
 };
 
+function getAgentLabel(agentKey: string, agentsIncluded?: string[]): string {
+  const idx = ["agent_1", "agent_2", "agent_3"].indexOf(agentKey);
+  if (agentsIncluded && agentsIncluded[idx]) return agentsIncluded[idx];
+  return DEFAULT_AGENT_LABELS[agentKey] ?? agentKey.replace(/_/g, " ");
+}
+
 function AgentCard({
   agentKey,
   agentData,
   reportId,
+  agentLabel,
 }: {
   agentKey: string;
   agentData: Record<string, unknown>;
   reportId: string;
+  agentLabel: string;
 }) {
   const groupId = getReportGroupId(reportId, `agent-eval-${agentKey}`);
   const [open, setOpen] = useState(() => getStoredCollapsibleState(groupId, false));
@@ -91,46 +92,41 @@ function AgentCard({
   const segment = addressableSegment ?? segmentAnalysis;
   const filteringCriteria =
     segment?.filtering_criteria ?? segment?.filter_criteria;
-  const label = AGENT_LABELS[agentKey] ?? agentKey.replace(/_/g, " ");
+  const label = agentLabel;
+
+  const customTitle = (
+    <div className="flex flex-wrap items-center gap-3">
+      <span className="font-semibold">{label}</span>
+      <div className="flex items-baseline gap-2">
+        <span
+          className={`text-xl font-display font-bold tabular-nums ${
+            recommendation
+              ? getFitScoreColorClasses(getCategoryFromRecommendation(recommendation))
+              : "text-foreground"
+          }`}
+        >
+          {score}
+          {recommendation && (
+            <span className="ml-1.5 font-semibold">
+              {getFitScoreLabel(getCategoryFromRecommendation(recommendation))}
+            </span>
+          )}
+        </span>
+        {!recommendation && (
+          <span className="text-sm text-muted-foreground">/100</span>
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <Card>
-        <CollapsibleTrigger asChild>
-          <button
-            className="w-full flex items-center justify-between p-4 md:p-6 hover:bg-muted/5 transition-colors text-left"
-            aria-expanded={open}
-          >
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="font-semibold">{label}</span>
-              <div className="flex items-baseline gap-2">
-                <span
-                  className={`text-xl font-display font-bold tabular-nums ${
-                    recommendation
-                      ? getFitScoreColorClasses(getCategoryFromRecommendation(recommendation))
-                      : "text-foreground"
-                  }`}
-                >
-                  {score}
-                  {recommendation && (
-                    <span className="ml-1.5 font-semibold">
-                      {getFitScoreLabel(getCategoryFromRecommendation(recommendation))}
-                    </span>
-                  )}
-                </span>
-                {!recommendation && (
-                  <span className="text-sm text-muted-foreground">/100</span>
-                )}
-              </div>
-            </div>
-            <FontAwesomeIcon
-              icon={open ? faChevronUp : faChevronDown}
-              className="w-4 h-4 text-muted-foreground flex-shrink-0"
-            />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="pt-4 space-y-6 border-t border-border">
+    <ReportCollapsibleCard
+      id={groupId}
+      title={customTitle}
+      reportId={reportId}
+      triggerClassName="hover:bg-muted/20"
+    >
+      <div className="space-y-6">
             {dimensionScores && Object.keys(dimensionScores).length > 0 && (
               <div>
                 <h4 className="text-sm font-semibold mb-3">Dimension Scores</h4>
@@ -307,10 +303,8 @@ function AgentCard({
                 </div>
               </div>
             )}
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+          </div>
+    </ReportCollapsibleCard>
   );
 }
 
@@ -326,6 +320,11 @@ export const IndividualAgentEvaluationsSection = ({
   > | undefined;
 
   if (!individualEvals || Object.keys(individualEvals).length === 0) return null;
+
+  const agentsIncluded = (data.meta as Record<string, unknown>)?.analysis_summary as
+    | { agents_included?: string[] }
+    | undefined;
+  const agentLabels = agentsIncluded?.agents_included;
 
   const agents = Object.entries(individualEvals)
     .filter(([, v]) => v && typeof v === "object")
@@ -350,6 +349,7 @@ export const IndividualAgentEvaluationsSection = ({
             agentKey={key}
             agentData={data as Record<string, unknown>}
             reportId={reportId}
+            agentLabel={getAgentLabel(key, agentLabels)}
           />
         ))}
       </div>

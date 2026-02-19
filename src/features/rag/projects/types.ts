@@ -14,6 +14,7 @@ export type Project = {
   first_researched_at?: string | null;
   last_researched_at?: string | null;
   run_count?: number;
+  total_usage?: number;
   created_at: string;
   updated_at: string;
   created_by: string | null;

@@ -1,826 +1,92 @@
 import type { ReportData } from "../types";
+import { buildReportMeta } from "./buildReportMeta";
+import { TRANSFORM_MAP } from "../registry";
 
 /**
  * Transforms raw output_json from rag_run_outputs into a normalized ReportData structure.
- * Handles missing/null fields gracefully with sensible defaults.
- * 
+ *
+ * Routes to the appropriate per-automation transform based on meta.automation_name,
+ * using the centralized TRANSFORM_MAP from the automation registry.
+ *
  * @param outputJson - Raw JSON from rag_run_outputs.output_json
  * @returns Normalized ReportData structure
  */
 export function transformOutputJson(outputJson: Record<string, any>): ReportData {
-  // Helper to safely get nested values with defaults
-  const get = (obj: any, path: string[], defaultValue: any = null) => {
-    let current = obj;
-    for (const key of path) {
-      if (current == null || typeof current !== 'object') {
-        return defaultValue;
+  // Handle array wrapper (some outputs are wrapped as [{ meta, data }])
+  const payload = Array.isArray(outputJson) && outputJson.length > 0
+    ? outputJson[0]
+    : outputJson;
+
+  const meta = payload?.meta;
+
+  if (!meta?.automation_name) {
+    // Fallback: try to detect from data shape for any edge cases
+    const detected = detectAutomationName(payload);
+    if (detected) {
+      const transform = TRANSFORM_MAP[detected];
+      if (transform) {
+        return transform({
+          meta: { ...meta, automation_name: detected },
+          data: payload?.data || {},
+        });
       }
-      current = current[key];
     }
-    return current ?? defaultValue;
-  };
-
-  // New niche evaluation format: array [{ meta, data }] or single { meta, data } with decision_card, meta_synthesis, individual_evaluations
-  const firstElement = Array.isArray(outputJson) && outputJson.length > 0 ? outputJson[0] : outputJson;
-  const innerData = firstElement?.data ?? outputJson?.data;
-  const isNewEvaluationFormat =
-    firstElement?.meta &&
-    innerData &&
-    (innerData.decision_card ?? innerData.meta_synthesis ?? innerData.individual_evaluations) != null;
-
-  if (isNewEvaluationFormat) {
-    const meta = firstElement.meta || {};
-    const payload = firstElement?.meta && firstElement?.data ? firstElement : outputJson;
-    const data = payload.data || {};
-    return {
-      meta: {
-        knowledge_base: meta.knowledge_base || "niche_fit_evaluation",
-        mode: meta.mode || "niche_fit_evaluation",
-        confidence: typeof meta.confidence === "number" ? meta.confidence : 0,
-        generated_at:
-          meta.generated_at ||
-          (typeof data.evaluation_timestamp === "string" ? data.evaluation_timestamp.split("T")[0] : undefined) ||
-          new Date().toISOString().split("T")[0],
-        sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
-        input: meta.input
-          ? {
-              niche_name: meta.input.niche_name ?? meta.input.name ?? "",
-              geo: meta.input.geo ?? meta.input.geography ?? "",
-              notes: meta.input.notes,
-              ai_model: meta.input.ai_model,
-            }
-          : {
-              niche_name: data.niche_name ?? "",
-              geo: "",
-              notes: undefined,
-              ai_model: undefined,
-            },
-        evaluation_summary: meta.evaluation_summary,
-        usage_metrics: meta.usage_metrics,
-      } as any,
-      data: data as any,
-    };
+    console.warn(
+      "[transformOutputJson] Missing meta.automation_name, returning raw payload with defaults"
+    );
+    return buildFallback(payload);
   }
 
-  // Legacy niche evaluation format: data.verdict
-  const evaluationPayload =
-    firstElement?.meta && firstElement?.data && firstElement.data?.verdict
-      ? firstElement
-      : outputJson?.meta && outputJson?.data && outputJson.data?.verdict
-        ? outputJson
-        : null;
-
-  if (evaluationPayload) {
-    const meta = evaluationPayload.meta || {};
-    const legacyInnerData = evaluationPayload.data || {};
-    return {
-      meta: {
-        knowledge_base: meta.knowledge_base || "niche_fit_evaluation",
-        mode: meta.mode || "niche_fit_evaluation",
-        confidence: typeof meta.confidence === "number" ? meta.confidence : 0,
-        generated_at:
-          meta.generated_at ||
-          (typeof legacyInnerData.evaluation_timestamp === "string"
-            ? legacyInnerData.evaluation_timestamp.split("T")[0]
-            : undefined) ||
-          new Date().toISOString().split("T")[0],
-        sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
-        input: meta.input
-          ? {
-              niche_name: meta.input.niche_name ?? meta.input.name ?? "",
-              geo: meta.input.geo ?? "",
-              notes: meta.input.notes,
-            ai_model: meta.input.ai_model,
-          }
-        : {
-            niche_name: legacyInnerData.niche_name ?? "",
-            geo: "",
-            notes: undefined,
-            ai_model: undefined,
-          },
-        usage_metrics: meta.usage_metrics,
-      } as any,
-      data: {
-        evaluation: legacyInnerData,
-      } as any,
-    };
+  const transform = TRANSFORM_MAP[meta.automation_name];
+  if (!transform) {
+    console.warn(
+      `[transformOutputJson] Unknown automation: "${meta.automation_name}", returning raw payload`
+    );
+    return buildFallback(payload);
   }
 
-  // Legacy niche evaluation: verdict and score_details at root, no meta
-  const isLegacyEvaluationReport = outputJson.verdict && outputJson.score_details && !outputJson.meta && !outputJson.niche_profile;
-  if (isLegacyEvaluationReport) {
-    return {
-      meta: {
-        knowledge_base: "unknown",
-        mode: "niche_fit_evaluation",
-        confidence: 0,
-        generated_at: outputJson.evaluation_timestamp || new Date().toISOString().split('T')[0],
-        input: {
-          niche_name: outputJson.niche_name || "",
-          geo: "",
-        },
-        usage_metrics: (outputJson as any).meta?.usage_metrics,
-      },
-      data: {
-        evaluation: outputJson,
-      } as any,
-    };
-  }
-
-  // ICP research format (legacy): array [{ meta, data }] or single { meta, data } with data.buyer_icp
-  const icpPayloadLegacy =
-    firstElement?.meta && firstElement?.data && (firstElement.data as Record<string, unknown>)?.buyer_icp
-      ? firstElement
-      : (outputJson?.meta && (outputJson.data as Record<string, unknown>)?.buyer_icp ? outputJson : null);
-
-  if (icpPayloadLegacy) {
-    const icpMeta = icpPayloadLegacy.meta || {};
-    const icpDataQuality = icpMeta.data_quality || {};
-    const icpData = icpPayloadLegacy.data || {};
-    return {
-      meta: {
-        knowledge_base: icpMeta.knowledge_base || "icp_intelligence",
-        mode: icpMeta.mode || "customer_research",
-        confidence:
-          typeof icpMeta.confidence === "number"
-            ? icpMeta.confidence
-            : typeof icpDataQuality.overall_confidence === "number"
-              ? icpDataQuality.overall_confidence
-              : 0,
-        generated_at:
-          icpMeta.generated_at || new Date().toISOString().split("T")[0],
-        sources_used: Array.isArray(icpDataQuality.sources_used)
-          ? icpDataQuality.sources_used
-          : Array.isArray(icpMeta.sources_used)
-            ? icpMeta.sources_used
-            : undefined,
-        input: icpMeta.input
-          ? {
-              niche_name: icpMeta.input.niche_name ?? "",
-              geo: icpMeta.input.geo ?? icpMeta.input.geography ?? "",
-              notes: icpMeta.input.notes,
-              ai_model: icpMeta.input.ai_model,
-            }
-          : { niche_name: "", geo: "", notes: undefined, ai_model: undefined },
-        focus: icpMeta.focus,
-        data_quality: icpDataQuality,
-        usage_metrics: icpMeta.usage_metrics,
-      } as any,
-      data: {
-        buyer_icp: icpData.buyer_icp,
-        ops_outputs: icpData.ops_outputs,
-        monitoring_alerts: icpData.monitoring_alerts,
-        market_sizing: icpData.market_sizing,
-      } as any,
-    };
-  }
-
-  // ICP research format (new JSON): data.snapshot, data.buying_triggers, data.customer_segments at top level (no data.buyer_icp)
-  const rawData = (firstElement?.data ?? outputJson?.data) as Record<string, unknown> | undefined;
-  const hasNewIcpShape =
-    rawData?.snapshot != null &&
-    rawData?.buyer_icp == null &&
-    (firstElement?.meta ?? outputJson?.meta) != null;
-
-  if (hasNewIcpShape) {
-    const payload = (firstElement?.meta && firstElement?.data ? firstElement : outputJson) as {
-      meta: Record<string, any>;
-      data: Record<string, unknown>;
-    };
-    const icpMeta = payload.meta || {};
-    const d = payload.data || {};
-    const dataQuality =
-      icpMeta.data_quality ||
-      (icpMeta.sources_total != null || icpMeta.overall_confidence != null || icpMeta.next_refresh_recommended != null
-        ? {
-            sources_used: Array.isArray(icpMeta.sources_used) ? icpMeta.sources_used : undefined,
-            sources_total: icpMeta.sources_total,
-            overall_confidence: icpMeta.overall_confidence,
-            next_refresh_recommended: icpMeta.next_refresh_recommended,
-          }
-        : {});
-    const customerSegments = d.customer_segments as Record<string, unknown> | undefined;
-    const buyerIcp = {
-      snapshot: d.snapshot,
-      triggers: d.buying_triggers,
-      buying_committee: d.buying_committee,
-      purchase_journey: d.purchase_journey,
-      segments: customerSegments
-        ? {
-            primary: customerSegments.primary_segments ?? [],
-            secondary: customerSegments.secondary_segments ?? [],
-            avoid: customerSegments.avoid_segments ?? [],
-            assignment_logic: customerSegments.assignment_logic ?? { method: "", rules: [] },
-          }
-        : undefined,
-      competitive_context: d.competitive_alternatives,
-    };
-    return {
-      meta: {
-        knowledge_base: icpMeta.knowledge_base || "icp_intelligence",
-        mode: icpMeta.mode || "customer_intelligence",
-        confidence:
-          typeof icpMeta.confidence === "number"
-            ? icpMeta.confidence
-            : typeof dataQuality.overall_confidence === "number"
-              ? dataQuality.overall_confidence
-              : 0,
-        generated_at: icpMeta.generated_at || new Date().toISOString().split("T")[0],
-        sources_used:
-          Array.isArray(dataQuality.sources_used) ? dataQuality.sources_used : Array.isArray(icpMeta.sources_used) ? icpMeta.sources_used : undefined,
-        input: icpMeta.input
-          ? {
-              niche_name: icpMeta.input.niche_name ?? icpMeta.niche_name ?? "",
-              geo: icpMeta.input.geo ?? icpMeta.input.geography ?? "",
-              notes: icpMeta.input.notes,
-              ai_model: icpMeta.input.ai_model,
-            }
-          : { niche_name: (icpMeta as any).niche_name ?? "", geo: "", notes: undefined, ai_model: undefined },
-        focus: icpMeta.focus,
-        data_quality: dataQuality,
-        usage_metrics: icpMeta.usage_metrics,
-      } as any,
-      data: {
-        buyer_icp: buyerIcp,
-        ops_outputs: d.ops_outputs,
-        monitoring_alerts: d.monitoring_alerts,
-        market_sizing: d.market_sizing,
-        typical_customer_types: d.typical_customer_types,
-      } as any,
-    };
-  }
-
-  // Descriptive intelligence format: data.basic_profile or meta.mode === "descriptive_intelligence"
-  const descPayload = firstElement?.meta && firstElement?.data ? firstElement : outputJson;
-  const descMeta = descPayload?.meta;
-  const descData = (firstElement?.data ?? outputJson?.data) as Record<string, unknown> | undefined;
-  const isDescriptiveIntelligence =
-    descMeta != null &&
-    descData != null &&
-    (descData.basic_profile != null || descMeta.mode === "descriptive_intelligence");
-
-  if (isDescriptiveIntelligence) {
-    const meta = descMeta || {};
-    const data = descData || {};
-    return {
-      meta: {
-        knowledge_base: meta.knowledge_base || "niche_intelligence",
-        mode: meta.mode || "descriptive_intelligence",
-        confidence: typeof meta.confidence === "number" ? meta.confidence : 0,
-        generated_at: meta.generated_at || new Date().toISOString().split("T")[0],
-        sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
-        input: meta.input
-          ? {
-              niche_name: meta.input.niche_name ?? "",
-              geo: meta.input?.geo ?? "",
-              notes: meta.input?.notes,
-              ai_model: meta.input?.ai_model ?? meta.input?.synthesis_ai_model,
-            }
-          : { niche_name: "", geo: "", notes: undefined, ai_model: undefined },
-        focus: meta.focus,
-        market_value: meta.market_value,
-        usage_metrics: meta.usage_metrics,
-      } as any,
-      data: data as any,
-    };
-  }
-
-  // Outbound strategy format: data.title_packs or data.sales_process (lead_gen_targeting)
-  const obRawData = (firstElement?.data ?? outputJson?.data) as Record<string, unknown> | undefined;
-  const isOutboundStrategy =
-    (firstElement?.meta ?? outputJson?.meta) != null &&
-    obRawData != null &&
-    (obRawData.title_packs != null || obRawData.sales_process != null);
-
-  if (isOutboundStrategy) {
-    const payload = (firstElement?.meta && firstElement?.data ? firstElement : outputJson) as {
-      meta: Record<string, any>;
-      data: Record<string, unknown>;
-    };
-    const obMeta = payload.meta || {};
-    const obData = payload.data || {};
-    return {
-      meta: {
-        knowledge_base: obMeta.knowledge_base || "niche_intelligence",
-        mode: obMeta.mode || "lead_gen_targeting",
-        confidence: typeof obMeta.confidence === "number" ? obMeta.confidence : 0,
-        generated_at: obMeta.generated_at || new Date().toISOString().split("T")[0],
-        sources_used: Array.isArray(obMeta.sources_used) ? obMeta.sources_used : undefined,
-        input: obMeta.input
-          ? {
-              niche_name: obMeta.input.niche_name ?? "",
-              geo: obMeta.input?.geo ?? "",
-              notes: obMeta.input?.notes,
-              ai_model: obMeta.input?.ai_model,
-            }
-          : { niche_name: "", geo: "", notes: undefined, ai_model: undefined },
-        focus: obMeta.focus,
-        market_value: obMeta.market_value,
-        usage_metrics: obMeta.usage_metrics,
-      } as any,
-      data: obData as any,
-    };
-  }
-
-  const meta = outputJson.meta || {};
-  const data = outputJson.data || {};
-
-  return {
-    meta: {
-      knowledge_base: meta.knowledge_base || "unknown",
-      mode: meta.mode || "lead_gen_targeting",
-      confidence: typeof meta.confidence === 'number' ? meta.confidence : 0,
-      generated_at: meta.generated_at || new Date().toISOString().split('T')[0],
-      sources_used: Array.isArray(meta.sources_used) ? meta.sources_used : undefined,
-      input: {
-        niche_name: meta.input?.niche_name || "",
-        geo: meta.input?.geo || "",
-        notes: meta.input?.notes,
-        ai_model: meta.input?.ai_model,
-      },
-      // Preserve additional meta fields that may exist in the JSON
-      focus: meta.focus,
-      market_value: meta.market_value,
-      usage_metrics: meta.usage_metrics,
-    } as any,
-    data: {
-      niche_profile: {
-        confidence: typeof data.niche_profile?.confidence === 'number' ? data.niche_profile.confidence : 0,
-        sources_used: Array.isArray(data.niche_profile?.sources_used) ? data.niche_profile.sources_used : undefined,
-        description: data.niche_profile?.description,
-        name: data.niche_profile?.name || "",
-        category: data.niche_profile?.category || "",
-        summary: data.niche_profile?.summary || "",
-        what_they_sell: data.niche_profile?.what_they_sell || "",
-        common_service_lines: Array.isArray(data.niche_profile?.common_service_lines) 
-          ? data.niche_profile.common_service_lines 
-          : [],
-        typical_customer_types: Array.isArray(data.niche_profile?.typical_customer_types)
-          ? data.niche_profile.typical_customer_types
-          : [],
-        client_acquisition_dynamics: {
-          how_they_currently_get_clients: Array.isArray(data.niche_profile?.client_acquisition_dynamics?.how_they_currently_get_clients)
-            ? data.niche_profile.client_acquisition_dynamics.how_they_currently_get_clients
-            : [],
-          competitive_intensity: data.niche_profile?.client_acquisition_dynamics?.competitive_intensity || "",
-          typical_sales_approach: data.niche_profile?.client_acquisition_dynamics?.typical_sales_approach || "",
-        },
-        market_maturity: data.niche_profile?.market_maturity || "",
-        timing_intelligence: data.niche_profile?.timing_intelligence
-          ? {
-              budget_approval_cycle: data.niche_profile.timing_intelligence.budget_approval_cycle || "",
-              fiscal_year_timing: data.niche_profile.timing_intelligence.fiscal_year_timing || "",
-            }
-          : undefined,
-        tam_analysis: data.niche_profile?.tam_analysis
-          ? {
-              total_companies_in_geography: typeof data.niche_profile.tam_analysis.total_companies_in_geography === 'number'
-                ? data.niche_profile.tam_analysis.total_companies_in_geography
-                : undefined,
-              addressable_by_segment: data.niche_profile.tam_analysis.addressable_by_segment || {},
-              market_concentration: data.niche_profile.tam_analysis.market_concentration || "",
-              geographic_clusters: Array.isArray(data.niche_profile.tam_analysis.geographic_clusters)
-                ? data.niche_profile.tam_analysis.geographic_clusters
-                : [],
-              regional_differences: data.niche_profile.tam_analysis.regional_differences || "",
-            }
-          : undefined,
-        deal_economics: data.niche_profile?.deal_economics
-          ? {
-              typical_client_value_annually: data.niche_profile.deal_economics.typical_client_value_annually || "",
-              average_deal_size: data.niche_profile.deal_economics.average_deal_size || "",
-              contract_length_months: typeof data.niche_profile.deal_economics.contract_length_months === 'number'
-                ? data.niche_profile.deal_economics.contract_length_months
-                : 0,
-              retention_rate_percent: typeof data.niche_profile.deal_economics.retention_rate_percent === 'number'
-                ? data.niche_profile.deal_economics.retention_rate_percent
-                : 0,
-            }
-          : undefined,
-        existing_solutions: {
-          operational_tools: Array.isArray(data.niche_profile?.existing_solutions?.operational_tools)
-            ? data.niche_profile.existing_solutions.operational_tools
-            : [],
-          client_acquisition_methods: Array.isArray(data.niche_profile?.existing_solutions?.client_acquisition_methods)
-            ? data.niche_profile.existing_solutions.client_acquisition_methods
-            : [],
-        },
-      } as any,
-      buyer_psychology: {
-        confidence: typeof data.buyer_psychology?.confidence === 'number' ? data.buyer_psychology.confidence : 0,
-        sources_used: Array.isArray(data.buyer_psychology?.sources_used) ? data.buyer_psychology.sources_used : undefined,
-        description: data.buyer_psychology?.description,
-        decision_makers: Array.isArray(data.buyer_psychology?.decision_makers)
-          ? data.buyer_psychology.decision_makers
-          : [],
-        buying_triggers: Array.isArray(data.buyer_psychology?.buying_triggers)
-          ? data.buyer_psychology.buying_triggers
-          : [],
-        common_objections: Array.isArray(data.buyer_psychology?.common_objections)
-          ? data.buyer_psychology.common_objections
-          : [],
-        budget_signal: data.buyer_psychology?.budget_signal || "",
-        urgency_level: data.buyer_psychology?.urgency_level || "",
-        sales_cycle_notes: data.buyer_psychology?.sales_cycle_notes || "",
-      },
-      value_dynamics: {
-        confidence: typeof data.value_dynamics?.confidence === 'number' ? data.value_dynamics.confidence : 0,
-        sources_used: Array.isArray(data.value_dynamics?.sources_used) ? data.value_dynamics.sources_used : undefined,
-        description: data.value_dynamics?.description,
-        core_pain_points: Array.isArray(data.value_dynamics?.core_pain_points)
-          ? data.value_dynamics.core_pain_points
-          : [],
-        desired_outcomes: Array.isArray(data.value_dynamics?.desired_outcomes)
-          ? data.value_dynamics.desired_outcomes
-          : [],
-        kpis_that_matter: Array.isArray(data.value_dynamics?.kpis_that_matter)
-          ? data.value_dynamics.kpis_that_matter
-          : [],
-        kpis_that_matter_description: data.value_dynamics?.kpis_that_matter_description,
-        must_have_proof: Array.isArray(data.value_dynamics?.must_have_proof)
-          ? data.value_dynamics.must_have_proof
-          : [],
-        must_have_proof_description: data.value_dynamics?.must_have_proof_description,
-        constraints_and_risks: Array.isArray(data.value_dynamics?.constraints_and_risks)
-          ? data.value_dynamics.constraints_and_risks
-          : [],
-      },
-      lead_gen_strategy: {
-        confidence: typeof data.lead_gen_strategy?.confidence === 'number' ? data.lead_gen_strategy.confidence : 0,
-        sources_used: Array.isArray(data.lead_gen_strategy?.sources_used) ? data.lead_gen_strategy.sources_used : undefined,
-        description: data.lead_gen_strategy?.description,
-        lead_gen_fit_score: typeof data.lead_gen_strategy?.lead_gen_fit_score === 'number' 
-          ? data.lead_gen_strategy.lead_gen_fit_score 
-          : 0,
-        fit_score_description: data.lead_gen_strategy?.fit_score_description,
-        fit_rationale: Array.isArray(data.lead_gen_strategy?.fit_rationale)
-          ? data.lead_gen_strategy.fit_rationale
-          : [],
-        fit_rationale_description: data.lead_gen_strategy?.fit_rationale_description,
-        red_flags: Array.isArray(data.lead_gen_strategy?.red_flags)
-          ? data.lead_gen_strategy.red_flags
-          : [],
-        red_flags_description: data.lead_gen_strategy?.red_flags_description,
-        best_wedge: {
-          confidence: typeof data.lead_gen_strategy?.best_wedge?.confidence === 'number' 
-            ? data.lead_gen_strategy.best_wedge.confidence 
-            : undefined,
-          sources_used: Array.isArray(data.lead_gen_strategy?.best_wedge?.sources_used) 
-            ? data.lead_gen_strategy.best_wedge.sources_used 
-            : undefined,
-          description: data.lead_gen_strategy?.best_wedge?.description,
-          wedge_type: data.lead_gen_strategy?.best_wedge?.wedge_type || "",
-          wedge_statement: data.lead_gen_strategy?.best_wedge?.wedge_statement || "",
-          why_it_works: Array.isArray(data.lead_gen_strategy?.best_wedge?.why_it_works)
-            ? data.lead_gen_strategy.best_wedge.why_it_works
-            : [],
-        },
-        verdict: (data.lead_gen_strategy?.verdict === "pursue" || 
-                 data.lead_gen_strategy?.verdict === "test" || 
-                 data.lead_gen_strategy?.verdict === "avoid")
-          ? data.lead_gen_strategy.verdict
-          : undefined,
-        verdict_description: data.lead_gen_strategy?.verdict_description,
-        next_step_if_test: data.lead_gen_strategy?.next_step_if_test,
-        strategic_assessment: data.lead_gen_strategy?.strategic_assessment
-          ? {
-              opportunity_summary: data.lead_gen_strategy.strategic_assessment.opportunity_summary || "",
-              key_advantages: Array.isArray(data.lead_gen_strategy.strategic_assessment.key_advantages)
-                ? data.lead_gen_strategy.strategic_assessment.key_advantages
-                : [],
-              key_challenges: Array.isArray(data.lead_gen_strategy.strategic_assessment.key_challenges)
-                ? data.lead_gen_strategy.strategic_assessment.key_challenges
-                : [],
-            }
-          : undefined,
-        pilot_approach: data.lead_gen_strategy?.pilot_approach
-          ? {
-              recommended_pilot_size: data.lead_gen_strategy.pilot_approach.recommended_pilot_size || "",
-              pilot_duration: data.lead_gen_strategy.pilot_approach.pilot_duration || "",
-              success_metrics: Array.isArray(data.lead_gen_strategy.pilot_approach.success_metrics)
-                ? data.lead_gen_strategy.pilot_approach.success_metrics
-                : [],
-              timing_considerations: data.lead_gen_strategy.pilot_approach.timing_considerations || "",
-            }
-          : undefined,
-        targeting_strategy: {
-          confidence: typeof data.lead_gen_strategy?.targeting_strategy?.confidence === 'number'
-            ? data.lead_gen_strategy.targeting_strategy.confidence
-            : undefined,
-          sources_used: Array.isArray(data.lead_gen_strategy?.targeting_strategy?.sources_used)
-            ? data.lead_gen_strategy.targeting_strategy.sources_used
-            : undefined,
-          description: data.lead_gen_strategy?.targeting_strategy?.description,
-          segments_to_prioritize: Array.isArray(data.lead_gen_strategy?.targeting_strategy?.segments_to_prioritize)
-            ? data.lead_gen_strategy.targeting_strategy.segments_to_prioritize
-            : [],
-          segments_to_prioritize_description: data.lead_gen_strategy?.targeting_strategy?.segments_to_prioritize_description,
-          targeting_filters: Array.isArray(data.lead_gen_strategy?.targeting_strategy?.targeting_filters)
-            ? data.lead_gen_strategy.targeting_strategy.targeting_filters
-            : [],
-          targeting_filters_description: data.lead_gen_strategy?.targeting_strategy?.targeting_filters_description,
-          disqualifiers: Array.isArray(data.lead_gen_strategy?.targeting_strategy?.disqualifiers)
-            ? data.lead_gen_strategy.targeting_strategy.disqualifiers
-            : [],
-          disqualifiers_description: data.lead_gen_strategy?.targeting_strategy?.disqualifiers_description,
-          best_channels_ranked: Array.isArray(data.lead_gen_strategy?.targeting_strategy?.best_channels_ranked)
-            ? data.lead_gen_strategy.targeting_strategy.best_channels_ranked
-            : [],
-          best_list_sources: Array.isArray(data.lead_gen_strategy?.targeting_strategy?.best_list_sources)
-            ? data.lead_gen_strategy.targeting_strategy.best_list_sources
-            : [],
-          best_list_sources_description: data.lead_gen_strategy?.targeting_strategy?.best_list_sources_description,
-        },
-      },
-      generic_offer_angles: Array.isArray(data.generic_offer_angles)
-        ? data.generic_offer_angles.map((angle: any) => ({
-            confidence: typeof angle.confidence === 'number' ? angle.confidence : undefined,
-            description: angle.description,
-            angle_name: angle.angle_name || "",
-            who_it_targets: angle.who_it_targets || "",
-            core_promise: angle.core_promise || "",
-            why_this_resonates: Array.isArray(angle.why_this_resonates) ? angle.why_this_resonates : [],
-            constraints: Array.isArray(angle.constraints) ? angle.constraints : undefined,
-          }))
-        : [],
-      outbound_approach: {
-        confidence: typeof data.outbound_approach?.confidence === 'number' ? data.outbound_approach.confidence : undefined,
-        description: data.outbound_approach?.description,
-        primary_pain_to_hit: data.outbound_approach?.primary_pain_to_hit || "",
-        hook_themes: Array.isArray(data.outbound_approach?.hook_themes)
-          ? data.outbound_approach.hook_themes
-          : [],
-        proof_requirements: Array.isArray(data.outbound_approach?.proof_requirements)
-          ? data.outbound_approach.proof_requirements
-          : [],
-        personalization_vectors: Array.isArray(data.outbound_approach?.personalization_vectors)
-          ? data.outbound_approach.personalization_vectors
-          : [],
-        objection_themes: Array.isArray(data.outbound_approach?.objection_themes)
-          ? data.outbound_approach.objection_themes.map((theme: any) => ({
-              objection: theme.objection || "",
-              positioning: theme.positioning || "",
-            }))
-          : [],
-      },
-      positioning_intel: {
-        confidence: typeof data.positioning_intel?.confidence === 'number' ? data.positioning_intel.confidence : undefined,
-        sources_used: Array.isArray(data.positioning_intel?.sources_used) ? data.positioning_intel.sources_used : undefined,
-        description: data.positioning_intel?.description,
-        their_offer_angles: Array.isArray(data.positioning_intel?.their_offer_angles)
-          ? data.positioning_intel.their_offer_angles.map((angle: any) => ({
-              angle_name: angle.angle_name || "",
-              who_it_targets: angle.who_it_targets || "",
-              promise: angle.promise || "",
-              proof_points: Array.isArray(angle.proof_points) ? angle.proof_points : [],
-              keywords_to_use: Array.isArray(angle.keywords_to_use) ? angle.keywords_to_use : [],
-            }))
-          : [],
-        value_propositions: Array.isArray(data.positioning_intel?.value_propositions)
-          ? data.positioning_intel.value_propositions
-          : [],
-        common_differentiators: Array.isArray(data.positioning_intel?.common_differentiators)
-          ? data.positioning_intel.common_differentiators
-          : [],
-      },
-      messaging_inputs: {
-        confidence: typeof data.messaging_inputs?.confidence === 'number' ? data.messaging_inputs.confidence : undefined,
-        sources_used: Array.isArray(data.messaging_inputs?.sources_used) ? data.messaging_inputs.sources_used : undefined,
-        description: data.messaging_inputs?.description,
-        industry_jargon: Array.isArray(data.messaging_inputs?.industry_jargon)
-          ? data.messaging_inputs.industry_jargon
-          : [],
-        pain_language: Array.isArray(data.messaging_inputs?.pain_language)
-          ? data.messaging_inputs.pain_language
-          : [],
-        benefit_language: Array.isArray(data.messaging_inputs?.benefit_language)
-          ? data.messaging_inputs.benefit_language
-          : [],
-        proof_language: Array.isArray(data.messaging_inputs?.proof_language)
-          ? data.messaging_inputs.proof_language
-          : [],
-      },
-      research_links: data.research_links ? {
-        confidence: typeof data.research_links.confidence === 'number' ? data.research_links.confidence : undefined,
-        description: data.research_links.description,
-        google_search_links: Array.isArray(data.research_links.google_search_links)
-          ? data.research_links.google_search_links
-          : undefined,
-        linkedin_job_search_links: Array.isArray(data.research_links.linkedin_job_search_links)
-          ? data.research_links.linkedin_job_search_links
-          : undefined,
-        funding_search_links: Array.isArray(data.research_links.funding_search_links)
-          ? data.research_links.funding_search_links
-          : undefined,
-      } : undefined,
-      lead_gen_scoring: data.lead_gen_scoring ? {
-        confidence: typeof data.lead_gen_scoring.confidence === 'number' ? data.lead_gen_scoring.confidence : 0,
-        sources_used: Array.isArray(data.lead_gen_scoring.sources_used) ? data.lead_gen_scoring.sources_used : undefined,
-        description: data.lead_gen_scoring.description,
-        lead_gen_fit_score: typeof data.lead_gen_scoring.lead_gen_fit_score === 'number' 
-          ? data.lead_gen_scoring.lead_gen_fit_score 
-          : 0,
-        verdict: (data.lead_gen_scoring.verdict === "pursue" || 
-                 data.lead_gen_scoring.verdict === "test" || 
-                 data.lead_gen_scoring.verdict === "avoid")
-          ? data.lead_gen_scoring.verdict
-          : "test",
-        verdict_rationale: data.lead_gen_scoring.verdict_rationale || "",
-        scorecard_evaluation: data.lead_gen_scoring.scorecard_evaluation ? {
-          offer_compatibility: {
-            total_score: data.lead_gen_scoring.scorecard_evaluation.offer_compatibility?.total_score || "",
-            questions: Array.isArray(data.lead_gen_scoring.scorecard_evaluation.offer_compatibility?.questions)
-              ? data.lead_gen_scoring.scorecard_evaluation.offer_compatibility.questions.map((q: any) => ({
-                  question: q.question || "",
-                  answer: (q.answer === "yes" || q.answer === "no") ? q.answer : "no",
-                  reasoning: q.reasoning || "",
-                }))
-              : [],
-          },
-          market_size_and_access: {
-            total_score: data.lead_gen_scoring.scorecard_evaluation.market_size_and_access?.total_score || "",
-            questions: Array.isArray(data.lead_gen_scoring.scorecard_evaluation.market_size_and_access?.questions)
-              ? data.lead_gen_scoring.scorecard_evaluation.market_size_and_access.questions.map((q: any) => ({
-                  question: q.question || "",
-                  answer: (q.answer === "yes" || q.answer === "no") ? q.answer : "no",
-                  reasoning: q.reasoning || "",
-                }))
-              : [],
-          },
-          fulfillment_feasibility: {
-            total_score: data.lead_gen_scoring.scorecard_evaluation.fulfillment_feasibility?.total_score || "",
-            questions: Array.isArray(data.lead_gen_scoring.scorecard_evaluation.fulfillment_feasibility?.questions)
-              ? data.lead_gen_scoring.scorecard_evaluation.fulfillment_feasibility.questions.map((q: any) => ({
-                  question: q.question || "",
-                  answer: (q.answer === "yes" || q.answer === "no") ? q.answer : "no",
-                  reasoning: q.reasoning || "",
-                }))
-              : [],
-          },
-          scorecard_summary: {
-            total_yes: typeof data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.total_yes === 'number'
-              ? data.lead_gen_scoring.scorecard_evaluation.scorecard_summary.total_yes
-              : 0,
-            total_questions: typeof data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.total_questions === 'number'
-              ? data.lead_gen_scoring.scorecard_evaluation.scorecard_summary.total_questions
-              : 0,
-            percentage: typeof data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.percentage === 'number'
-              ? data.lead_gen_scoring.scorecard_evaluation.scorecard_summary.percentage
-              : 0,
-            interpretation: data.lead_gen_scoring.scorecard_evaluation.scorecard_summary?.interpretation || "",
-          },
-        } : {
-          offer_compatibility: { total_score: "", questions: [] },
-          market_size_and_access: { total_score: "", questions: [] },
-          fulfillment_feasibility: { total_score: "", questions: [] },
-          scorecard_summary: { total_yes: 0, total_questions: 0, percentage: 0, interpretation: "" },
-        },
-        final_jury_results: data.lead_gen_scoring.final_jury_results ? {
-          filters_passed: data.lead_gen_scoring.final_jury_results.filters_passed || "",
-          overall_pass: typeof data.lead_gen_scoring.final_jury_results.overall_pass === 'boolean'
-            ? data.lead_gen_scoring.final_jury_results.overall_pass
-            : false,
-          budget_filter: {
-            pass: typeof data.lead_gen_scoring.final_jury_results.budget_filter?.pass === 'boolean'
-              ? data.lead_gen_scoring.final_jury_results.budget_filter.pass
-              : false,
-            roi_multiple: typeof data.lead_gen_scoring.final_jury_results.budget_filter?.roi_multiple === 'number'
-              ? data.lead_gen_scoring.final_jury_results.budget_filter.roi_multiple
-              : 0,
-            reasoning: data.lead_gen_scoring.final_jury_results.budget_filter?.reasoning || "",
-          },
-          scalability_filter: {
-            pass: typeof data.lead_gen_scoring.final_jury_results.scalability_filter?.pass === 'boolean'
-              ? data.lead_gen_scoring.final_jury_results.scalability_filter.pass
-              : false,
-            reasoning: data.lead_gen_scoring.final_jury_results.scalability_filter?.reasoning || "",
-          },
-          offer_market_fit: {
-            pass: typeof data.lead_gen_scoring.final_jury_results.offer_market_fit?.pass === 'boolean'
-              ? data.lead_gen_scoring.final_jury_results.offer_market_fit.pass
-              : false,
-            reasoning: data.lead_gen_scoring.final_jury_results.offer_market_fit?.reasoning || "",
-          },
-        } : {
-          filters_passed: "0/3",
-          overall_pass: false,
-          budget_filter: { pass: false, roi_multiple: 0, reasoning: "" },
-          scalability_filter: { pass: false, reasoning: "" },
-          offer_market_fit: { pass: false, reasoning: "" },
-        },
-        dealbreakers: Array.isArray(data.lead_gen_scoring.dealbreakers)
-          ? data.lead_gen_scoring.dealbreakers.map((db: any) => ({
-              type: db.type || "",
-              threshold: typeof db.threshold === 'number' ? db.threshold : 0,
-              actual_value: typeof db.actual_value === 'number' ? db.actual_value : 0,
-              severity: (db.severity === "critical" || db.severity === "catastrophic") ? db.severity : "critical",
-              impact: db.impact || "",
-              score_cap_applied: typeof db.score_cap_applied === 'number' ? db.score_cap_applied : 0,
-            }))
-          : [],
-        score_breakdown: data.lead_gen_scoring.score_breakdown ? {
-          components: Array.isArray(data.lead_gen_scoring.score_breakdown.components)
-            ? data.lead_gen_scoring.score_breakdown.components.map((c: any) => ({
-                name: c.name || "",
-                weight: typeof c.weight === 'number' ? c.weight : 0,
-                score: typeof c.score === 'number' ? c.score : 0,
-                max_score: typeof c.max_score === 'number' ? c.max_score : 0,
-                value: c.value || "",
-                reasoning: c.reasoning || "",
-              }))
-            : [],
-          total_before_caps: typeof data.lead_gen_scoring.score_breakdown.total_before_caps === 'number'
-            ? data.lead_gen_scoring.score_breakdown.total_before_caps
-            : 0,
-          dealbreaker_cap_applied: typeof data.lead_gen_scoring.score_breakdown.dealbreaker_cap_applied === 'number'
-            ? data.lead_gen_scoring.score_breakdown.dealbreaker_cap_applied
-            : 0,
-          final_score: typeof data.lead_gen_scoring.score_breakdown.final_score === 'number'
-            ? data.lead_gen_scoring.score_breakdown.final_score
-            : 0,
-        } : {
-          components: [],
-          total_before_caps: 0,
-          dealbreaker_cap_applied: 0,
-          final_score: 0,
-        },
-        interpretation: data.lead_gen_scoring.interpretation ? {
-          score_range: data.lead_gen_scoring.interpretation.score_range || "",
-          category: data.lead_gen_scoring.interpretation.category || "",
-          recommendation: data.lead_gen_scoring.interpretation.recommendation || "",
-          key_reasons: Array.isArray(data.lead_gen_scoring.interpretation.key_reasons)
-            ? data.lead_gen_scoring.interpretation.key_reasons
-            : [],
-        } : {
-          score_range: "",
-          category: "",
-          recommendation: "",
-          key_reasons: [],
-        },
-      } : undefined,
-      // Preserve evaluation data if it exists (for evaluation reports)
-      // Evaluation data can be at root of outputJson or in data.evaluation
-      // Evaluation data structure: verdict, synthesis, critical_concerns, key_opportunities, flags, quick_stats, score_details
-      evaluation: (outputJson.verdict || outputJson.synthesis || data.evaluation) ? {
-        // Check root level first, then data.evaluation
-        verdict: (outputJson.verdict || data.evaluation?.verdict) ? {
-          label: (outputJson.verdict || data.evaluation?.verdict)?.label || "",
-          color: (outputJson.verdict || data.evaluation?.verdict)?.color || "",
-          score: typeof (outputJson.verdict || data.evaluation?.verdict)?.score === 'number' 
-            ? (outputJson.verdict || data.evaluation?.verdict).score 
-            : 0,
-          priority: typeof (outputJson.verdict || data.evaluation?.verdict)?.priority === 'number' 
-            ? (outputJson.verdict || data.evaluation?.verdict).priority 
-            : 0,
-          recommendation: (outputJson.verdict || data.evaluation?.verdict)?.recommendation || "",
-          confidence: (outputJson.verdict || data.evaluation?.verdict)?.confidence || "",
-        } : undefined,
-        synthesis: outputJson.synthesis || data.evaluation?.synthesis || "",
-        critical_concerns: Array.isArray(outputJson.critical_concerns) 
-          ? outputJson.critical_concerns 
-          : (Array.isArray(data.evaluation?.critical_concerns) ? data.evaluation.critical_concerns : []),
-        key_opportunities: Array.isArray(outputJson.key_opportunities) 
-          ? outputJson.key_opportunities 
-          : (Array.isArray(data.evaluation?.key_opportunities) ? data.evaluation.key_opportunities : []),
-        flags: (outputJson.flags || data.evaluation?.flags) ? {
-          consensus: Array.isArray((outputJson.flags || data.evaluation?.flags)?.consensus) 
-            ? (outputJson.flags || data.evaluation?.flags).consensus 
-            : [],
-          by_category: (outputJson.flags || data.evaluation?.flags)?.by_category || {},
-          category_summary: Array.isArray((outputJson.flags || data.evaluation?.flags)?.category_summary) 
-            ? (outputJson.flags || data.evaluation?.flags).category_summary 
-            : [],
-        } : undefined,
-        quick_stats: (outputJson.quick_stats || data.evaluation?.quick_stats) ? {
-          has_strong_consensus: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.has_strong_consensus === 'boolean' 
-            ? (outputJson.quick_stats || data.evaluation?.quick_stats).has_strong_consensus 
-            : false,
-          positive_signals: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.positive_signals === 'number' 
-            ? (outputJson.quick_stats || data.evaluation?.quick_stats).positive_signals 
-            : 0,
-          negative_signals: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.negative_signals === 'number' 
-            ? (outputJson.quick_stats || data.evaluation?.quick_stats).negative_signals 
-            : 0,
-          net_sentiment: typeof (outputJson.quick_stats || data.evaluation?.quick_stats)?.net_sentiment === 'number' 
-            ? (outputJson.quick_stats || data.evaluation?.quick_stats).net_sentiment 
-            : 0,
-          confidence_description: (outputJson.quick_stats || data.evaluation?.quick_stats)?.confidence_description || "",
-        } : undefined,
-        // Include score_details if it exists (for individual model scores)
-        score_details: (outputJson.score_details || data.evaluation?.score_details) ? {
-          std_dev: typeof (outputJson.score_details || data.evaluation?.score_details)?.std_dev === 'number'
-            ? (outputJson.score_details || data.evaluation?.score_details).std_dev
-            : 0,
-          raw_average: typeof (outputJson.score_details || data.evaluation?.score_details)?.raw_average === 'number'
-            ? (outputJson.score_details || data.evaluation?.score_details).raw_average
-            : 0,
-          adjusted_average: typeof (outputJson.score_details || data.evaluation?.score_details)?.adjusted_average === 'number'
-            ? (outputJson.score_details || data.evaluation?.score_details).adjusted_average
-            : 0,
-          individual_scores: (outputJson.score_details || data.evaluation?.score_details)?.individual_scores || {},
-        } : undefined,
-      } : undefined,
-    } as any,
-  } as ReportData;
+  return transform({ meta, data: payload.data || {} });
 }
 
+/**
+ * Best-effort detection of automation type from data shape.
+ * Used only as a fallback when automation_name is missing.
+ */
+function detectAutomationName(
+  payload: Record<string, any> | null
+): string | null {
+  const data = payload?.data as Record<string, unknown> | undefined;
+  const meta = payload?.meta as Record<string, unknown> | undefined;
+  if (!data && !meta) return null;
+
+  // Niche evaluation
+  if (data?.decision_card ?? data?.meta_synthesis ?? data?.individual_evaluations) {
+    return "niche-fit-evaluation";
+  }
+  // ICP research
+  if (data?.buyer_icp || data?.snapshot) {
+    return "icp-research";
+  }
+  // Outbound strategy
+  if (
+    data?.title_packs != null ||
+    data?.target_profile != null ||
+    meta?.report_type === "full_targeting_positioning_sales_playbook"
+  ) {
+    return "outbound-strategy";
+  }
+  // Niche intelligence
+  if (data?.basic_profile != null) {
+    return "niche-intelligence";
+  }
+  return null;
+}
+
+/**
+ * Fallback that wraps raw payload into a ReportData shape with sensible defaults.
+ */
+function buildFallback(payload: Record<string, any> | null): ReportData {
+  const meta = payload?.meta || {};
+  const data = payload?.data || {};
+  return { meta: buildReportMeta(meta), data };
+}

@@ -10,6 +10,7 @@ import { INTEL_SIDEBAR_ITEMS } from "./intel-sidebar-items";
 import { KnowledgeBaseCollapsible } from "./KnowledgeBaseCollapsible";
 import { ProjectCollapsible } from "./ProjectCollapsible";
 import type { SidebarUser } from "@/components/admin/layout/sidebar/types";
+import { usePrefetchRuns } from "@/features/rag/runs/hooks/useRuns";
 
 type IntelSidebarContentProps = {
   isMobile: boolean;
@@ -81,6 +82,8 @@ export function IntelSidebarContent({
     });
   };
 
+  const prefetchRuns = usePrefetchRuns();
+
   // State for knowledge bases expandable (like pages in admin)
   const [isKnowledgeBasesOpen, setIsKnowledgeBasesOpen] = useState(false);
   // State for projects expandable - persisted in localStorage
@@ -144,6 +147,7 @@ export function IntelSidebarContent({
                     item={item}
                     isActive={getIsActive(item.href)}
                     onNavigate={onNavigate}
+                    onMouseEnter={item.href === "/intel/research" ? () => prefetchRuns(null) : undefined}
                   />
                 );
               })}

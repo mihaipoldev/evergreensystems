@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
 import { MobileNavMenu } from './MobileNavMenu';
+import { Logo } from '@/components/shared/Logo';
 
 type Section = {
   id: string;
@@ -305,9 +306,9 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link
               href="/"
-              className="ml-3 text-lg font-bold text-primary"
+              className="ml-3 flex items-center"
             >
-              Evergreen Sys.
+              <Logo variant="horizontal" className="h-6 md:h-8" usePrimaryColor={true} />
             </Link>
           </div>
 

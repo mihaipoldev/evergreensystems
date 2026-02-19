@@ -1,24 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { PublicThemeProvider } from "./PublicThemeProvider";
 import { headers } from "next/headers";
+import { getRouteForPathname } from "@/features/funnels/routes";
 
 export async function PublicThemeProviderWrapper({ children }: { children: React.ReactNode }) {
   let theme = "dark"; // Default theme
-  
+
   try {
     const supabase = await createClient();
-    
+
     // Determine environment based on NODE_ENV
     const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
-    
+
     // Determine route from headers
-    let route: '/' | '/outbound-system' = '/';
+    let route = '/';
     try {
       const headersList = await headers();
       const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
-      if (pathname.includes("/outbound-system")) {
-        route = '/outbound-system';
-      }
+      route = getRouteForPathname(pathname);
     } catch {
       // Default to landing page if headers unavailable
     }

@@ -1,4 +1,3 @@
-export { QuickReferenceCard } from "./QuickReferenceCard";
 export { ICPSnapshotSection } from "./ICPSnapshotSection";
 export { WhyTheyBuySection } from "./WhyTheyBuySection";
 export { BuyingCommitteeSection } from "./BuyingCommitteeSection";

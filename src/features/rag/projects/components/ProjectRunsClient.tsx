@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { RunTable } from "@/features/rag/runs/components/RunTable";
 import { Toolbar } from "@/features/rag/shared/components/Toolbar";
@@ -29,21 +29,8 @@ type ProjectRunsClientProps = {
   onGenerateClick?: () => void;
   /** Called when user clicks Generate for a specific workflow - opens modal with that workflow selected */
   onGenerateWorkflowClick?: (workflowId: string) => void;
-};
-
-// Extract fit_score and verdict: tries NEW format (output_json) first, then OLD (metadata.evaluation_result)
-const getFitScoreAndVerdict = (runData: any): { fit_score: number | null; verdict: "pursue" | "test" | "caution" | "avoid" | null } => {
-  const runOutputs = runData.rag_run_outputs;
-  const outputJson =
-    Array.isArray(runOutputs) && runOutputs.length > 0
-      ? runOutputs[0]?.output_json
-      : runOutputs?.output_json ?? undefined;
-  const runWithOutput = { ...runData, output_json: outputJson };
-  const result = extractWorkflowResult(runWithOutput);
-  return {
-    fit_score: result?.score ?? null,
-    verdict: result?.verdict ?? null,
-  };
+  /** Increment to trigger an immediate refresh (e.g. after generating a report) */
+  refreshTrigger?: number;
 };
 
 export function ProjectRunsClient({
@@ -52,8 +39,10 @@ export function ProjectRunsClient({
   projectTypeId,
   onGenerateClick,
   onGenerateWorkflowClick,
+  refreshTrigger,
 }: ProjectRunsClientProps) {
   const [runs, setRuns] = useState<RunWithExtras[]>(initialRuns);
+  const refreshRunsRef = useRef<(() => Promise<void>) | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [workflows, setWorkflows] = useState<WorkflowWithOrder[]>([]);
@@ -86,10 +75,11 @@ export function ProjectRunsClient({
     return new Set<string>();
   });
 
-  // Update runs when initialRuns changes (from server refresh)
+  // Only reset to initialRuns when project changes (navigating to different project).
+  // Do NOT sync on every initialRuns change - that would overwrite our polled updates.
   useEffect(() => {
     setRuns(initialRuns);
-  }, [initialRuns]);
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps -- intentional: only reset when project changes
 
   // Fetch workflows for filtering (project-type workflows when projectTypeId exists, else all enabled)
   useEffect(() => {
@@ -121,134 +111,129 @@ export function ProjectRunsClient({
     fetchWorkflows();
   }, [projectTypeId]);
 
-  // Set up Supabase real-time subscription for runs + fallback polling for progress
+  // Set up Supabase real-time subscription for runs + smart polling fallback
   useEffect(() => {
     const supabase = createClient();
-    
+
     let pollInterval: NodeJS.Timeout | null = null;
-    let subscriptionActive = false;
-    
-    // Helper function to refresh runs (used by polling fallback)
+    let currentPollMs = 0;
+
+    // Processing statuses that need fast polling for progress updates
+    const ACTIVE_STATUSES = ["queued", "processing", "collecting", "ingesting", "generating"];
+
+    // Helper: check if any runs are currently active/processing
+    const hasActiveRuns = (): boolean => {
+      // Read current runs from a ref-like pattern via setState callback
+      let active = false;
+      setRuns((prev) => {
+        active = prev.some((r) => ACTIVE_STATUSES.includes(r.status));
+        return prev; // no change
+      });
+      return active;
+    };
+
+    // Helper function to refresh runs - use API (bypasses RLS via service role)
     const refreshRuns = async () => {
       try {
-        const { data: runsData, error } = await supabase
-          .from('rag_runs')
-          .select(`
-            *,
-            rag_knowledge_bases (name),
-            workflows (slug, name),
-            rag_run_outputs (id, output_json)
-          `)
-          .eq('project_id', projectId)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('[ProjectRunsClient] Error refreshing runs:', error);
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        const response = await fetch(
+          `/api/intel/runs?project_id=${encodeURIComponent(projectId)}`,
+          {
+            cache: 'no-store',
+            headers: {
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.error('[ProjectRunsClient] Error refreshing runs:', response.status);
           return;
         }
-        
+
+        const runsData = await response.json();
         const runsWithExtras: RunWithExtras[] = (runsData || []).map((run: any) => {
-          const kbName = run.rag_knowledge_bases?.name || null;
-          const workflowName = run.workflows?.slug || null;
-          const workflowLabel = run.workflows?.name || null;
           const runOutputs = run.rag_run_outputs;
-          const report_id =
-            Array.isArray(runOutputs) && runOutputs.length > 0
-              ? runOutputs[0].id
-              : runOutputs?.id ?? null;
-          
-          const { fit_score, verdict } = getFitScoreAndVerdict(run);
           const outputJson =
             Array.isArray(runOutputs) && runOutputs.length > 0
               ? runOutputs[0]?.output_json
               : runOutputs?.output_json ?? undefined;
-          
+          const metadata = run.metadata ? JSON.parse(JSON.stringify(run.metadata)) : {};
           return {
             ...(run as Run),
+            metadata,
             output_json: outputJson,
-            knowledge_base_name: kbName,
-            workflow_name: workflowName,
-            workflow_label: workflowLabel,
-            report_id,
-            fit_score,
-            verdict,
+            knowledge_base_name: run.knowledge_base_name ?? null,
+            workflow_name: run.workflow_name ?? null,
+            workflow_label: run.workflow_label ?? null,
+            report_id: run.report_id ?? null,
+            fit_score: run.fit_score ?? null,
+            verdict: run.verdict ?? null,
           };
         });
-        
+
         setRuns((prev) => {
-          // Always update when we have fresh data from server
           if (runsWithExtras.length > 0) return runsWithExtras;
-          // Keep previous state if we got empty (e.g. no runs yet)
           return prev.length > 0 ? prev : runsWithExtras;
         });
       } catch (error) {
         console.error('[ProjectRunsClient] Exception refreshing runs:', error);
       }
     };
-    
-    // Fallback polling: when subscription is NOT active, poll every 3s; when active, poll every 15s for progress
-    const startPolling = (intervalMs: number) => {
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(refreshRuns, intervalMs);
+
+    // Expose refreshRuns so external triggers (like refreshTrigger prop) can call it
+    refreshRunsRef.current = refreshRuns;
+
+    // Smart polling: 3s when active runs exist, 30s otherwise
+    const adjustPolling = () => {
+      const targetMs = hasActiveRuns() ? 3000 : 30000;
+      if (targetMs !== currentPollMs) {
+        currentPollMs = targetMs;
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(() => {
+          refreshRuns().then(adjustPolling);
+        }, targetMs);
+      }
     };
-    
-    // Start polling immediately (covers subscription delay and ensures progress updates)
-    startPolling(3000);
-    
-    // Helper function to fetch run with all relations
+
+    // Initial refresh after 1s, then start smart polling
+    const initialRefresh = setTimeout(() => {
+      refreshRuns().then(adjustPolling);
+    }, 1000);
+    // Start with fast polling (will self-adjust after first refresh)
+    currentPollMs = 3000;
+    pollInterval = setInterval(() => {
+      refreshRuns().then(adjustPolling);
+    }, 3000);
+
+    // Helper function to fetch single run via API (bypasses RLS)
     const fetchRunWithExtras = async (runId: string): Promise<RunWithExtras | null> => {
       try {
-        const { data: runData, error } = await supabase
-          .from('rag_runs')
-          .select(`
-            *,
-            rag_knowledge_bases (name),
-            workflows (slug, name),
-            rag_run_outputs (id, output_json)
-          `)
-          .eq('id', runId)
-          .single();
-        
-        if (error) {
-          console.error('[ProjectRunsClient] Error fetching run:', error);
-          return null;
-        }
-        
-        if (!runData) return null;
-        
-        const kbName = (runData as any).rag_knowledge_bases?.name || null;
-        const workflowName = (runData as any).workflows?.slug || null;
-        const workflowLabel = (runData as any).workflows?.name || null;
-        const runOutputs = (runData as any).rag_run_outputs;
-        const report_id =
-          Array.isArray(runOutputs) && runOutputs.length > 0
-            ? runOutputs[0].id
-            : runOutputs?.id ?? null;
-        const outputJson =
-          Array.isArray(runOutputs) && runOutputs.length > 0
-            ? runOutputs[0]?.output_json
-            : runOutputs?.output_json ?? undefined;
-        
-        const { fit_score, verdict } = getFitScoreAndVerdict(runData);
-        
-        return {
-          ...(runData as Run),
-          output_json: outputJson,
-          knowledge_base_name: kbName,
-          workflow_name: workflowName,
-          workflow_label: workflowLabel,
-          report_id,
-          fit_score,
-          verdict,
-        };
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        const response = await fetch(`/api/intel/runs/${runId}`, {
+          cache: 'no-store',
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        if (!response.ok) return null;
+
+        const runData = await response.json();
+        return runData as RunWithExtras;
       } catch (error) {
         console.error('[ProjectRunsClient] Exception fetching run:', error);
         return null;
       }
     };
-    
-    // Channel for rag_runs - use filter to only receive events for this project's runs
-    // (DELETE events can't be filtered per Supabase, so we filter those client-side)
+
+    // Supabase Realtime subscription for instant updates (complements polling)
+    // Note: postgres_changes events are filtered by RLS. Complex RLS policies with JOINs
+    // may silently block delivery, which is why we also poll as a reliable fallback.
     const runsChannel = supabase
       .channel(`rag_runs_project_${projectId}`, {
         config: {
@@ -261,48 +246,23 @@ export function ProjectRunsClient({
           event: 'INSERT',
           schema: 'public',
           table: 'rag_runs',
-          filter: `project_id=eq.${projectId}`,
         },
         async (payload) => {
           if (payload.eventType !== 'INSERT' || !payload.new) return;
           const newRun = payload.new as any;
-          try {
-            const response = await fetch(`/api/intel/runs/${newRun.id}`);
-            if (response.ok) {
-              const runData = await response.json();
-              const { fit_score, verdict } = getFitScoreAndVerdict(runData);
-              const runWithExtras = { ...runData, fit_score, verdict };
-              setRuns((prev) => {
-                if (prev.some((r) => r.id === newRun.id)) return prev;
-                const updated = [runWithExtras, ...prev];
-                return updated.sort((a, b) =>
-                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                );
-              });
-            } else {
-              const runWithExtras = await fetchRunWithExtras(newRun.id);
-              if (runWithExtras) {
-                setRuns((prev) => {
-                  if (prev.some((r) => r.id === newRun.id)) return prev;
-                  const updated = [runWithExtras, ...prev];
-                  return updated.sort((a, b) =>
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                  );
-                });
-              }
-            }
-          } catch {
-            const runWithExtras = await fetchRunWithExtras(newRun.id);
-            if (runWithExtras) {
-              setRuns((prev) => {
-                if (prev.some((r) => r.id === newRun.id)) return prev;
-                const updated = [runWithExtras, ...prev];
-                return updated.sort((a, b) =>
-                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                );
-              });
-            }
+          if (newRun.project_id !== projectId) return;
+          console.log('[ProjectRunsClient] Realtime INSERT:', newRun.id);
+          const runWithExtras = await fetchRunWithExtras(newRun.id);
+          if (runWithExtras) {
+            setRuns((prev) => {
+              if (prev.some((r) => r.id === newRun.id)) return prev;
+              const updated = [runWithExtras, ...prev];
+              return updated.sort((a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              );
+            });
           }
+          adjustPolling();
         }
       )
       .on(
@@ -311,34 +271,28 @@ export function ProjectRunsClient({
           event: 'UPDATE',
           schema: 'public',
           table: 'rag_runs',
-          filter: `project_id=eq.${projectId}`,
         },
         async (payload) => {
           if (payload.eventType !== 'UPDATE' || !payload.new) return;
           const updatedRun = payload.new as any;
-          try {
-            const response = await fetch(`/api/intel/runs/${updatedRun.id}`);
-            if (response.ok) {
-              const runData = await response.json();
-              if (runData.project_id !== projectId) return;
-              const { fit_score, verdict } = getFitScoreAndVerdict(runData);
-              const runWithExtras = { ...runData, fit_score, verdict };
-              setRuns((prev) => {
-                const exists = prev.some((r) => r.id === updatedRun.id);
-                if (!exists) {
-                  const updated = [runWithExtras, ...prev];
-                  return updated.sort((a, b) =>
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                  );
-                }
-                return prev.map((r) => (r.id === updatedRun.id ? runWithExtras : r));
-              });
-            } else {
-              refreshRuns();
-            }
-          } catch {
+          if (updatedRun.project_id !== projectId) return;
+          console.log('[ProjectRunsClient] Realtime UPDATE:', updatedRun.id, 'status:', updatedRun.status);
+          const runWithExtras = await fetchRunWithExtras(updatedRun.id);
+          if (runWithExtras) {
+            setRuns((prev) => {
+              const exists = prev.some((r) => r.id === updatedRun.id);
+              if (!exists) {
+                const updated = [runWithExtras, ...prev];
+                return updated.sort((a, b) =>
+                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                );
+              }
+              return prev.map((r) => (r.id === updatedRun.id ? runWithExtras : r));
+            });
+          } else {
             refreshRuns();
           }
+          adjustPolling();
         }
       )
       .on(
@@ -352,25 +306,37 @@ export function ProjectRunsClient({
           const deletedRun = payload.old as any;
           const runProjectId = deletedRun?.project_id;
           if (runProjectId && runProjectId !== projectId) return;
+          console.log('[ProjectRunsClient] Realtime DELETE:', deletedRun?.id);
           setRuns((prev) => prev.filter((r) => r.id !== deletedRun?.id));
         }
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          subscriptionActive = true;
-          // Fallback poll (5s) for progress bar updates - subscription handles real-time, poll catches any misses
-          startPolling(5000);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          subscriptionActive = false;
-          startPolling(3000);
+        console.log('[ProjectRunsClient] Subscription status:', status);
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          // Subscription failed - ensure fast polling as fallback
+          if (currentPollMs > 3000) {
+            currentPollMs = 3000;
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(() => {
+              refreshRuns().then(adjustPolling);
+            }, 3000);
+          }
         }
       });
 
     return () => {
+      clearTimeout(initialRefresh);
       if (pollInterval) clearInterval(pollInterval);
       supabase.removeChannel(runsChannel);
     };
   }, [projectId]);
+
+  // When refreshTrigger changes (e.g. after generating a report), immediately fetch fresh data
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      refreshRunsRef.current?.();
+    }
+  }, [refreshTrigger]);
 
   const filterCategories: FilterCategory[] = [
     {
@@ -559,22 +525,11 @@ export function ProjectRunsClient({
         }
       />
 
-      {filteredAndSortedRuns.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground"
-        >
-          {runs.length === 0
-            ? "No researches found for this project."
-            : "No researches found matching your search"}
-        </motion.div>
-      ) : projectTypeId && groupBy === "workflow" && groupedRunsByWorkflow ? (
+      {projectTypeId && groupBy === "workflow" && groupedRunsByWorkflow ? (
         <TooltipProvider delayDuration={100}>
           <div className="space-y-2">
             {/* Table Header */}
-            <div className="flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <div className="flex-1 min-w-0">Run</div>
               <div className="w-20 shrink-0">Usage</div>
               <div className="w-28 shrink-0">Result</div>
@@ -672,6 +627,7 @@ export function ProjectRunsClient({
                           runs={workflowRuns}
                           hideHeader={true}
                           dateColumn="updated"
+                          animated={false}
                         />
                       )}
                     </div>
@@ -681,6 +637,17 @@ export function ProjectRunsClient({
             })}
           </div>
         </TooltipProvider>
+      ) : filteredAndSortedRuns.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-8 text-center text-muted-foreground"
+        >
+          {runs.length === 0
+            ? "No researches found for this project."
+            : "No researches found matching your search"}
+        </motion.div>
       ) : (
         <RunTable runs={filteredAndSortedRuns} dateColumn="updated" />
       )}

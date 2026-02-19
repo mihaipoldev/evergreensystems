@@ -63,19 +63,15 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(SEO_CONFIG.siteUrl),
   manifest: '/manifest.json',
-  // Icons commented out until icon files are created
-  // icons: {
-  //   icon: [
-  //     { url: '/icon-16.png', sizes: '16x16', type: 'image/png' },
-  //     { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
-  //     { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-  //     { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-  //   ],
-  //   apple: [
-  //     { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
-  //   ],
-  //   shortcut: '/favicon.ico',
-  // },
+  icons: {
+    icon: [
+      { url: '/icon', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/icon', sizes: '180x180', type: 'image/svg+xml' },
+    ],
+    shortcut: '/icon',
+  },
   other: {
     'theme-color': '#000000', // Will be updated based on actual theme
   },
@@ -136,13 +132,12 @@ export default async function RootLayout({
         const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
         
         // Determine route from pathname
-        let route: '/' | '/outbound-system' = '/';
+        let route = '/';
         try {
+          const { getRouteForPathname } = await import("@/features/funnels/routes");
           const headersList = await headers();
           const pathnameHeader = headersList.get("x-pathname") || headersList.get("referer") || "";
-          if (pathnameHeader.includes("/outbound-system")) {
-            route = '/outbound-system';
-          }
+          route = getRouteForPathname(pathnameHeader);
         } catch {
           // Default to landing page if headers unavailable
         }

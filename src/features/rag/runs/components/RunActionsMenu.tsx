@@ -6,7 +6,8 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { ViewOutputJsonModal } from "./ViewOutputJsonModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCode, faCopy, faEllipsis, faEye, faExternalLink, faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faCode, faCopy, faDownload, faEllipsis, faEye, faExternalLink, faFileAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { downloadOutputJson } from "../utils/downloadOutputJson";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Run } from "../types";
@@ -112,6 +113,25 @@ export function RunActionsMenu({
           setShowViewJsonModal(true);
         } else {
           toast.info("Output JSON will be available after the run completes");
+        }
+      },
+      disabled: !isComplete || !reportId,
+    },
+    {
+      label: "Download JSON",
+      icon: <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />,
+      onClick: async (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (!isComplete || !reportId) {
+          toast.info("Output JSON will be available after the run completes");
+          return;
+        }
+        try {
+          await downloadOutputJson(reportId, `run-${run.id}.json`);
+          toast.success("JSON downloaded");
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Failed to download JSON";
+          toast.error(message);
         }
       },
       disabled: !isComplete || !reportId,

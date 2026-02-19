@@ -488,19 +488,19 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
   return (
     <div className="bg-background relative">
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-4xl mx-auto">
           {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
+            className="text-center mb-6 md:mb-10"
           >
             {/* Animated Icon */}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
+              className={`w-12 h-12 md:w-20 md:h-20 mx-auto mb-3 md:mb-6 rounded-full flex items-center justify-center ${
                 run.status === "failed"
                   ? "bg-red-600 dark:bg-red-500 text-background"
                   : "bg-primary text-primary-foreground"
@@ -511,11 +511,11 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
                   : "0 0 40px hsl(var(--primary) / 0.4)",
               }}
             >
-              <FontAwesomeIcon icon={faBrain} className="w-10 h-10" />
+              <FontAwesomeIcon icon={faBrain} className="w-6 h-6 md:w-10 md:h-10" />
             </motion.div>
 
             {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-3">
+            <h1 className="text-xl md:text-3xl lg:text-4xl font-extrabold mb-2 md:mb-3">
               {run.status === "failed" ? (
                 <span className="text-red-600 dark:text-red-500">{runLabel}</span>
               ) : (
@@ -533,20 +533,20 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
             </h1>
 
             {/* Subject */}
-            <div className="text-2xl font-semibold text-foreground mb-4">
+            <div className="text-lg md:text-2xl font-semibold text-foreground mb-3 md:mb-4">
               {subject}
             </div>
 
             {/* Geography Badge and AI Model */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-2 md:gap-3">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3, type: "spring" }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border"
+                className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-muted border border-border"
               >
-                <FontAwesomeIcon icon={faGlobe} className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{geography}</span>
+                <FontAwesomeIcon icon={faGlobe} className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
+                <span className="text-xs md:text-sm font-medium">{geography}</span>
               </motion.div>
               
               {/* AI Model Badge */}
@@ -568,22 +568,29 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex flex-col items-center mb-12"
+            className="flex flex-col items-center mb-6 md:mb-12"
           >
-            <CircularProgress percentage={progress} size={220} status={run.status} />
+            {/* Mobile - smaller circle */}
+            <div className="md:hidden">
+              <CircularProgress percentage={progress} size={120} status={run.status} />
+            </div>
+            {/* Desktop - full size */}
+            <div className="hidden md:block">
+              <CircularProgress percentage={progress} size={220} status={run.status} />
+            </div>
 
             {/* Time info */}
-            <div className="flex items-center justify-center gap-8 mt-6">
-              <div className="text-center min-w-[100px]">
-                <div className="text-sm text-muted-foreground">Elapsed</div>
-                <div className="text-lg font-bold text-foreground">
+            <div className="flex items-center justify-center gap-4 md:gap-8 mt-4 md:mt-6">
+              <div className="text-center min-w-[80px] md:min-w-[100px]">
+                <div className="text-xs md:text-sm text-muted-foreground">Elapsed</div>
+                <div className="text-base md:text-lg font-bold text-foreground">
                   {elapsedTime}
                 </div>
               </div>
-              <div className="w-px h-8 bg-border" />
-              <div className="text-center min-w-[100px]">
-                <div className="text-sm text-muted-foreground">Remaining</div>
-                <div className="text-lg font-bold text-foreground">
+              <div className="w-px h-6 md:h-8 bg-border" />
+              <div className="text-center min-w-[80px] md:min-w-[100px]">
+                <div className="text-xs md:text-sm text-muted-foreground">Remaining</div>
+                <div className="text-base md:text-lg font-bold text-foreground">
                   {estimatedRemaining}
                 </div>
               </div>
@@ -614,7 +621,7 @@ export function RunDetailClient({ run: initialRun }: RunDetailClientProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mb-8"
+              className="mb-6 md:mb-8"
             >
 
               <ProgressTimeline

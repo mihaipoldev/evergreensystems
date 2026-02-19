@@ -6,13 +6,19 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import type { HeaderContent } from "../types";
+import { Logo } from "@/components/shared/Logo";
 
 const SCROLL_THRESHOLD = 12;
 
-const Header = () => {
+interface HeaderProps {
+  content: HeaderContent;
+}
+
+const Header = ({ content }: HeaderProps) => {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
-  const isOutboundPage = pathname === "/outbound-system";
+  const isFunnelPage = pathname !== "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,29 +32,22 @@ const Header = () => {
   // Helper function to handle smooth scroll for anchor links
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
-    
+
     const targetId = href.replace('#', '');
     const targetElement = document.getElementById(targetId);
-    
+
     if (targetElement) {
       const headerHeight = 100;
       const offset = 20;
       const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - headerHeight - offset;
-      
+
       window.scrollTo({
         top: Math.max(0, offsetPosition),
         behavior: 'smooth',
       });
     }
   };
-
-  const navLinks = [
-    { label: "Outcomes", href: "#expected-outcomes", active: false },
-    { label: "Why", href: "#why-outbound", active: false },
-    { label: "Deliverables", href: "#what-you-get", active: false },
-    { label: "Pricing", href: "#pricing", active: false },
-  ];
 
   return (
     <header className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8">
@@ -58,31 +57,27 @@ const Header = () => {
             isScrolled ? "md:shadow-sm" : "md:shadow-none"
           }`}
         >
-          {/* Logo: full page load when on outbound so landing preset (colors/fonts) loads correctly */}
+          {/* Logo: full page load when on funnel so landing preset (colors/fonts) loads correctly */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {isOutboundPage ? (
-              <a href="/" className="ml-3 text-lg font-bold text-primary">
-                Evergreen Sys.
+            {isFunnelPage ? (
+              <a href="/" className="ml-3 flex items-center">
+                <Logo variant="horizontal" className="h-6 md:h-8" usePrimaryColor={true} />
               </a>
             ) : (
-              <Link href="/" className="ml-3 text-lg font-bold text-primary">
-                Evergreen Sys.
+              <Link href="/" className="ml-3 flex items-center">
+                <Logo variant="horizontal" className="h-6 md:h-8" usePrimaryColor={true} />
               </Link>
             )}
           </div>
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-4 flex-1 justify-center">
-            {navLinks.map((link) => (
+            {content.navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={(e) => handleSmoothScroll(e, link.href)}
-                className={`text-sm transition-colors whitespace-nowrap cursor-pointer ${
-                  link.active
-                    ? "text-foreground font-bold"
-                    : "text-muted-foreground font-normal"
-                }`}
+                className="text-sm transition-colors whitespace-nowrap cursor-pointer text-muted-foreground font-normal"
               >
                 {link.label}
               </a>
@@ -97,7 +92,7 @@ const Header = () => {
               className="rounded-full border-gray-300 flex items-center gap-2"
             >
               <FontAwesomeIcon icon={faCalendar} className="h-4 w-4" />
-              <span className="text-sm font-medium">Book Call</span>
+              <span className="text-sm font-medium">{content.ctaButtonText}</span>
             </Button>
           </div>
         </nav>

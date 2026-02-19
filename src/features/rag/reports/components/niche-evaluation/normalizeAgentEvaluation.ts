@@ -42,7 +42,10 @@ export function normalizeAgentEvaluation(
     recommendation:
       agentData.recommendation ?? fv?.recommendation ?? "",
     confidence_score:
-      agentData.confidence_score ?? fv?.confidence_score ?? 0,
+      agentData.confidence_score ??
+      agentData.confidence ??
+      fv?.confidence_score ??
+      0,
     one_line_summary:
       agentData.one_line_summary ?? fv?.one_line_summary ?? "",
     dimension_scores_breakdown: dimensionScores,

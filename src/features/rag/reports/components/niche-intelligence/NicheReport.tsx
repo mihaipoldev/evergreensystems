@@ -1,14 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBullseye,
-  faFileAlt,
-  faChartLine,
-} from "@fortawesome/free-solid-svg-icons";
 import type { ReportData } from "../../types";
-import { StatCard, ConfidenceBadge, SourcesUsedSection } from "../shared";
+import { ConfidenceBadge, SourcesUsedSection } from "../shared";
 import {
   BasicProfileSection,
   TamAnalysisSection,
@@ -33,21 +27,12 @@ interface NicheReportProps {
 }
 
 export const NicheReport = ({ data, reportId }: NicheReportProps) => {
-  const geo = data.meta.input.geo || "—";
   const confidence = data.meta.confidence || 0;
-
-  const metaAny = data.meta as Record<string, unknown>;
-  const focus = (metaAny?.focus as string) || "—";
-  const marketValue = (metaAny?.market_value as string) || "—";
+  const confidenceRationale = data.meta.confidence_rationale as string | undefined;
 
   const dataAny = data.data as Record<string, unknown>;
   const basicProfile = dataAny?.basic_profile as Record<string, unknown> | undefined;
   const tamAnalysis = dataAny?.tam_analysis as Record<string, unknown> | undefined;
-  const marketValueFromProfile = basicProfile?.market_value as string | undefined;
-  const tam = tamAnalysis?.total_companies_in_geography as number | undefined;
-
-  const displayMarketValue = marketValueFromProfile || marketValue || "—";
-  const displayTam = tam != null ? tam.toLocaleString() : "—";
 
   const isDescriptiveFormat = basicProfile != null;
 
@@ -67,31 +52,10 @@ export const NicheReport = ({ data, reportId }: NicheReportProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
+        className="flex justify-center mb-6"
       >
-        <StatCard
-          label="Geography"
-          value={geo}
-          icon={<FontAwesomeIcon icon={faBullseye} className="w-4 h-4" />}
-        />
-        <StatCard
-          label="Market Value"
-          value={displayMarketValue && String(displayMarketValue).trim() ? String(displayMarketValue) : "—"}
-          icon={<FontAwesomeIcon icon={faChartLine} className="w-4 h-4" />}
-        />
-        <StatCard
-          label="TAM"
-          value={displayTam}
-          icon={<FontAwesomeIcon icon={faChartLine} className="w-4 h-4" />}
-        />
-        <StatCard
-          label="Focus"
-          value={focus}
-          icon={<FontAwesomeIcon icon={faFileAlt} className="w-4 h-4" />}
-        />
+        <ConfidenceBadge value={confidence} rationale={confidenceRationale} />
       </motion.div>
-
-      <ConfidenceBadge value={confidence} />
 
       {basicProfile && <BasicProfileSection profile={basicProfile} sectionNumber="01" />}
       {tamAnalysis && <TamAnalysisSection tam={tamAnalysis} sectionNumber="02" />}
@@ -129,7 +93,7 @@ export const NicheReport = ({ data, reportId }: NicheReportProps) => {
         <ResearchLinksSection
           researchLinks={dataAny.research_links as NonNullable<ReportData["data"]["research_links"]>}
           reportId={reportId}
-          sectionNumber="15"
+          sectionNumber="17"
         />
       )}
       {data.meta.sources_used && data.meta.sources_used.length > 0 && (

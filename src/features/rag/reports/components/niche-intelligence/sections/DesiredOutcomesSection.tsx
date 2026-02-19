@@ -49,16 +49,22 @@ export const DesiredOutcomesSection = ({
               title="Aspirational Wins"
               icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-accent" />}
             />
-            <div className="space-y-4">
+            <div className="space-y-2">
               {data.aspirational_wins.map((win, index) => (
-                <ContentCard key={index} variant="success" title={getText(win.outcome, `Outcome ${index + 1}`)} titleVariant="title">
+                <div
+                  key={index}
+                  className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-3"
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {getText(win.outcome, `Outcome ${index + 1}`)}
+                  </p>
                   {win.why_it_matters && (
-                    <p className="text-sm font-body text-muted-foreground">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">Why it matters: </span>
                       {getText(win.why_it_matters, "")}
                     </p>
                   )}
-                </ContentCard>
+                </div>
               ))}
             </div>
           </div>

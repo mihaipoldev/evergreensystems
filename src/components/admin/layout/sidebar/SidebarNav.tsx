@@ -36,13 +36,15 @@ type SidebarNavItemProps = {
   item: SidebarItem;
   isActive: boolean;
   onNavigate: (href: string) => void;
+  onMouseEnter?: () => void;
 };
 
-export function SidebarNavItem({ item, isActive, onNavigate }: SidebarNavItemProps) {
+export function SidebarNavItem({ item, isActive, onNavigate, onMouseEnter }: SidebarNavItemProps) {
   return (
     <Link
       href={item.href}
       onClick={() => onNavigate(item.href)}
+      onMouseEnter={onMouseEnter}
       className={cn(
         "group flex items-center gap-4 rounded-sm px-4 py-2 text-[16px] font-medium",
         "relative overflow-hidden",

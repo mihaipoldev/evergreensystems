@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -113,12 +112,7 @@ export function Toolbar({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus search input when expanded
-  useEffect(() => {
-    if (isSearchExpanded && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchExpanded]);
+  // Focus is handled synchronously in the click handler for mobile keyboard support
 
   const handleSortChange = (sort: string) => {
     if (!controlledSelectedSort) {
@@ -144,64 +138,55 @@ export function Toolbar({
       {/* Left: Search */}
       {onSearch && (
         <>
-          {/* Mobile: Search - Icon or Expanding Input */}
-          <div className="md:hidden flex items-center gap-2 flex-1 min-w-0">
-            <AnimatePresence mode="wait">
-              {!isSearchExpanded ? (
-                <motion.div
-                  key="search-icon"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsSearchExpanded(true)}
-                    className="h-10 w-10 p-0 border-0 shadow-none bg-transparent hover:bg-transparent shrink-0"
-                    title="Search"
-                  >
-                    <FontAwesomeIcon 
-                      icon={faSearch} 
-                      className={cn(
-                        "!h-4 !w-4",
-                        searchValue && searchValue.length > 0 ? "text-primary" : "text-foreground/80"
-                      )}
-                      style={{ fontSize: '16px', width: '16px', height: '16px' }}
-                    />
-                  </Button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="search-input"
-                  initial={{ width: 40, opacity: 0 }}
-                  animate={{ width: "100%", opacity: 1 }}
-                  exit={{ width: 40, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="relative flex-1 min-w-0"
-                >
-                  <FontAwesomeIcon
-                    icon={faSearch}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground z-10"
-                    style={{ fontSize: '12px', width: '12px', height: '12px' }}
-                  />
-                  <Input
-                    ref={searchInputRef}
-                    placeholder={searchPlaceholder}
-                    value={searchValue}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onBlur={(e) => {
-                      // Only collapse if input is empty and not focused
-                      if (!e.target.value && !e.relatedTarget) {
-                        setIsSearchExpanded(false);
-                      }
-                    }}
-                    className="pl-9 h-10 bg-transparent border-0 shadow-none text-foreground/80 focus:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
-                  />
-                </motion.div>
+          {/* Mobile: Search - Icon + always-mounted input (required for synchronous focus / mobile keyboard) */}
+          <div className="md:hidden flex items-center gap-2 flex-1 min-w-0 relative">
+            {!isSearchExpanded && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  searchInputRef.current?.focus();
+                  setIsSearchExpanded(true);
+                }}
+                className="h-10 w-10 p-0 border-0 shadow-none bg-transparent hover:bg-transparent shrink-0"
+                title="Search"
+              >
+                <FontAwesomeIcon
+                  icon={faSearch}
+                  className={cn(
+                    "!h-4 !w-4",
+                    searchValue && searchValue.length > 0 ? "text-primary" : "text-foreground/80"
+                  )}
+                  style={{ fontSize: '16px', width: '16px', height: '16px' }}
+                />
+              </Button>
+            )}
+            <div
+              className={cn(
+                "relative min-w-0",
+                isSearchExpanded
+                  ? "flex-1 opacity-100"
+                  : "absolute inset-0 opacity-0 pointer-events-none"
               )}
-            </AnimatePresence>
+            >
+              <FontAwesomeIcon
+                icon={faSearch}
+                className="absolute left-3 top-1/2 -translate-y-1/2 !h-3 !w-3 text-muted-foreground z-10"
+                style={{ fontSize: '12px', width: '12px', height: '12px' }}
+              />
+              <Input
+                ref={searchInputRef}
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onBlur={(e) => {
+                  if (!e.target.value && !e.relatedTarget) {
+                    setIsSearchExpanded(false);
+                  }
+                }}
+                className="pl-9 h-10 bg-transparent border-0 !shadow-none dark:!shadow-none hover:!shadow-none dark:hover:!shadow-none text-foreground/80 focus:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
+              />
+            </div>
           </div>
 
           {/* Desktop: Search Input */}
@@ -402,7 +387,7 @@ export function Toolbar({
         {actionAfterSort && !actionAfterSort.disabled && (
           <Button
             onClick={actionAfterSort.onClick}
-            className="relative h-10 w-10 md:h-10 md:w-10 p-0 overflow-hidden border-0 shadow-none bg-transparent hover:bg-transparent md:bg-primary md:hover:bg-primary md:shadow-buttons md:hover:shadow-card transition-all duration-300 hover:scale-105 text-foreground/80 md:text-primary-foreground"
+            className="relative h-10 w-10 md:h-10 md:w-10 p-0 overflow-hidden border-0 shadow-buttons hover:shadow-card bg-primary hover:bg-primary transition-all duration-300 hover:scale-105 text-primary-foreground ml-1.5 md:ml-0"
             title={actionAfterSort.label}
           >
             <div

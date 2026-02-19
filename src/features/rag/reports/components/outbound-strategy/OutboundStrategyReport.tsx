@@ -2,27 +2,26 @@
 
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBullseye,
-  faFileAlt,
-  faChartLine,
-} from "@fortawesome/free-solid-svg-icons";
+import { faUsers, faDollarSign } from "@fortawesome/free-solid-svg-icons";
 import type { ReportData } from "../../types";
-import { StatCard, ConfidenceBadge, SourcesUsedSection } from "../shared";
+import { ConfidenceBadge, SourcesUsedSection, StatCard } from "../shared";
 import { ResearchLinksSection } from "../niche-intelligence/sections/ResearchLinksSection";
 import {
   TitlePacksSection,
   TargetProfileSection,
-  SalesProcessSection,
-  OurPositioningSection,
+  PositioningSection,
   BuyerPsychologySection,
   MessagingStrategySection,
   ObjectionHandlingSection,
   SegmentationRulesSection,
   TargetingStrategySection,
-  ExclusionRulesSection,
   EnrichmentRequirementsSection,
-  TargetingQuickReferenceSection,
+  TechnographicSignalsSection,
+  BehavioralSignalsSection,
+  DiscoverySection,
+  DemoSection,
+  PilotSection,
+  ProofPackageSection,
 } from "./sections";
 
 interface OutboundStrategyReportProps {
@@ -31,40 +30,46 @@ interface OutboundStrategyReportProps {
 }
 
 export const OutboundStrategyReport = ({ data, reportId }: OutboundStrategyReportProps) => {
-  const geo = data.meta.input.geo || "—";
-  const confidence = data.meta.confidence || 0;
-  const metaAny = data.meta as Record<string, unknown>;
-  const focus = (metaAny?.focus as string) || "—";
-  const marketValue = (metaAny?.market_value as string) || "—";
-
+  const confidence = data.meta.confidence ?? 0;
+  const confidenceRationale = data.meta.confidence_rationale as string | undefined;
   const dataAny = data.data as Record<string, unknown>;
+  const messaging = (dataAny.messaging ?? {}) as Record<string, unknown>;
+  const targetProfile = dataAny.target_profile as { employee_count?: string; company_revenue?: string } | undefined;
+  const hasTopCards = targetProfile && (targetProfile.employee_count || targetProfile.company_revenue);
 
   return (
     <>
+      {hasTopCards && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+        >
+          {targetProfile.employee_count && (
+            <StatCard
+              label="Employee count"
+              value={targetProfile.employee_count}
+              icon={<FontAwesomeIcon icon={faUsers} className="w-4 h-4" />}
+            />
+          )}
+          {targetProfile.company_revenue && (
+            <StatCard
+              label="Company revenue"
+              value={targetProfile.company_revenue}
+              icon={<FontAwesomeIcon icon={faDollarSign} className="w-4 h-4" />}
+            />
+          )}
+        </motion.div>
+      )}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+        className="flex justify-center mb-6"
       >
-        <StatCard
-          label="Geography"
-          value={geo}
-          icon={<FontAwesomeIcon icon={faBullseye} className="w-4 h-4" />}
-        />
-        <StatCard
-          label="Market Value"
-          value={marketValue && String(marketValue).trim() ? String(marketValue) : "—"}
-          icon={<FontAwesomeIcon icon={faChartLine} className="w-4 h-4" />}
-        />
-        <StatCard
-          label="Focus"
-          value={focus}
-          icon={<FontAwesomeIcon icon={faFileAlt} className="w-4 h-4" />}
-        />
+        <ConfidenceBadge value={confidence} rationale={confidenceRationale} />
       </motion.div>
-
-      <ConfidenceBadge value={confidence} />
 
       {dataAny.target_profile && (
         <TargetProfileSection targetProfile={dataAny.target_profile as Parameters<typeof TargetProfileSection>[0]["targetProfile"]} sectionNumber="01" />
@@ -78,35 +83,44 @@ export const OutboundStrategyReport = ({ data, reportId }: OutboundStrategyRepor
       {dataAny.segmentation_rules && (
         <SegmentationRulesSection segmentationRules={dataAny.segmentation_rules as Parameters<typeof SegmentationRulesSection>[0]["segmentationRules"]} sectionNumber="04" />
       )}
-      {dataAny.exclusion_rules && (
-        <ExclusionRulesSection exclusionRules={dataAny.exclusion_rules as Parameters<typeof ExclusionRulesSection>[0]["exclusionRules"]} sectionNumber="05" />
-      )}
       {dataAny.title_packs && (
-        <TitlePacksSection titlePacks={dataAny.title_packs as Parameters<typeof TitlePacksSection>[0]["titlePacks"]} sectionNumber="06" />
+        <TitlePacksSection titlePacks={dataAny.title_packs as Parameters<typeof TitlePacksSection>[0]["titlePacks"]} sectionNumber="05" />
       )}
-      {dataAny.targeting_quick_reference && (
-        <TargetingQuickReferenceSection targetingQuickReference={dataAny.targeting_quick_reference as Parameters<typeof TargetingQuickReferenceSection>[0]["targetingQuickReference"]} sectionNumber="07" />
+      {dataAny.technographic_signals && (
+        <TechnographicSignalsSection technographicSignals={dataAny.technographic_signals as Parameters<typeof TechnographicSignalsSection>[0]["technographicSignals"]} sectionNumber="06" />
       )}
-      {dataAny.our_positioning && (
-        <OurPositioningSection ourPositioning={dataAny.our_positioning as Parameters<typeof OurPositioningSection>[0]["ourPositioning"]} sectionNumber="08" />
+      {dataAny.behavioral_signals && (
+        <BehavioralSignalsSection behavioralSignals={dataAny.behavioral_signals as string[]} sectionNumber="07" />
       )}
-      {dataAny.buyer_psychology && (
-        <BuyerPsychologySection buyerPsychology={dataAny.buyer_psychology as Parameters<typeof BuyerPsychologySection>[0]["buyerPsychology"]} sectionNumber="09" />
+      {dataAny.positioning && (
+        <PositioningSection positioning={dataAny.positioning as Parameters<typeof PositioningSection>[0]["positioning"]} sectionNumber="08" />
       )}
-      {dataAny.objection_handling && (
-        <ObjectionHandlingSection objectionHandling={dataAny.objection_handling as Parameters<typeof ObjectionHandlingSection>[0]["objectionHandling"]} sectionNumber="10" />
+      {messaging.buyer_psychology && (
+        <BuyerPsychologySection buyerPsychology={messaging.buyer_psychology as Parameters<typeof BuyerPsychologySection>[0]["buyerPsychology"]} sectionNumber="09" />
       )}
-      {dataAny.messaging_strategy && (
-        <MessagingStrategySection messagingStrategy={dataAny.messaging_strategy as Parameters<typeof MessagingStrategySection>[0]["messagingStrategy"]} sectionNumber="11" />
+      {messaging.common_objections && (
+        <ObjectionHandlingSection objectionHandling={{ common_objections: messaging.common_objections as Parameters<typeof ObjectionHandlingSection>[0]["objectionHandling"]["common_objections"] }} sectionNumber="10" />
       )}
-      {dataAny.sales_process && (
-        <SalesProcessSection salesProcess={dataAny.sales_process as Parameters<typeof SalesProcessSection>[0]["salesProcess"]} sectionNumber="12" />
+      {messaging.personalization_vectors && (
+        <MessagingStrategySection messagingStrategy={{ personalization_vectors: messaging.personalization_vectors as Parameters<typeof MessagingStrategySection>[0]["messagingStrategy"]["personalization_vectors"] }} sectionNumber="11" />
+      )}
+      {dataAny.discovery && (
+        <DiscoverySection discovery={dataAny.discovery as Parameters<typeof DiscoverySection>[0]["discovery"]} sectionNumber="12" />
+      )}
+      {dataAny.demo && (
+        <DemoSection demo={dataAny.demo as Parameters<typeof DemoSection>[0]["demo"]} sectionNumber="13" />
+      )}
+      {dataAny.pilot && (
+        <PilotSection pilot={dataAny.pilot as Parameters<typeof PilotSection>[0]["pilot"]} sectionNumber="14" />
+      )}
+      {dataAny.proof_package && (
+        <ProofPackageSection proofPackage={dataAny.proof_package as Parameters<typeof ProofPackageSection>[0]["proofPackage"]} sectionNumber="15" />
       )}
       {dataAny.research_links && (
         <ResearchLinksSection
           researchLinks={dataAny.research_links as Parameters<typeof ResearchLinksSection>[0]["researchLinks"]}
           reportId={reportId}
-          sectionNumber="13"
+          sectionNumber="16"
         />
       )}
       {data.meta.sources_used && data.meta.sources_used.length > 0 && (

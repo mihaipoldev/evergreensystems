@@ -43,9 +43,10 @@ export const PurchaseJourneySection = ({ data }: PurchaseJourneySectionProps) =>
     );
   }
 
-  const stages = journey.stages as Array<Record<string, unknown>>;
-  const evaluationCriteria = journey.evaluation_criteria as Record<string, unknown>;
-  const objectionsAndHandling = journey.objections_and_handling as Array<Record<string, unknown>>;
+  const stages = (journey.stages as Array<Record<string, unknown>>) ?? [];
+  const evaluationCriteria = (journey.evaluation_criteria as Record<string, unknown>) ?? {};
+  const objectionsAndHandling = (journey.objections_and_handling as Array<Record<string, unknown>>) ?? [];
+  const hasConfidence = typeof journey.confidence === "number";
 
   return (
     <SectionWrapper
@@ -54,12 +55,14 @@ export const PurchaseJourneySection = ({ data }: PurchaseJourneySectionProps) =>
       title="Purchase Journey"
       subtitle="How these customers evaluate and buy solutions"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          label="Confidence"
-          value={`${((journey.confidence as number) * 100).toFixed(0)}%`}
-          icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
-        />
+      <div className={`grid grid-cols-1 gap-4 mb-8 ${hasConfidence ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {hasConfidence && (
+          <StatCard
+            label="Confidence"
+            value={`${((journey.confidence as number) * 100).toFixed(0)}%`}
+            icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
+          />
+        )}
         <StatCard
           label="Journey Stages"
           value={stages.length}

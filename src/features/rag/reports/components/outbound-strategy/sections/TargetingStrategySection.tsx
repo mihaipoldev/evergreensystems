@@ -3,8 +3,8 @@
 import {
   SectionWrapper,
   BlockHeader,
-  InsightList,
   NumberedCard,
+  ContentCard,
 } from "../../shared";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -12,6 +12,7 @@ import {
   faFilter,
   faStar,
   faChartBar,
+  faIndustry,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 
@@ -33,11 +34,26 @@ type SegmentToPrioritize = {
   priority?: number;
 };
 
+type IndustryItem = {
+  industry?: string;
+  naics?: string;
+  keywords?: string;
+  qualification?: string;
+  reason?: string;
+};
+
+type Industries = {
+  primary_focus?: IndustryItem[];
+  adjacent?: IndustryItem[];
+  avoid?: IndustryItem[];
+};
+
 type TargetingStrategy = {
   description?: string;
   best_list_sources?: (ListSource | string)[];
   targeting_filters?: (TargetingFilter | string)[];
   segments_to_prioritize?: (SegmentToPrioritize | string)[];
+  industries?: Industries;
 };
 
 interface TargetingStrategySectionProps {
@@ -59,18 +75,19 @@ function isSegmentToPrioritize(x: SegmentToPrioritize | string): x is SegmentToP
 
 export const TargetingStrategySection = ({
   targetingStrategy,
-  sectionNumber = "09",
+  sectionNumber = "02",
 }: TargetingStrategySectionProps) => {
   const sources = targetingStrategy?.best_list_sources ?? [];
   const filters = targetingStrategy?.targeting_filters ?? [];
   const segments = targetingStrategy?.segments_to_prioritize ?? [];
+  const industries = targetingStrategy?.industries;
 
   return (
     <SectionWrapper
       id="targeting-strategy"
       number={sectionNumber}
       title="Targeting Strategy"
-      subtitle={targetingStrategy?.description ?? "List sources, filters, and prioritized segments"}
+      subtitle={targetingStrategy?.description || undefined}
     >
       {sources.length > 0 && (
         <div className="mb-10">
@@ -158,7 +175,7 @@ export const TargetingStrategySection = ({
       )}
 
       {segments.length > 0 && (
-        <div>
+        <div className="mb-10">
           <BlockHeader
             variant="title"
             title="Segments to Prioritize"
@@ -202,6 +219,63 @@ export const TargetingStrategySection = ({
                 </NumberedCard>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {industries && (
+        <div>
+          <BlockHeader
+            variant="title"
+            title="Industries"
+            icon={<FontAwesomeIcon icon={faIndustry} className="w-5 h-5 text-accent" />}
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {industries.primary_focus && industries.primary_focus.length > 0 && (
+              <ContentCard variant="green" title="Primary Focus">
+                <ul className="space-y-3">
+                  {industries.primary_focus.map((item, i) => (
+                    <li key={i} className="text-sm">
+                      <span className="font-medium text-foreground">{item.industry}</span>
+                      {item.naics && (
+                        <span className="text-muted-foreground ml-1">(NAICS: {item.naics})</span>
+                      )}
+                      {item.keywords && (
+                        <p className="text-xs text-muted-foreground mt-1">{item.keywords}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </ContentCard>
+            )}
+            {industries.adjacent && industries.adjacent.length > 0 && (
+              <ContentCard variant="accent" title="Adjacent Opportunities">
+                <ul className="space-y-3">
+                  {industries.adjacent.map((item, i) => (
+                    <li key={i} className="text-sm">
+                      <span className="font-medium text-foreground">{item.industry}</span>
+                      {item.qualification && (
+                        <p className="text-xs text-muted-foreground mt-1">{item.qualification}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </ContentCard>
+            )}
+            {industries.avoid && industries.avoid.length > 0 && (
+              <ContentCard variant="danger" title="Avoid">
+                <ul className="space-y-3">
+                  {industries.avoid.map((item, i) => (
+                    <li key={i} className="text-sm">
+                      <span className="font-medium text-foreground">{item.industry}</span>
+                      {item.reason && (
+                        <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </ContentCard>
+            )}
           </div>
         </div>
       )}

@@ -16,4 +16,5 @@ export { NumberedCard } from "./NumberedCard";
 export { ContentCard, type ContentCardStyle } from "./ContentCard";
 export { KeyValueBlock } from "./KeyValueBlock";
 export { UsageMetricsSection } from "./UsageMetricsSection";
+export { ReportCollapsibleCard } from "./ReportCollapsibleCard";
 

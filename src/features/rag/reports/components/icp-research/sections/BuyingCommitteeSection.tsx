@@ -57,10 +57,10 @@ export const BuyingCommitteeSection = ({ data }: BuyingCommitteeSectionProps) =>
     );
   }
 
-  const decisionStructure = committee.decision_structure as Record<string, unknown>;
-  const approvalThresholds = decisionStructure.approval_thresholds as Record<string, string>;
-  const roles = committee.roles as Array<Record<string, unknown>>;
-  const committeeDynamics = committee.committee_dynamics as Record<string, unknown>;
+  const decisionStructure = (committee.decision_structure as Record<string, unknown>) ?? {};
+  const approvalThresholds = (decisionStructure.approval_thresholds as Record<string, string>) ?? {};
+  const roles = (committee.roles as Array<Record<string, unknown>>) ?? [];
+  const committeeDynamics = (committee.committee_dynamics as Record<string, unknown>) ?? {};
 
   return (
     <SectionWrapper
@@ -73,7 +73,7 @@ export const BuyingCommitteeSection = ({ data }: BuyingCommitteeSectionProps) =>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <StatCard
           label="Committee Size"
-          value={(decisionStructure.typical_committee_size as string).split(" for ")[0]}
+          value={(decisionStructure.typical_committee_size as string)?.split(" for ")[0] ?? "—"}
           icon={<FontAwesomeIcon icon={faUsers} className="w-5 h-5" />}
         />
         <StatCard

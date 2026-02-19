@@ -1,66 +1,27 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import type { FAQContent } from "../types";
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-50px" },
-  transition: { duration: 0.5, ease: [0.17, 0.67, 0.83, 0.67] as const }
-};
+interface FAQSectionProps {
+  content: FAQContent;
+}
 
-const faqs = [
-  {
-    question: "What does Evergreen Systems actually handle?",
-    answer: "Evergreen Systems builds, runs, and optimizes the entire outbound system end to end. This includes targeting, lead sourcing, AI driven enrichment, messaging, sending, follow ups, reply handling, and booking qualified sales calls to your calendar. Your role is focused on sales conversations, not outbound execution.",
-  },
-  {
-    question: "How involved do I need to be?",
-    answer: "Very little. We align upfront on your offer, ideal customer profile, and qualification criteria. Once the system is live, your main responsibility is showing up prepared for booked sales calls.",
-  },
-  {
-    question: "How quickly does the system start working?",
-    answer: "Every engagement begins with a setup and warmup phase designed to protect deliverability. This typically takes a few weeks. Once outreach goes live, replies and conversations begin accumulating as the system gathers real data.",
-  },
-  {
-    question: "Is this a one time campaign or an ongoing system?",
-    answer: "This is an ongoing outbound system, not a one off campaign. Performance improves over time as targeting, enrichment, and messaging are refined based on real reply data.",
-  },
-  {
-    question: "What happens after a call is booked?",
-    answer: "Once a qualified call is booked, the conversation is handed off to you. From that point forward, you handle the sales process, follow up, and closing inside your existing workflow or CRM. If needed, booked calls can be passed into your CRM so your pipeline stays organized, but sales execution remains fully on your side.",
-  },
-  {
-    question: "Is this compliant with email regulations?",
-    answer: "Outbound is set up using standard best practices, including proper identification and unsubscribe handling. You remain in control of your messaging and business information at all times.",
-  },
-];
-
-const FAQSection = () => {
+const FAQSection = ({ content }: FAQSectionProps) => {
   return (
     <section className="section-spacing">
       <div className="max-w-3xl mx-auto px-3 md:px-0">
-        <motion.h2 
-          className="md:heading-lg heading-md md:mb-10 mb-6 text-center"
-          {...fadeInUp}
-        >
-          Frequently Asked Questions
-        </motion.h2>
+        <h2 className="md:heading-lg heading-md md:mb-10 mb-6 text-center">
+          {content.heading}
+        </h2>
 
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ staggerChildren: 0.1 }}
-        >
-          <Accordion type="single" collapsible className="w-full">
-          {faqs.map((faq, index) => (
+        <Accordion type="single" collapsible className="w-full">
+          {content.faqs.map((faq, index) => (
             <AccordionItem
               key={index}
               value={`item-${index}`}
@@ -75,7 +36,6 @@ const FAQSection = () => {
             </AccordionItem>
           ))}
         </Accordion>
-        </motion.div>
       </div>
     </section>
   );

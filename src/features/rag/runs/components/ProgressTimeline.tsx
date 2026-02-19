@@ -163,47 +163,47 @@ function StepCard({ step, index, totalSteps }: { step: Step; index: number; tota
         {/* Header */}
         <div
           onClick={() => step.status === "completed" && setIsExpanded(!isExpanded)}
-          className="w-full p-4 flex items-center gap-4"
+          className="w-full p-2.5 md:p-4 flex items-center gap-2 md:gap-4"
           style={{ pointerEvents: step.status !== "completed" ? "none" : "auto", opacity: step.status !== "completed" ? 0.5 : 1 }}
         >
           {/* Status Icon */}
           <div
             className={cn(
-              "w-12 h-12 rounded-[1.25rem] flex items-center justify-center flex-shrink-0",
+              "w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-[1.25rem] flex items-center justify-center flex-shrink-0",
               config.iconBg,
               step.status === "active" && "animate-pulse"
             )}
           >
             {step.status === "completed" ? (
-              <FontAwesomeIcon icon={faCheck} className="w-6 h-6" />
+              <FontAwesomeIcon icon={faCheck} className="w-4 h-4 md:w-6 md:h-6" />
             ) : step.status === "active" ? (
-              <FontAwesomeIcon icon={faSpinner} className="w-6 h-6 animate-spin" />
+              <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
             ) : (
-              <FontAwesomeIcon icon={step.icon} className={cn("w-5 h-5", config.text)} />
+              <FontAwesomeIcon icon={step.icon} className={cn("w-3.5 h-3.5 md:w-5 md:h-5", config.text)} />
             )}
           </div>
 
           {/* Content */}
-          <div className="flex-1 text-left">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-foreground">{step.title}</h3>
+          <div className="flex-1 text-left min-w-0">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+              <h3 className="font-bold text-sm md:text-base text-foreground">{step.title}</h3>
               {step.duration && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-600/20 text-green-600 dark:text-green-400">
+                <span className="text-xs font-medium px-1.5 py-0.5 md:px-2 rounded-full bg-green-600/20 text-green-600 dark:text-green-400">
                   {step.duration}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">{step.description}</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5 line-clamp-1">{step.description}</p>
 
             {/* Active step dots animation */}
             {step.status === "active" && (
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1.5 md:mt-2">
                 {[0, 1, 2].map((i) => (
                   <motion.span
                     key={i}
                     animate={{ opacity: [0.3, 1, 0.3] }}
                     transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                    className="w-1.5 h-1.5 rounded-full bg-primary"
+                    className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-primary"
                   />
                 ))}
               </div>
@@ -273,7 +273,7 @@ export function ProgressTimeline({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 md:space-y-4">
       {stepObjects.map((step, index) => (
         <StepCard key={step.id} step={step} index={index} totalSteps={stepObjects.length} />
       ))}

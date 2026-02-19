@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
@@ -13,9 +13,13 @@ import { BulkSelectionProvider, useBulkSelection } from "@/features/rag/shared/c
 import { FloatingActionBar } from "@/features/rag/shared/components/FloatingActionBar";
 import { DeleteConfirmationDialog } from "@/features/rag/shared/components/DeleteConfirmationDialog";
 import { BulkGenerateReportModal } from "@/features/rag/workflows/components/BulkGenerateReportModal";
+import { ActionMenu } from "@/components/shared/ActionMenu";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEllipsis, faFileExport } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import type { Project } from "../types";
 import type { ProjectType } from "@/features/rag/project-type/types";
+import { useProjectTypes } from "../hooks/useProjectTypes";
 
 type ProjectWithCount = Project & { document_count?: number };
 
@@ -130,7 +134,7 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
+  const { data: projectTypes = [] } = useProjectTypes();
   const hasLoadedFromStorage = useRef(false);
   
   // Bulk selection state
@@ -145,34 +149,6 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
   }, []);
 
   const { setHeader } = usePageHeader();
-  useEffect(() => {
-    setHeader({ breadcrumbItems: [{ label: "Projects" }] });
-    return () => setHeader(null);
-  }, [setHeader]);
-
-  // Fetch project types
-  useEffect(() => {
-    const loadProjectTypes = async () => {
-      try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from("project_types")
-          .select("*")
-          .eq("enabled", true)
-          .order("name", { ascending: true });
-
-        if (error) {
-          console.error("Error loading project types:", error);
-          return;
-        }
-
-        setProjectTypes((data || []) as ProjectType[]);
-      } catch (error) {
-        console.error("Error loading project types:", error);
-      }
-    };
-    loadProjectTypes();
-  }, []);
 
   // Track whether Project Type filter came from URL param (should not be persisted)
   const projectTypeFromUrlRef = useRef<boolean>(false);
@@ -352,6 +328,49 @@ function ProjectListContent({ initialProjects }: ProjectListProps) {
 
     return sorted;
   }, [initialProjects, searchQuery, selectedFilters, selectedSort, projectTypeName, projectTypes]);
+
+  const handleExportVisibleNames = useCallback(() => {
+    const names = filteredAndSortedProjects.map((p) => p.name);
+    if (names.length === 0) {
+      toast.info("No project names to export");
+      return;
+    }
+    const blob = new Blob([names.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `project-names-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${names.length} project name(s)`);
+  }, [filteredAndSortedProjects]);
+
+  useEffect(() => {
+    setHeader({
+      breadcrumbItems: [{ label: "Projects" }],
+      actions: (
+        <ActionMenu
+          trigger={
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="h-9 w-9 rounded-full hover:text-primary flex items-center justify-center shrink-0 cursor-pointer transition-all"
+            >
+              <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
+            </button>
+          }
+          items={[
+            {
+              label: "Export all visible names",
+              icon: <FontAwesomeIcon icon={faFileExport} className="h-4 w-4" />,
+              onClick: handleExportVisibleNames,
+            },
+          ]}
+          align="end"
+        />
+      ),
+    });
+    return () => setHeader(null);
+  }, [setHeader, handleExportVisibleNames]);
 
   const handleDelete = () => {
     router.refresh();

@@ -1,52 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { RunList } from "@/features/rag/runs/components/RunList";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
-import type { Run } from "@/features/rag/runs/types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
-
-type RunWithKB = Run & { knowledge_base_name?: string | null };
+import { useRuns } from "@/features/rag/runs/hooks/useRuns";
 
 type ResearchesContentProps = {
   projectTypeId?: string | null;
 };
 
 export function ResearchesContent({ projectTypeId }: ResearchesContentProps) {
-  const [runs, setRuns] = useState<RunWithKB[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const apiUrl = projectTypeId
-          ? `/api/intel/runs?project_type_id=${encodeURIComponent(projectTypeId)}`
-          : "/api/intel/runs";
-
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch runs");
-        }
-
-        const data = await response.json();
-        setRuns(data || []);
-      } catch (err) {
-        console.error("Error fetching runs:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [projectTypeId]);
+  const { data: runs = [], error, isLoading } = useRuns(projectTypeId ?? null);
 
   const stats = useMemo(() => {
     const total = runs.length;
@@ -62,18 +27,20 @@ export function ResearchesContent({ projectTypeId }: ResearchesContentProps) {
     return { total, active, completed };
   }, [runs]);
 
-  if (error) {
+  if (isLoading) {
     return (
       <div className="text-center py-12">
-        <p className="text-destructive">{error}</p>
+        <p className="text-muted-foreground">Loading researches...</p>
       </div>
     );
   }
 
-  if (loading) {
+  if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Loading researches...</p>
+        <p className="text-destructive">
+          {error instanceof Error ? error.message : "An error occurred"}
+        </p>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import type { FontConfig } from "@/types/fonts";
 import { DEFAULT_FONT_CONFIG } from "@/types/fonts";
 import { getFontVariable as getFontVariableLightweight } from "./font-variables";
+import { getFunnelPresetClass } from "@/features/funnels/routes";
 
 /**
  * Parse font_family JSON string from database
@@ -76,18 +77,18 @@ export function generateFontCSS(fonts: FontConfig): string {
 
 /**
  * Generate complete CSS for landing page fonts
- * Only applies to .preset-landing-page or .preset-outbound-system, not :root to avoid affecting admin panel
+ * Only applies to the appropriate preset class, not :root to avoid affecting admin panel
  */
-export function generateLandingFontCSS(fonts: FontConfig, route: '/' | '/outbound-system' = '/'): string {
+export function generateLandingFontCSS(fonts: FontConfig, pathname: string = '/'): string {
   if (!fonts.landing) {
     return "";
   }
-  
+
   const headingVar = getFontVariableLightweight(fonts.landing.heading);
   const bodyVar = getFontVariableLightweight(fonts.landing.body);
 
-  // Determine which preset class to target based on route
-  const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
+  // Determine which preset class to target based on pathname
+  const presetClass = getFunnelPresetClass(pathname);
 
   // Only set CSS variables on the appropriate preset class, not :root
   // This prevents landing page fonts from affecting admin panel

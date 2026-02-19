@@ -7,9 +7,9 @@ import type { Run } from "../types";
 import { AnimatedTable } from "@/features/rag/shared/components/AnimatedTable";
 
 interface RunTableProps {
-  runs: (Run & { 
+  runs: (Run & {
     output_json?: unknown;
-    knowledge_base_name?: string | null; 
+    knowledge_base_name?: string | null;
     report_id?: string | null;
     fit_score?: number | null;
     verdict?: "pursue" | "test" | "caution" | "avoid" | null;
@@ -19,14 +19,26 @@ interface RunTableProps {
   hideHeader?: boolean;
   /** When "updated", shows "Last updated" column with updated_at instead of "Created" */
   dateColumn?: "created" | "updated";
+  /** Skip row animations (e.g. when inside a collapsible that already animates) */
+  animated?: boolean;
 }
 
-export function RunTable({ runs, onView, onDelete, hideHeader = false, dateColumn = "created" }: RunTableProps) {
+export function RunTable({ runs, onView, onDelete, hideHeader = false, dateColumn = "created", animated = true }: RunTableProps) {
   const dateLabel = dateColumn === "updated" ? "Last updated" : "Created";
+
+  const rows = runs.map((run) => (
+    <RunRow
+      key={run.id}
+      run={run}
+      onView={onView ? () => onView(run) : undefined}
+      onDelete={onDelete}
+      dateColumn={dateColumn}
+    />
+  ));
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {/* Table Header */}
         {!hideHeader && (
           <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -39,21 +51,16 @@ export function RunTable({ runs, onView, onDelete, hideHeader = false, dateColum
           </div>
         )}
 
-        {/* Animated Rows */}
-        <AnimatedTable
-          getKey={(_, index) => runs[index]?.id || index}
-          staggerDelay={0.02}
-        >
-          {runs.map((run) => (
-            <RunRow
-              key={run.id}
-              run={run}
-              onView={onView ? () => onView(run) : undefined}
-              onDelete={onDelete}
-              dateColumn={dateColumn}
-            />
-          ))}
-        </AnimatedTable>
+        {animated ? (
+          <AnimatedTable
+            getKey={(_, index) => runs[index]?.id || index}
+            staggerDelay={0.02}
+          >
+            {rows}
+          </AnimatedTable>
+        ) : (
+          <>{rows}</>
+        )}
       </div>
     </TooltipProvider>
   );

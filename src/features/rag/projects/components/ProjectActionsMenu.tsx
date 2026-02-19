@@ -7,16 +7,21 @@ import { DeleteConfirmationDialog } from "@/features/rag/shared/components/Delet
 import { GenerateReportModal } from "@/features/rag/workflows/components/GenerateReportModal";
 import { useBulkSelectionOptional } from "@/features/rag/shared/contexts/BulkSelectionContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faPencil, faTrash, faWandMagicSparkles, faCheck, faCopy } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPencil, faTrash, faWandMagicSparkles, faCheck, faCopy, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { downloadOutputJson } from "@/features/rag/runs/utils/downloadOutputJson";
 import type { Project } from "../types";
 import type { ProjectType } from "@/features/rag/project-type/types";
+
+export type RunForDownload = { id: string; report_id: string | null };
 
 interface ProjectActionsMenuProps {
   project: Project;
   projectTypes?: ProjectType[];
   projectTypeName?: string | null;
+  /** Runs with report_id; when provided, "Download all JSON" is shown in the menu */
+  runs?: RunForDownload[];
   onDelete?: () => void;
   onEdit?: (project: Project) => void;
 }
@@ -25,6 +30,7 @@ export function ProjectActionsMenu({
   project,
   projectTypes = [],
   projectTypeName,
+  runs,
   onDelete,
   onEdit,
 }: ProjectActionsMenuProps) {
@@ -32,6 +38,10 @@ export function ProjectActionsMenu({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+
+  const runsWithReport = (runs ?? []).filter((r) => r.report_id);
+  const canDownloadAll = runsWithReport.length > 0;
   
   // Get the project type name from the project's project_type_id
   const projectType = project.project_type_id 
@@ -111,6 +121,39 @@ export function ProjectActionsMenu({
         }
       },
     },
+    ...(canDownloadAll
+      ? [
+          {
+            label: "Download all JSON",
+            icon: <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />,
+            onClick: async (e?: React.MouseEvent) => {
+              e?.stopPropagation();
+              if (isDownloadingAll) return;
+              setIsDownloadingAll(true);
+              let success = 0;
+              let failed = 0;
+              try {
+                for (const run of runsWithReport) {
+                  try {
+                    await downloadOutputJson(run.report_id!, `run-${run.id}.json`);
+                    success++;
+                  } catch {
+                    failed++;
+                  }
+                }
+                if (failed === 0) {
+                  toast.success(`Downloaded ${success} JSON file${success !== 1 ? "s" : ""}`);
+                } else {
+                  toast.warning(`Downloaded ${success} file(s), ${failed} failed`);
+                }
+              } finally {
+                setIsDownloadingAll(false);
+              }
+            },
+            disabled: isDownloadingAll,
+          },
+        ]
+      : []),
     {
       label: "Copy ID",
       icon: <FontAwesomeIcon icon={faCopy} className="h-4 w-4" />,

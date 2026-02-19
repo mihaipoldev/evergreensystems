@@ -1,0 +1,14 @@
+export { TargetMarketSection } from "./TargetMarketSection";
+export { WhatYouSellSection } from "./WhatYouSellSection";
+export { OfferStructureSection } from "./OfferStructureSection";
+export { PricingArchitectureSection } from "./PricingArchitectureSection";
+export { GuaranteeDesignSection } from "./GuaranteeDesignSection";
+export { ValuePropositionSection } from "./ValuePropositionSection";
+export { OfferNamingSection } from "./OfferNamingSection";
+export { LeadMagnetSection } from "./LeadMagnetSection";
+export { ObjectionHandlingSection } from "./ObjectionHandlingSection";
+export { ProofRequirementsSection } from "./ProofRequirementsSection";
+export { SalesEnablementSection } from "./SalesEnablementSection";
+export { OutreachStrategySection } from "./OutreachStrategySection";
+export { CompetitiveDiffSection } from "./CompetitiveDiffSection";
+export { ImplementationRoadmapSection } from "./ImplementationRoadmapSection";

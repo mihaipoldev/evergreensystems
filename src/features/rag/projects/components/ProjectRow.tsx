@@ -128,11 +128,11 @@ export function ProjectRow({
   return (
     <>
       {/* Mobile Layout - whole row clickable */}
-      <Card 
+      <Card
         className={cn(
-          "md:hidden group cursor-pointer hover:bg-card/70 dark:hover:bg-muted/40 shadow-none md:shadow-card rounded-2xl transition-all border-2 p-3",
-          selected 
-            ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80" 
+          "md:hidden group cursor-pointer hover:bg-card/70 dark:hover:bg-muted/40 shadow-none md:shadow-card rounded-xl transition-all border-2 py-2 px-2.5",
+          selected
+            ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 hover:border-primary/80"
             : "border-transparent"
         )}
       >
@@ -142,43 +142,40 @@ export function ProjectRow({
           onClick={handleLinkClick}
         >
           <div className="flex items-start gap-3">
-            <div className="h-10 w-8 rounded-lg bg-secondary overflow-hidden flex items-center justify-center flex-shrink-0">
+            <div className="h-8 w-8 rounded-lg bg-secondary overflow-hidden flex items-center justify-center flex-shrink-0 mt-0.5">
               {projectTypeIcon ? (
-                <span className="text-lg">{projectTypeIcon}</span>
+                <span className="text-base">{projectTypeIcon}</span>
               ) : (
                 <FontAwesomeIcon
                   icon={faFolder}
-                  className="h-5 w-5 text-primary"
+                  className="h-3.5 w-3.5 text-primary"
                 />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-base break-words">
+              <div className="font-semibold text-sm truncate">
                 {project.name}
               </div>
-              <div className="text-sm text-muted-foreground space-y-0">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 {!isNicheProject && (
-                  <div>
-                    <StatusBadge color={statusColor}>
-                      {project.status}
-                    </StatusBadge>
-                  </div>
+                  <StatusBadge color={statusColor}>
+                    {project.status}
+                  </StatusBadge>
                 )}
                 {isNicheProject && (
-                  <div>
-                    <FitScoreAndVerdict 
-                      fit_score={project.niche_intelligence_fit_score} 
-                      verdict={project.niche_intelligence_verdict}
-                      showVerdict={false}
-                      updatedAt={project.niche_intelligence_updated_at}
-                      runs={project.niche_intelligence_runs}
-                    />
-                  </div>
+                  <FitScoreAndVerdict
+                    fit_score={project.niche_intelligence_fit_score}
+                    verdict={project.niche_intelligence_verdict}
+                    showVerdict={false}
+                    updatedAt={project.niche_intelligence_updated_at}
+                    runs={project.niche_intelligence_runs}
+                  />
                 )}
-                <div>{formattedDate}</div>
+                <span className="text-muted-foreground/60">·</span>
+                <span>{formattedDate}</span>
               </div>
             </div>
-            <div className="flex-shrink-0 ml-2" data-action-menu onClick={(e) => e.stopPropagation()}>
+            <div className="flex-shrink-0 mt-0.5" data-action-menu onClick={(e) => e.stopPropagation()}>
               <ProjectActionsMenu
                 project={project}
                 projectTypes={projectTypes}
@@ -195,14 +192,14 @@ export function ProjectRow({
       <Link
         href={projectHref}
         className={cn(
-          "hidden md:block cursor-pointer rounded-lg border-2",
+          "hidden md:block cursor-pointer rounded-lg border-2 overflow-visible",
           selected ? "border-primary/50" : "border-transparent"
         )}
         onClick={handleLinkClick}
       >
         <Card 
           className={cn(
-            "flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20",
+            "flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 rounded-lg overflow-visible",
             selected ? "bg-primary/5 hover:border-primary/80" : ""
           )}
         >

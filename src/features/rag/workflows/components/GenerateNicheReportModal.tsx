@@ -365,10 +365,6 @@ export function GenerateNicheReportModal({
       return;
     }
 
-    // Get the workflow's default AI models before entering try block
-    const researchAiModel = workflow.default_ai_model || null;
-    const synthesisAiModel = workflow.default_synthesis_ai_model || workflow.default_ai_model || null;
-
     setIsExecuting(true);
 
     try {
@@ -388,8 +384,6 @@ export function GenerateNicheReportModal({
           project_type_id: effectiveProjectTypeId || null,
           workflow_id: selectedWorkflow,
           input: formValues,
-          research_ai_model: researchAiModel,
-          synthesis_ai_model: synthesisAiModel,
         }),
       });
 

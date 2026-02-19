@@ -9,65 +9,7 @@ import type { ReportData } from "@/features/rag/reports/types";
 import { transformOutputJson } from "@/features/rag/reports/utils/transformOutputJson";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-
-const DESCRIPTIVE_SECTIONS = [
-  { id: "basic-profile", number: "01", title: "Basic Profile" },
-  { id: "tam-analysis", number: "02", title: "TAM Analysis" },
-  { id: "what-they-sell", number: "03", title: "What They Sell" },
-  { id: "deal-economics", number: "04", title: "Deal Economics" },
-  { id: "technology-stack", number: "05", title: "Technology Stack" },
-  { id: "client-acquisition-dynamics", number: "06", title: "Client Acquisition Dynamics" },
-  { id: "shadow-competitors", number: "07", title: "Shadow Competitors" },
-  { id: "financial-reality", number: "08", title: "Financial Reality" },
-  { id: "market-maturity", number: "09", title: "Market Maturity" },
-  { id: "timing-intelligence", number: "10", title: "Timing Intelligence" },
-  { id: "pain-points", number: "11", title: "Pain Points" },
-  { id: "desired-outcomes", number: "12", title: "Desired Outcomes" },
-  { id: "kpis-that-matter", number: "13", title: "KPIs That Matter" },
-  { id: "how-they-position", number: "14", title: "How They Position" },
-  { id: "their-customer-language", number: "15", title: "Their Customer Language" },
-  { id: "buyer-psychology", number: "16", title: "Buyer Psychology" },
-];
-
-const sections = [
-  { id: "niche-profile", number: "01", title: "Niche Profile" },
-  { id: "market-intelligence", number: "02", title: "Market Intelligence" },
-  { id: "buyer-psychology", number: "03", title: "Buyer Psychology" },
-  { id: "value-dynamics", number: "04", title: "Value Dynamics" },
-  { id: "lead-gen-strategy", number: "05", title: "Lead Gen Strategy" },
-  { id: "targeting-strategy", number: "06", title: "Targeting Strategy" },
-  { id: "offer-angles", number: "07", title: "Offer Angles" },
-  { id: "outbound-approach", number: "08", title: "Outbound Approach" },
-  { id: "positioning-intel", number: "09", title: "Positioning Intel" },
-  { id: "messaging-inputs", number: "10", title: "Messaging Inputs" },
-];
-
-const ICP_SECTIONS = [
-  { id: "quick-reference", number: "00", title: "Quick Reference" },
-  { id: "icp-overview", number: "01", title: "ICP Overview" },
-  { id: "target-segmentation", number: "02", title: "Target Segmentation" },
-  { id: "targeting-criteria", number: "03", title: "Targeting Criteria" },
-  { id: "triggers", number: "04", title: "Buying Triggers" },
-  { id: "buying-motivations-journey", number: "05", title: "Buying Motivations & Journey" },
-  { id: "competitive-context", number: "06", title: "Competitive Positioning" },
-  { id: "tactical-playbooks", number: "07", title: "Tactical Playbooks" },
-  { id: "data-quality", number: "08", title: "Data Quality & Sources" },
-];
-
-const OUTBOUND_SECTIONS = [
-  { id: "target-profile", number: "01", title: "Target Profile" },
-  { id: "targeting-strategy", number: "02", title: "Targeting Strategy" },
-  { id: "enrichment-requirements", number: "03", title: "Enrichment Requirements" },
-  { id: "segmentation-rules", number: "04", title: "Segmentation Rules" },
-  { id: "exclusion-rules", number: "05", title: "Exclusion Rules" },
-  { id: "title-packs", number: "06", title: "Title Packs" },
-  { id: "targeting-quick-reference", number: "07", title: "Targeting Quick Reference" },
-  { id: "our-positioning", number: "08", title: "Our Positioning" },
-  { id: "buyer-psychology", number: "09", title: "Buyer Psychology" },
-  { id: "objection-handling", number: "10", title: "Objection Handling" },
-  { id: "messaging-strategy", number: "11", title: "Messaging Strategy" },
-  { id: "sales-process", number: "12", title: "Sales Process" },
-];
+import { getSectionsForReport } from "@/features/rag/reports/utils/getSectionsForReport";
 
 type ReportResultClientProps = {
   initialReportData: ReportData;
@@ -232,51 +174,9 @@ export function ReportResultClient({ initialReportData, runId, runStatus, workfl
     };
   }, [runId, isComplete]);
 
-  // Normalize workflow for comparison (slug may have spaces from DB/API)
-  const normalizedWorkflow = (workflowName && typeof workflowName === "string")
-    ? workflowName.toLowerCase().replace(/-/g, "_").replace(/\s+/g, "_").trim()
-    : null;
-
-  const isOutbound = normalizedWorkflow === "outbound_strategy" || normalizedWorkflow === "lead_gen_targeting";
-  const isDescriptive = normalizedWorkflow === "descriptive_intelligence" || (reportData.data as Record<string, unknown>)?.basic_profile != null;
-  const baseSections =
-    normalizedWorkflow === "icp_research"
-      ? ICP_SECTIONS
-      : isDescriptive
-        ? DESCRIPTIVE_SECTIONS
-        : isOutbound
-          ? OUTBOUND_SECTIONS
-          : [...sections];
-  const allSections = [...baseSections];
-  if (isOutbound) {
-    const dataAny = reportData.data as Record<string, unknown>;
-    if (dataAny?.research_links) {
-      allSections.push({ id: "research-links", number: "13", title: "Research Links" });
-    }
-    if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
-      allSections.push({ id: "sources-used", number: "14", title: "Sources Used" });
-    }
-  } else if (isDescriptive) {
-    const dataAny = reportData.data as Record<string, unknown>;
-    if (dataAny?.research_links) {
-      allSections.push({ id: "research-links", number: "17", title: "Research Links" });
-    }
-    if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
-      allSections.push({ id: "sources-used", number: "18", title: "Sources Used" });
-    }
-  } else if (normalizedWorkflow !== "icp_research") {
-    if (reportData.data.lead_gen_scoring) {
-      allSections.push({ id: "lead-gen-scoring", number: "11", title: "Lead Gen Scoring" });
-    }
-    if (reportData.data.research_links) {
-      allSections.push({ id: "research-links", number: "12", title: "Research Links" });
-    }
-    if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
-      allSections.push({ id: "sources-used", number: "13", title: "Sources Used" });
-    }
-  } else if (reportData.meta.sources_used && reportData.meta.sources_used.length > 0) {
-    allSections.push({ id: "sources-used", number: "09", title: "Sources Used" });
-  }
+  // Resolve sections from automation_name
+  const automationName = (reportData.meta as { automation_name?: string }).automation_name;
+  const allSections = getSectionsForReport(automationName, reportData);
 
   // Extract evaluation data (if this is an evaluation report)
   // Evaluation data is stored at data.data.evaluation in ReportData structure
@@ -284,8 +184,8 @@ export function ReportResultClient({ initialReportData, runId, runStatus, workfl
   const evaluationVerdict = evaluationData?.verdict;
   const evaluationQuickStats = evaluationData?.quick_stats;
 
-  // Get header configuration based on workflow
-  const headerConfig = getHeaderConfigForWorkflow(workflowName || null);
+  // Use automation_name for header config, fall back to workflowName
+  const headerConfig = getHeaderConfigForWorkflow(automationName || workflowName || null);
 
   // Get title - prioritize project name, then niche_name, then fallback
   const reportTitle = projectName || 
@@ -311,12 +211,13 @@ export function ReportResultClient({ initialReportData, runId, runStatus, workfl
       <div className="-mx-8 dark:-mx-0 rounded-none md:rounded-2xl border border-border/60 bg-white px-8 md:px-8 py-8 md:pt-8 pt-3 shadow-none md:shadow-sm dark:border-transparent dark:bg-transparent dark:shadow-none dark:px-0 dark:py-0 print:border-transparent print:shadow-none">
         <ReportHeader
           title={reportTitle}
-          geo={reportData.meta.input.geo}
+          geo={reportData.meta.input?.geography ?? "—"}
           generatedAt={reportData.meta.generated_at}
           confidence={reportData.meta.confidence}
           headerConfig={headerConfig}
+          reportIdOrRunId={runId}
           runInput={runInput ?? undefined}
-          usageMetrics={reportData.meta.usage_metrics}
+          reportMeta={reportData.meta}
           evaluationVerdict={evaluationVerdict}
           evaluationQuickStats={evaluationQuickStats}
         />

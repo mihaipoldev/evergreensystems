@@ -1,9 +1,8 @@
 "use client";
 
-import { SectionWrapper, BlockHeader, TagCloud } from "../../shared";
+import { SectionWrapper, BlockHeader } from "../../shared";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faHashtag,
   faBullseye,
   faMapMarkerAlt,
   faArrowUp,
@@ -19,7 +18,6 @@ type PersonalizationVector = {
 
 type MessagingStrategy = {
   description?: string;
-  hook_themes?: string[];
   personalization_vectors?: PersonalizationVector[];
 };
 
@@ -37,90 +35,76 @@ const impactColors: Record<string, string> = {
 
 export const MessagingStrategySection = ({
   messagingStrategy,
-  sectionNumber = "06",
+  sectionNumber = "11",
 }: MessagingStrategySectionProps) => {
-  const hookThemes = messagingStrategy?.hook_themes ?? [];
   const vectors = messagingStrategy?.personalization_vectors ?? [];
+
+  if (vectors.length === 0) return null;
 
   return (
     <SectionWrapper
       id="messaging-strategy"
       number={sectionNumber}
       title="Messaging Strategy"
-      subtitle={messagingStrategy?.description ?? "Hook themes and personalization vectors"}
+      subtitle={messagingStrategy?.description || undefined}
     >
-      {hookThemes.length > 0 && (
-        <div className="mb-10">
-          <BlockHeader
-            variant="title"
-            title="Hook Themes"
-            icon={<FontAwesomeIcon icon={faHashtag} className="w-5 h-5 text-accent" />}
-          />
-          <TagCloud tags={hookThemes} variant="accent" />
-        </div>
-      )}
-
-      {vectors.length > 0 && (
-        <div>
-          <BlockHeader
-            variant="title"
-            title="Personalization Vectors"
-            icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-accent" />}
-          />
-          <div className="space-y-6">
-            {vectors.map((v, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="bg-card rounded-xl border border-border report-shadow overflow-hidden"
-              >
-                <div className="p-5 border-b border-border flex flex-wrap items-center gap-3">
-                  <h4 className="font-display font-semibold text-foreground">
-                    {v.vector?.replace(/_/g, " ") ?? `Vector ${index + 1}`}
-                  </h4>
-                  {v.impact && (
-                    <span
-                      className={`text-xs font-body font-medium px-2.5 py-1 rounded-md border ${
-                        impactColors[v.impact] ?? impactColors.Medium
-                      }`}
-                    >
-                      {v.impact} Impact
+      <BlockHeader
+        variant="title"
+        title="Personalization Vectors"
+        icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-accent" />}
+      />
+      <div className="space-y-6">
+        {vectors.map((v, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-card rounded-xl border border-border report-shadow overflow-hidden"
+          >
+            <div className="p-5 border-b border-border flex flex-wrap items-center gap-3">
+              <h4 className="font-display font-semibold text-foreground">
+                {v.vector?.replace(/_/g, " ") ?? `Vector ${index + 1}`}
+              </h4>
+              {v.impact && (
+                <span
+                  className={`text-xs font-body font-medium px-2.5 py-1 rounded-md border ${
+                    impactColors[v.impact] ?? impactColors.Medium
+                  }`}
+                >
+                  {v.impact} Impact
+                </span>
+              )}
+            </div>
+            <div className="p-5 space-y-4">
+              {v.how_to_use && (
+                <div className="flex items-start gap-3">
+                  <FontAwesomeIcon icon={faArrowUp} className="w-4 h-4 text-accent mt-1 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
+                      How to Use
                     </span>
-                  )}
+                    <p className="text-sm font-body text-foreground whitespace-pre-wrap">
+                      {v.how_to_use}
+                    </p>
+                  </div>
                 </div>
-                <div className="p-5 space-y-4">
-                  {v.how_to_use && (
-                    <div className="flex items-start gap-3">
-                      <FontAwesomeIcon icon={faArrowUp} className="w-4 h-4 text-accent mt-1 flex-shrink-0" />
-                      <div>
-                        <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
-                          How to Use
-                        </span>
-                        <p className="text-sm font-body text-foreground whitespace-pre-wrap">
-                          {v.how_to_use}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {v.where_to_find && (
-                    <div className="flex items-start gap-3">
-                      <FontAwesomeIcon icon={faMapMarkerAlt} className="w-4 h-4 text-accent mt-1 flex-shrink-0" />
-                      <div>
-                        <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
-                          Where to Find
-                        </span>
-                        <p className="text-sm font-body text-foreground">{v.where_to_find}</p>
-                      </div>
-                    </div>
-                  )}
+              )}
+              {v.where_to_find && (
+                <div className="flex items-start gap-3">
+                  <FontAwesomeIcon icon={faMapMarkerAlt} className="w-4 h-4 text-accent mt-1 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
+                      Where to Find
+                    </span>
+                    <p className="text-sm font-body text-foreground">{v.where_to_find}</p>
+                  </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </SectionWrapper>
   );
 };

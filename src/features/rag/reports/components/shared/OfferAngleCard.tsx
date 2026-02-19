@@ -8,10 +8,18 @@ import {
   faStar 
 } from "@fortawesome/free-solid-svg-icons";
 
-import type { ReportData } from "../../types";
+interface OfferAngle {
+  angle_name: string;
+  who_it_targets: string;
+  core_promise: string;
+  why_this_resonates: string[];
+  constraints?: string[];
+  confidence?: number;
+  description?: string;
+}
 
 interface OfferAngleCardProps {
-  angle: ReportData["data"]["generic_offer_angles"][number];
+  angle: OfferAngle;
   index: number;
 }
 

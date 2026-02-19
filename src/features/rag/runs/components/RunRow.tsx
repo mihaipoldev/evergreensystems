@@ -29,7 +29,7 @@ type RunRowProps = {
   dateColumn?: "created" | "updated";
 };
 
-import { getRunStatusGradientClasses } from "@/features/rag/shared/utils/runStatusColors";
+import { getRunStatusGradientClasses, getRunStatusColorString } from "@/features/rag/shared/utils/runStatusColors";
 
 export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRowProps) {
   const dateToShow = dateColumn === "updated" ? run.updated_at : run.created_at;
@@ -72,8 +72,8 @@ export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRow
 
   return (
     <>
-      {/* Mobile Layout */}
-      <Card className="md:hidden border-none shadow-none hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow p-3">
+      {/* Mobile Layout - whole row clickable */}
+      <Card className="md:hidden group cursor-pointer hover:bg-card/70 dark:hover:bg-muted/40 shadow-none md:shadow-card rounded-xl transition-all border-2 py-2 px-2.5 border-transparent">
         <Link
           href={titleHref}
           className="contents"
@@ -85,11 +85,11 @@ export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRow
           }}
         >
           <div className="flex items-start gap-3">
-            <div className="h-10 w-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-              <FontAwesomeIcon icon={faPlay} className={cn("h-5 w-5", iconColor)} />
+            <div className="h-8 w-8 rounded-lg bg-secondary overflow-hidden flex items-center justify-center flex-shrink-0 mt-0.5">
+              <FontAwesomeIcon icon={faPlay} className={cn("h-3.5 w-3.5", iconColor)} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-base break-words">
+              <div className="font-semibold text-sm truncate">
                 {runLabel}
               </div>
               {run.project_name && (
@@ -97,18 +97,18 @@ export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRow
                   {run.project_name}
                 </div>
               )}
-              <div className="text-sm text-muted-foreground space-y-0 mt-2">
+              <div className="mt-2 space-y-2">
                 {workflowResult && (
                   <div>
                     <FitScoreAndVerdict fit_score={workflowResult.score} verdict={workflowResult.verdict} />
                   </div>
                 )}
-                <div>
+                <div className="space-y-1.5">
                   <RunProgress status={run.status} metadata={run.metadata} className="!w-full !pr-0" />
                   {(cost != null || duration != null) && (
                     <div
                       className={cn(
-                        "flex items-center gap-2 text-xs text-muted-foreground mt-1",
+                        "flex items-center gap-2 text-xs text-muted-foreground",
                         cost != null && duration != null && "justify-between"
                       )}
                     >
@@ -117,10 +117,12 @@ export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRow
                     </div>
                   )}
                 </div>
-                <div>{formattedDate}</div>
+                <div className="text-xs text-muted-foreground pt-0.5">
+                  {formattedDate}
+                </div>
               </div>
             </div>
-            <div className="flex-shrink-0 ml-2" data-action-menu onClick={(e) => e.stopPropagation()}>
+            <div className="flex-shrink-0 mt-0.5" data-action-menu onClick={(e) => e.stopPropagation()}>
               <RunActionsMenu run={run} onDelete={onDelete} />
             </div>
           </div>
@@ -130,7 +132,7 @@ export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRow
       {/* Desktop Layout - whole row clickable, same destination as title */}
       <Link
         href={titleHref}
-        className="hidden md:block cursor-pointer"
+        className="hidden md:block cursor-pointer overflow-visible"
         title={isComplete ? "View Report" : "View Progress"}
         onClick={(e) => {
           if (shouldIgnoreRowClick(e)) {
@@ -139,7 +141,7 @@ export function RunRow({ run, onView, onDelete, dateColumn = "created" }: RunRow
           }
         }}
       >
-        <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20">
+        <Card className="flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 rounded-lg overflow-visible">
           {/* Icon + Name */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">

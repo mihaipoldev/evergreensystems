@@ -2,8 +2,6 @@
 
 import {
   SectionWrapper,
-  ContentCard,
-  InsightList,
   TagCloud,
   BlockHeader,
 } from "../../shared";
@@ -66,25 +64,27 @@ export const ShadowCompetitorsSection = ({
             <BlockHeader
               variant="title"
               title="Competitive Threats"
-              icon={<FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
+              icon={<FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-accent" />}
             />
-            <div className="space-y-4">
+            <div className="space-y-2 mt-4">
               {data.competitive_threats.map((threat, index) => (
-                <ContentCard
+                <div
                   key={index}
-                  variant="warning"
-                  title={getText(threat.competitor_type, `Competitor ${index + 1}`)}
-                  titleVariant="title"
+                  className="rounded-lg border border-border bg-muted/40 px-4 py-3"
                 >
-                  <p className="text-sm font-body text-foreground mb-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {getText(threat.competitor_type, `Competitor ${index + 1}`)}
+                  </p>
+                  <p className="text-sm font-body text-muted-foreground mt-1.5 leading-snug">
                     {getText(threat.why_they_lose_to_them, "")}
                   </p>
                   {threat.market_share_impact && (
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                      Market share impact: {threat.market_share_impact}
-                    </span>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      <span className="font-medium text-foreground">Market share impact: </span>
+                      {threat.market_share_impact}
+                    </p>
                   )}
-                </ContentCard>
+                </div>
               ))}
             </div>
           </div>

@@ -5,11 +5,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faFileAlt, 
   faCalendar,
+  faEllipsis,
+  faPrint,
+  faFilePdf,
+  faDownload,
 } from "@fortawesome/free-solid-svg-icons";
 import type { HeaderConfig } from "./ReportHeaderConfig";
 import { RunInputTooltip } from "./RunInputTooltip";
-import { UsageMetricsSection } from "@/features/rag/reports/components/shared/UsageMetricsSection";
-import type { UsageMetrics } from "@/features/rag/reports/types";
+import type { ReportMeta } from "../../types/meta";
+import { ActionMenu } from "@/components/shared/ActionMenu";
+import { Button } from "@/components/ui/button";
+import { downloadOutputJson } from "@/features/rag/runs/utils/downloadOutputJson";
+import { toast } from "sonner";
 
 interface ReportHeaderProps {
   title: string;
@@ -17,8 +24,10 @@ interface ReportHeaderProps {
   generatedAt: string;
   confidence: number;
   headerConfig: HeaderConfig;
+  /** When set, enables "Download JSON" in the header menu (report id or run id for API lookup) */
+  reportIdOrRunId?: string;
   runInput?: Record<string, unknown> | null;
-  usageMetrics?: UsageMetrics | null;
+  reportMeta?: ReportMeta | null;
   // Evaluation-specific props (kept for potential future use)
   evaluationVerdict?: {
     label: string;
@@ -40,8 +49,9 @@ export const ReportHeader = ({
   generatedAt,
   confidence,
   headerConfig,
+  reportIdOrRunId,
   runInput,
-  usageMetrics,
+  reportMeta,
   evaluationVerdict,
   evaluationQuickStats,
 }: ReportHeaderProps) => {
@@ -64,6 +74,48 @@ export const ReportHeader = ({
 
   const formattedDate = formatDate(generatedAt);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPDF = () => {
+    // Open print dialog - user can save as PDF
+    window.print();
+  };
+
+  const handleDownloadJSON = async () => {
+    if (!reportIdOrRunId) return;
+    try {
+      await downloadOutputJson(reportIdOrRunId, `run-${reportIdOrRunId}.json`);
+      toast.success("JSON downloaded");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to download JSON";
+      toast.error(message);
+    }
+  };
+
+  const actionMenuItems = [
+    {
+      label: "Print Report",
+      icon: <FontAwesomeIcon icon={faPrint} className="h-4 w-4" />,
+      onClick: handlePrint,
+    },
+    {
+      label: "Download PDF",
+      icon: <FontAwesomeIcon icon={faFilePdf} className="h-4 w-4" />,
+      onClick: handleDownloadPDF,
+    },
+    ...(reportIdOrRunId
+      ? [
+          {
+            label: "Download JSON",
+            icon: <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />,
+            onClick: handleDownloadJSON,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -85,14 +137,25 @@ export const ReportHeader = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {runInput && Object.keys(runInput).length > 0 && (
-            <RunInputTooltip runInput={runInput} />
-          )}
-          {usageMetrics && <UsageMetricsSection usageMetrics={usageMetrics} />}
+          <RunInputTooltip runInput={runInput ?? null} reportMeta={reportMeta ?? null} />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <FontAwesomeIcon icon={faCalendar} className="w-3 h-3" />
             <span>{formattedDate}</span>
           </div>
+          <ActionMenu
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full hover:bg-muted/50 hover:text-foreground no-print"
+              >
+                <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
+              </Button>
+            }
+            items={actionMenuItems}
+            align="end"
+            width="w-48"
+          />
         </div>
       </div>
 

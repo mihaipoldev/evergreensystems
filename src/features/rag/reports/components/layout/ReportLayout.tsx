@@ -94,7 +94,7 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
         </AnimatePresence>
       )}
 
-      <div className="flex relative">
+      <div className="flex relative print:block print:static">
         {/* Desktop Sidebar - positioned after IntelSidebar */}
         {showTableOfContents && (
           <aside className="hidden lg:block fixed left-64 top-0 bottom-0 w-[280px] bg-sidebar p-6 overflow-y-auto no-print z-30">
@@ -107,8 +107,8 @@ export const ReportLayout = ({ sections, children, showTableOfContents = true, r
         )}
 
         {/* Main Content */}
-        <main className={`flex-1 min-h-screen ${showTableOfContents ? 'lg:ml-[280px]' : ''}`}>
-          <div className={`max-w-4xl mx-auto px-6 py-0 dark:pt-4`}>
+        <main className={`flex-1 min-h-screen ${showTableOfContents ? 'lg:ml-[280px]' : ''} print:ml-0 print:static`}>
+          <div className={`max-w-4xl mx-auto px-6 py-0 dark:pt-4 print:max-w-full print:px-4`}>
             {children}
           </div>
         </main>

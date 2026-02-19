@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFolder, faTag } from "@fortawesome/free-solid-svg-icons";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import type { ProjectType } from "@/features/rag/project-type/types";
+import { useProjectTypes } from "@/features/rag/projects/hooks/useProjectTypes";
+import { usePrefetchProjects } from "@/features/rag/projects/hooks/useProjects";
 
 type ProjectCollapsibleProps = {
   isOpen: boolean;
@@ -28,35 +29,8 @@ export function ProjectCollapsible({
   onNavigate,
   getIsActive,
 }: ProjectCollapsibleProps) {
-  const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchProjectTypes() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/intel/project-types?enabled=true");
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch project types");
-        }
-
-        const data = await response.json();
-        setProjectTypes(data || []);
-      } catch (err) {
-        console.error("Error fetching project types:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProjectTypes();
-  }, []);
+  const { data: projectTypes = [], isLoading: loading, error } = useProjectTypes();
+  const prefetchProjects = usePrefetchProjects();
 
   // Handle manual toggle
   const handleToggle = () => {
@@ -81,9 +55,9 @@ export function ProjectCollapsible({
   const projectsListHref = "/intel/projects";
 
   return (
-    <Collapsible 
-      open={isOpen} 
-      onOpenChange={handleToggle} 
+    <Collapsible
+      open={isOpen}
+      onOpenChange={handleToggle}
       className="w-full min-w-0"
       style={{ width: '100%', maxWidth: '100%', minWidth: 0 }}
     >
@@ -103,6 +77,7 @@ export function ProjectCollapsible({
             e.stopPropagation();
             onNavigate(projectsListHref);
           }}
+          onMouseEnter={() => prefetchProjects(null)}
           className="flex items-center gap-4 flex-1 min-w-0 max-w-full active:scale-[0.98] overflow-hidden"
           style={{ minWidth: 0, maxWidth: '100%' }}
         >
@@ -130,7 +105,7 @@ export function ProjectCollapsible({
           />
         </CollapsibleTrigger>
       </div>
-      <CollapsibleContent 
+      <CollapsibleContent
         className="pl-2 pr-10 space-y-0.5 mt-0.5 overflow-hidden overflow-x-hidden w-full min-w-0 max-w-full border-l border-border/50 ml-4"
         style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
       >
@@ -139,7 +114,7 @@ export function ProjectCollapsible({
         {loading ? (
           <div className="px-4 py-1.5 text-sm text-muted-foreground">Loading project types...</div>
         ) : error ? (
-          <div className="px-4 py-1.5 text-sm text-destructive">{error}</div>
+          <div className="px-4 py-1.5 text-sm text-destructive">{error instanceof Error ? error.message : "An error occurred"}</div>
         ) : sortedProjectTypes.length === 0 ? (
           <div className="px-4 py-1.5 text-sm text-muted-foreground">No project types found</div>
         ) : (
@@ -153,6 +128,7 @@ export function ProjectCollapsible({
                 key={projectType.id}
                 href={href}
                 onClick={() => onNavigate(href)}
+                onMouseEnter={() => prefetchProjects(projectType.id)}
                 className={cn(
                   "group flex items-center gap-3 rounded-sm px-4 py-2 text-[14px] font-medium w-full",
                   "relative overflow-hidden overflow-x-hidden min-w-0 max-w-full",
@@ -189,4 +165,3 @@ export function ProjectCollapsible({
     </Collapsible>
   );
 }
-

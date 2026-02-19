@@ -850,6 +850,7 @@ export interface Database {
           updated_at: string;
           created_by: string | null;
           archived_at: string | null;
+          total_usage: number;
         };
         Insert: {
           id?: string;
@@ -863,6 +864,7 @@ export interface Database {
           updated_at?: string;
           created_by?: string | null;
           archived_at?: string | null;
+          total_usage?: number;
         };
         Update: {
           id?: string;
@@ -876,6 +878,7 @@ export interface Database {
           updated_at?: string;
           created_by?: string | null;
           archived_at?: string | null;
+          total_usage?: number;
         };
       };
       project_documents: {

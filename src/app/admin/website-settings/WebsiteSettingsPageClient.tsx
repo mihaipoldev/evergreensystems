@@ -34,10 +34,10 @@ export function WebsiteSettingsPageClient() {
   const [activeEnvironment, setActiveEnvironment] = useState<'production' | 'development'>('development');
   
   // Initialize activeRoute from localStorage, default to '/'
-  const [activeRoute, setActiveRoute] = useState<'/' | '/outbound-system'>(() => {
+  const [activeRoute, setActiveRoute] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const savedRoute = localStorage.getItem('website-settings-active-route');
-      if (savedRoute === '/' || savedRoute === '/outbound-system') {
+      if (savedRoute) {
         return savedRoute;
       }
     }
@@ -188,7 +188,7 @@ export function WebsiteSettingsPageClient() {
     setSelectedPresetId(null);
   };
 
-  const handleRouteChange = (route: '/' | '/outbound-system') => {
+  const handleRouteChange = (route: string) => {
     setActiveRoute(route);
     // Save to localStorage
     if (typeof window !== 'undefined') {
@@ -202,7 +202,7 @@ export function WebsiteSettingsPageClient() {
     setSelectedPresetId(presetId);
   };
 
-  const applyPresetToEnvironment = async (presetId: string, environment: 'production' | 'development', route: '/' | '/outbound-system') => {
+  const applyPresetToEnvironment = async (presetId: string, environment: 'production' | 'development', route: string) => {
     try {
       setIsApplying(true);
       const supabase = createClient();
@@ -299,7 +299,7 @@ export function WebsiteSettingsPageClient() {
     await applyPresetToEnvironment(selectedPresetId, activeEnvironment, activeRoute);
   };
 
-  const deactivatePresetFromEnvironment = async (environment: 'production' | 'development', route: '/' | '/outbound-system') => {
+  const deactivatePresetFromEnvironment = async (environment: 'production' | 'development', route: string) => {
     try {
       setIsApplying(true);
       const supabase = createClient();

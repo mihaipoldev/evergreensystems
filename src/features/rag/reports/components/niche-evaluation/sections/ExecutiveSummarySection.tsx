@@ -4,15 +4,21 @@ import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartLine,
-  faExclamationTriangle,
   faBullseye,
-  faListCheck,
+  faExclamationTriangle,
   faChevronRight,
+  faListCheck,
+  faGlobe,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
-import { SectionWrapper } from "../../shared/SectionWrapper";
-import { StatCard } from "../../shared/StatCard";
+import {
+  SectionWrapper,
+  StatCard,
+  BlockHeader,
+  TagCloud,
+  InsightList,
+} from "../../shared";
 import { Badge } from "@/components/ui/badge";
-import { InsightList } from "../../shared/InsightList";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { ReportData } from "../../../types";
 
@@ -50,6 +56,9 @@ export const ExecutiveSummarySection = ({
   }>) ?? [];
   const marketSnapshot = decisionCard.market_snapshot as Record<string, unknown> | undefined;
   const nextSteps = decisionCard.next_steps as Record<string, unknown> | undefined;
+  const differentiation = decisionCard.differentiation as Record<string, string> | undefined;
+  const metricsToTrack = decisionCard.metrics_to_track as Record<string, unknown> | undefined;
+  const decisionCriteria = decisionCard.decision_criteria as Record<string, unknown> | undefined;
 
   return (
     <SectionWrapper
@@ -65,38 +74,32 @@ export const ExecutiveSummarySection = ({
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="space-y-4"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
-            <h3 className="text-base font-semibold flex items-center gap-2">
-              <FontAwesomeIcon icon={faChartLine} className="w-5 h-5 text-accent" />
-              Score Context
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {scoreContext.range ? (
-                <StatCard
-                  label="Range"
-                  value={safeStr(scoreContext.range)}
-                  icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
-                  variant="default"
-                />
-              ) : null}
-              {scoreContext.consensus ? (
-                <StatCard
-                  label="Consensus"
-                  value={safeStr(scoreContext.consensus)}
-                  icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
-                  variant="default"
-                />
-              ) : null}
-              {scoreContext.agreement_quality ? (
-                <StatCard
-                  label="Agreement"
-                  value={safeStr(scoreContext.agreement_quality)}
-                  icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
-                  variant="primary"
-                />
-              ) : null}
-            </div>
+            {!!scoreContext.range && (
+              <StatCard
+                label="Range"
+                value={safeStr(scoreContext.range)}
+                icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
+                variant="default"
+              />
+            )}
+            {!!scoreContext.consensus && (
+              <StatCard
+                label="Consensus"
+                value={safeStr(scoreContext.consensus)}
+                icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
+                variant="default"
+              />
+            )}
+            {!!scoreContext.agreement_quality && (
+              <StatCard
+                label="Agreement"
+                value={safeStr(scoreContext.agreement_quality)}
+                icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5" />}
+                variant="primary"
+              />
+            )}
           </motion.div>
         )}
 
@@ -107,12 +110,12 @@ export const ExecutiveSummarySection = ({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="space-y-4"
           >
-            <h3 className="text-base font-semibold flex items-center gap-2">
-              <FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-green-600 dark:text-green-400" />
-              Top 3 Reasons to Pursue
-            </h3>
+            <BlockHeader
+              variant="title"
+              title="Top 3 Reasons to Pursue"
+              icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-accent" />}
+            />
             <InsightList items={top3Reasons} type="success" numbered />
           </motion.div>
         )}
@@ -124,12 +127,12 @@ export const ExecutiveSummarySection = ({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="space-y-2"
           >
-            <h3 className="text-base font-semibold flex items-center gap-2">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              Top 3 Risks
-            </h3>
+            <BlockHeader
+              variant="title"
+              title="Top 3 Risks"
+              icon={<FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-accent" />}
+            />
             <div className="space-y-0 rounded-lg border border-border bg-card overflow-hidden">
               {top3Risks.map((r, i) => {
                 const priority = r.priority_score ?? 0;
@@ -211,41 +214,43 @@ export const ExecutiveSummarySection = ({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="space-y-4"
           >
-            <div className="rounded-lg border border-border bg-card p-5 space-y-4 report-shadow">
-              {marketSnapshot.segment != null && marketSnapshot.segment !== "" ? (
-                <div>
-                  <p className="font-semibold text-foreground mb-1">Segment</p>
-                  <p className="text-sm text-muted-foreground">{safeStr(marketSnapshot.segment)}</p>
-                </div>
-              ) : null}
-              
-              {marketSnapshot.size != null && marketSnapshot.size !== "" ? (
-                <div>
-                  <p className="font-semibold text-foreground mb-1">Size</p>
-                  <p className="text-sm text-muted-foreground">{safeStr(marketSnapshot.size)}</p>
-                </div>
-              ) : null}
-              
-              {marketSnapshot.saturation != null && marketSnapshot.saturation !== "" ? (
-                <div>
-                  <p className="font-semibold text-foreground mb-1">Saturation</p>
-                  <p className="text-sm text-muted-foreground">{safeStr(marketSnapshot.saturation)}</p>
-                </div>
-              ) : null}
-              
-              {Array.isArray(marketSnapshot.competitors) &&
-                (marketSnapshot.competitors as string[]).length > 0 && (
+            <BlockHeader
+              variant="title"
+              title="Market Snapshot"
+              icon={<FontAwesomeIcon icon={faGlobe} className="w-5 h-5 text-accent" />}
+            />
+            <div className="rounded-lg border border-border bg-card p-5">
+              <div className="space-y-4">
+                {marketSnapshot.segment != null && marketSnapshot.segment !== "" && (
                   <div>
-                    <p className="font-semibold text-foreground mb-1">Competitors</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      {(marketSnapshot.competitors as string[]).map((c, i) => (
-                        <li key={i}>{c}</li>
-                      ))}
-                    </ul>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Segment</p>
+                    <p className="text-sm text-foreground leading-relaxed">{safeStr(marketSnapshot.segment)}</p>
                   </div>
                 )}
+
+                {marketSnapshot.size != null && marketSnapshot.size !== "" && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Size</p>
+                    <p className="text-sm text-foreground leading-relaxed">{safeStr(marketSnapshot.size)}</p>
+                  </div>
+                )}
+
+                {marketSnapshot.saturation != null && marketSnapshot.saturation !== "" && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Saturation</p>
+                    <p className="text-sm text-foreground leading-relaxed">{safeStr(marketSnapshot.saturation)}</p>
+                  </div>
+                )}
+
+                {Array.isArray(marketSnapshot.competitors) &&
+                  (marketSnapshot.competitors as string[]).length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Competitors</p>
+                      <TagCloud tags={marketSnapshot.competitors as string[]} variant="accent" />
+                    </div>
+                  )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -257,64 +262,185 @@ export const ExecutiveSummarySection = ({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="space-y-4"
           >
-            <h3 className="text-base font-semibold flex items-center gap-2">
-              <FontAwesomeIcon icon={faListCheck} className="w-5 h-5 text-accent" />
-              Next Steps
-            </h3>
-            <div className="rounded-lg border border-border bg-card p-5 space-y-4 report-shadow">
-              {nextSteps.phase != null && nextSteps.phase !== "" ? (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                    Phase
-                  </p>
-                  <Badge variant="secondary">{safeStr(nextSteps.phase)}</Badge>
-                </div>
-              ) : null}
-              
-              {nextSteps.objective != null && nextSteps.objective !== "" ? (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                    Objective
-                  </p>
-                  <p className="text-sm text-foreground leading-relaxed">
+            <div className="flex items-center gap-3 mb-4">
+              <BlockHeader
+                variant="title"
+                title="Next Steps"
+                icon={<FontAwesomeIcon icon={faListCheck} className="w-5 h-5 text-accent" />}
+              />
+              {nextSteps.phase != null && nextSteps.phase !== "" && (
+                <Badge variant="secondary" className="text-xs">{safeStr(nextSteps.phase)}</Badge>
+              )}
+            </div>
+            <div className="rounded-lg border border-border bg-card p-5">
+              <div className="space-y-4">
+                {nextSteps.objective != null && nextSteps.objective !== "" && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {safeStr(nextSteps.objective)}
                   </p>
-                </div>
-              ) : null}
-
-              {Array.isArray(nextSteps.top_3_actions) &&
-                (nextSteps.top_3_actions as string[]).length > 0 && (
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                      Top 3 Actions
-                    </p>
-                    <InsightList items={nextSteps.top_3_actions as string[]} type="accent" numbered />
-                  </div>
                 )}
 
-              {nextSteps.success_criteria != null && nextSteps.success_criteria !== "" ? (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                    Success Criteria
-                  </p>
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {safeStr(nextSteps.success_criteria)}
-                  </p>
-                </div>
-              ) : null}
+                {Array.isArray(nextSteps.top_3_actions) &&
+                  (nextSteps.top_3_actions as string[]).length > 0 && (
+                    <ul className="space-y-2">
+                      {(nextSteps.top_3_actions as string[]).map((action, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-foreground">
+                          <span className="text-accent font-medium">•</span>
+                          <span className="leading-relaxed">{action}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
-              {nextSteps.timeline != null && nextSteps.timeline !== "" ? (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                    Timeline
-                  </p>
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {safeStr(nextSteps.timeline)}
-                  </p>
+                {!!(nextSteps.success_criteria || nextSteps.timeline) && (
+                  <div className="space-y-2 text-sm">
+                    {nextSteps.success_criteria != null && nextSteps.success_criteria !== "" && (
+                      <p className="text-muted-foreground">
+                        <span className="font-medium text-foreground">Success: </span>
+                        {safeStr(nextSteps.success_criteria)}
+                      </p>
+                    )}
+
+                    {nextSteps.timeline != null && nextSteps.timeline !== "" && (
+                      <p className="text-muted-foreground">
+                        <span className="font-medium text-foreground">Timeline: </span>
+                        {safeStr(nextSteps.timeline)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Differentiation */}
+        {differentiation && (differentiation.strategy || differentiation.advantage) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.25 }}
+          >
+            <BlockHeader
+              variant="title"
+              title="Differentiation"
+              icon={<FontAwesomeIcon icon={faTrophy} className="w-5 h-5 text-accent" />}
+            />
+            <div className="rounded-lg border border-border bg-card p-5">
+              <div className="space-y-4">
+                {differentiation.strategy && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Strategy</p>
+                    <p className="text-sm text-foreground leading-relaxed">{safeStr(differentiation.strategy)}</p>
+                  </div>
+                )}
+                {differentiation.advantage && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Competitive Advantage</p>
+                    <p className="text-sm text-foreground leading-relaxed">{safeStr(differentiation.advantage)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Metrics to Track */}
+        {metricsToTrack && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.28 }}
+          >
+            <BlockHeader
+              variant="title"
+              title="Metrics to Track"
+              icon={<FontAwesomeIcon icon={faChartLine} className="w-5 h-5 text-accent" />}
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {Array.isArray(metricsToTrack.leading) && (metricsToTrack.leading as string[]).length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Leading Indicators</p>
+                  <ul className="space-y-2">
+                    {(metricsToTrack.leading as string[]).map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-foreground">
+                        <span className="text-green-600 dark:text-green-400 font-medium">•</span>
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ) : null}
+              )}
+              {Array.isArray(metricsToTrack.lagging) && (metricsToTrack.lagging as string[]).length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Lagging Indicators</p>
+                  <ul className="space-y-2">
+                    {(metricsToTrack.lagging as string[]).map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-foreground">
+                        <span className="text-blue-600 dark:text-blue-400 font-medium">•</span>
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            {!!metricsToTrack.month_1_target && (
+              <p className="text-sm text-muted-foreground mt-4">
+                <span className="font-medium text-foreground">Month 1 Target: </span>
+                {safeStr(metricsToTrack.month_1_target)}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {/* Decision Criteria */}
+        {decisionCriteria && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+          >
+            <BlockHeader
+              variant="title"
+              title="Decision Criteria"
+              icon={<FontAwesomeIcon icon={faListCheck} className="w-5 h-5 text-accent" />}
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {Array.isArray(decisionCriteria.go_if) && (decisionCriteria.go_if as string[]).length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <p className="text-xs uppercase tracking-wider text-green-600 dark:text-green-400 mb-3 font-medium">
+                    Go If
+                  </p>
+                  <ul className="space-y-2">
+                    {(decisionCriteria.go_if as string[]).map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-foreground">
+                        <span className="text-green-600 dark:text-green-400 font-medium">•</span>
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Array.isArray(decisionCriteria.stop_if) && (decisionCriteria.stop_if as string[]).length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-5">
+                  <p className="text-xs uppercase tracking-wider text-red-600 dark:text-red-400 mb-3 font-medium">
+                    Stop If
+                  </p>
+                  <ul className="space-y-2">
+                    {(decisionCriteria.stop_if as string[]).map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-foreground">
+                        <span className="text-red-600 dark:text-red-400 font-medium">•</span>
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

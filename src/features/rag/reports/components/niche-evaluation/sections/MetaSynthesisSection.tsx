@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 import { SectionWrapper } from "../../shared/SectionWrapper";
-import {
-  getStoredCollapsibleState,
-  setStoredCollapsibleState,
-  getReportGroupId,
-} from "@/lib/collapsible-persistence";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InsightList } from "../../shared/InsightList";
+import { ReportCollapsibleCard } from "../../shared/ReportCollapsibleCard";
+import { TagCloud } from "../../shared/TagCloud";
 import type { ReportData } from "../../../types";
 
 interface MetaSynthesisSectionProps {
@@ -21,53 +14,22 @@ interface MetaSynthesisSectionProps {
   reportId: string;
 }
 
-function MetaSubsection({
-  id,
-  title,
-  children,
-  reportId,
-  defaultOpen = false,
-}: {
-  id: string;
-  title: string;
-  children: React.ReactNode;
-  reportId: string;
-  defaultOpen?: boolean;
-}) {
-  const groupId = getReportGroupId(reportId, `meta-synthesis-${id}`);
-  const [open, setOpen] = useState(() => getStoredCollapsibleState(groupId, defaultOpen));
 
-  useEffect(() => {
-    setStoredCollapsibleState(groupId, open);
-  }, [groupId, open]);
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <Card>
-        <CollapsibleTrigger asChild>
-          <button
-            className="w-full flex items-center justify-between p-4 md:p-6 transition-colors text-left"
-            aria-expanded={open}
-          >
-            <CardTitle className="text-base font-semibold">{title}</CardTitle>
-            <FontAwesomeIcon
-              icon={open ? faChevronUp : faChevronDown}
-              className="w-4 h-4 text-muted-foreground"
-            />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="pt-4 border-t border-border">{children}</CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
-  );
-}
-
-function renderList(items: unknown, type: "success" | "critical" | "info" = "info") {
+function renderBadgeList(items: unknown, colorClass: string) {
   const arr = Array.isArray(items) ? items : [];
   if (arr.length === 0) return null;
-  return <InsightList items={arr.map(String)} type={type} />;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {arr.map((item, i) => (
+        <span
+          key={i}
+          className={`px-3 py-1.5 ${colorClass} text-xs font-body rounded-md border`}
+        >
+          {String(item)}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function renderObjectList(
@@ -92,7 +54,10 @@ export const MetaSynthesisSection = ({
   reportId,
 }: MetaSynthesisSectionProps) => {
   const dataAny = data.data as Record<string, unknown>;
-  const metaSynthesis = dataAny?.meta_synthesis as Record<string, unknown> | undefined;
+  const payload = Array.isArray(dataAny) ? (dataAny as unknown[])[0] : dataAny;
+  const payloadObj = (payload ?? dataAny) as Record<string, unknown>;
+  const metaSynthesis = payloadObj?.meta_synthesis as Record<string, unknown> | undefined;
+  const evidenceSummary = payloadObj?.evidence_summary as Record<string, unknown> | undefined;
   if (!metaSynthesis) return null;
 
   const consensus = metaSynthesis.consensus_analysis as Record<string, unknown> | undefined;
@@ -124,6 +89,7 @@ export const MetaSynthesisSection = ({
   > | undefined;
   const keyInsights = metaSynthesis.key_insights as string[] | undefined;
   const finalRationale = metaSynthesis.final_recommendation_rationale as string | undefined;
+  const resourceRequirements = metaSynthesis.resource_requirements as Record<string, unknown> | undefined;
 
   return (
     <SectionWrapper
@@ -134,18 +100,23 @@ export const MetaSynthesisSection = ({
     >
       <div className="space-y-4">
         {consensus && (
-          <MetaSubsection id="consensus" title="Consensus Analysis" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-consensus`}
+            title="Consensus Analysis"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-4">
               {consensus.unanimous_agreement ? (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Unanimous Agreement</h4>
-                  {renderList(consensus.unanimous_agreement, "success")}
+                  <h4 className="text-sm font-semibold mb-3">Unanimous Agreement</h4>
+                  {renderBadgeList(consensus.unanimous_agreement, "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800")}
                 </div>
               ) : null}
               {consensus.majority_consensus ? (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Majority Consensus</h4>
-                  {renderList(consensus.majority_consensus, "info")}
+                  <h4 className="text-sm font-semibold mb-3">Majority Consensus</h4>
+                  {renderBadgeList(consensus.majority_consensus, "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800")}
                 </div>
               ) : null}
               {Array.isArray(consensus.key_disagreements) &&
@@ -175,32 +146,46 @@ export const MetaSynthesisSection = ({
                   </div>
                 )}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
-        {evidenceQuality && (
-          <MetaSubsection id="evidence" title="Evidence Quality Assessment" reportId={reportId}>
+        {(evidenceQuality || evidenceSummary) && (
+          <ReportCollapsibleCard
+            id={`meta-synthesis-evidence`}
+            title="Evidence Quality Assessment"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-4">
-              {evidenceQuality.strongest_evidence ? (
+              {Array.isArray(evidenceSummary?.unanimous_facts) && (evidenceSummary!.unanimous_facts as string[]).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Strongest Evidence</h4>
-                  {renderList(evidenceQuality.strongest_evidence, "success")}
+                  <h4 className="text-sm font-semibold mb-3">Unanimous Facts</h4>
+                  {renderBadgeList(evidenceSummary!.unanimous_facts as string[], "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800")}
+                </div>
+              )}
+              {(evidenceQuality?.strongest_evidence ?? evidenceSummary?.strongest_proof) ? (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Strongest Evidence</h4>
+                  {renderBadgeList(
+                    (evidenceQuality?.strongest_evidence ?? evidenceSummary?.strongest_proof) as string[],
+                    "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                  )}
                 </div>
               ) : null}
-              {evidenceQuality.evidence_gaps ? (
+              {evidenceQuality?.evidence_gaps ? (
                 <div>
-                  <h4 className="text-sm font-semibold mb-2">Evidence Gaps</h4>
-                  {renderList(evidenceQuality.evidence_gaps, "critical")}
+                  <h4 className="text-sm font-semibold mb-3">Evidence Gaps</h4>
+                  {renderBadgeList(evidenceQuality.evidence_gaps, "bg-orange-50 dark:bg-orange-950/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800")}
                 </div>
               ) : null}
-              {evidenceQuality.reliability_rating &&
-              typeof evidenceQuality.reliability_rating === "object" ? (
+              {(() => {
+                const reliability =
+                  evidenceQuality?.reliability_rating ?? evidenceSummary?.reliability_by_dimension;
+                return reliability && typeof reliability === "object" ? (
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Reliability by Dimension</h4>
                   <div className="space-y-3">
-                    {Object.entries(
-                      evidenceQuality.reliability_rating as Record<string, string>
-                    ).map(([dim, val]) => (
+                    {Object.entries(reliability as Record<string, string>).map(([dim, val]) => (
                       <div key={dim} className="bg-muted/50 rounded-lg p-3">
                         <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
                           {dim.replace(/_/g, " ")}
@@ -210,13 +195,19 @@ export const MetaSynthesisSection = ({
                     ))}
                   </div>
                 </div>
-              ) : null}
+                ) : null;
+              })()}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {dimensionSynthesis && Object.keys(dimensionSynthesis).length > 0 && (
-          <MetaSubsection id="dimensions" title="Dimension Synthesis" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-dimensions`}
+            title="Dimension Synthesis"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-8">
               {Object.entries(dimensionSynthesis).map(([dimName, dimData]) => {
                 const d = dimData as Record<string, unknown>;
@@ -247,7 +238,7 @@ export const MetaSynthesisSection = ({
                           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
                             Proof Points
                           </p>
-                          <InsightList items={d.key_proof_points as string[]} type="success" />
+                          {renderBadgeList(d.key_proof_points as string[], "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800")}
                         </div>
                       )}
                       {d.remaining_concerns != null && (
@@ -269,11 +260,16 @@ export const MetaSynthesisSection = ({
                 );
               })}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {addressableSegment && (
-          <MetaSubsection id="addressable" title="Addressable Segment" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-addressable`}
+            title="Addressable Segment"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-3 text-sm">
               {addressableSegment.consensus_definition ? (
                 <div>
@@ -294,10 +290,7 @@ export const MetaSynthesisSection = ({
               {Array.isArray(addressableSegment.filtering_criteria) && (
                 <div>
                   <span className="font-semibold block mb-2">Filtering Criteria:</span>
-                  <InsightList
-                    items={addressableSegment.filtering_criteria as string[]}
-                    type="accent"
-                  />
+                  <TagCloud tags={addressableSegment.filtering_criteria as string[]} variant="accent" />
                 </div>
               )}
               {addressableSegment.market_proof_source ? (
@@ -309,11 +302,16 @@ export const MetaSynthesisSection = ({
                 </div>
               ) : null}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {riskAssessment && (
-          <MetaSubsection id="risks" title="Risk Assessment" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-risks`}
+            title="Risk Assessment"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-4">
               {riskAssessment.risk_prioritization ? (
                 <p className="text-sm font-medium">
@@ -322,7 +320,7 @@ export const MetaSynthesisSection = ({
               ) : null}
               {Array.isArray(riskAssessment.critical_risks) &&
                 (riskAssessment.critical_risks as Record<string, unknown>[]).map((r, i) => (
-                  <div key={i} className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                  <div key={i} className="p-3 rounded-lg border border-border bg-muted/30">
                     <p className="font-medium text-sm">{String(r.risk)}</p>
                     <div className="flex gap-2 mt-2 text-xs">
                       {r.likelihood ? (
@@ -338,19 +336,65 @@ export const MetaSynthesisSection = ({
                   </div>
                 ))}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
+        )}
+
+        {resourceRequirements && (
+          <ReportCollapsibleCard
+            id={`meta-synthesis-resources`}
+            title="Resource Requirements"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
+            <div className="space-y-4">
+              {resourceRequirements.research_depth ? (
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    Research Depth
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{String(resourceRequirements.research_depth)}</p>
+                </div>
+              ) : null}
+              {resourceRequirements.client_education ? (
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    Client Education
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{String(resourceRequirements.client_education)}</p>
+                </div>
+              ) : null}
+              {resourceRequirements.estimated_ramp_time ? (
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    Ramp Time
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{String(resourceRequirements.estimated_ramp_time)}</p>
+                </div>
+              ) : null}
+              {resourceRequirements.messaging_complexity ? (
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    Messaging Complexity
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{String(resourceRequirements.messaging_complexity)}</p>
+                </div>
+              ) : null}
+            </div>
+          </ReportCollapsibleCard>
         )}
 
         {competitivePositioning && (
-          <MetaSubsection id="competitive" title="Competitive Positioning" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-competitive`}
+            title="Competitive Positioning"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-4 text-sm">
               {Array.isArray(competitivePositioning.existing_competitors) && (
                 <div>
                   <h4 className="font-semibold mb-2">Existing Competitors</h4>
-                  <InsightList
-                    items={competitivePositioning.existing_competitors as string[]}
-                    type="info"
-                  />
+                  <TagCloud tags={competitivePositioning.existing_competitors as string[]} variant="accent" />
                 </div>
               )}
               {competitivePositioning.differentiation_strategy ? (
@@ -378,11 +422,16 @@ export const MetaSynthesisSection = ({
                 </div>
               ) : null}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {executionRoadmap && Object.keys(executionRoadmap).length > 0 && (
-          <MetaSubsection id="roadmap" title="Execution Roadmap" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-roadmap`}
+            title="Execution Roadmap"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-8">
               {Object.entries(executionRoadmap)
                 .sort(([a], [b]) => {
@@ -412,7 +461,7 @@ export const MetaSynthesisSection = ({
                           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
                             Actions
                           </p>
-                          <InsightList items={p.actions as string[]} type="accent" />
+                          {renderBadgeList(p.actions as string[], "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800")}
                         </div>
                       )}
                       {p.success_criteria ? (
@@ -436,11 +485,16 @@ export const MetaSynthesisSection = ({
                 );
               })}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {successMetrics && (
-          <MetaSubsection id="metrics" title="Success Metrics" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-metrics`}
+            title="Success Metrics"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <div className="space-y-8">
               {Array.isArray(successMetrics.leading_indicators) &&
                 (successMetrics.leading_indicators as string[]).length > 0 && (
@@ -449,7 +503,7 @@ export const MetaSynthesisSection = ({
                       Leading Indicators
                     </h3>
                     <div className="pl-0 md:pl-4 border-l-2 border-border">
-                      <InsightList items={successMetrics.leading_indicators as string[]} type="success" />
+                      {renderBadgeList(successMetrics.leading_indicators as string[], "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800")}
                     </div>
                   </div>
                 )}
@@ -460,7 +514,7 @@ export const MetaSynthesisSection = ({
                       Lagging Indicators
                     </h3>
                     <div className="pl-0 md:pl-4 border-l-2 border-border">
-                      <InsightList items={successMetrics.lagging_indicators as string[]} type="info" />
+                      {renderBadgeList(successMetrics.lagging_indicators as string[], "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800")}
                     </div>
                   </div>
                 )}
@@ -488,51 +542,72 @@ export const MetaSynthesisSection = ({
                 );
               })()}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {decisionFramework && (
-          <MetaSubsection id="framework" title="Decision Framework" reportId={reportId}>
-            <div className="space-y-4 text-sm">
-              {Array.isArray(decisionFramework.go_criteria) && (
+          <ReportCollapsibleCard
+            id={`meta-synthesis-framework`}
+            title="Decision Framework"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {Array.isArray(decisionFramework.go_criteria) && (decisionFramework.go_criteria as string[]).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3 text-green-600 dark:text-green-400">
+                      Go Criteria
+                    </h4>
+                    {renderBadgeList(decisionFramework.go_criteria as string[], "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800")}
+                  </div>
+                )}
+                {Array.isArray(decisionFramework.no_go_criteria) && (decisionFramework.no_go_criteria as string[]).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3 text-red-600 dark:text-red-400">
+                      No-Go Criteria
+                    </h4>
+                    {renderBadgeList(decisionFramework.no_go_criteria as string[], "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800")}
+                  </div>
+                )}
+              </div>
+              {Array.isArray(decisionFramework.reassessment_triggers) && (decisionFramework.reassessment_triggers as string[]).length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-2 text-green-600 dark:text-green-400">
-                    Go Criteria
-                  </h4>
-                  <InsightList items={decisionFramework.go_criteria as string[]} type="success" />
-                </div>
-              )}
-              {Array.isArray(decisionFramework.no_go_criteria) && (
-                <div>
-                  <h4 className="font-semibold mb-2 text-red-600 dark:text-red-400">
-                    No-Go Criteria
-                  </h4>
-                  <InsightList items={decisionFramework.no_go_criteria as string[]} type="critical" />
-                </div>
-              )}
-              {Array.isArray(decisionFramework.reassessment_triggers) && (
-                <div>
-                  <h4 className="font-semibold mb-2">Reassessment Triggers</h4>
-                  <InsightList
-                    items={decisionFramework.reassessment_triggers as string[]}
-                    type="warning"
-                  />
+                  <h4 className="font-semibold mb-3">Reassessment Triggers</h4>
+                  {renderBadgeList(decisionFramework.reassessment_triggers as string[], "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800")}
                 </div>
               )}
             </div>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
 
         {keyInsights && keyInsights.length > 0 && (
-          <MetaSubsection id="insights" title="Key Insights" reportId={reportId} defaultOpen>
-            <InsightList items={keyInsights} type="accent" />
-          </MetaSubsection>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-insights`}
+            title="Key Insights"
+            reportId={reportId}
+            defaultOpen
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
+            <div className="space-y-3">
+              {keyInsights.map((insight, i) => (
+                <div key={i} className="p-4 rounded-lg border border-border bg-muted/20">
+                  <p className="text-sm text-foreground leading-relaxed">{insight}</p>
+                </div>
+              ))}
+            </div>
+          </ReportCollapsibleCard>
         )}
 
         {finalRationale && (
-          <MetaSubsection id="rationale" title="Final Recommendation Rationale" reportId={reportId}>
+          <ReportCollapsibleCard
+            id={`meta-synthesis-rationale`}
+            title="Final Recommendation Rationale"
+            reportId={reportId}
+            icon={<FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-primary" />}
+          >
             <p className="text-sm text-foreground leading-relaxed">{finalRationale}</p>
-          </MetaSubsection>
+          </ReportCollapsibleCard>
         )}
       </div>
     </SectionWrapper>

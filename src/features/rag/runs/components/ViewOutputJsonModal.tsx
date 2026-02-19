@@ -76,10 +76,35 @@ export function ViewOutputJsonModal({
     if (!jsonString || isCopying) return;
     setIsCopying(true);
     try {
-      await navigator.clipboard.writeText(jsonString);
-      toast.success("Output JSON copied to clipboard");
-    } catch {
-      toast.error("Failed to copy to clipboard");
+      // Try modern Clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(jsonString);
+        toast.success("Output JSON copied to clipboard");
+      } else {
+        // Fallback for older browsers or mobile Safari
+        const textArea = document.createElement("textarea");
+        textArea.value = jsonString;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand("copy");
+          if (successful) {
+            toast.success("Output JSON copied to clipboard");
+          } else {
+            throw new Error("execCommand copy failed");
+          }
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy to clipboard. Please try selecting and copying manually.");
     } finally {
       setIsCopying(false);
     }
@@ -96,34 +121,40 @@ export function ViewOutputJsonModal({
       maxHeight="90vh"
       showScroll
       noBodyPadding
+      contentClassName="!top-0 !left-0 !right-0 !translate-x-0 !translate-y-0 md:!left-[50%] md:!translate-x-[-50%] md:!top-[50%] md:!translate-y-[-50%] !w-full md:!w-auto h-[100vh] md:h-auto md:max-h-[90vh] rounded-none md:rounded-xl"
       footer={
-        <DialogFooter>
+        <div className="flex flex-row justify-end gap-2 p-0">
           <Button
             variant="outline"
             onClick={handleCopy}
             disabled={!jsonString || isCopying}
+            className="w-auto flex-shrink-0 hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground focus:bg-muted focus:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
           >
             <FontAwesomeIcon icon={faCopy} className="h-4 w-4 mr-2" />
             {isCopying ? "Copying…" : "Copy"}
           </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="w-auto flex-shrink-0 hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground focus:bg-muted focus:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+          >
             Close
           </Button>
-        </DialogFooter>
+        </div>
       }
     >
-      <div className="p-4 md:p-6">
+      <div className="p-0 md:p-4 md:p-6">
         {loading && (
-          <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+          <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground px-4 md:px-0">
             <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin" />
             <span>Loading output JSON…</span>
           </div>
         )}
         {error && !loading && (
-          <div className="py-8 text-center text-destructive">{error}</div>
+          <div className="py-8 text-center text-destructive px-4 md:px-0">{error}</div>
         )}
         {jsonString && !loading && (
-          <div className="rounded-lg border border-border overflow-hidden w-full min-w-0">
+          <div className="md:rounded-lg border-0 md:border border-border overflow-hidden w-full min-w-0">
             <JsonCodeEditor
               value={jsonString}
               onChange={() => {}}

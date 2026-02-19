@@ -34,8 +34,10 @@ export const CompetitiveContextSection = ({ data }: CompetitiveContextSectionPro
     );
   }
 
-  const alternatives = competitive.alternatives as Array<Record<string, unknown>>;
-  const positioningGuidance = competitive.positioning_guidance as Record<string, unknown>;
+  const alternatives = (competitive.alternatives as Array<Record<string, unknown>>) ?? [];
+  const positioningGuidance = (competitive.positioning_guidance as Record<string, unknown>) ?? {};
+  const whenClearlyWins = (positioningGuidance.when_clearly_wins as string[] | undefined) ?? [];
+  const hasConfidence = typeof competitive.confidence === "number";
 
   return (
     <SectionWrapper
@@ -44,12 +46,14 @@ export const CompetitiveContextSection = ({ data }: CompetitiveContextSectionPro
       title="Competitive Context"
       subtitle="What alternatives these customers consider and how to compete"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          label="Confidence"
-          value={`${((competitive.confidence as number) * 100).toFixed(0)}%`}
-          icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
-        />
+      <div className={`grid grid-cols-1 gap-4 mb-8 ${hasConfidence ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {hasConfidence && (
+          <StatCard
+            label="Confidence"
+            value={`${((competitive.confidence as number) * 100).toFixed(0)}%`}
+            icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
+          />
+        )}
         <StatCard
           label="Alternatives Analyzed"
           value={alternatives.length}
@@ -58,7 +62,7 @@ export const CompetitiveContextSection = ({ data }: CompetitiveContextSectionPro
         />
         <StatCard
           label="Win Scenarios"
-          value={(positioningGuidance.when_clearly_wins as string[]).length}
+          value={whenClearlyWins.length}
           icon={<FontAwesomeIcon icon={faTrophy} className="w-5 h-5" />}
         />
       </div>
@@ -108,7 +112,7 @@ export const CompetitiveContextSection = ({ data }: CompetitiveContextSectionPro
                   </div>
                   <div className="bg-muted/50 rounded-lg p-3 border border-border border-l-4 border-l-accent">
                     <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
-                      How Custom CRM Wins
+                      How to Win
                     </span>
                     <p className="text-sm font-body text-foreground">{alt.how_custom_wins as string}</p>
                   </div>
@@ -123,16 +127,13 @@ export const CompetitiveContextSection = ({ data }: CompetitiveContextSectionPro
         <BlockHeader variant="title" title="Positioning Guidance" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <BlockHeader variant="label" title="When Custom CRM Clearly Wins" />
-            <InsightList
-              items={positioningGuidance.when_clearly_wins as string[]}
-              type="success"
-            />
+            <BlockHeader variant="label" title="When You Clearly Win" />
+            <InsightList items={whenClearlyWins} type="success" />
           </div>
           <div>
-            <BlockHeader variant="label" title="When Custom CRM is Probably Wrong" />
+            <BlockHeader variant="label" title="When You Are Probably Wrong Fit" />
             <InsightList
-              items={positioningGuidance.when_probably_wrong as string[]}
+              items={(positioningGuidance.when_probably_wrong as string[] | undefined) ?? []}
               type="danger"
             />
           </div>

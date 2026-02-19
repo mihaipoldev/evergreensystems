@@ -4,15 +4,12 @@ import {
   SectionWrapper,
   BlockHeader,
   NumberedCard,
-  ContentCard,
 } from "../../shared";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWater,
   faCheckCircle,
-  faChartPie,
   faStar,
-  faDatabase,
 } from "@fortawesome/free-solid-svg-icons";
 
 type EnrichmentField = {
@@ -21,16 +18,13 @@ type EnrichmentField = {
   must_verify?: boolean;
   verification_method?: string | null;
   usage?: string;
-  acceptable_proxy?: string;
-  impact?: string;
 };
 
 type EnrichmentRequirements = {
   description?: string;
   enrichment_waterfall?: string[];
-  required_before_outreach?: EnrichmentField[];
-  required_for_segmentation?: EnrichmentField[];
-  nice_to_have_for_personalization?: EnrichmentField[];
+  required?: EnrichmentField[];
+  optional?: EnrichmentField[];
 };
 
 interface EnrichmentRequirementsSectionProps {
@@ -40,19 +34,18 @@ interface EnrichmentRequirementsSectionProps {
 
 export const EnrichmentRequirementsSection = ({
   enrichmentRequirements,
-  sectionNumber = "11",
+  sectionNumber = "03",
 }: EnrichmentRequirementsSectionProps) => {
   const waterfall = enrichmentRequirements?.enrichment_waterfall ?? [];
-  const beforeOutreach = enrichmentRequirements?.required_before_outreach ?? [];
-  const forSegmentation = enrichmentRequirements?.required_for_segmentation ?? [];
-  const niceToHave = enrichmentRequirements?.nice_to_have_for_personalization ?? [];
+  const required = enrichmentRequirements?.required ?? [];
+  const optional = enrichmentRequirements?.optional ?? [];
 
   return (
     <SectionWrapper
       id="enrichment-requirements"
       number={sectionNumber}
       title="Enrichment Requirements"
-      subtitle={enrichmentRequirements?.description ?? "Data fields required before outreach and for segmentation"}
+      subtitle={enrichmentRequirements?.description || undefined}
     >
       {waterfall.length > 0 && (
         <div className="mb-10">
@@ -71,15 +64,15 @@ export const EnrichmentRequirementsSection = ({
         </div>
       )}
 
-      {beforeOutreach.length > 0 && (
+      {required.length > 0 && (
         <div className="mb-10">
           <BlockHeader
             variant="title"
-            title="Required Before Outreach"
+            title="Required Fields"
             icon={<FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-green-600" />}
           />
           <div className="space-y-4">
-            {beforeOutreach.map((f, i) => (
+            {required.map((f, i) => (
               <div
                 key={i}
                 className="bg-card rounded-xl border border-border report-shadow p-6"
@@ -99,7 +92,7 @@ export const EnrichmentRequirementsSection = ({
                     Sources: {f.sources.join(", ")}
                   </p>
                 )}
-                {f.verification_method && (
+                {f.verification_method && f.verification_method !== "N/A" && (
                   <p className="text-sm font-body text-foreground">
                     Verification: {f.verification_method}
                   </p>
@@ -110,48 +103,15 @@ export const EnrichmentRequirementsSection = ({
         </div>
       )}
 
-      {forSegmentation.length > 0 && (
-        <div className="mb-10">
-          <BlockHeader
-            variant="title"
-            title="Required for Segmentation"
-            icon={<FontAwesomeIcon icon={faChartPie} className="w-5 h-5 text-accent" />}
-          />
-          <div className="space-y-4">
-            {forSegmentation.map((f, i) => (
-              <ContentCard key={i} title={f.field ?? `Field ${i + 1}`}>
-                <div className="space-y-2">
-                  {f.usage && (
-                    <p className="text-sm font-body text-foreground">
-                      <span className="font-medium text-muted-foreground">Usage:</span> {f.usage}
-                    </p>
-                  )}
-                  {f.sources && f.sources.length > 0 && (
-                    <p className="text-sm text-muted-foreground font-body">
-                      Sources: {f.sources.join(", ")}
-                    </p>
-                  )}
-                  {f.acceptable_proxy && (
-                    <p className="text-sm text-muted-foreground font-body italic">
-                      Proxy: {f.acceptable_proxy}
-                    </p>
-                  )}
-                </div>
-              </ContentCard>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {niceToHave.length > 0 && (
+      {optional.length > 0 && (
         <div>
           <BlockHeader
             variant="title"
-            title="Nice to Have for Personalization"
+            title="Optional Fields"
             icon={<FontAwesomeIcon icon={faStar} className="w-5 h-5 text-accent" />}
           />
           <div className="space-y-4">
-            {niceToHave.map((f, i) => (
+            {optional.map((f, i) => (
               <div
                 key={i}
                 className="bg-muted/30 rounded-xl border border-border p-6"
@@ -161,11 +121,6 @@ export const EnrichmentRequirementsSection = ({
                 </h4>
                 {f.usage && (
                   <p className="text-sm font-body text-foreground mb-2">{f.usage}</p>
-                )}
-                {f.impact && (
-                  <p className="text-xs text-muted-foreground font-body">
-                    Impact: {f.impact}
-                  </p>
                 )}
                 {f.sources && f.sources.length > 0 && (
                   <p className="text-xs text-muted-foreground font-body mt-1">

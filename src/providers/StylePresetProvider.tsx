@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useLayoutEffect } from "react";
+import { isFunnelRoute, getFunnelPresetClass } from "@/features/funnels/routes";
 
 export function StylePresetProvider() {
   const pathname = usePathname();
@@ -13,41 +14,27 @@ export function StylePresetProvider() {
     }
 
     const htmlElement = document.documentElement;
-    
+
     // Determine which preset should be active based on pathname
     const shouldBeAdmin = pathname?.startsWith("/admin") || pathname?.startsWith("/intel");
-    const shouldBeOutbound = pathname === "/outbound-system";
-    const shouldBeLanding = !shouldBeAdmin && !shouldBeOutbound;
-    
-    // Check current state to avoid unnecessary DOM manipulation
-    const hasAdmin = htmlElement.classList.contains("preset-admin");
-    const hasLanding = htmlElement.classList.contains("preset-landing-page");
-    const hasOutbound = htmlElement.classList.contains("preset-outbound-system");
-    
-    // Only update if the preset class needs to change
-    // This prevents resetting colors/styles unnecessarily on refresh
-    if (shouldBeAdmin) {
-      // Should have admin preset
-      if (!hasAdmin || hasLanding || hasOutbound) {
-        // Need to add admin or remove other presets
-        htmlElement.classList.remove("preset-landing-page", "preset-outbound-system");
-        htmlElement.classList.add("preset-admin");
-      }
-    } else if (shouldBeOutbound) {
-      // Should have outbound preset
-      if (!hasOutbound || hasAdmin || hasLanding) {
-        // Need to add outbound or remove other presets
-        htmlElement.classList.remove("preset-admin", "preset-landing-page");
-        htmlElement.classList.add("preset-outbound-system");
-      }
-    } else {
-      // Should have landing preset (default)
-      if (!hasLanding || hasAdmin || hasOutbound) {
-        // Need to add landing or remove other presets
-        htmlElement.classList.remove("preset-admin", "preset-outbound-system");
-        htmlElement.classList.add("preset-landing-page");
-      }
+    const isFunnel = !shouldBeAdmin && pathname ? isFunnelRoute(pathname) : false;
+    const targetPreset = shouldBeAdmin
+      ? "preset-admin"
+      : isFunnel
+        ? getFunnelPresetClass(pathname!)
+        : "preset-landing-page";
+
+    // Check if the target preset is already active
+    if (htmlElement.classList.contains(targetPreset)) {
+      return;
     }
+
+    // Remove all preset classes and add the correct one
+    const currentClasses = Array.from(htmlElement.classList).filter((c) =>
+      c.startsWith("preset-")
+    );
+    currentClasses.forEach((c) => htmlElement.classList.remove(c));
+    htmlElement.classList.add(targetPreset);
   }, [pathname]);
 
   return null;

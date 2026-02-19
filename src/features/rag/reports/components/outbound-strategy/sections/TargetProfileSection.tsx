@@ -1,14 +1,14 @@
 "use client";
 
-import { SectionWrapper, StatCard, BlockHeader, InsightList } from "../../shared";
+import { SectionWrapper, BlockHeader, InsightList, ContentCard, TagCloud } from "../../shared";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faUsers,
-  faDollarSign,
   faMapMarkerAlt,
   faCheckCircle,
   faXmarkCircle,
   faBolt,
+  faBriefcase,
+  faSeedling,
 } from "@fortawesome/free-solid-svg-icons";
 
 type TargetProfile = {
@@ -19,6 +19,8 @@ type TargetProfile = {
   employee_count?: string;
   company_revenue?: string;
   geographic_focus?: string;
+  business_model?: string;
+  growth_stage?: string;
 };
 
 interface TargetProfileSectionProps {
@@ -28,7 +30,7 @@ interface TargetProfileSectionProps {
 
 export const TargetProfileSection = ({
   targetProfile,
-  sectionNumber = "02",
+  sectionNumber = "01",
 }: TargetProfileSectionProps) => {
   const mustHaves = targetProfile?.must_haves ?? [];
   const disqualifiers = targetProfile?.disqualifiers ?? [];
@@ -39,31 +41,40 @@ export const TargetProfileSection = ({
       id="target-profile"
       number={sectionNumber}
       title="Target Profile"
-      subtitle={targetProfile?.description ?? "Ideal customer profile definition"}
+      subtitle={targetProfile?.description || undefined}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {targetProfile?.employee_count && (
-          <StatCard
-            label="Employee Count"
-            value={targetProfile.employee_count}
-            icon={<FontAwesomeIcon icon={faUsers} className="w-5 h-5" />}
-          />
-        )}
-        {targetProfile?.company_revenue && (
-          <StatCard
-            label="Company Revenue"
-            value={targetProfile.company_revenue}
-            icon={<FontAwesomeIcon icon={faDollarSign} className="w-5 h-5" />}
-          />
-        )}
-        {targetProfile?.geographic_focus && (
-          <StatCard
-            label="Geographic Focus"
-            value={targetProfile.geographic_focus}
-            icon={<FontAwesomeIcon icon={faMapMarkerAlt} className="w-5 h-5" />}
-          />
-        )}
-      </div>
+      {(targetProfile?.business_model || targetProfile?.growth_stage) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {targetProfile?.business_model && (
+            <ContentCard title="Business Model" icon={<FontAwesomeIcon icon={faBriefcase} className="w-5 h-5 text-accent" />}>
+              <p className="text-sm font-body text-foreground">{targetProfile.business_model}</p>
+            </ContentCard>
+          )}
+          {targetProfile?.growth_stage && (
+            <ContentCard title="Growth Stage" icon={<FontAwesomeIcon icon={faSeedling} className="w-5 h-5 text-accent" />}>
+              <p className="text-sm font-body text-foreground">{targetProfile.growth_stage}</p>
+            </ContentCard>
+          )}
+        </div>
+      )}
+
+      {targetProfile?.geographic_focus && (() => {
+        const raw = targetProfile.geographic_focus.trim();
+        const afterColon = raw.includes(":") ? raw.slice(raw.indexOf(":") + 1).trim() : raw;
+        const tags = afterColon.includes(",")
+          ? afterColon.split(",").map((s) => s.trim()).filter(Boolean)
+          : [afterColon];
+        return (
+          <div className="mb-8">
+            <BlockHeader
+              variant="title"
+              title="Geographic Clusters"
+              icon={<FontAwesomeIcon icon={faMapMarkerAlt} className="w-5 h-5 text-accent" />}
+            />
+            <TagCloud tags={tags} variant="accent" />
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div>

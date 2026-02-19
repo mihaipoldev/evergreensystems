@@ -157,7 +157,7 @@ export function UsageMetricsSection({ usageMetrics }: UsageMetricsSectionProps) 
             aria-label="View usage metrics"
           >
             <FontAwesomeIcon icon={faChartSimple} className="w-3 h-3" />
-            <span>{summary || "Usage"}</span>
+            <span>{summary || "—"}</span>
           </button>
         </TooltipTrigger>
         <TooltipContent

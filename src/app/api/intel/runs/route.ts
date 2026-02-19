@@ -1,6 +1,7 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { createRun } from "@/features/rag/runs/data";
+import { extractWorkflowResult } from "@/features/rag/runs/utils/extractWorkflowResult";
 
 export async function GET(request: Request) {
   try {
@@ -38,7 +39,8 @@ export async function GET(request: Request) {
           name
         ),
         rag_run_outputs (
-          id
+          id,
+          output_json
         )
       `);
 
@@ -91,7 +93,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform data to include knowledge base name, workflow info, and report ID
+    // Transform data to include knowledge base name, workflow info, report ID, fit_score, verdict
     const typedData = (data || []) as any[];
     const runsWithKB = typedData.map((run: any) => {
       // Handle rag_run_outputs - it might be an array or single object
@@ -100,6 +102,13 @@ export async function GET(request: Request) {
       const reportId = Array.isArray(runOutputs) && runOutputs.length > 0
         ? runOutputs[0].id
         : runOutputs?.id || null;
+
+      const outputJson = Array.isArray(runOutputs) && runOutputs.length > 0
+        ? runOutputs[0]?.output_json
+        : runOutputs?.output_json ?? undefined;
+      const workflowResult = extractWorkflowResult({ ...run, output_json: outputJson });
+      const fit_score = workflowResult?.score ?? null;
+      const verdict = workflowResult?.verdict ?? null;
 
       // Handle projects - it might be null, an object, or an array
       let projectName = null;
@@ -118,10 +127,17 @@ export async function GET(request: Request) {
         workflow_name: run.workflows?.slug || null,
         workflow_label: run.workflows?.name || null,
         report_id: reportId,
+        fit_score,
+        verdict,
       };
     });
 
-    return NextResponse.json(runsWithKB, { status: 200 });
+    return NextResponse.json(runsWithKB, {
+      status: 200,
+      headers: {
+        "Cache-Control": "private, max-age=10, stale-while-revalidate=20",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

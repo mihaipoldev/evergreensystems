@@ -173,7 +173,7 @@ export function DocumentRow({
       </Card>
 
       {/* Desktop Layout */}
-      <Card className="relative hidden md:flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 overflow-hidden">
+      <Card className="relative hidden md:flex items-center gap-4 p-4 border-none shadow-card-light hover:shadow-card hover:bg-card/50 dark:hover:bg-muted/40 transition-shadow h-20 rounded-lg">
         {/* Corner Indicator */}
         {document.is_workspace_document !== undefined && (
           <Tooltip>

@@ -7,22 +7,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-type Route = '/' | '/outbound-system';
+import { getAllRouteOptions } from "@/features/funnels/routes";
 
 interface RouteSelectorProps {
-  activeRoute: Route;
-  onRouteChange: (route: Route) => void;
+  activeRoute: string;
+  onRouteChange: (route: string) => void;
 }
 
-const routeOptions: { value: Route; label: string }[] = [
-  { value: '/', label: 'Landing Page' },
-  { value: '/outbound-system', label: 'Outbound Systems' },
-];
+const routeOptions = getAllRouteOptions();
 
 export function RouteSelector({ activeRoute, onRouteChange }: RouteSelectorProps) {
   return (
-    <Select value={activeRoute} onValueChange={(value) => onRouteChange(value as Route)}>
+    <Select value={activeRoute} onValueChange={(value) => onRouteChange(value)}>
       <SelectTrigger className="w-full h-8 text-xs">
         <SelectValue />
       </SelectTrigger>

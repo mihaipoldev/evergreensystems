@@ -274,10 +274,6 @@ export function BulkGenerateReportModal({
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
 
-    const selectedWorkflow = workflows.find((w) => w.id === workflowId);
-    const researchAiModel = selectedWorkflow?.default_ai_model || null;
-    const synthesisAiModel = selectedWorkflow?.default_synthesis_ai_model || selectedWorkflow?.default_ai_model || null;
-
     // Generate reports sequentially
     for (let i = 0; i < selectedProjects.length; i++) {
       const project = selectedProjects[i];
@@ -302,8 +298,6 @@ export function BulkGenerateReportModal({
             research_subject_geography: project.geography || null,
             research_subject_description: project.description || null,
             research_subject_category: project.category || null,
-            research_ai_model: researchAiModel,
-            synthesis_ai_model: synthesisAiModel,
           }),
         });
 

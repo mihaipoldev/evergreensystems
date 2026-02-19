@@ -13,6 +13,7 @@ import { RunTable } from "./RunTable";
 import type { Run } from "../types";
 import { createClient } from "@/lib/supabase/client";
 import { getRunStatusBadgeClasses, getRunStatusColorString } from "@/features/rag/shared/utils/runStatusColors";
+import { useWorkflows } from "../hooks/useWorkflows";
 
 type RunWithKB = Run & { 
   knowledge_base_name?: string | null;
@@ -125,7 +126,7 @@ export function RunList({ initialRuns, projectTypeId }: RunListProps) {
   const [runs, setRuns] = useState<RunWithKB[]>(initialRuns);
   // Initialize state from localStorage directly to avoid flash of default values
   const [searchQuery, setSearchQuery] = useState(() => getStoredSearch());
-  const [workflows, setWorkflows] = useState<Array<{ id: string; slug: string; name: string }>>([]);
+  const { data: workflows = [] } = useWorkflows();
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => getStoredFilters());
   const [selectedSort, setSelectedSort] = useState<string>(() => getStoredSort());
   const [groupByStatus, setGroupByStatus] = useState(() => getStoredGroupByStatus());
@@ -158,32 +159,6 @@ export function RunList({ initialRuns, projectTypeId }: RunListProps) {
       ],
     },
   ];
-
-  // Fetch workflows for filtering
-  useEffect(() => {
-    const fetchWorkflows = async () => {
-      try {
-        const supabase = createClient();
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
-
-        const response = await fetch("/api/intel/workflows?enabled=true", {
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setWorkflows(data || []);
-        }
-      } catch (error) {
-        console.error("Error fetching workflows:", error);
-      }
-    };
-
-    fetchWorkflows();
-  }, []);
 
   // Sync initialRuns when they change
   useEffect(() => {

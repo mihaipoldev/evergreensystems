@@ -93,7 +93,7 @@ export const TriggersSection = ({ data }: TriggersSectionProps) => {
   const highUrgency = Array.isArray(raw.high_urgency) ? raw.high_urgency : [];
   const mediumUrgency = Array.isArray(raw.medium_urgency) ? raw.medium_urgency : [];
   const lowUrgency = Array.isArray(raw.low_urgency) ? raw.low_urgency : [];
-  const confidence = typeof raw.confidence === "number" ? raw.confidence : 0;
+  const hasConfidence = typeof raw.confidence === "number";
   const coolingSignals = normalizeCoolingSignals(raw.cooling_signals as Record<string, unknown> | undefined);
   const coolingDescription = raw.cooling_signals && typeof raw.cooling_signals === "object" && "description" in raw.cooling_signals
     ? String((raw.cooling_signals as { description?: string }).description ?? "")
@@ -107,12 +107,14 @@ export const TriggersSection = ({ data }: TriggersSectionProps) => {
       title="Buying Triggers"
       subtitle="Events and circumstances that cause customers to actively seek solutions"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          label="Confidence"
-          value={`${(confidence * 100).toFixed(0)}%`}
-          icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
-        />
+      <div className={`grid grid-cols-1 gap-4 mb-8 ${hasConfidence ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {hasConfidence && (
+          <StatCard
+            label="Confidence"
+            value={`${((raw.confidence as number) * 100).toFixed(0)}%`}
+            icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5" />}
+          />
+        )}
         <StatCard
           label="High Urgency Triggers"
           value={highUrgency.length}
@@ -151,7 +153,7 @@ export const TriggersSection = ({ data }: TriggersSectionProps) => {
             variant="title"
             title="Cooling Signals"
             icon={<FontAwesomeIcon icon={faArrowTrendDown} className="w-5 h-5 text-muted-foreground" />}
-            subtitle={coolingDescription || "Signs that prospect urgency is cooling and when to revisit."}
+            subtitle={coolingDescription || undefined}
           />
           <Accordion type="single" collapsible className="space-y-3">
             {coolingSignals.map((signal) => (

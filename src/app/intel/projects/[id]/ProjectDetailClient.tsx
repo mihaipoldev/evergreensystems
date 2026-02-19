@@ -9,6 +9,7 @@ import {
   faCircleInfo,
   faClock,
   faDatabase,
+  faDollarSign,
   faExclamationTriangle,
   faFileText,
   faLayerGroup,
@@ -19,7 +20,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { usePageHeader } from "@/providers/PageHeaderProvider";
 import { PageTitle } from "@/features/rag/shared/components/PageTitle";
-import { ProjectActionsMenu } from "@/features/rag/projects/components/ProjectActionsMenu";
+import { ProjectActionsMenu, type RunForDownload } from "@/features/rag/projects/components/ProjectActionsMenu";
 import { ProjectModal } from "@/features/rag/projects/components/ProjectModal";
 import { GenerateReportModal } from "@/features/rag/workflows/components/GenerateReportModal";
 import {
@@ -76,6 +77,7 @@ export function ProjectDetailClient({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [generateModalWorkflowId, setGenerateModalWorkflowId] = useState<string | null>(null);
+  const [runsRefreshTrigger, setRunsRefreshTrigger] = useState(0);
   const [projectTypeName, setProjectTypeName] = useState<string | null>(initialProjectTypeName || null);
   const [runsCount, setRunsCount] = useState(initialRuns.length);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -147,10 +149,10 @@ export function ProjectDetailClient({
         { href: "/intel/projects", label: "Projects" },
         { label: displayName || "Project" },
       ],
-      actions: <ProjectActionsMenu project={project} onEdit={handleEdit} />,
+      actions: <ProjectActionsMenu project={project} onEdit={handleEdit} runs={initialRuns.map((r): RunForDownload => ({ id: r.id, report_id: r.report_id ?? null }))} />,
     });
     return () => setHeader(null);
-  }, [displayName, project, setHeader]);
+  }, [displayName, project, setHeader, initialRuns]);
 
   return (
     <>
@@ -159,49 +161,52 @@ export function ProjectDetailClient({
           icon={initialProjectType?.icon ? <span className="shrink-0">{initialProjectType.icon}</span> : undefined}
           title={displayName || "Project"}
           titleActions={
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="shrink-0 md:h-8 hidden md:flex text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Project information"
+            <div className="flex items-center gap-1 shrink-0">
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="shrink-0 md:h-8 hidden md:flex text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Project information"
+                    >
+                      <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className="max-w-md"
+                    side="bottom"
+                    sideOffset={8}
                   >
-                    <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent
-                  className="max-w-md"
-                  side="bottom"
-                  sideOffset={8}
-                >
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Name</p>
-                      <p className="text-foreground font-medium">{displayName || "—"}</p>
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Name</p>
+                        <p className="text-foreground font-medium">{displayName || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Status</p>
+                        <StatusBadge color={statusColorMap[project.status] || "muted"}>
+                          {project.status || "—"}
+                        </StatusBadge>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
+                        <p className="text-foreground font-medium">{project.category || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
+                        <p className="text-foreground font-medium">{project.geography || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
+                        <p className="text-foreground font-medium">{project.description || "—"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Status</p>
-                      <StatusBadge color={statusColorMap[project.status] || "muted"}>
-                        {project.status || "—"}
-                      </StatusBadge>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Category</p>
-                      <p className="text-foreground font-medium">{project.category || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Geography</p>
-                      <p className="text-foreground font-medium">{project.geography || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground tracking-wider mb-1">Description</p>
-                      <p className="text-foreground font-medium">{project.description || "—"}</p>
-                    </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <ProjectActionsMenu project={project} onEdit={handleEdit} runs={initialRuns.map((r): RunForDownload => ({ id: r.id, report_id: r.report_id ?? null }))} />
+            </div>
           }
           meta={
             <>
@@ -255,7 +260,7 @@ export function ProjectDetailClient({
                 {tab.id === "documents" && (
                   <div className="space-y-4">
                     {/* Document Stats - Always 4 cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
                       <StatCard
                         title="Total Documents"
                         value={documentsCount}
@@ -295,7 +300,7 @@ export function ProjectDetailClient({
                   <div className="space-y-4">
                     {/* Research Stats - 4 cards for niche projects */}
                     {isNicheProject ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
                         {/* Card 1: Fit Score from niche_fit_evaluation workflow */}
                         {(() => {
                           const fitEvaluationRun = initialRuns.find(
@@ -316,7 +321,14 @@ export function ProjectDetailClient({
                             />
                           );
                         })()}
-                        {/* Card 2: Total Researched */}
+                        {/* Card 2: Total Usage */}
+                        <StatCard
+                          title="Total Usage"
+                          value={`$${(project.total_usage ?? 0).toFixed(2)}`}
+                          icon={faDollarSign}
+                          index={1}
+                        />
+                        {/* Card 3: Total Researched */}
                         {(() => {
                           // Count unique workflows that have been run
                           const uniqueWorkflows = new Set(
@@ -330,17 +342,10 @@ export function ProjectDetailClient({
                               title="Total Researched"
                               value={totalWorkflows > 0 ? `${uniqueWorkflowsCount}/${totalWorkflows}` : uniqueWorkflowsCount.toString()}
                               icon={faPlay}
-                              index={1}
+                              index={2}
                             />
                           );
                         })()}
-                        {/* Card 3: First Researched */}
-                        <StatCard
-                          title="First Researched"
-                          value={project.first_researched_at ? formatDate(project.first_researched_at) : "Never"}
-                          icon={faCalendar}
-                          index={2}
-                        />
                         {/* Card 4: Last Researched */}
                         <StatCard
                           title="Last Researched"
@@ -350,29 +355,35 @@ export function ProjectDetailClient({
                         />
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <StatCard
-                          title="Total Researches"
-                          value={runsCount}
-                          icon={faPlay}
-                          index={0}
-                        />
+                      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
                         <StatCard
                           title="Completed"
                           value={initialRuns.filter(run => run.status === "complete").length}
                           icon={faPlay}
+                          index={0}
+                        />
+                        <StatCard
+                          title="Total Usage"
+                          value={`$${(project.total_usage ?? 0).toFixed(2)}`}
+                          icon={faDollarSign}
                           index={1}
                         />
                         <StatCard
+                          title="Total Researches"
+                          value={runsCount}
+                          icon={faPlay}
+                          index={2}
+                        />
+                        <StatCard
                           title="In Progress"
-                          value={initialRuns.filter(run => 
-                            run.status === "queued" || 
-                            run.status === "collecting" || 
-                            run.status === "ingesting" || 
+                          value={initialRuns.filter(run =>
+                            run.status === "queued" ||
+                            run.status === "collecting" ||
+                            run.status === "ingesting" ||
                             run.status === "generating"
                           ).length}
                           icon={faSpinner}
-                          index={2}
+                          index={3}
                         />
                       </div>
                     )}
@@ -380,6 +391,7 @@ export function ProjectDetailClient({
                       initialRuns={initialRuns}
                       projectId={project.id}
                       projectTypeId={project.project_type_id || null}
+                      refreshTrigger={runsRefreshTrigger}
                       onGenerateClick={() => {
                         setGenerateModalWorkflowId(null);
                         setIsGenerateModalOpen(true);
@@ -408,7 +420,11 @@ export function ProjectDetailClient({
         open={isGenerateModalOpen}
         onOpenChange={(open) => {
           setIsGenerateModalOpen(open);
-          if (!open) setGenerateModalWorkflowId(null);
+          if (!open) {
+            setGenerateModalWorkflowId(null);
+            // Trigger immediate refresh so new run appears in table right away
+            setRunsRefreshTrigger((prev) => prev + 1);
+          }
         }}
         projectType={projectTypeName || null}
         projectTypeId={project.project_type_id || null}

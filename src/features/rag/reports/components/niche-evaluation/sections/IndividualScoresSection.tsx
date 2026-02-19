@@ -1,19 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCalculator,
-  faChartLine,
-  faChartBar,
-} from "@fortawesome/free-solid-svg-icons";
 import { SectionWrapper } from "../../shared/SectionWrapper";
 import { DimensionScoreBar } from "../../shared/DimensionScoreBar";
 import type { ReportData } from "../../../types";
-import { normalizeAgentEvaluation } from "../../../utils/normalizeAgentEvaluation";
+import { normalizeAgentEvaluation } from "../normalizeAgentEvaluation";
 import {
   getFitScoreCategory,
-  getFitScoreColorClasses,
   getFitScoreLabel,
   getFitScoreBadgeClasses,
   type FitScoreCategory,
@@ -42,69 +35,6 @@ function getCardGradientClasses(category: FitScoreCategory): string {
       return "from-red-600/10 to-red-600/5 dark:from-red-600/10 dark:to-red-600/5 border-red-600/20 dark:border-red-600/20";
   }
 }
-
-const ScoreGauge = ({ score }: { score: number }) => {
-  const radius = 50;
-  const circumference = 2 * Math.PI * radius;
-  const numericScore = Math.max(0, Math.min(100, Number(score) || 0));
-  const strokeDashoffset = circumference - (numericScore / 100) * circumference;
-  const svgSize = 120;
-  const center = svgSize / 2;
-
-  const category = getFitScoreCategory(numericScore, null);
-  const colorClasses = getFitScoreColorClasses(category);
-
-  return (
-    <div className="relative inline-block w-[120px] h-[120px] md:w-[140px] md:h-[140px]">
-      <svg
-        viewBox={`0 0 ${svgSize} ${svgSize}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="transform -rotate-90 w-full h-full block"
-      >
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          className="text-muted opacity-10"
-        />
-        <motion.circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="10"
-          strokeLinecap="round"
-          className={colorClasses}
-          initial={{ strokeDashoffset: circumference }}
-          whileInView={{ strokeDashoffset }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          style={{ strokeDasharray: circumference }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-          className="text-center"
-        >
-          <div className={`text-2xl md:text-4xl font-display font-bold ${colorClasses}`}>
-            {Math.round(numericScore)}
-          </div>
-          <div className="text-xs text-muted-foreground font-body uppercase tracking-wider mt-1">
-            Score
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-};
 
 function getCategoryFromRecommendation(rec: string): FitScoreCategory {
   const r = String(rec || "").toLowerCase();
@@ -218,145 +148,49 @@ export const IndividualScoresSection = ({
     Record<string, unknown>
   > | undefined;
 
-  if (individualEvals && Object.keys(individualEvals).length > 0) {
-    const agents = [
-      { key: "agent_1", label: "Agent 1", data: normalizeAgentEvaluation(individualEvals.agent_1 as Record<string, unknown>) ?? individualEvals.agent_1 },
-      { key: "agent_2", label: "Agent 2", data: normalizeAgentEvaluation(individualEvals.agent_2 as Record<string, unknown>) ?? individualEvals.agent_2 },
-      { key: "agent_3", label: "Agent 3", data: normalizeAgentEvaluation(individualEvals.agent_3 as Record<string, unknown>) ?? individualEvals.agent_3 },
-    ].filter((a) => a.data);
+  if (!individualEvals || Object.keys(individualEvals).length === 0) return null;
 
-    if (agents.length === 0) return null;
-
-    const recommendations = agents
-      .map((a) => String((a.data?.recommendation as string) ?? "").toUpperCase())
-      .filter(Boolean);
-    const allAgree =
-      recommendations.length >= 2 &&
-      recommendations.every((r) => r === recommendations[0]);
-
-    return (
-      <SectionWrapper
-        id="agent-consensus"
-        number={sectionNumber}
-        title="Agent Consensus"
-        subtitle="Multi-agent evaluation with dimension scores and recommendations"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {agents.map((agent, index) => (
-            <AgentConsensusCard
-              key={agent.key}
-              agent={agent}
-              index={index}
-              allAgree={allAgree}
-              getRecommendationVerdictConfig={getRecommendationVerdictConfig}
-              getCardGradientClasses={getCardGradientClasses}
-              getFitScoreCategory={getFitScoreCategory}
-            />
-          ))}
-        </div>
-      </SectionWrapper>
-    );
-  }
-
-  const evaluationData = payloadObj?.evaluation ?? payloadObj;
-  const scoreDetails = (evaluationData as Record<string, unknown>)?.score_details as
-    | Record<string, unknown>
+  const agentsIncluded = (data.meta as Record<string, unknown>)?.analysis_summary as
+    | { agents_included?: string[] }
     | undefined;
-  const individualScores = scoreDetails?.individual_scores as Record<
-    string,
-    Record<string, unknown>
-  > | undefined;
+  const agentLabels = agentsIncluded?.agents_included ?? ["Agent 1", "Agent 2", "Agent 3"];
+  const agentKeys = ["agent_1", "agent_2", "agent_3"] as const;
+  const agents = agentKeys
+    .map((key, i) => ({
+      key,
+      label: agentLabels[i] ?? `Agent ${i + 1}`,
+      data: normalizeAgentEvaluation(individualEvals[key] as Record<string, unknown>) ?? individualEvals[key],
+    }))
+    .filter((a) => a.data);
 
-  if (!individualScores) return null;
+  if (agents.length === 0) return null;
 
-  const stdDev = Number(scoreDetails?.score_spread ?? scoreDetails?.std_dev ?? 0);
-  const rawAverage = Number(scoreDetails?.raw_average ?? 0);
-  const adjustedAverage = Number(scoreDetails?.adjusted_average ?? 0);
-
-  const models = [
-    { key: "agent1", data: individualScores.agent1 },
-    { key: "agent2", data: individualScores.agent2 },
-    { key: "agent3", data: individualScores.agent3 },
-  ].filter((m) => m.data);
-
-  if (models.length === 0) return null;
+  const recommendations = agents
+    .map((a) => String((a.data?.recommendation as string) ?? "").toUpperCase())
+    .filter(Boolean);
+  const allAgree =
+    recommendations.length >= 2 &&
+    recommendations.every((r) => r === recommendations[0]);
 
   return (
     <SectionWrapper
-      id="individual-scores"
+      id="agent-consensus"
       number={sectionNumber}
-      title="Individual Model Scores"
-      subtitle="Multi-model AI evaluation with consensus scoring and variance analysis"
+      title="Agent Consensus"
+      subtitle="Multi-agent evaluation with dimension scores and recommendations"
     >
-      <div className="flex flex-wrap gap-6 mb-8">
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon icon={faCalculator} className="w-5 h-5 text-accent" />
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Raw Average</p>
-            <p className="text-xl font-semibold">{rawAverage.toFixed(1)}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon icon={faChartLine} className="w-5 h-5 text-accent" />
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Adjusted Average</p>
-            <p className="text-xl font-semibold">{adjustedAverage.toFixed(1)}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon icon={faChartBar} className="w-5 h-5 text-accent" />
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Standard Deviation</p>
-            <p className="text-xl font-semibold">{stdDev.toFixed(1)}</p>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {models.map((model, index) => {
-          const scoreData = model.data as Record<string, unknown>;
-          const rawScore = Number(scoreData.raw) || 0;
-          const verdict = String(scoreData.verdict ?? "");
-          const agentName = String(scoreData.agent ?? scoreData.role ?? "Evaluator");
-          const modelName = String(scoreData.model ?? "AI Evaluator");
-          const category = getFitScoreCategory(rawScore, null);
-          const gradient = getCardGradientClasses(category);
-
-          return (
-            <motion.div
-              key={model.key}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.15 }}
-              className={`bg-gradient-to-br ${gradient} rounded-xl p-4 md:p-6 border report-shadow hover:shadow-lg transition-all duration-300 overflow-hidden`}
-            >
-              <div className="mb-4 md:mb-6 text-center">
-                <h3 className="text-lg md:text-xl font-display font-semibold text-foreground mb-1 break-words">
-                  {agentName}
-                </h3>
-                <p className="text-xs text-muted-foreground font-body uppercase tracking-wider break-words">
-                  {modelName}
-                </p>
-              </div>
-
-              <div className="w-full flex items-center justify-center mb-4 md:mb-6">
-                <ScoreGauge score={rawScore} />
-              </div>
-
-              {verdict && (
-                <div className="p-2">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-body mb-2">
-                    Verdict
-                  </p>
-                  <p className="text-sm font-body leading-relaxed text-foreground break-words">
-                    {verdict}
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          );
-        })}
+        {agents.map((agent, index) => (
+          <AgentConsensusCard
+            key={agent.key}
+            agent={agent}
+            index={index}
+            allAgree={allAgree}
+            getRecommendationVerdictConfig={getRecommendationVerdictConfig}
+            getCardGradientClasses={getCardGradientClasses}
+            getFitScoreCategory={getFitScoreCategory}
+          />
+        ))}
       </div>
     </SectionWrapper>
   );

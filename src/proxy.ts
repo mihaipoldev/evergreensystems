@@ -30,14 +30,15 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    // Only create Supabase client and check auth for admin routes or login
+    // Only create Supabase client and check auth for admin routes, intel routes, or login
     // Skip database queries entirely for public pages to avoid blocking
     const isAdminRoute = pathname.startsWith("/admin");
+    const isIntelRoute = pathname.startsWith("/intel");
     const isLoginRoute = pathname === "/login";
     
     let user = null;
   
-  if (isAdminRoute || isLoginRoute) {
+  if (isAdminRoute || isIntelRoute || isLoginRoute) {
     try {
       const supabase = createServerClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -132,8 +133,20 @@ export async function proxy(request: NextRequest) {
       // Preserve query parameters if any
       return NextResponse.redirect(url);
     }
+  }
 
-    // For admin pages, inject color style tag into HTML response
+  // Protect intel routes
+  if (isIntelRoute) {
+    if (!user) {
+      // Redirect to login if not authenticated
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // For admin pages, inject color style tag into HTML response
+  if (isAdminRoute) {
     // Skip for API routes and non-HTML responses
     if (pathname !== "/admin/login" && !pathname.startsWith("/api")) {
       try {
@@ -163,21 +176,23 @@ export async function proxy(request: NextRequest) {
 
         // Get user settings with active theme - with error handling
         let settings = null;
-        try {
-          const result = await (supabase
-            .from("user_settings") as any)
-            .select("active_theme_id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          settings = result.data;
-          console.log('[COLOR DEBUG] User settings loaded:', {
-            hasSettings: !!settings,
-            activeThemeId: settings?.active_theme_id || null
-          });
-        } catch (error) {
-          // If query fails, continue without settings
-          settings = null;
-          console.error('[COLOR DEBUG] Error loading user settings:', error);
+        if (user) {
+          try {
+            const result = await (supabase
+              .from("user_settings") as any)
+              .select("active_theme_id")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            settings = result.data;
+            console.log('[COLOR DEBUG] User settings loaded:', {
+              hasSettings: !!settings,
+              activeThemeId: settings?.active_theme_id || null
+            });
+          } catch (error) {
+            // If query fails, continue without settings
+            settings = null;
+            console.error('[COLOR DEBUG] Error loading user settings:', error);
+          }
         }
 
         let colorInjection = "";
@@ -186,7 +201,7 @@ export async function proxy(request: NextRequest) {
         let htmlInlineStyle = "";
         let colorHslValues: { h: string; s: string; l: string; primary: string } | null = null;
 
-        if (settings?.active_theme_id) {
+        if (user && settings?.active_theme_id) {
           console.log('[COLOR DEBUG] Active theme ID found:', settings.active_theme_id);
           // Get theme with primary color and fonts - with error handling
           let theme = null;
@@ -456,7 +471,7 @@ export async function proxy(request: NextRequest) {
               colorInjection = blockingScript + styleTag;
             }
           }
-        } else {
+        } else if (user) {
           console.log('[COLOR DEBUG] ⚠️ No active theme ID in settings');
           // No active theme - first check if "Default Theme" exists (even if not set as active)
           let defaultTheme = null;

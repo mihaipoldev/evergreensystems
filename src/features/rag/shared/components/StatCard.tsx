@@ -67,7 +67,7 @@ export function StatCard({
         ease: [0.16, 1, 0.3, 1],
       }}
     >
-      <Card className="p-5 relative overflow-hidden border-0 shadow-card-light transition-all duration-300 hover:shadow-card hover:scale-[1.02] cursor-default">
+      <Card className="p-3 md:p-5 relative overflow-hidden border-0 shadow-card-light transition-all duration-300 hover:shadow-card hover:scale-[1.02] cursor-default">
         {/* Gradient overlays */}
         <div className={cn("absolute inset-0 bg-gradient-to-br pointer-events-none", colors.gradient)} />
         <div 
@@ -76,26 +76,26 @@ export function StatCard({
         />
         
         <div className="flex items-start justify-between relative z-10">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground font-medium">{title}</p>
+          <div className="space-y-1 md:space-y-2 min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-muted-foreground font-medium truncate">{title}</p>
             {typeof value === "string" && value.includes("/100") ? (
-              <p className={cn("text-2xl font-semibold", colors.valueColor)}>
+              <p className={cn("text-lg md:text-2xl font-semibold", colors.valueColor)}>
                 {value.split("/100")[0]}
                 <span className="text-xs text-muted-foreground ml-1">/100</span>
               </p>
             ) : (
-              <p className={cn("text-2xl font-semibold", colors.valueColor)}>{value}</p>
+              <p className={cn("text-lg md:text-2xl font-semibold truncate", colors.valueColor)}>{value}</p>
             )}
             {change && (
-              <p className={cn("text-sm font-medium", changeColors[changeType])}>
+              <p className={cn("text-xs md:text-sm font-medium", changeColors[changeType])}>
                 {change}
               </p>
             )}
           </div>
-          <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", colors.iconBg)}>
+          <div className={cn("h-8 w-8 md:h-10 md:w-10 rounded-lg flex items-center justify-center flex-shrink-0 ml-2", colors.iconBg)}>
             <FontAwesomeIcon
               icon={icon}
-              className={cn("h-5 w-5", colors.iconColor)}
+              className={cn("h-4 w-4 md:h-5 md:w-5", colors.iconColor)}
             />
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { getRouteForPathname, getFunnelPresetClass } from "@/features/funnels/routes";
 
 export async function WebsiteColorStyle() {
   // ALWAYS check database first - cookies are just for optimization
@@ -11,20 +12,21 @@ export async function WebsiteColorStyle() {
     // Silently fail - return null to prevent errors
     return null;
   }
-  
+
   // Determine environment based on NODE_ENV
   const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
-  
+
   // Determine route from headers
-  let route: '/' | '/outbound-system' = '/';
+  let route = '/';
+  let pathname = '/';
   try {
     const headersList = await headers();
-    const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
-    if (pathname.includes("/outbound-system")) {
-      route = '/outbound-system';
-    }
+    pathname = headersList.get("x-pathname") || headersList.get("referer") || "/";
+    route = getRouteForPathname(pathname);
   } catch {
     // Default to landing page if headers unavailable
+    pathname = '/';
+    route = '/';
   }
   
   // Get website settings with preset join (public read access, no auth required)
@@ -75,7 +77,7 @@ export async function WebsiteColorStyle() {
   }
 
   if (primaryColor || secondaryColor) {
-    return renderColorScript(primaryColor, secondaryColor, route);
+    return renderColorScript(primaryColor, secondaryColor, pathname);
   }
 
   return null;
@@ -84,12 +86,12 @@ export async function WebsiteColorStyle() {
 function renderColorScript(
   primaryColor: { hsl_h: number; hsl_s: number; hsl_l: number } | null,
   secondaryColor: { hsl_h: number; hsl_s: number; hsl_l: number } | null,
-  route: '/' | '/outbound-system' = '/'
+  pathname: string = '/'
 ) {
   // Return style tag - Next.js will move it to head automatically
   // Apply ONLY to landing page preset - NOT to :root to avoid affecting admin
   const cssParts: string[] = [];
-  
+
   if (primaryColor) {
     const hslH = String(primaryColor.hsl_h);
     const hslS = String(primaryColor.hsl_s);
@@ -97,18 +99,18 @@ function renderColorScript(
     const primaryValue = `${primaryColor.hsl_h} ${primaryColor.hsl_s}% ${primaryColor.hsl_l}%`;
     cssParts.push(`--brand-h:${hslH}!important;--brand-s:${hslS}!important;--brand-l:${hslL}!important;--primary:${primaryValue}!important;`);
   }
-  
+
   if (secondaryColor) {
     const secondaryValue = `${secondaryColor.hsl_h} ${secondaryColor.hsl_s}% ${secondaryColor.hsl_l}%`;
     cssParts.push(`--secondary:${secondaryValue}!important;`);
   }
-  
+
   if (cssParts.length === 0) {
     return null;
   }
-  
-  // Determine which preset class to target based on route
-  const presetClass = route === '/outbound-system' ? 'preset-outbound-system' : 'preset-landing-page';
+
+  // Determine which preset class to target based on pathname (not route)
+  const presetClass = getFunnelPresetClass(pathname);
   const cssContent = `.${presetClass},.${presetClass} *,.${presetClass}.dark,.${presetClass}.dark *{${cssParts.join('')}}`;
   
   return (

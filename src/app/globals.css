@@ -126,6 +126,21 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
+    /* Custom tokens for funnel pages - dark mode fallback for any preset */
+    --text-primary: 220 10% 95%;
+    --text-secondary: 220 10% 75%;
+    --text-muted: 220 10% 60%;
+
+    --surface-elevated: 220 18% 12%;
+    --surface-subtle: 220 15% 15%;
+
+    --cta-bg: var(--primary);
+    --cta-hover: 220 15% 95%;
+    --cta-text: 220 20% 10%;
+
+    --success: 160 60% 50%;
+    --success-muted: 160 40% 20%;
+
     /* Table variables - fallback values (overridden in admin preset) */
     --table-background: transparent;
     --table-head-background: transparent;
@@ -424,12 +439,13 @@
   }
   html {
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip; /* clip instead of hidden to avoid implicit overflow-y: auto */
+    overflow-y: scroll; /* Always reserve scrollbar space to prevent layout shift */
   }
   body {
     @apply bg-background text-foreground;
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip; /* clip instead of hidden to avoid creating a second scroll container */
     position: relative;
     isolation: isolate; /* allow pseudo-elements to layer above background */
     z-index: 0;
@@ -476,7 +492,7 @@
   }
 
   .heading-xl {
-    @apply text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight;
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-tight;
     color: hsl(var(--text-primary));
   }
 
@@ -556,9 +572,22 @@ textarea.json-textarea-fg {
 [data-json-code-editor] .cm-scroller,
 [data-json-code-editor] .cm-content {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
   cursor: text !important;
+  tab-size: 1 !important;
+  -moz-tab-size: 1 !important;
+}
+
+@media (min-width: 768px) {
+  [data-json-code-editor] .cm-editor,
+  [data-json-code-editor] .cm-scroller,
+  [data-json-code-editor] .cm-content {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    tab-size: 2 !important;
+    -moz-tab-size: 2 !important;
+  }
 }
 [data-json-code-editor] .cm-editor.cm-focused {
   outline: none;
@@ -998,11 +1027,6 @@ input[type="password"]:-webkit-autofill:active {
 .masonry-grid_column:nth-child(2) > div:nth-child(even) {
   transform: translateY(-2.5rem);
   z-index: 1;
-}
-
-/* Rich Text Styling - Inherit font-weight and make bold heavier */
-.rich-text-content {
-  font-weight: inherit;
 }
 
 /* Gradient markers (primary to secondary) inherit weight from parent */
@@ -1527,6 +1551,43 @@ input[type="password"]:-webkit-autofill:active {
 
     .sidebar {
       display: none;
+    }
+
+    /* Fix empty pages issue - ensure content flows properly */
+    /* Remove fixed positioning that causes empty pages */
+    [class*="fixed"] {
+      position: static !important;
+    }
+
+    /* Remove left margin from main content (sidebar compensation) */
+    main[class*="ml-"] {
+      margin-left: 0 !important;
+    }
+
+    /* Ensure flex containers don't cause layout issues */
+    .flex {
+      display: block !important;
+    }
+
+    /* Fix overflow issues that might hide content */
+    [class*="overflow"] {
+      overflow: visible !important;
+    }
+
+    /* Remove negative margins that might cause clipping */
+    [class*="-mx"] {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+
+    /* Ensure content containers are visible and flow properly */
+    div[class*="relative"] {
+      position: static !important;
+    }
+
+    /* Fix z-index issues */
+    [class*="z-"] {
+      z-index: auto !important;
     }
   }
 

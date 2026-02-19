@@ -129,7 +129,7 @@ export const TitlePacksSection = ({
       id="title-packs"
       number={sectionNumber}
       title="Title Packs"
-      subtitle={titlePacks?.description ?? "Decision-maker titles to target and exclude"}
+      subtitle={titlePacks?.description || undefined}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TitleGroup

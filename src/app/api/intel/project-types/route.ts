@@ -37,7 +37,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data || [], { status: 200 });
+    return NextResponse.json(data || [], {
+      status: 200,
+      headers: {
+        "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "An unexpected error occurred" },

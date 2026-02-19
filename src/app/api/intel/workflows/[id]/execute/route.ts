@@ -16,7 +16,7 @@ export async function POST(
 
     const { id: workflowId } = await params;
     const body = await request.json();
-    const { project_id, research_subject_id, workflow_id, input, ai_model, research_ai_model, synthesis_ai_model } = body;
+    const { project_id, research_subject_id, workflow_id, input } = body;
 
     // Accept both project_id (new) and research_subject_id (backward compat)
     const effectiveProjectId = project_id || research_subject_id;
@@ -34,10 +34,10 @@ export async function POST(
     // Use service role client to access secrets and research data
     const adminSupabase = createServiceRoleClient();
 
-    // Fetch workflow to get knowledge_base_target, target_knowledge_base_id, default_ai_model, and default_synthesis_ai_model
+    // Fetch workflow to get knowledge_base_target and target_knowledge_base_id
     const { data: workflow, error: workflowError } = await (adminSupabase
       .from("workflows") as any)
-      .select("knowledge_base_target, target_knowledge_base_id, default_ai_model, default_synthesis_ai_model")
+      .select("knowledge_base_target, target_knowledge_base_id")
       .eq("id", effectiveWorkflowId)
       .single();
 
@@ -64,8 +64,6 @@ export async function POST(
     const workflowTyped = workflow as { 
       knowledge_base_target: string; 
       target_knowledge_base_id: string | null;
-      default_ai_model: string;
-      default_synthesis_ai_model: string | null;
     };
 
     // Fetch webhook URL from workflow_secrets
@@ -216,11 +214,6 @@ export async function POST(
       });
     }
 
-    // Use research_ai_model or ai_model from request body, or fallback to workflow's default_ai_model
-    const effectiveResearchModel = research_ai_model || ai_model || workflowTyped.default_ai_model;
-    // Use synthesis_ai_model from request body, or fallback to workflow's default_synthesis_ai_model, then default_ai_model
-    const effectiveSynthesisModel = synthesis_ai_model || workflowTyped.default_synthesis_ai_model || workflowTyped.default_ai_model;
-
     // Prepare webhook payload - Input is the single source for name/geography/category/description
     // document_ids: webhook can fetch full docs from Supabase via id IN (...)
     const webhookPayload = {
@@ -229,8 +222,6 @@ export async function POST(
       ProjectId: effectiveProjectId,
       RunId: runId,
       DocumentIds: Array.from(documentIds),
-      ...(effectiveResearchModel && { ResearchAiModel: effectiveResearchModel }),
-      ...(effectiveSynthesisModel && { SynthesisAiModel: effectiveSynthesisModel }),
       ...(input && Object.keys(input).length > 0 && { Input: input }),
     };
 

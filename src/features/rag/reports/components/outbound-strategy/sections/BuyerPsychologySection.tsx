@@ -27,7 +27,7 @@ type BuyerPsychology = {
   budget_signal?: string;
   urgency_level?: string;
   buying_triggers?: string[];
-  decision_makers?: DecisionMaker[];
+  decision_makers?: (DecisionMaker | string)[];
   sales_cycle_notes?: string;
 };
 
@@ -44,7 +44,7 @@ const budgetLabels: Record<string, string> = {
 
 export const BuyerPsychologySection = ({
   buyerPsychology,
-  sectionNumber = "05",
+  sectionNumber = "09",
 }: BuyerPsychologySectionProps) => {
   const decisionMakers = buyerPsychology?.decision_makers ?? [];
   const buyingTriggers = buyerPsychology?.buying_triggers ?? [];
@@ -56,7 +56,7 @@ export const BuyerPsychologySection = ({
       id="buyer-psychology"
       number={sectionNumber}
       title="Buyer Psychology"
-      subtitle={buyerPsychology?.description ?? "Decision-maker roles, buying triggers, and sales cycle"}
+      subtitle={buyerPsychology?.description || undefined}
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard
@@ -90,27 +90,36 @@ export const BuyerPsychologySection = ({
             icon={<FontAwesomeIcon icon={faUserTie} className="w-5 h-5 text-accent" />}
           />
           <div className="space-y-4">
-            {decisionMakers.map((dm, index) => (
-              <div
-                key={index}
-                className="bg-card rounded-xl border border-border report-shadow p-6"
-              >
-                <h4 className="font-display font-semibold text-foreground mb-2">
-                  {dm.role}
-                </h4>
-                {dm.influence && (
-                  <p className="text-sm text-muted-foreground font-body mb-3">
-                    <span className="font-medium text-foreground">Influence:</span> {dm.influence}
-                  </p>
-                )}
-                {dm.what_they_care_about && (
-                  <p className="text-sm font-body text-foreground">
-                    <span className="font-medium text-muted-foreground">What they care about:</span>{" "}
-                    {dm.what_they_care_about}
-                  </p>
-                )}
-              </div>
-            ))}
+            {decisionMakers.map((dm, index) => {
+              if (typeof dm === "string") {
+                return (
+                  <div key={index} className="bg-card rounded-xl border border-border report-shadow p-6">
+                    <p className="text-sm font-body text-foreground">{dm}</p>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={index}
+                  className="bg-card rounded-xl border border-border report-shadow p-6"
+                >
+                  <h4 className="font-display font-semibold text-foreground mb-2">
+                    {dm.role}
+                  </h4>
+                  {dm.influence && (
+                    <p className="text-sm text-muted-foreground font-body mb-3">
+                      <span className="font-medium text-foreground">Influence:</span> {dm.influence}
+                    </p>
+                  )}
+                  {dm.what_they_care_about && (
+                    <p className="text-sm font-body text-foreground">
+                      <span className="font-medium text-muted-foreground">What they care about:</span>{" "}
+                      {dm.what_they_care_about}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

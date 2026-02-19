@@ -1,54 +1,24 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { RunList } from "@/features/rag/runs/components/RunList";
 import { PageTitle } from "@/features/rag/shared/components/PageTitle";
 import { StatCard } from "@/features/rag/shared/components/StatCard";
-import type { Run } from "@/features/rag/runs/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faPlay, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
-
-type RunWithKB = Run & { knowledge_base_name?: string | null };
+import { useRuns } from "@/features/rag/runs/hooks/useRuns";
 
 export default function ResearchReportsPage() {
-  const [runs, setRuns] = useState<RunWithKB[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/intel/runs");
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch runs");
-        }
-
-        const data = await response.json();
-        setRuns(data || []);
-      } catch (err) {
-        console.error("Error fetching runs:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
+  const { data: runs = [], error, isLoading } = useRuns(null);
 
   // Calculate statistics
   const stats = useMemo(() => {
     const total = runs.length;
     const active = runs.filter(
-      (run) => 
-        run.status === "queued" || 
-        run.status === "collecting" || 
-        run.status === "ingesting" || 
+      (run) =>
+        run.status === "queued" ||
+        run.status === "collecting" ||
+        run.status === "ingesting" ||
         run.status === "generating"
     ).length;
     const completed = runs.filter((run) => run.status === "complete").length;
@@ -56,11 +26,17 @@ export default function ResearchReportsPage() {
     return { total, active, completed };
   }, [runs]);
 
+  if (isLoading) {
+    return null;
+  }
+
   if (error) {
     return (
       <div className="w-full space-y-6">
         <div className="text-center py-12">
-          <p className="text-destructive">{error}</p>
+          <p className="text-destructive">
+            {error instanceof Error ? error.message : "An error occurred"}
+          </p>
         </div>
       </div>
     );
@@ -100,7 +76,3 @@ export default function ResearchReportsPage() {
     </div>
   );
 }
-
-
-
-

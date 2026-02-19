@@ -17,10 +17,16 @@ import {
   setStoredCollapsibleState,
   getReportGroupId,
 } from "@/lib/collapsible-persistence";
-import type { ReportData } from "../../../types";
+interface ResearchLinks {
+  google_search_links?: string[];
+  linkedin_job_search_links?: string[];
+  funding_search_links?: string[];
+  confidence?: number;
+  description?: string;
+}
 
 interface ResearchLinksSectionProps {
-  researchLinks: NonNullable<ReportData["data"]["research_links"]>;
+  researchLinks: ResearchLinks;
   reportId: string;
   sectionNumber?: string;
 }

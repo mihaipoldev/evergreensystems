@@ -2,8 +2,6 @@
 
 import {
   SectionWrapper,
-  InsightList,
-  ContentCard,
   BlockHeader,
 } from "../../shared";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -39,42 +37,60 @@ export const PainPointsSection = ({ data, sectionNumber = "11" }: PainPointsSect
       title="Pain Points"
       subtitle="Core challenges, emotional state, and critical triggers"
     >
-      <div className="space-y-8">
+      <div className="space-y-6">
         {data.core_pain_points && data.core_pain_points.length > 0 && (
           <div>
             <BlockHeader
               variant="title"
               title="Core Pain Points"
-              icon={<FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-destructive" />}
+              icon={<FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-accent" />}
             />
-            <InsightList items={data.core_pain_points} type="warning" numbered />
+            <div className="space-y-2 mt-4">
+              {data.core_pain_points.map((point, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3"
+                >
+                  <span className="text-sm font-semibold text-muted-foreground tabular-nums flex-shrink-0">
+                    {index + 1}.
+                  </span>
+                  <p className="text-sm font-body text-foreground leading-snug">
+                    {point}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {data.emotional_state && (
-          <ContentCard
-            variant="warning"
-            style="summary"
-            title="Emotional State"
-            icon={<FontAwesomeIcon icon={faHeartPulse} className="w-5 h-5" />}
-          >
-            <p className="text-base font-body text-foreground leading-relaxed">
-              {getText(data.emotional_state, "")}
-            </p>
-          </ContentCard>
+          <div>
+            <BlockHeader
+              variant="title"
+              title="Emotional State"
+              icon={<FontAwesomeIcon icon={faHeartPulse} className="w-5 h-5 text-accent" />}
+            />
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 mt-4">
+              <p className="text-sm font-body text-foreground leading-relaxed">
+                {getText(data.emotional_state, "")}
+              </p>
+            </div>
+          </div>
         )}
 
         {data.bleeding_neck_trigger && (
-          <ContentCard
-            variant="danger"
-            style="summary"
-            title="Bleeding Neck Trigger"
-            icon={<FontAwesomeIcon icon={faBolt} className="w-5 h-5" />}
-          >
-            <p className="text-base font-body text-foreground leading-relaxed">
-              {getText(data.bleeding_neck_trigger, "")}
-            </p>
-          </ContentCard>
+          <div>
+            <BlockHeader
+              variant="title"
+              title="Bleeding Neck Trigger"
+              icon={<FontAwesomeIcon icon={faBolt} className="w-5 h-5 text-accent" />}
+            />
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 mt-4">
+              <p className="text-sm font-body text-foreground leading-relaxed">
+                {getText(data.bleeding_neck_trigger, "")}
+              </p>
+            </div>
+          </div>
         )}
       </div>
     </SectionWrapper>

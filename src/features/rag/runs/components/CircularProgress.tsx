@@ -8,6 +8,7 @@ interface CircularProgressProps {
   size?: number;
   strokeWidth?: number;
   status?: string;
+  className?: string;
 }
 
 /**
@@ -19,6 +20,7 @@ export function CircularProgress({
   size = 200,
   strokeWidth = 12,
   status = "generating",
+  className = "",
 }: CircularProgressProps) {
   const gradientId = useId();
   const radius = (size - strokeWidth) / 2;
@@ -29,7 +31,7 @@ export function CircularProgress({
   const isComplete = status === "complete";
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className={`relative ${className}`} style={{ width: size, height: size }}>
       {/* Background ring */}
       <svg
         className="rotate-[-90deg]"
@@ -90,7 +92,7 @@ export function CircularProgress({
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-5xl font-bold inline-block"
+          className="text-3xl md:text-5xl font-bold inline-block"
           style={
             isFailed
               ? {
@@ -111,7 +113,7 @@ export function CircularProgress({
         >
           {percentage}%
         </motion.div>
-        <span className="text-sm text-muted-foreground mt-1">
+        <span className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
           {isFailed ? "Failed" : isComplete ? "Complete" : "In Progress"}
         </span>
       </div>

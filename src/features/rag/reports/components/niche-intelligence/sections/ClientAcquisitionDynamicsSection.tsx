@@ -2,7 +2,6 @@
 
 import {
   SectionWrapper,
-  InsightList,
   KeyValueBlock,
   BlockHeader,
   StatCard,
@@ -56,7 +55,21 @@ export const ClientAcquisitionDynamicsSection = ({
               title="How They Currently Get Clients"
               icon={<FontAwesomeIcon icon={faBullseye} className="w-5 h-5 text-accent" />}
             />
-            <InsightList items={data.how_they_currently_get_clients} type="target" numbered />
+            <div className="space-y-2 mt-4">
+              {data.how_they_currently_get_clients.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3"
+                >
+                  <span className="text-sm font-semibold text-muted-foreground tabular-nums flex-shrink-0">
+                    {index + 1}.
+                  </span>
+                  <p className="text-sm font-body text-foreground leading-snug">
+                    {getText(item, "")}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

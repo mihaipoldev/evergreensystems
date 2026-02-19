@@ -9,6 +9,7 @@ import {
   faStar,
   faQuoteRight,
   faHandshake,
+  faShieldHalved,
 } from "@fortawesome/free-solid-svg-icons";
 
 type OfferAngle = {
@@ -21,7 +22,9 @@ type OfferAngle = {
 
 type Differentiation = Record<string, { key_message?: string; proof_point?: string; our_approach?: string; their_approach?: string }>;
 
-type OurPositioning = {
+type ProofRequirement = string | { item?: string; priority?: string; purpose?: string };
+
+type Positioning = {
   description?: string;
   offer_angles?: OfferAngle[];
   primary_wedge?: { statement?: string; why_it_works?: string[] };
@@ -31,30 +34,33 @@ type OurPositioning = {
     strategic_benefits?: string[];
     functional_benefits?: string[];
   };
-  proof_requirements?: { must_provide?: string[]; nice_to_have?: string[] };
+  proof_requirements?: ProofRequirement[];
 };
 
-interface OurPositioningSectionProps {
-  ourPositioning: OurPositioning;
+interface PositioningSectionProps {
+  positioning: Positioning;
   sectionNumber?: string;
 }
 
-export const OurPositioningSection = ({
-  ourPositioning,
-  sectionNumber = "04",
-}: OurPositioningSectionProps) => {
-  const angles = ourPositioning?.offer_angles ?? [];
-  const primaryWedge = ourPositioning?.primary_wedge;
-  const differentiation = ourPositioning?.differentiation;
-  const valueProp = ourPositioning?.value_proposition;
-  const proofReqs = ourPositioning?.proof_requirements;
+export const PositioningSection = ({
+  positioning,
+  sectionNumber = "08",
+}: PositioningSectionProps) => {
+  const angles = positioning?.offer_angles ?? [];
+  const primaryWedge = positioning?.primary_wedge;
+  const differentiation = positioning?.differentiation;
+  const valueProp = positioning?.value_proposition;
+  const rawProofReqs = positioning?.proof_requirements ?? [];
+  const proofReqs = rawProofReqs.map((p) =>
+    typeof p === "string" ? p : (p?.item ?? (p as { purpose?: string }).purpose ?? String(p))
+  );
 
   return (
     <SectionWrapper
-      id="our-positioning"
+      id="positioning"
       number={sectionNumber}
-      title="Our Positioning"
-      subtitle={ourPositioning?.description ?? "How we position our lead gen service"}
+      title="Positioning"
+      subtitle={positioning?.description || undefined}
     >
       {/* Primary Wedge */}
       {primaryWedge?.statement && (
@@ -195,14 +201,6 @@ export const OurPositioningSection = ({
                       <p className="text-sm font-body text-foreground font-medium">{val.key_message}</p>
                     </div>
                   )}
-                  {val.proof_point && (
-                    <div>
-                      <span className="text-xs uppercase tracking-wider text-muted-foreground font-body block mb-1">
-                        Proof Point
-                      </span>
-                      <p className="text-sm font-body text-foreground">{val.proof_point}</p>
-                    </div>
-                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
                     {val.our_approach && (
                       <div>
@@ -233,6 +231,18 @@ export const OurPositioningSection = ({
         <div className="mb-10">
           <BlockHeader variant="title" title="Value Proposition" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {valueProp.functional_benefits && valueProp.functional_benefits.length > 0 && (
+              <ContentCard title="Functional Benefits">
+                <ul className="space-y-2">
+                  {valueProp.functional_benefits.map((b, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </ContentCard>
+            )}
             {valueProp.emotional_benefits && valueProp.emotional_benefits.length > 0 && (
               <ContentCard variant="accent" title="Emotional Benefits">
                 <ul className="space-y-2">
@@ -257,49 +267,26 @@ export const OurPositioningSection = ({
                 </ul>
               </ContentCard>
             )}
-            {valueProp.functional_benefits && valueProp.functional_benefits.length > 0 && (
-              <ContentCard title="Functional Benefits">
-                <ul className="space-y-2">
-                  {valueProp.functional_benefits.map((b, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-              </ContentCard>
-            )}
           </div>
         </div>
       )}
 
       {/* Proof Requirements */}
-      {proofReqs && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {proofReqs.must_provide && proofReqs.must_provide.length > 0 && (
-            <ContentCard variant="green" title="Must Provide">
-              <ul className="space-y-2">
-                {proofReqs.must_provide.map((p, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </ContentCard>
-          )}
-          {proofReqs.nice_to_have && proofReqs.nice_to_have.length > 0 && (
-            <ContentCard variant="muted" title="Nice to Have">
-              <ul className="space-y-2">
-                {proofReqs.nice_to_have.map((p, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </ContentCard>
-          )}
+      {proofReqs.length > 0 && (
+        <div>
+          <BlockHeader
+            variant="title"
+            title="Proof Requirements"
+            icon={<FontAwesomeIcon icon={faShieldHalved} className="w-5 h-5 text-accent" />}
+          />
+          <ul className="space-y-2">
+            {proofReqs.map((p, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm font-body text-foreground p-3 rounded-lg bg-muted/30 border border-border">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                {p}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </SectionWrapper>

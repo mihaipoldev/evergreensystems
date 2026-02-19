@@ -84,7 +84,7 @@ export function ModalShell({
 }: ModalShellProps) {
   useScrollLock(open);
   const maxWidthClass = maxWidthMap[maxWidth];
-  const maxHeightClass = maxHeight === "90vh" ? "max-h-[90vh]" : "";
+  const maxHeightClass = maxHeight === "90vh" ? "h-[100vh] md:h-auto md:max-h-[90vh]" : "";
 
   // Render title icon/image
   const renderTitleIcon = () => {
@@ -122,6 +122,7 @@ export function ModalShell({
           maxWidthClass,
           maxHeightClass,
           "p-0 gap-0 rounded-xl bg-card dark:bg-background",
+          maxHeight === "90vh" ? "md:my-8 my-0 !m-0" : "my-8",
           "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
           "[&>button]:z-20 [&>button]:focus-visible:outline-none [&>button]:focus-visible:ring-0 [&>button]:focus-visible:ring-offset-0",
           contentClassName
@@ -133,7 +134,7 @@ export function ModalShell({
         <div
           className={cn(
             "flex flex-col",
-            maxHeight === "90vh" ? "max-h-[90vh] overflow-hidden" : ""
+            maxHeight === "90vh" ? "h-full min-h-full md:max-h-[90vh] overflow-hidden" : ""
           )}
         >
           <div className="flex-shrink-0 p-4 md:p-6 border-b border-border/50 sticky top-0 z-10 bg-card dark:bg-background rounded-t-xl">
