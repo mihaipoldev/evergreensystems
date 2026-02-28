@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import { trackEvent } from "@/lib/analytics";
 import type { HeaderContent } from "../types";
 import { Logo } from "@/components/shared/Logo";
 
@@ -90,9 +91,26 @@ const Header = ({ content }: HeaderProps) => {
               variant="default"
               size="sm"
               className="rounded-full border-gray-300 flex items-center gap-2"
+              asChild
             >
-              <FontAwesomeIcon icon={faCalendar} className="h-4 w-4" />
-              <span className="text-sm font-medium">{content.ctaButtonText}</span>
+              <Link
+                href={content.ctaUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (content.ctaId) {
+                    trackEvent({
+                      event_type: "link_click",
+                      entity_type: "cta_button",
+                      entity_id: content.ctaId,
+                      metadata: { location: "funnel_header" },
+                    });
+                  }
+                }}
+              >
+                <FontAwesomeIcon icon={faCalendar} className="h-4 w-4" />
+                <span className="text-sm font-medium">{content.ctaButtonText}</span>
+              </Link>
             </Button>
           </div>
         </nav>

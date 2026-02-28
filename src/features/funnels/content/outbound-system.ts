@@ -7,6 +7,8 @@ export const outboundSystemContent: FunnelContent = {
   header: {
     logoText: "Evergreen Sys.",
     ctaButtonText: "Book Call",
+    ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems",
+    ctaId: "426f5869-48b5-4e36-bad3-203ea5425f9d",
     navLinks: [
       { label: "Outcomes", href: "#expected-outcomes" },
       { label: "Why", href: "#why-outbound" },
@@ -21,6 +23,8 @@ export const outboundSystemContent: FunnelContent = {
     subheadline:
       "An always-on outbound system that runs in the background while you focus on closing.",
     ctaButtonText: "Book a Qualification Call",
+    ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems",
+    ctaId: "20960721-c403-4696-888e-3493de125658",
     bottomText: "10 booked calls a month ((guaranteed!))",
     videoPlaceholderText: "Watch the overview",
   },
@@ -364,6 +368,8 @@ export const outboundSystemContent: FunnelContent = {
       text: "You install a predictable, enriched acquisition system that books qualified sales conversations consistently.",
     },
     ctaButtonText: "Book a Strategy Call",
+    ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems",
+    ctaId: "783ee798-5de9-4186-959c-67710862bd0e",
     subtext:
       "No pressure. No commitment.\nJust a clear conversation about whether this system fits your business.",
   },

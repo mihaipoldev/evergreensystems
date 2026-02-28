@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from "@/components/ui/RichText";
+import { trackEvent } from "@/lib/analytics";
 import { ctaHover } from "../animations";
 import type { FinalCTAContent } from "../types";
 
@@ -47,9 +49,25 @@ const FinalCTASection = ({ content }: FinalCTASectionProps) => {
           {/* CTA Button */}
           <div className="md:mb-6 mb-4">
             <motion.div {...ctaHover} className="inline-block">
-              <Button variant="cta" size="xl" className="shadow-lg hover:shadow-xl transition-shadow hover:-translate-y-0">
-                {content.ctaButtonText}
-                <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />
+              <Button variant="cta" size="xl" className="shadow-lg hover:shadow-xl transition-shadow hover:-translate-y-0" asChild>
+                <Link
+                  href={content.ctaUrl || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    if (content.ctaId) {
+                      trackEvent({
+                        event_type: "link_click",
+                        entity_type: "cta_button",
+                        entity_id: content.ctaId,
+                        metadata: { location: "funnel_final_cta" },
+                      });
+                    }
+                  }}
+                >
+                  {content.ctaButtonText}
+                  <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </motion.div>
           </div>

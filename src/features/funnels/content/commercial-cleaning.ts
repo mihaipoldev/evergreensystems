@@ -8,6 +8,8 @@ export const commercialCleaningContent: FunnelContent = {
   header: {
     logoText: "Evergreen Sys.",
     ctaButtonText: "Book Call",
+    ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems?month=2026-03",
+    ctaId: "426f5869-48b5-4e36-bad3-203ea5425f9d",
     navLinks: [
       { label: "Outcomes", href: "#expected-outcomes" },
       { label: "Why", href: "#why-outbound" },
@@ -22,6 +24,8 @@ export const commercialCleaningContent: FunnelContent = {
     subheadline:
       "An always-on outbound system that runs in the background while you focus on closing.",
     ctaButtonText: "Book a Qualification Call",
+    ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems?month=2026-03",
+    ctaId: "6905ab5a-5e06-4cec-aac2-dc352b8c1d9c",
     bottomText: "8+ qualified calls per month ((guaranteed!))",
     videoPlaceholderText: "Watch the overview",
   },
@@ -367,6 +371,8 @@ export const commercialCleaningContent: FunnelContent = {
       text: "You install a system that books qualified sales calls with decision-makers every month — so you never depend on referrals alone again.",
     },
     ctaButtonText: "Book a Strategy Call",
+    ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems?month=2026-03",
+    ctaId: "63180dd7-c75e-4c4a-90fb-451c5f63c0d6",
     subtext:
       "No pressure. No commitment.\nJust a clear conversation about whether this system fits your cleaning business.",
   },

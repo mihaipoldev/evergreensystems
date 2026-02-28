@@ -8,6 +8,8 @@ export interface NavLink {
 export interface HeaderContent {
   logoText: string;
   ctaButtonText: string;
+  ctaUrl?: string;
+  ctaId?: string;
   navLinks: NavLink[];
 }
 
@@ -17,6 +19,8 @@ export interface HeroContent {
   headline: string;
   subheadline: string;
   ctaButtonText: string;
+  ctaUrl?: string;
+  ctaId?: string;
   /** Supports rich text */
   bottomText: string;
   videoPlaceholderText: string;
@@ -180,6 +184,8 @@ export interface FinalCTAContent {
   worstCase: { label: string; text: string };
   bestCase: { label: string; text: string };
   ctaButtonText: string;
+  ctaUrl?: string;
+  ctaId?: string;
   /** Supports rich text */
   subtext: string;
 }
