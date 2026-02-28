@@ -55,6 +55,11 @@ const OutcomesSection = ({ content }: OutcomesSectionProps) => {
           <p className="md:body-md body-sm text-center mt-3">
             {content.valueSubtext}
           </p>
+          {content.qualifiedDefinition && (
+            <p className="body-sm text-center mt-2 text-muted-foreground italic">
+              {content.qualifiedDefinition}
+            </p>
+          )}
         </div>
 
         {/* Qualifier */}

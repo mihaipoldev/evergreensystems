@@ -28,6 +28,7 @@ export interface OutcomesContent {
   benefits: string[];
   valueProp: string;
   valueSubtext: string;
+  qualifiedDefinition?: string;
   /** Supports rich text */
   qualifierText: string;
 }

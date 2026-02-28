@@ -22,14 +22,14 @@ export const commercialCleaningContent: FunnelContent = {
     subheadline:
       "An always-on outbound system that runs in the background while you focus on closing.",
     ctaButtonText: "Book a Qualification Call",
-    bottomText: "10+ qualified calls per month ((guaranteed!))",
+    bottomText: "8+ qualified calls per month ((guaranteed!))",
     videoPlaceholderText: "Watch the overview",
   },
 
   outcomes: {
     heading: "Get Consistent, Qualified Sales Calls",
     subheading:
-      "At least 10 qualified sales calls within 30 days of the first email sent",
+      "At least 8 qualified sales calls within 30 days of the first email sent",
     benefits: [
       "Without spending tens of thousands on ads",
       'Without paying bloated retainers for "leads" that go nowhere',
@@ -39,6 +39,8 @@ export const commercialCleaningContent: FunnelContent = {
       "We build and run the entire outbound system for you — end-to-end.",
     valueSubtext:
       "You only show up to qualified calls booked directly on your calendar.",
+    qualifiedDefinition:
+      "A qualified call is a booked conversation with a decision-maker — facility manager, property manager, office manager, or business owner — at a company within your service area that has a potential need for commercial cleaning services.",
     qualifierText:
       "**ℹ️ Only continue if you're a commercial cleaning company owner or sales leader** with a clear offer and the ability to handle new contract opportunities. This is not for experiments, short-term spikes, or \"growth hacks.\"\nThis is for cleaning company owners who want a **repeatable system that brings new cleaning contracts every month.**",
   },
@@ -80,7 +82,7 @@ export const commercialCleaningContent: FunnelContent = {
         value: "2–3/mo",
         description: "new cleaning contracts per month at typical close rates",
         subtext:
-          "10 qualified calls, 20–30% close rate. Each contract worth $500–$2,400/month recurring. Revenue compounds — every month the system runs, new contracts stack on top of existing ones.",
+          "8+ qualified calls, 20–30% close rate. Each contract worth $500–$2,400/month recurring. Revenue compounds — every month the system runs, new contracts stack on top of existing ones.",
       },
       {
         title: "Deliverability Health",
@@ -303,7 +305,7 @@ export const commercialCleaningContent: FunnelContent = {
           text: "Once the system goes live, **monthly management begins**",
         },
         {
-          text: "If the system does **not produce at least 10 qualified sales calls within 30 days** of the first email sent: **both the setup fee and the first month's management fee are fully refunded**",
+          text: "If the system does **not produce at least 8 qualified sales calls within 30 days** of the first email sent: **both the setup fee and the first month's management fee are fully refunded**",
           highlighted: true,
         },
       ],
@@ -337,7 +339,7 @@ export const commercialCleaningContent: FunnelContent = {
       {
         question: "What size cleaning contracts does this typically generate?",
         answer:
-          "Commercial cleaning contracts typically range from $2,000 to $10,000 per month depending on facility size and service scope. Even one closed deal from this system can cover the entire cost of the engagement multiple times over.",
+          "Commercial cleaning contracts typically range from $500 to $2,400 per month depending on facility size and service scope. Even one closed deal from this system can cover the cost of the engagement, and contracts are recurring — they compound month over month.",
       },
       {
         question: "How is this different from buying a lead list?",
