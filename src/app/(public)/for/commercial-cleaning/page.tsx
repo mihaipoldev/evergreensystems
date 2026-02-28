@@ -9,7 +9,16 @@ export default async function CommercialCleaningPage() {
 
   const heroVideo = media
     ? {
-        mainMedia: null,
+        mainMedia: {
+          ...media,
+          section_media: {
+            id: media.id,
+            role: "main",
+            sort_order: 0,
+            status: "published" as const,
+            created_at: media.created_at,
+          },
+        },
         videoId: media.embed_id ?? null,
         mediaUrl: media.url,
       }
