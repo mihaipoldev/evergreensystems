@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
-import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
+import type { CTAButtonWithSection } from '@/features/media/types';
 
 type Section = {
   id: string;

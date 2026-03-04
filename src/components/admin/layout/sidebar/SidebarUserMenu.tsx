@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,7 +12,6 @@ import {
   faSun,
   faMoon,
   faDisplay,
-  faArrowRightArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -38,11 +37,9 @@ type SidebarUserMenuProps = {
 
 export function SidebarUserMenu({ user }: SidebarUserMenuProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
-  const isIntelRoute = pathname?.startsWith("/intel") ?? false;
-  const settingsBase = isIntelRoute ? "/intel/settings" : "/admin/settings";
+  const settingsBase = "/admin/settings";
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -121,16 +118,6 @@ export function SidebarUserMenu({ user }: SidebarUserMenuProps) {
           >
             <FontAwesomeIcon icon={faDisplay} className="mr-2 h-4 w-4" />
             System
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link
-              href={isIntelRoute ? "/admin" : "/intel"}
-              className={cn(itemClass, "flex items-center")}
-            >
-              <FontAwesomeIcon icon={faArrowRightArrowLeft} className="mr-2 h-4 w-4" />
-              {isIntelRoute ? "Admin" : "Intelligence"}
-            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

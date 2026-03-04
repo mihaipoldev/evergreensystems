@@ -36,9 +36,9 @@ import { RichText } from '@/components/ui/RichText';
 import { MediaRenderer } from '@/components/MediaRenderer';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
-import type { MediaWithSection } from '@/features/page-builder/media/types';
-import type { CTAButtonWithSection } from '@/features/page-builder/cta/types';
-import type { Media } from '@/features/page-builder/media/types';
+import type { MediaWithSection } from '@/features/media/types';
+import type { CTAButtonWithSection } from '@/features/media/types';
+import type { Media } from '@/features/media/types';
 
 type HeroContent = {
   topBanner?: {
@@ -587,7 +587,7 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
           className="max-w-5xl mx-auto mb-4 md:mb-6"
         >
         <h1 className="heading-2xl leading-tight md:leading-none text-[22px] md:text-[50px] font-bold">
-          We Build & Run Outbound Systems That <b className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Books Qualified Sales Calls</b>
+          We Build & Run Outbound Systems That <b className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Book Qualified Sales Calls</b>
         </h1>
         </motion.div>
 

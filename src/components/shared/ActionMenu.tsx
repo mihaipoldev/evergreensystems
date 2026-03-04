@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { markClickFromDropdown } from "@/features/rag/shared/utils/dropdownClickGuard";
+import { markClickFromDropdown } from "@/lib/dropdown-click-guard";
 import { cn } from "@/lib/utils";
 
 export interface ActionMenuItem {

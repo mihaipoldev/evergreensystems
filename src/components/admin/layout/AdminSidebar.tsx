@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import Link from "next/link";
@@ -8,97 +7,20 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHome } from "@fortawesome/free-solid-svg-icons";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSidebarData } from "@/features/page-builder/site-structure/hooks";
 import { useSidebarState } from "./sidebar/hooks/useSidebarState";
 import { useSidebarNavigation } from "./sidebar/hooks/useSidebarNavigation";
 import { useSidebarUser } from "./sidebar/hooks/useSidebarUser";
 import { SidebarContent } from "./sidebar/SidebarContent";
 import { setSidebarOpenState, useSidebarOpenState } from "./sidebar/SidebarTrigger";
-import { getTimestamp, getDuration, debugClientTiming, debugQuery } from "@/lib/debug-performance";
-import type { Page } from "@/features/page-builder/pages/types";
 
 export function AdminSidebar() {
-  const mountStartTime = useRef<number>(getTimestamp());
-  const renderCount = useRef<number>(0);
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
-  
-  const { startNavigation, pendingPath, pathname, getIsNavItemActive, currentPageId } = useSidebarNavigation();
+
+  const { startNavigation, pendingPath, pathname, getIsNavItemActive } = useSidebarNavigation();
   const { user, loading: userLoading } = useSidebarUser();
   const [isOpen, setIsOpen] = useSidebarOpenState();
-
-  // Fetch all sidebar data in one request (optimized)
-  const sidebarDataQueryStartTime = useRef<number>(getTimestamp());
-  const { data: sidebarData, isLoading: sidebarDataLoading } = useSidebarData();
-  
-  // Extract data from combined response
-  // Note: pages are minimal (id, title, order) - cast to Page type for compatibility
-  const pages: Page[] = (sidebarData?.pages || []).map(p => ({
-    ...p,
-    description: null,
-    type: 'page',
-    status: 'published',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  })) as Page[];
-  const sectionsByPage = sidebarData?.sectionsByPage || {};
-  const pagesLoading = sidebarDataLoading;
-  
-  // Track sidebar data query completion
-  useEffect(() => {
-    if (!sidebarDataLoading && sidebarData) {
-      const sidebarDataQueryDuration = getDuration(sidebarDataQueryStartTime.current);
-      debugQuery("AdminSidebar", "Sidebar data query", sidebarDataQueryDuration, {
-        pagesCount: pages.length,
-        sectionsPagesCount: Object.keys(sectionsByPage).length,
-        isLoading: sidebarDataLoading
-      });
-    }
-  }, [sidebarDataLoading, sidebarData, pages.length, sectionsByPage]);
-
-  // Sidebar state management
-  const {
-    openPages,
-    openSections,
-    isInitialized,
-    togglePage,
-    toggleSection,
-    autoOpenPage,
-    manuallyClosedPages,
-    clearManuallyClosed,
-  } = useSidebarState(pages);
-
-  // Auto-open page if we're on a page route
-  // Only auto-open when we're actually navigating TO a page route, not when navigating away
-  useEffect(() => {
-    const currentPath = pendingPath || pathname;
-    // Only auto-open if we're actually on a page-related route
-    const isOnPageRoute = currentPath.startsWith('/admin/pages/') || 
-                         currentPath.startsWith('/admin/sections/') ||
-                         /\/admin\/(testimonials|faq|features|offer|cta)\/[^/]+\/edit/.test(currentPath);
-    
-    if (currentPageId && isOnPageRoute) {
-      autoOpenPage(currentPageId);
-    }
-  }, [currentPageId, autoOpenPage, pathname, pendingPath]);
-
-  // Track component mount and renders
-  useEffect(() => {
-    const mountDuration = getDuration(mountStartTime.current);
-    debugClientTiming("AdminSidebar", "Mount", mountDuration);
-  }, []);
-  
-  // Track re-renders
-  useEffect(() => {
-    renderCount.current += 1;
-    if (renderCount.current > 1) {
-      debugClientTiming("AdminSidebar", `Render #${renderCount.current}`, 0, {
-        pagesCount: pages.length,
-        openPagesCount: openPages.size,
-        isInitialized
-      });
-    }
-  });
+  const { openSections, toggleSection } = useSidebarState();
 
   const handleNavigation = (href: string) => {
     startNavigation(href);
@@ -123,21 +45,11 @@ export function AdminSidebar() {
           isMobile={false}
           user={user}
           userLoading={userLoading}
-          pages={pages}
-          pagesLoading={pagesLoading}
-          sectionsByPage={sectionsByPage}
-          openPages={openPages}
           openSections={openSections}
-          togglePage={togglePage}
           toggleSection={toggleSection}
           getIsActive={getIsNavItemActive}
           onNavigate={handleNavigation}
-          pathname={pathname}
-          pendingPath={pendingPath}
-          searchParams={searchParams}
           onHomeClick={handleHomeClick}
-          manuallyClosedPages={manuallyClosedPages}
-          clearManuallyClosed={clearManuallyClosed}
         />
       </aside>
     );
@@ -183,21 +95,11 @@ export function AdminSidebar() {
           isMobile={true}
           user={user}
           userLoading={userLoading}
-          pages={pages}
-          pagesLoading={pagesLoading}
-          sectionsByPage={sectionsByPage}
-          openPages={openPages}
           openSections={openSections}
-          togglePage={togglePage}
           toggleSection={toggleSection}
           getIsActive={getIsNavItemActive}
           onNavigate={handleNavigation}
-          pathname={pathname}
-          pendingPath={pendingPath}
-          searchParams={searchParams}
           onHomeClick={handleHomeClick}
-          manuallyClosedPages={manuallyClosedPages}
-          clearManuallyClosed={clearManuallyClosed}
         />
       </SheetContent>
     </Sheet>

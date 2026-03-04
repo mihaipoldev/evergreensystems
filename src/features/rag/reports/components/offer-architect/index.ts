@@ -1,1 +1,0 @@
-export { OfferArchitectReport } from "./OfferArchitectReport";

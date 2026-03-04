@@ -9,7 +9,7 @@ import { VSLPlayer } from "@/features/funnels/components/VSLPlayer";
 import { RichText } from "@/components/ui/RichText";
 import { trackEvent } from "@/lib/analytics";
 import { heroEntrance, ctaHover } from "../animations";
-import type { MediaWithSection } from "@/features/page-builder/media/types";
+import type { MediaWithSection } from "@/features/media/types";
 import type { HeroContent } from "../types";
 
 export type HeroVideoProps = {

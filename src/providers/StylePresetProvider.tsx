@@ -16,7 +16,7 @@ export function StylePresetProvider() {
     const htmlElement = document.documentElement;
 
     // Determine which preset should be active based on pathname
-    const shouldBeAdmin = pathname?.startsWith("/admin") || pathname?.startsWith("/intel");
+    const shouldBeAdmin = pathname?.startsWith("/admin");
     const isFunnel = !shouldBeAdmin && pathname ? isFunnelRoute(pathname) : false;
     const targetPreset = shouldBeAdmin
       ? "preset-admin"

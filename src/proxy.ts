@@ -30,15 +30,14 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    // Only create Supabase client and check auth for admin routes, intel routes, or login
+    // Only create Supabase client and check auth for admin routes or login
     // Skip database queries entirely for public pages to avoid blocking
     const isAdminRoute = pathname.startsWith("/admin");
-    const isIntelRoute = pathname.startsWith("/intel");
     const isLoginRoute = pathname === "/login";
-    
+
     let user = null;
-  
-  if (isAdminRoute || isIntelRoute || isLoginRoute) {
+
+  if (isAdminRoute || isLoginRoute) {
     try {
       const supabase = createServerClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -131,16 +130,6 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/analytics";
       // Preserve query parameters if any
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // Protect intel routes
-  if (isIntelRoute) {
-    if (!user) {
-      // Redirect to login if not authenticated
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
   }

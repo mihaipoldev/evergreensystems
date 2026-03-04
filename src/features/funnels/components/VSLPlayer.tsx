@@ -5,8 +5,8 @@ import Script from "next/script";
 import { MediaRenderer } from "@/components/MediaRenderer";
 import { trackEvent } from "@/lib/analytics";
 import { hslToHex } from "@/lib/color-utils";
-import type { MediaWithSection } from "@/features/page-builder/media/types";
-import type { Media } from "@/features/page-builder/media/types";
+import type { MediaWithSection } from "@/features/media/types";
+import type { Media } from "@/features/media/types";
 
 function getWistiaVideoId(url: string | null | undefined): string | null {
   if (!url) return null;

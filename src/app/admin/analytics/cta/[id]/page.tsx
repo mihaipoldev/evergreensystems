@@ -39,12 +39,15 @@ function CTAAnalyticsContent() {
       try {
         const scope = searchParams.get("scope") || "30";
         
-        // Fetch CTA label
-        const ctaResponse = await fetch(`/api/admin/cta-buttons/${ctaId}`);
-        if (ctaResponse.ok) {
-          const ctaData = await ctaResponse.json();
-          setCtaLabel(ctaData.label || "CTA Analytics");
-        }
+        // Look up CTA label from content
+        const { homeContent } = await import("@/features/landing/content/home");
+        const allCtas = [
+          ...(homeContent.header?.ctas || []),
+          ...(homeContent.hero?.ctas || []),
+          ...(homeContent.cta?.ctas || []),
+        ];
+        const match = allCtas.find((c) => c.id === ctaId);
+        if (match) setCtaLabel(match.label);
 
         // Fetch analytics data
         const analyticsResponse = await fetch(`/api/admin/analytics/cta/${ctaId}?scope=${scope}`);

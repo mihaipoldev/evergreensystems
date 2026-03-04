@@ -1,4 +1,4 @@
-import { getMediaById } from "@/features/page-builder/media/queries";
+import { getMediaById } from "@/features/media/queries";
 import FunnelPage from "@/features/funnels/components/FunnelPage";
 import { commercialCleaningContent } from "@/features/funnels/content/commercial-cleaning";
 

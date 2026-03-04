@@ -1,2 +1,0 @@
-export { NicheEvaluation } from "./NicheEvaluation";
-

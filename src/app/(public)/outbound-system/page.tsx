@@ -1,39 +1,28 @@
-import { getActivePageBySlug } from "@/features/page-builder/pages/queries";
-import { getVisibleSectionsByPageId } from "@/features/page-builder/sections/queries";
+import { getMediaById } from "@/features/media/queries";
 import FunnelPage from "@/features/funnels/components/FunnelPage";
 import { outboundSystemContent } from "@/features/funnels/content/outbound-system";
-import type { MediaWithSection } from "@/features/page-builder/media/types";
-
-function getMainMedia(section: { media?: MediaWithSection[]; media_url?: string | null }) {
-  if (!section?.media?.length) return null;
-  const main = section.media.find((m) => m.section_media?.role === "main");
-  return main ?? section.media[0] ?? null;
-}
+import { homeContent } from "@/features/landing/content/home";
 
 export default async function OutboundSystemPage() {
-  const homePage = await getActivePageBySlug("home");
-  let heroVideo: {
-    mainMedia: MediaWithSection | null;
-    videoId: string | null;
-    mediaUrl: string | null;
-  } | null = null;
+  // Reuse the hero media ID from the landing page content
+  const media = await getMediaById(homeContent.hero.mainMediaId).catch(() => null);
 
-  if (homePage) {
-    const sections = await getVisibleSectionsByPageId(homePage.id);
-    const hero = sections.find((s) => s.type === "hero");
-    if (hero) {
-      const mainMedia = getMainMedia(hero);
-      const videoId =
-        mainMedia?.embed_id ??
-        (mainMedia?.source_type === "wistia" && mainMedia?.embed_id ? mainMedia.embed_id : null) ??
-        null;
-      heroVideo = {
-        mainMedia: mainMedia ?? null,
-        videoId,
-        mediaUrl: hero.media_url ?? null,
-      };
-    }
-  }
+  const heroVideo = media
+    ? {
+        mainMedia: {
+          ...media,
+          section_media: {
+            id: media.id,
+            role: "main",
+            sort_order: 0,
+            status: "published" as const,
+            created_at: media.created_at,
+          },
+        },
+        videoId: media.embed_id ?? null,
+        mediaUrl: media.url,
+      }
+    : null;
 
   return (
     <FunnelPage content={outboundSystemContent} heroVideo={heroVideo} />

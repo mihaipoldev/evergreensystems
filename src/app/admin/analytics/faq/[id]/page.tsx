@@ -34,12 +34,10 @@ function FAQAnalyticsContent() {
       try {
         const scope = searchParams.get("scope") || "30";
         
-        // Fetch FAQ question
-        const faqResponse = await fetch(`/api/admin/faq-items/${faqId}`);
-        if (faqResponse.ok) {
-          const faqData = await faqResponse.json();
-          setFaqQuestion(faqData.question || "FAQ Analytics");
-        }
+        // Look up FAQ question from content
+        const { homeContent } = await import("@/features/landing/content/home");
+        const match = homeContent.faq.faqs.find((f) => f.id === faqId);
+        if (match) setFaqQuestion(match.question);
 
         // Fetch analytics data
         const analyticsResponse = await fetch(`/api/admin/analytics/faq/${faqId}?scope=${scope}`);

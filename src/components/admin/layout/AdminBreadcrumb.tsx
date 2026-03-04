@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Breadcrumb,
@@ -14,41 +13,14 @@ import {
 
 // Map route segments to display names
 const pageNames: Record<string, string> = {
-  dashboard: "Dashboard",
-  "site-preferences": "Site Preferences",
-  sections: "Sections",
-  features: "Features",
-  testimonials: "Testimonials",
-  faq: "FAQ",
+  analytics: "Analytics",
   media: "Media Library",
   settings: "Settings",
+  "website-settings": "Website Settings",
 };
-
-async function fetchItemName(resource: string, slug: string): Promise<string | null> {
-  try {
-    const response = await fetch(
-      `/api/admin/item-name?resource=${encodeURIComponent(resource)}&slug=${encodeURIComponent(slug)}`
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data.name || null;
-  } catch (error) {
-    console.error(`Error fetching ${resource} name:`, error);
-    return null;
-  }
-}
 
 export function AdminBreadcrumb() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [pageName, setPageName] = useState<string | null>(null);
-  const [sectionName, setSectionName] = useState<string | null>(null);
-  const [itemName, setItemName] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Parse the pathname
   const segments = pathname.split("/").filter(Boolean);
@@ -57,72 +29,7 @@ export function AdminBreadcrumb() {
   const adminIndex = segments.indexOf("admin");
   const relevantSegments = adminIndex >= 0 ? segments.slice(adminIndex + 1) : segments;
 
-  // Check for new section route: /admin/sections/[id]
-  const isNewSectionRoute = relevantSegments[0] === "sections" && relevantSegments.length >= 2;
-  const sectionId = isNewSectionRoute ? relevantSegments[1] : null;
-  const pageIdFromQuery = isNewSectionRoute ? searchParams.get("pageId") : null;
-
-  // Check for old nested structure: /admin/pages/[id]/sections/[sectionId]/...
-  const isPagesRoute = relevantSegments[0] === "pages" && relevantSegments.length >= 2;
-  const pageId = isPagesRoute ? relevantSegments[1] : (isNewSectionRoute ? pageIdFromQuery : null);
-  const isSectionsRoute = isPagesRoute && relevantSegments[2] === "sections" && relevantSegments.length >= 4;
-  const oldSectionId = isSectionsRoute ? relevantSegments[3] : null;
-  const isSectionEditRoute = isSectionsRoute && relevantSegments[4] === "edit";
-  const isMediaRoute = isSectionsRoute && relevantSegments[4] === "media";
-  const isCTARoute = isSectionsRoute && relevantSegments[4] === "cta";
-
-  // Check for old routes
-  const isOldEditPage = !isPagesRoute && !isNewSectionRoute && relevantSegments.length >= 3 && relevantSegments[2] === "edit";
-  const isOldStatsPage = !isPagesRoute && !isNewSectionRoute && relevantSegments.length >= 3 && relevantSegments[2] === "stats";
-  const resource = !isPagesRoute && !isNewSectionRoute ? (relevantSegments[0] || null) : null;
-  const itemSlug = (isOldEditPage || isOldStatsPage) ? relevantSegments[1] : null;
-
-  // Fetch names for routes
-  useEffect(() => {
-    if (isNewSectionRoute && sectionId) {
-      setIsLoading(true);
-      Promise.all([
-        pageId ? fetchItemName("pages", pageId) : Promise.resolve(null),
-        sectionId ? fetchItemName("sections", sectionId) : Promise.resolve(null),
-      ]).then(([page, section]) => {
-        setPageName(page);
-        setSectionName(section);
-        setItemName(null);
-        setIsLoading(false);
-      }).catch(() => {
-        setIsLoading(false);
-      });
-    } else if (isPagesRoute && pageId) {
-      setIsLoading(true);
-      Promise.all([
-        pageId ? fetchItemName("pages", pageId) : Promise.resolve(null),
-        oldSectionId ? fetchItemName("sections", oldSectionId) : Promise.resolve(null),
-      ]).then(([page, section]) => {
-        setPageName(page);
-        setSectionName(section);
-        setItemName(null);
-        setIsLoading(false);
-      }).catch(() => {
-        setIsLoading(false);
-      });
-    } else if ((isOldEditPage || isOldStatsPage) && resource && itemSlug) {
-      setIsLoading(true);
-      fetchItemName(resource, itemSlug)
-        .then((name) => {
-          setItemName(name);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setPageName(null);
-      setSectionName(null);
-      setItemName(null);
-    }
-  }, [isNewSectionRoute, isPagesRoute, pageId, sectionId, oldSectionId, isOldEditPage, isOldStatsPage, resource, itemSlug]);
-
-  // Handle dashboard page
+  // Handle dashboard/root page
   if (!relevantSegments.length || relevantSegments[0] === "") {
     return (
       <Breadcrumb>
@@ -141,104 +48,9 @@ export function AdminBreadcrumb() {
     );
   }
 
-  // Handle new section route: /admin/sections/[id]?pageId=[pageId]
-  if (isNewSectionRoute && sectionId) {
-    const sectionHref = pageId 
-      ? `/admin/sections/${sectionId}?pageId=${pageId}`
-      : `/admin/sections/${sectionId}`;
-    
-    return (
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/admin/analytics">Menu</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/admin/sections">Sections</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{isLoading ? "Loading..." : sectionName || "Section"}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    );
-  }
-
-  // Handle old nested structure: /admin/pages/[id]/sections/[sectionId]/...
-  if (isPagesRoute && pageId) {
-    return (
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/admin/analytics">Menu</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            {isSectionsRoute ? (
-              <BreadcrumbLink asChild>
-                <Link href={`/admin/pages/${pageId}/sections`}>
-                  {isLoading ? "Loading..." : pageName || "Page"}
-                </Link>
-              </BreadcrumbLink>
-            ) : (
-              <BreadcrumbPage>{isLoading ? "Loading..." : pageName || "Page"}</BreadcrumbPage>
-            )}
-          </BreadcrumbItem>
-              {isSectionsRoute && oldSectionId && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    {isSectionEditRoute || isMediaRoute || isCTARoute ? (
-                      <BreadcrumbLink asChild>
-                        <Link href={`/admin/pages/${pageId}/sections/${oldSectionId}?tab=edit`}>
-                          {isLoading ? "Loading..." : sectionName || "Section"}
-                        </Link>
-                      </BreadcrumbLink>
-                    ) : (
-                      <BreadcrumbPage>{isLoading ? "Loading..." : sectionName || "Section"}</BreadcrumbPage>
-                    )}
-                  </BreadcrumbItem>
-                  {isSectionEditRoute && (
-                    <>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>Edit</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </>
-                  )}
-              {isMediaRoute && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Media</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              )}
-              {isCTARoute && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>CTA</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              )}
-            </>
-          )}
-        </BreadcrumbList>
-      </Breadcrumb>
-    );
-  }
-
-  // Handle old routes
-  const oldPageName = pageNames[resource || ""] || (resource ? resource.charAt(0).toUpperCase() + resource.slice(1) : "");
+  const topLevel = relevantSegments[0];
+  const topLevelName = pageNames[topLevel] || topLevel.charAt(0).toUpperCase() + topLevel.slice(1);
+  const hasSubRoute = relevantSegments.length > 1;
 
   return (
     <Breadcrumb>
@@ -250,35 +62,21 @@ export function AdminBreadcrumb() {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          {isOldEditPage || isOldStatsPage ? (
+          {hasSubRoute ? (
             <BreadcrumbLink asChild>
-              <Link href={`/admin/${resource}`}>{oldPageName}</Link>
+              <Link href={`/admin/${topLevel}`}>{topLevelName}</Link>
             </BreadcrumbLink>
           ) : (
-            <BreadcrumbPage>{oldPageName}</BreadcrumbPage>
+            <BreadcrumbPage>{topLevelName}</BreadcrumbPage>
           )}
         </BreadcrumbItem>
-        {isOldEditPage && (
+        {hasSubRoute && (
           <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{isLoading ? "Loading..." : itemName || "Edit"}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </>
-        )}
-        {isOldStatsPage && (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={`/admin/${resource}/${itemSlug}/edit`}>
-                  {isLoading ? "Loading..." : itemName || "Item"}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Stats</BreadcrumbPage>
+              <BreadcrumbPage>
+                {relevantSegments.slice(1).join(" / ")}
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </>
         )}

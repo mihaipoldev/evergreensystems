@@ -16,7 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { FontId } from "@/types/fonts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { FloatingProgressIndicatorWrapper } from "@/components/shared/FloatingProgressIndicatorWrapper";
+
 import { ConsoleLogFilter } from "@/components/shared/ConsoleLogFilter";
 import { SEO_CONFIG, ALL_KEYWORDS } from "@/lib/seo";
 import { getTimestamp, getDuration, debugServerTiming, timeAsync } from "@/lib/debug-performance";
@@ -99,7 +99,7 @@ export default async function RootLayout({
   try {
     const headersList = await headers();
     pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
-    isAdminPage = (pathname.includes("/admin") && !pathname.includes("/admin/login")) || pathname.includes("/intel");
+    isAdminPage = (pathname.includes("/admin") && !pathname.includes("/admin/login"));
     const headerDuration = getDuration(headerStartTime);
     debugServerTiming("Root Layout", "Header detection", headerDuration, { pathname, isAdminPage });
   } catch (error) {
@@ -395,7 +395,6 @@ export default async function RootLayout({
         <StylePresetProvider />
         <Toaster />
         <SonnerToaster />
-        <FloatingProgressIndicatorWrapper />
         {children}
       </body>
     </html>
