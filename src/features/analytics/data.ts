@@ -113,13 +113,15 @@ export async function getAnalyticsData(scope: string = "30"): Promise<AnalyticsD
       return defaultData;
     }
 
-    // Get CTA buttons for enrichment
-    const { data: ctaButtons } = await supabase
-      .from("cta_buttons")
-      .select("id, label") as { data: Array<{ id: string; label: string }> | null };
-
+    // Build CTA label map from content (no DB query needed)
+    const { homeContent } = await import("@/features/landing/content/home");
+    const allCtas = [
+      ...(homeContent.header?.ctas || []),
+      ...(homeContent.hero?.ctas || []),
+      ...(homeContent.cta?.ctas || []),
+    ];
     const ctaButtonMap = new Map(
-      (ctaButtons || []).map((btn) => [btn.id, btn.label])
+      allCtas.map((c) => [c.id, c.label])
     );
 
     // Aggregate events by type - matching API route logic

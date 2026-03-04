@@ -1,6 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Media, MediaInsert, MediaUpdate } from "./types";
-import type { Database } from "@/lib/supabase/types";
 
 /**
  * Get all media items, ordered by created_at descending
@@ -92,7 +91,6 @@ export async function updateMedia(id: string, data: MediaUpdate): Promise<Media>
 
 /**
  * Delete a media record
- * This will cascade delete all section_media relationships
  * Uses service role client to bypass RLS for admin operations
  */
 export async function deleteMedia(id: string): Promise<void> {
@@ -107,38 +105,3 @@ export async function deleteMedia(id: string): Promise<void> {
   }
 }
 
-/**
- * Get all media for a specific section
- * Uses service role client to bypass RLS for admin operations
- */
-export async function getMediaBySectionId(sectionId: string): Promise<Array<Media & { section_media: Database["public"]["Tables"]["section_media"]["Row"] }>> {
-  const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
-    .from("section_media")
-    .select(`
-      *,
-      media (*)
-    `)
-    .eq("section_id", sectionId)
-    .order("sort_order", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data) {
-    return [];
-  }
-
-  return data.map((item: any) => ({
-    ...item.media,
-    section_media: {
-      id: item.id,
-      section_id: item.section_id,
-      media_id: item.media_id,
-      role: item.role,
-      sort_order: item.sort_order,
-      created_at: item.created_at,
-    },
-  }));
-}

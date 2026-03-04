@@ -165,8 +165,6 @@ export async function DELETE(
     const adminSupabase = createServiceRoleClient();
     
     // Delete the media item
-    // Note: This will automatically cascade delete all entries in section_media
-    // junction table due to ON DELETE CASCADE constraint in the database schema
     const { error } = await adminSupabase
       .from("media")
       .delete()

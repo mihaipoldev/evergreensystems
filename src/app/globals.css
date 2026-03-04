@@ -148,12 +148,12 @@
     --table-accent-background: transparent;
   }
 
-  /* Admin Preset - Professional, darker tones */
+  /* Admin Preset - Professional, blue primary */
   .preset-admin {
     /* Brand color variables - base hue, saturation, lightness */
-    --brand-h: 0;
-    --brand-s: 0;
-    --brand-l: 9;
+    --brand-h: 212;
+    --brand-s: 96;
+    --brand-l: 51;
 
     --background: 0 0% 97%;
     --foreground: 0 0% 4%;
@@ -176,7 +176,7 @@
     --ring: 0 0% 40%;
     --radius: 0.75rem;
 
-    --primary: var(--brand-h) var(--brand-s) var(--brand-l);
+    --primary: var(--brand-h) var(--brand-s)% var(--brand-l)%;
     --primary-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -203,9 +203,9 @@
 
   .preset-admin.dark {
     /* Brand color variables - base hue, saturation, lightness */
-    --brand-h: 0;
-    --brand-s: 0;
-    --brand-l: 98;
+    --brand-h: 212;
+    --brand-s: 96;
+    --brand-l: 51;
 
     --background: 0 0% 7%;
     --foreground: 0 0% 95%;
@@ -227,7 +227,7 @@
     --input-background: 0 0% 10%;
     --ring: 0 0% 60.1%;
 
-    --primary: var(--brand-h) var(--brand-s) var(--brand-l);
+    --primary: var(--brand-h) var(--brand-s)% var(--brand-l)%;
     --primary-foreground: 0 0% 9%;
 
     --accent: 0 0% 16%;

@@ -18,8 +18,6 @@ export async function POST(
     }
 
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const sectionId = searchParams.get("section_id");
 
     // Use service role client to bypass RLS for admin operations
     const adminSupabase = createServiceRoleClient();
@@ -80,36 +78,6 @@ export async function POST(
         { error: duplicateError.message },
         { status: 500 }
       );
-    }
-
-    // If section_id is provided, create junction table entry
-    if (sectionId) {
-      // Get max sort_order for this section
-      const { data: maxSortOrderData } = await adminSupabase
-        .from("section_media")
-        .select("sort_order")
-        .eq("section_id", sectionId)
-        .order("sort_order", { ascending: false })
-        .limit(1)
-        .maybeSingle<{ sort_order: number }>();
-
-      const newSortOrder = maxSortOrderData?.sort_order
-        ? maxSortOrderData.sort_order + 1
-        : 1;
-
-      const { error: junctionError } = await (adminSupabase
-        .from("section_media") as any)
-        .insert({
-          section_id: sectionId,
-          media_id: duplicate.id,
-          role: "main",
-          sort_order: newSortOrder,
-        });
-
-      if (junctionError) {
-        console.error("Error creating section media connection:", junctionError);
-        // Don't fail the request, just log the error
-      }
     }
 
     // Invalidate cache

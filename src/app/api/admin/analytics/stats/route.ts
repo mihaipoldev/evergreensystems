@@ -85,21 +85,19 @@ export async function GET(request: Request) {
       });
     }
 
-    // Get CTA buttons and FAQ items for enrichment
-    const { data: ctaButtons } = await supabase
-      .from("cta_buttons")
-      .select("id, label") as { data: Array<{ id: string; label: string }> | null };
-
-    const { data: faqItems } = await supabase
-      .from("faq_items")
-      .select("id, question") as { data: Array<{ id: string; question: string }> | null };
-
+    // Build CTA and FAQ maps from content (no DB queries needed)
+    const { homeContent } = await import("@/features/landing/content/home");
+    const allCtas = [
+      ...(homeContent.header?.ctas || []),
+      ...(homeContent.hero?.ctas || []),
+      ...(homeContent.cta?.ctas || []),
+    ];
     const ctaButtonMap = new Map(
-      (ctaButtons || []).map((btn) => [btn.id, btn.label])
+      allCtas.map((c) => [c.id, c.label])
     );
 
     const faqItemMap = new Map(
-      (faqItems || []).map((item) => [item.id, item.question])
+      homeContent.faq.faqs.map((f) => [f.id, f.question])
     );
 
     // Aggregate data
