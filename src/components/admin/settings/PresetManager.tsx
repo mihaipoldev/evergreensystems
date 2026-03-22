@@ -306,7 +306,6 @@ export function PresetManager({
                           e.stopPropagation();
                           onActivatePreset(preset.id);
                         }}
-                        className="cursor-pointer"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Apply
@@ -321,7 +320,6 @@ export function PresetManager({
                               e.stopPropagation();
                               onGenerateName(preset.id);
                             }}
-                            className="cursor-pointer"
                           >
                             <Sparkles className="mr-2 h-4 w-4" />
                             Generate Name
@@ -333,7 +331,6 @@ export function PresetManager({
                               e.stopPropagation();
                               onRenamePreset(preset.id);
                             }}
-                            className="cursor-pointer"
                           >
                             <Pencil className="mr-2 h-4 w-4" />
                             Rename
@@ -345,7 +342,6 @@ export function PresetManager({
                               e.stopPropagation();
                               onDuplicatePreset(preset.id);
                             }}
-                            className="cursor-pointer"
                           >
                             <Copy className="mr-2 h-4 w-4" />
                             Duplicate
@@ -359,7 +355,7 @@ export function PresetManager({
                                 e.stopPropagation();
                                 onDeletePreset(preset.id);
                               }}
-                              className="cursor-pointer text-destructive focus:text-destructive"
+                              className="text-destructive focus:text-destructive"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete

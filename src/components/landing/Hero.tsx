@@ -577,7 +577,41 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
       />
 
       <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        
+
+        {/* Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0 }}
+          className="inline-flex mb-6 w-full sm:w-auto justify-center"
+          style={{ maxWidth: "100%" }}
+        >
+          <div className="relative inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 rounded-full text-xs font-regular min-w-0">
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "linear-gradient(84deg, hsl(var(--primary)/50%), hsl(var(--secondary)/50%) 92%)",
+                padding: "1px",
+                WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                WebkitMaskComposite: "xor",
+                mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                maskComposite: "exclude",
+                zIndex: 0,
+              }}
+            />
+            <span
+              className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0 relative z-10"
+              style={{
+                backgroundImage:
+                  "linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)",
+              }}
+            />
+            <span className="uppercase font-medium text-[10px] md:text-[12px] text-foreground relative z-10">
+              For B2B Businesses That Want More Contracts
+            </span>
+          </div>
+        </motion.div>
 
         {/* Headline */}
         <motion.div

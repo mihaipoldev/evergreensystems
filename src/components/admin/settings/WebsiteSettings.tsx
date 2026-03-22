@@ -1664,7 +1664,6 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
                               });
                             }
                           }}
-                          className="cursor-pointer"
                           disabled={isApplying}
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
@@ -1675,21 +1674,18 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
                     )}
                     <DropdownMenuItem
                       onClick={handleGenerateName}
-                      className="cursor-pointer"
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
                       Generate Name
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleRenamePreset}
-                      className="cursor-pointer"
                     >
                       <Pencil className="mr-2 h-4 w-4" />
                       Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleDuplicatePreset}
-                      className="cursor-pointer"
                     >
                       <Copy className="mr-2 h-4 w-4" />
                       Duplicate
@@ -1700,7 +1696,7 @@ export function WebsiteSettings({ environment = 'production', route = '/', selec
                         setPresetToDelete(selectedPresetId);
                         setIsDeleteDialogOpen(true);
                       }}
-                      className="cursor-pointer text-destructive focus:text-destructive"
+                      className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete

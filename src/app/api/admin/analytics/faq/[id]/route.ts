@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient, fetchAllRows } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -10,13 +10,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const supabase = createServiceRoleClient();
     const { searchParams } = new URL(request.url);
     const scope = searchParams.get("scope") || "30";
     const { id: faqId } = await params;
@@ -42,8 +43,7 @@ export async function GET(
     );
     const lookbackISO = lookbackDate.toISOString();
 
-    // Get all FAQ click events for this specific FAQ
-    // First, get all events and filter in code (similar to main stats route)
+    // Get all FAQ click events (paginated to bypass Supabase max-rows limit)
     const eventsQuery = supabase
       .from("analytics_events")
       .select("*")
@@ -51,7 +51,7 @@ export async function GET(
       .eq("event_type", "link_click")
       .gte("created_at", lookbackISO);
 
-    const { data: allEvents, error: eventsError } = await eventsQuery as { data: AnalyticsEvent[] | null; error: any };
+    const { data: allEvents, error: eventsError } = await fetchAllRows<AnalyticsEvent>(eventsQuery);
 
     if (eventsError) {
       return NextResponse.json({ error: eventsError.message }, { status: 500 });

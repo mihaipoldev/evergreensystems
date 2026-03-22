@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -6,13 +6,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const supabase = createServiceRoleClient();
     const { id } = await params;
     const { data, error } = await supabase
       .from("analytics_events")
@@ -42,13 +43,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const supabase = createServiceRoleClient();
     const { id } = await params;
     const { error } = await supabase
       .from("analytics_events")

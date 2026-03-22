@@ -119,7 +119,6 @@ export function ActionMenu({
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="cursor-pointer"
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
@@ -143,7 +142,7 @@ export function ActionMenu({
                   e.stopPropagation();
                   action.onClick(e);
                 }}
-                className={`cursor-pointer ${action.className ?? ""}`}
+                className={action.className ?? ""}
               >
                 {action.icon ? <span className="mr-2 inline-flex h-4 w-4 items-center justify-center">{action.icon}</span> : null}
                 {action.label}
@@ -151,7 +150,7 @@ export function ActionMenu({
             ))}
             {openPageHref && (
               <>
-                <DropdownMenuItem onClick={handleOpenPage} className="cursor-pointer">
+                <DropdownMenuItem onClick={handleOpenPage}>
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Open Page
                 </DropdownMenuItem>
@@ -175,7 +174,6 @@ export function ActionMenu({
                 <DropdownMenuItem
                   onClick={handleDuplicate}
                   disabled={isDuplicating}
-                  className="cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faCopy} className="mr-2 h-4 w-4" />
                   {isDuplicating ? "Duplicating..." : "Duplicate"}
@@ -187,7 +185,7 @@ export function ActionMenu({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleDeleteClick}
-                  className="text-destructive focus:text-destructive cursor-pointer"
+                  className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete

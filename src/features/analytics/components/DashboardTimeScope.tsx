@@ -94,7 +94,7 @@ export function DashboardTimeScope() {
         </SelectTrigger>
         <SelectContent>
           {timeScopeOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value} className="cursor-pointer">
+            <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
           ))}

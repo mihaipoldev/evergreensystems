@@ -79,3 +79,32 @@ export function createServiceRoleClient() {
   });
 }
 
+/**
+ * Fetch all rows from a Supabase query, paginating in batches of 1000
+ * to work around Supabase's max-rows server limit.
+ */
+export async function fetchAllRows<T>(
+  queryBuilder: any,
+  orderColumn = "created_at",
+  ascending = true,
+  pageSize = 1000
+): Promise<{ data: T[]; error: any }> {
+  const allRows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await queryBuilder
+      .order(orderColumn, { ascending })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) return { data: allRows, error };
+    if (!data || data.length === 0) break;
+
+    allRows.push(...data);
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return { data: allRows, error: null };
+}
+

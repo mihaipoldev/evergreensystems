@@ -28,6 +28,11 @@ export async function WebsiteColorStyle() {
     pathname = '/';
     route = '/';
   }
+
+  // Skip color injection for admin pages — admin has its own static color scheme
+  if (pathname.includes("/admin")) {
+    return null;
+  }
   
   // Get website settings with preset join (public read access, no auth required)
   const { data: settings } = await (supabase

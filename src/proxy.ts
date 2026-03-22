@@ -115,6 +115,13 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Re-set x-pathname header (may have been lost if Supabase auth refreshed the response)
+  try {
+    supabaseResponse.headers.set("x-pathname", pathname);
+  } catch {
+    // Non-blocking
+  }
+
   // Protect admin routes
   if (isAdminRoute) {
     if (!user) {

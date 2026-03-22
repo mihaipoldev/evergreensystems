@@ -73,16 +73,6 @@ module.exports = {
 				'3': 'hsl(var(--chart-3))',
 				'4': 'hsl(var(--chart-4))',
 				'5': 'hsl(var(--chart-5))'
-			},
-			chat: {
-				user: {
-					DEFAULT: 'hsl(var(--chat-user-bg))',
-					foreground: 'hsl(var(--chat-user-fg))'
-				},
-				ai: {
-					DEFAULT: 'hsl(var(--chat-ai-bg))',
-					foreground: 'hsl(var(--chat-ai-fg))'
-				}
 			}
 		},
   		keyframes: {

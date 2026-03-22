@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient, fetchAllRows } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -7,13 +7,14 @@ type AnalyticsEvent = Database["public"]["Tables"]["analytics_events"]["Row"];
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const supabase = createServiceRoleClient();
     const { searchParams } = new URL(request.url);
     const scope = searchParams.get("scope") || "30";
     const country = searchParams.get("country");
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
     );
     const lookbackISO = lookbackDate.toISOString();
 
-    // Get all analytics events (we'll aggregate in code for flexibility)
+    // Get all analytics events (paginated to bypass Supabase max-rows limit)
     let eventsQuery = supabase
       .from("analytics_events")
       .select("*")
@@ -40,15 +41,12 @@ export async function GET(request: Request) {
 
     // Filter by country if provided
     if (country) {
-      // Decode and normalize country code (handle both codes and names)
       const decodedCountry = decodeURIComponent(country);
-      // If it's a full country name, we'd need a mapping, but for now assume it's a code
-      // The client will handle name-to-code conversion
       const countryCode = decodedCountry.toUpperCase();
       eventsQuery = eventsQuery.eq("country", countryCode);
     }
 
-    const { data: events, error: eventsError } = await eventsQuery as { data: AnalyticsEvent[] | null; error: any };
+    const { data: events, error: eventsError } = await fetchAllRows<AnalyticsEvent>(eventsQuery);
 
     if (eventsError) {
       return NextResponse.json({ error: eventsError.message }, { status: 500 });

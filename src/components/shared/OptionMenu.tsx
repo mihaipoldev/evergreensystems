@@ -48,7 +48,7 @@ export function OptionMenu({
             key={option.value}
             onClick={() => onSelect(option.value)}
             className={cn(
-              "cursor-pointer rounded-none px-4 py-2",
+              "rounded-none px-4 py-2",
               selectedValue === option.value 
                 ? "bg-accent/60 hover:bg-accent/100" 
                 : "hover:bg-accent/100 focus:bg-accent/100"

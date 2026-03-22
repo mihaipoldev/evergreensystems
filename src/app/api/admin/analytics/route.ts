@@ -1,4 +1,4 @@
-import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient, fetchAllRows } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { Database } from "@/lib/supabase/types";
 import { headers } from "next/headers";
@@ -7,13 +7,14 @@ type AnalyticsEventInsert = Database["public"]["Tables"]["analytics_events"]["In
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const supabase = createServiceRoleClient();
     const { searchParams } = new URL(request.url);
     const eventType = searchParams.get("event_type");
     const entityType = searchParams.get("entity_type");
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
       query = query.lte("created_at", endDate);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await fetchAllRows<any>(query, "created_at", false);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
