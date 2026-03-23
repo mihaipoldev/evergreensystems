@@ -12,7 +12,8 @@ export function parseFontFamily(fontFamilyJson: string | null | undefined): Font
   }
 
   try {
-    const parsed = JSON.parse(fontFamilyJson);
+    // Handle both JSON strings and already-parsed objects
+    const parsed = typeof fontFamilyJson === 'object' ? fontFamilyJson : JSON.parse(fontFamilyJson);
     
     // Validate structure - must have admin, landing is optional
     if (

@@ -82,8 +82,6 @@ export async function POST(request: Request) {
       host.startsWith('10.0.');
 
     if (isDevelopment || isLocalhost) {
-      // Return success response but don't insert into database
-      // This prevents client-side errors while silently ignoring dev events
       return NextResponse.json(
         { message: "Analytics tracking skipped (development mode)" },
         { status: 200 }
@@ -135,6 +133,17 @@ export async function POST(request: Request) {
     const finalUserAgent = user_agent || headersList.get("user-agent") || null;
     const finalReferrer = referrer || headersList.get("referer") || null;
 
+    // Look up evergreen workspace ID (this website is always evergreen)
+    const { data: workspace } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("slug", "evergreen")
+      .single();
+
+    if (!workspace) {
+      return NextResponse.json({ error: "Workspace not found" }, { status: 500 });
+    }
+
     const insertData: AnalyticsEventInsert = {
       event_type,
       entity_type,
@@ -145,6 +154,7 @@ export async function POST(request: Request) {
       user_agent: finalUserAgent,
       referrer: finalReferrer,
       metadata: metadata || null,
+      workspace_id: workspace.id,
     };
 
     const { data, error } = await (supabase
