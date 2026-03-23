@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { headers } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getRouteForPathname } from '@/features/funnels/routes';
 
 // Image metadata
@@ -37,7 +37,7 @@ export default async function Icon() {
     
     // Try to get primary color from database
     try {
-      const supabase = await createClient();
+      const supabase = createServiceRoleClient();
       const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
       
       // Determine route from headers

@@ -10,7 +10,7 @@ import { WebsiteColorStyle } from "@/components/admin/styling/WebsiteColorStyle"
 import { WebsiteFontStyle } from "@/components/admin/styling/WebsiteFontStyle";
 import { getSelectedFontVariables, getAllFontVariables, nunitoSans } from "@/lib/fonts";
 import { parseFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { FontId } from "@/types/fonts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -126,7 +126,7 @@ export default async function RootLayout({
       // Don't use cookie - always query database to get the correct preset fonts
       try {
         const publicFontStartTime = getTimestamp();
-        const supabase = await createClient();
+        const supabase = createServiceRoleClient();
         const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
         
         // Determine route from pathname

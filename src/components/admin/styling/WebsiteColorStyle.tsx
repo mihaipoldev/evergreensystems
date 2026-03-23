@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { getRouteForPathname, getFunnelPresetClass } from "@/features/funnels/routes";
 
@@ -7,7 +7,7 @@ export async function WebsiteColorStyle() {
   // This ensures colors are always loaded from the source of truth
   let supabase;
   try {
-    supabase = await createClient();
+    supabase = createServiceRoleClient();
   } catch {
     // Silently fail - return null to prevent errors
     return null;

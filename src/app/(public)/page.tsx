@@ -33,7 +33,7 @@ const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod 
   loading: () => <div className="h-96" />,
 });
 
-import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { getMediaById } from '@/features/media/queries';
 import type { Metadata } from 'next';
 import { SEO_CONFIG, generatePageMetadata, generateOrganizationSchema, generateServiceSchema, generateWebSiteSchema } from '@/lib/seo';
@@ -92,7 +92,7 @@ export default async function LandingPage() {
   const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
 
   // Fetch styling options and hero media in parallel
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const [settingsResult, heroMedia] = await Promise.all([
     // Styling options (stays in DB — per-environment theming)
     (supabase.from("website_settings") as any)

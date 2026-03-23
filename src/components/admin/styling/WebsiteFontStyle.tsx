@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { parseFontFamily, generateLandingFontCSS } from "@/lib/font-utils";
 import { headers } from "next/headers";
 import { getRouteForPathname } from "@/features/funnels/routes";
@@ -23,7 +23,7 @@ export async function WebsiteFontStyle() {
   // Fallback to database if no cookie
   let supabase;
   try {
-    supabase = await createClient();
+    supabase = createServiceRoleClient();
   } catch {
     // Silently fail - return null to prevent errors
     return null;
