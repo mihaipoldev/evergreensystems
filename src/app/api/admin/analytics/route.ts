@@ -134,8 +134,8 @@ export async function POST(request: Request) {
     const finalReferrer = referrer || headersList.get("referer") || null;
 
     // Look up evergreen workspace ID (this website is always evergreen)
-    const { data: workspace } = await supabase
-      .from("workspaces")
+    const { data: workspace } = await (supabase
+      .from("workspaces") as any)
       .select("id")
       .eq("slug", "evergreen")
       .single();
