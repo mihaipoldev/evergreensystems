@@ -133,18 +133,17 @@ export async function POST(request: Request) {
     const finalUserAgent = user_agent || headersList.get("user-agent") || null;
     const finalReferrer = referrer || headersList.get("referer") || null;
 
+    // Untyped client — generated types are stale, DB has workspaces + workspace_id
+    const db = supabase as any;
+
     // Look up evergreen workspace ID (this website is always evergreen)
-    const { data: workspace } = await (supabase
-      .from("workspaces") as any)
+    const { data: workspace } = await db
+      .from("workspaces")
       .select("id")
       .eq("slug", "evergreen")
       .single();
 
-    if (!workspace) {
-      return NextResponse.json({ error: "Workspace not found" }, { status: 500 });
-    }
-
-    const insertData: AnalyticsEventInsert = {
+    const insertData = {
       event_type,
       entity_type,
       entity_id,
@@ -154,11 +153,11 @@ export async function POST(request: Request) {
       user_agent: finalUserAgent,
       referrer: finalReferrer,
       metadata: metadata || null,
-      workspace_id: workspace.id,
+      workspace_id: workspace?.id,
     };
 
-    const { data, error } = await (supabase
-      .from("analytics_events") as any)
+    const { data, error } = await db
+      .from("analytics_events")
       .insert(insertData)
       .select()
       .single();
