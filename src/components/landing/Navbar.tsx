@@ -76,11 +76,23 @@ const getSectionHref = (type: string): string => {
 
 export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [headerTransparent, setHeaderTransparent] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
   const isMobile = useIsMobile();
   const lastScrollYRef = useRef(0);
   const [isVisible, setIsVisible] = useState(true);
+
+  // Delay the header's transparency until after the menu's content slide-in
+  // settles, so the links don't visually flicker behind the logo as they
+  // animate down from above their final position.
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => setHeaderTransparent(true), 220);
+      return () => clearTimeout(t);
+    }
+    setHeaderTransparent(false);
+  }, [isOpen]);
 
   useEffect(() => {
     // Safety check for client-side only
@@ -206,13 +218,16 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
       requestAnimationFrame(() => {
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
         const targetId = href.replace('#', '');
-        const targetElement = document.getElementById(targetId);
-        if (!targetElement) return;
-        // Mobile navbar sits at top-0 and is ~60px tall — much less padding
-        // than the desktop scroll handler needs.
-        const mobileHeaderClearance = 72;
+        const section = document.getElementById(targetId);
+        if (!section) return;
+        // Sections wrap their heading in padded containers, so the section
+        // top is ~50–100px above the visible heading. Target the first heading
+        // inside the section so the title lands right under the navbar.
+        const heading =
+          section.querySelector<HTMLElement>('h1, h2, h3') ?? section;
+        const mobileHeaderClearance = 64;
         const elementPosition =
-          targetElement.getBoundingClientRect().top + window.pageYOffset;
+          heading.getBoundingClientRect().top + window.pageYOffset;
         const offsetPosition = elementPosition - mobileHeaderClearance;
         window.scrollTo({
           top: Math.max(0, offsetPosition),
@@ -227,10 +242,23 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     if (!headerSection?.ctaButtons || headerSection.ctaButtons.length === 0) {
       return [];
     }
-    return [...headerSection.ctaButtons].sort((a, b) => 
+    return [...headerSection.ctaButtons].sort((a, b) =>
       a.section_cta_button.position - b.section_cta_button.position
     );
   }, [headerSection]);
+
+  // Map CTA buttons into the simpler shape the mobile menu expects
+  const mobileCtaButtons = useMemo(
+    () =>
+      headerButtons.map((button) => ({
+        id: button.id,
+        label: button.label,
+        url: button.url,
+        icon: button.icon,
+        style: (button.style as 'primary' | 'secondary' | undefined) ?? undefined,
+      })),
+    [headerButtons],
+  );
 
   // Generate navigation links from sections, excluding hero, cta, logos, header, and footer
   // In production: only show published sections
@@ -364,21 +392,29 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   }, [navLinks]);
 
   return (
+    <>
     <motion.nav
       initial={false}
-      animate={{ 
-        y: isMobile && !isVisible ? -100 : 0, 
-        opacity: 1 
+      animate={{
+        y: isMobile && !isVisible ? -100 : 0,
+        opacity: 1
       }}
       transition={{ duration: 0.15, ease: 'easeInOut' }}
       className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8"
     >
       <div className="w-full md:max-w-2xl md:mx-auto">
-        <div className={`rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300 ${
-          scrolled 
-            ? 'bg-background/80 backdrop-blur-lg md:shadow-sm' 
-            : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
-        }`}>
+        <div className={cn(
+          'rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300',
+          headerTransparent
+            // Menu open on mobile: kill the pill bg/blur so the menu glow flows through.
+            // Desktop keeps its normal scrolled style.
+            ? scrolled
+              ? 'bg-transparent backdrop-blur-0 md:bg-background/80 md:backdrop-blur-lg md:shadow-sm'
+              : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
+            : scrolled
+              ? 'bg-background/80 backdrop-blur-lg md:shadow-sm'
+              : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
+        )}>
           {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link
@@ -471,7 +507,7 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isOpen}
               aria-controls="mobile-nav-panel"
-              className="relative h-10 w-10 rounded-xl flex items-center justify-center bg-foreground/5 hover:bg-foreground/10 active:scale-95 transition-all text-foreground"
+              className="relative h-10 w-10 flex items-center justify-center active:scale-95 transition-transform text-foreground"
               onClick={() => setIsOpen(!isOpen)}
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -491,20 +527,20 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
         </div>
 
       </div>
-
-      {/* Mobile full-screen menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <MobileNavMenu
-            navLinks={navLinks}
-            activeSection={activeSection}
-            headerButtons={headerButtons}
-            onMobileLinkClick={handleMobileLinkClick}
-            onClose={() => setIsOpen(false)}
-          />
-        )}
-      </AnimatePresence>
     </motion.nav>
+
+    {/* Mobile full-screen menu — sibling so the navbar (z-50) always paints on top */}
+    <AnimatePresence>
+      {isOpen && (
+        <MobileNavMenu
+          navLinks={navLinks}
+          activeSection={activeSection}
+          ctaButtons={mobileCtaButtons}
+          onMobileLinkClick={handleMobileLinkClick}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 

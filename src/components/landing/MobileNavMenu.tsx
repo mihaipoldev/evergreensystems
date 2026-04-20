@@ -2,50 +2,44 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
-import { X, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
-import { Logo } from '@/components/shared/Logo';
-import type { CTAButtonWithSection } from '@/features/media/types';
 
-type NavLink = {
+export type MobileNavLink = {
   name: string;
   href: string;
   sectionId: string;
 };
 
+export type MobileCTA = {
+  id: string;
+  label: string;
+  url: string;
+  icon?: any;
+  style?: 'primary' | 'secondary';
+};
+
 type MobileNavMenuProps = {
-  navLinks: NavLink[];
+  navLinks: MobileNavLink[];
   activeSection: string;
-  headerButtons: CTAButtonWithSection[];
+  ctaButtons: MobileCTA[];
   onMobileLinkClick: (
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string,
     isAnchor: boolean,
   ) => void;
-  onClose: () => void;
 };
 
 export const MobileNavMenu = ({
   navLinks,
   activeSection,
-  headerButtons,
+  ctaButtons,
   onMobileLinkClick,
-  onClose,
 }: MobileNavMenuProps) => {
   const prefersReducedMotion = useReducedMotion();
-
-  const sheetInitial = prefersReducedMotion
-    ? { opacity: 0 }
-    : { opacity: 0, y: '-100%' };
-  const sheetAnimate = prefersReducedMotion
-    ? { opacity: 1 }
-    : { opacity: 1, y: 0 };
-  const sheetExit = prefersReducedMotion
-    ? { opacity: 0 }
-    : { opacity: 0, y: '-100%' };
 
   return (
     <motion.div
@@ -54,21 +48,11 @@ export const MobileNavMenu = ({
       role="dialog"
       aria-modal="true"
       aria-label="Site navigation"
-      className="md:hidden fixed inset-0 z-[80] bg-background overflow-hidden"
-      initial={sheetInitial}
-      animate={sheetAnimate}
-      exit={sheetExit}
-      transition={
-        prefersReducedMotion
-          ? { duration: 0.2 }
-          : {
-              type: 'spring',
-              stiffness: 220,
-              damping: 28,
-              mass: 0.9,
-              opacity: { duration: 0.25, ease: 'easeOut' },
-            }
-      }
+      className="md:hidden fixed inset-0 z-40 bg-background/70 backdrop-blur-2xl overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -82,44 +66,24 @@ export const MobileNavMenu = ({
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
         <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-primary/12 blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex h-full flex-col">
-        {/* Top bar — mirrors navbar layout */}
-        <div className="flex items-center justify-between p-3">
-          <Link
-            href="/"
-            onClick={onClose}
-            aria-label="Home"
-            className="ml-3 flex items-center"
-          >
-            <Logo variant="horizontal" className="h-6" usePrimaryColor={true} />
-          </Link>
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={onClose}
-            className="h-10 w-10 rounded-xl flex items-center justify-center bg-foreground/5 hover:bg-foreground/10 active:scale-95 transition-all text-foreground"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
+      <div className="relative z-10 flex h-full flex-col pt-16">
         {/* Nav links */}
-        <nav className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
+        <nav className="flex-1 overflow-y-auto px-6 pt-8 pb-4">
           <ul className="flex flex-col">
             {navLinks.map((link, index) => {
               const isActive = activeSection === link.sectionId;
               return (
                 <motion.li
                   key={link.name}
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
-                    delay: prefersReducedMotion ? 0 : 0.12 + index * 0.045,
-                    duration: 0.32,
-                    ease: [0.22, 1, 0.36, 1],
+                    delay: prefersReducedMotion ? 0 : 0.04 + index * 0.025,
+                    duration: 0.2,
+                    ease: 'easeOut',
                   }}
                 >
                   <a
@@ -168,18 +132,18 @@ export const MobileNavMenu = ({
         </nav>
 
         {/* CTA buttons pinned to bottom */}
-        {headerButtons.length > 0 && (
+        {ctaButtons.length > 0 && (
           <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-              delay: prefersReducedMotion ? 0 : 0.12 + navLinks.length * 0.045,
-              duration: 0.35,
-              ease: [0.22, 1, 0.36, 1],
+              delay: prefersReducedMotion ? 0 : 0.04 + navLinks.length * 0.025,
+              duration: 0.22,
+              ease: 'easeOut',
             }}
             className="px-6 pt-4 pb-6 flex flex-col gap-3"
           >
-            {headerButtons.map((button) => {
+            {ctaButtons.map((button) => {
               const isAnchorLink = button.url.startsWith('#');
               return (
                 <Button
