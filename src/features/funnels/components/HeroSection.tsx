@@ -34,7 +34,7 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
         className="inline-flex mb-6 w-full sm:w-auto justify-center"
         style={{ maxWidth: "100%" }}
       >
-        <div className="relative inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 rounded-full text-xs font-regular min-w-0">
+        <div className="relative inline-flex items-center gap-1.5 sm:gap-3 px-3 sm:px-5 py-2 rounded-full text-xs font-regular min-w-0">
           <div
             className="absolute inset-0 rounded-full"
             style={{
@@ -49,13 +49,13 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
             }}
           />
           <span
-            className="w-[12px] h-[12px] rounded-full animate-pulse flex-shrink-0 relative z-10"
+            className="w-[8px] h-[8px] sm:w-[12px] sm:h-[12px] rounded-full animate-pulse flex-shrink-0 relative z-10"
             style={{
               backgroundImage:
                 "linear-gradient(84deg, hsl(var(--primary)), hsl(var(--secondary)) 92%)",
             }}
           />
-          <span className="uppercase font-medium text-[10px] md:text-[12px] text-foreground relative z-10">
+          <span className="uppercase font-medium text-[9px] md:text-[12px] text-foreground relative z-10 whitespace-nowrap">
             {content.badgeText}
           </span>
         </div>
@@ -69,7 +69,7 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
         <RichText
           text={content.headline}
           as="h1"
-          className="heading-xl leading-tight md:leading-none text-[24px] md:text-[54px] font-bold md:mb-4 mb-3"
+          className="heading-xl leading-tight md:leading-none text-[22px] md:text-[54px] font-bold md:mb-4 mb-3"
         />
         <p className="body-lg text-[14px] md:text-[16px] max-w-3xl mx-auto">
           {content.subheadline}

@@ -76,23 +76,11 @@ const getSectionHref = (type: string): string => {
 
 export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [headerTransparent, setHeaderTransparent] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
   const isMobile = useIsMobile();
   const lastScrollYRef = useRef(0);
   const [isVisible, setIsVisible] = useState(true);
-
-  // Delay the header's transparency until after the menu's content slide-in
-  // settles, so the links don't visually flicker behind the logo as they
-  // animate down from above their final position.
-  useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => setHeaderTransparent(true), 220);
-      return () => clearTimeout(t);
-    }
-    setHeaderTransparent(false);
-  }, [isOpen]);
 
   useEffect(() => {
     // Safety check for client-side only
@@ -403,18 +391,11 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
       className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8"
     >
       <div className="w-full md:max-w-2xl md:mx-auto">
-        <div className={cn(
-          'rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300',
-          headerTransparent
-            // Menu open on mobile: kill the pill bg/blur so the menu glow flows through.
-            // Desktop keeps its normal scrolled style.
-            ? scrolled
-              ? 'bg-transparent backdrop-blur-0 md:bg-background/80 md:backdrop-blur-lg md:shadow-sm'
-              : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
-            : scrolled
-              ? 'bg-background/80 backdrop-blur-lg md:shadow-sm'
-              : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
-        )}>
+        <div className={`rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300 ${
+          scrolled
+            ? 'bg-background/80 backdrop-blur-lg md:shadow-sm'
+            : 'bg-transparent backdrop-blur-0 border-b-0 md:border-0'
+        }`}>
           {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link

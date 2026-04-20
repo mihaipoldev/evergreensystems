@@ -48,7 +48,7 @@ export const MobileNavMenu = ({
       role="dialog"
       aria-modal="true"
       aria-label="Site navigation"
-      className="md:hidden fixed inset-0 z-40 bg-background/70 backdrop-blur-2xl overflow-hidden"
+      className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-lg overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -60,16 +60,7 @@ export const MobileNavMenu = ({
         paddingRight: 'env(safe-area-inset-right)',
       }}
     >
-      {/* Soft brand glow background */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-primary/12 blur-3xl" />
-      </div>
-
-      <div className="relative z-10 flex h-full flex-col pt-16">
+      <div className="relative flex h-full flex-col pt-16">
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-6 pt-8 pb-4">
           <ul className="flex flex-col">

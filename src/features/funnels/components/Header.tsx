@@ -24,18 +24,7 @@ const Header = ({ content }: HeaderProps) => {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [headerTransparent, setHeaderTransparent] = useState(false);
   const isFunnelPage = pathname !== "/";
-
-  // Delay the header's transparency until after the menu's content slide-in
-  // settles, so the links don't visually flicker behind the logo.
-  useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => setHeaderTransparent(true), 220);
-      return () => clearTimeout(t);
-    }
-    setHeaderTransparent(false);
-  }, [isOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -168,15 +157,9 @@ const Header = ({ content }: HeaderProps) => {
     <header className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8">
       <div className="w-full md:max-w-2xl md:mx-auto">
         <nav
-          className={cn(
-            "rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-all duration-300",
-            // Menu open on mobile: drop bg + blur so the menu glow flows through.
-            // Desktop keeps its normal glass pill.
-            headerTransparent
-              ? "bg-transparent backdrop-blur-0 md:bg-background/70 md:backdrop-blur-lg"
-              : "bg-background/70 backdrop-blur-lg",
-            isScrolled ? "md:shadow-sm" : "md:shadow-none",
-          )}
+          className={`bg-background/70 backdrop-blur-lg rounded-none md:rounded-full p-3 md:p-2 flex items-center justify-between gap-6 transition-shadow duration-200 ${
+            isScrolled ? "md:shadow-sm" : "md:shadow-none"
+          }`}
         >
           {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">

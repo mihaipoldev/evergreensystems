@@ -32,10 +32,10 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
         />
       </div>
 
-      <div className="max-w-5xl mx-auto relative z-10 md:pt-20 pt-12 md:pb-20 pb-12 md:px-6 px-4">
+      <div className="max-w-5xl mx-auto relative z-10 md:pt-20 pt-12 md:pb-20 pb-12 md:px-6 px-0">
 
         {/* Main Card Container */}
-        <div className="rounded-2xl md:p-12 p-6 py-12">
+        <div className="rounded-2xl md:p-12 px-0 py-12">
 
           {/* Why Outbound Works */}
           <div className="md:mb-16 mb-8">
