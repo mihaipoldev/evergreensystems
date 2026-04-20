@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -119,10 +119,51 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMobile]);
 
+  // Lock body scroll (iOS-safe) + close on Escape while mobile menu is open
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+    if (!isOpen) return;
+
+    const scrollY = window.scrollY;
+    const html = document.documentElement;
+    const body = document.body;
+
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+    };
+
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.width = prev.bodyWidth;
+      window.scrollTo(0, scrollY);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [isOpen]);
+
   // Smooth scroll handler for navigation links
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
-    
+
     // Safety check for client-side only
     if (typeof window === "undefined" || typeof document === "undefined") {
       return;
@@ -130,19 +171,55 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
 
     const targetId = href.replace('#', '');
     const targetElement = document.getElementById(targetId);
-    
+
     if (targetElement) {
       const headerHeight = 100;
       const offset = 20;
       const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
       // Reduce offset slightly to ensure we land within the activation zone
       const offsetPosition = elementPosition - headerHeight - offset - 30;
-      
+
       window.scrollTo({
         top: Math.max(0, offsetPosition),
         behavior: 'smooth',
       });
     }
+  };
+
+  // Close the mobile menu and then smooth-scroll. We have to wait for the
+  // scroll-lock cleanup (html/body unfreeze + scrollTo restore) to flush before
+  // measuring the target — otherwise the measurement is wrong and the restore
+  // wipes our scroll. Two rAFs = state flush + paint, then we navigate.
+  const handleMobileLinkClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+    isAnchor: boolean,
+  ) => {
+    if (!isAnchor) {
+      // External link — let the default behavior handle it after closing.
+      setIsOpen(false);
+      return;
+    }
+    e.preventDefault();
+    setIsOpen(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        const targetId = href.replace('#', '');
+        const targetElement = document.getElementById(targetId);
+        if (!targetElement) return;
+        // Mobile navbar sits at top-0 and is ~60px tall — much less padding
+        // than the desktop scroll handler needs.
+        const mobileHeaderClearance = 72;
+        const elementPosition =
+          targetElement.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - mobileHeaderClearance;
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: 'smooth',
+        });
+      });
+    });
   };
 
   // Get header section CTA buttons
@@ -390,25 +467,43 @@ export const Navbar = ({ sections = [], headerSection }: NavbarProps) => {
           {/* Mobile Menu Button */}
           <div className="flex-shrink-0 md:hidden flex items-center gap-2">
             <button
-              className="text-foreground"
+              type="button"
+              aria-label={isOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isOpen}
+              aria-controls="mobile-nav-panel"
+              className="relative h-10 w-10 rounded-xl flex items-center justify-center bg-foreground/5 hover:bg-foreground/10 active:scale-95 transition-all text-foreground"
               onClick={() => setIsOpen(!isOpen)}
             >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={isOpen ? 'close' : 'open'}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  {isOpen ? <X size={20} /> : <Menu size={20} />}
+                </motion.span>
+              </AnimatePresence>
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+      </div>
+
+      {/* Mobile full-screen menu */}
+      <AnimatePresence>
         {isOpen && (
           <MobileNavMenu
             navLinks={navLinks}
             activeSection={activeSection}
             headerButtons={headerButtons}
-            handleSmoothScroll={handleSmoothScroll}
-            onLinkClick={() => setIsOpen(false)}
+            onMobileLinkClick={handleMobileLinkClick}
+            onClose={() => setIsOpen(false)}
           />
         )}
-      </div>
+      </AnimatePresence>
     </motion.nav>
   );
 };
