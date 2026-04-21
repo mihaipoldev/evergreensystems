@@ -26,14 +26,14 @@ export const commercialCleaningContent: FunnelContent = {
     ctaButtonText: "Book a Qualification Call",
     ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems?month=2026-03",
     ctaId: "6905ab5a-5e06-4cec-aac2-dc352b8c1d9c",
-    bottomText: "8+ qualified calls per month ((guaranteed!))",
+    bottomText: "5–15 qualified calls per month ((guaranteed!))",
     videoPlaceholderText: "Watch the overview",
   },
 
   outcomes: {
     heading: "Get Consistent, Qualified Sales Calls",
     subheading:
-      "At least 8 qualified sales calls within 30 days of the first email sent",
+      "At least 5–15 qualified sales calls within 30 days of the first email sent",
     benefits: [
       "Without spending tens of thousands on ads",
       'Without paying bloated retainers for "leads" that go nowhere',
@@ -52,24 +52,24 @@ export const commercialCleaningContent: FunnelContent = {
   benchmarks: {
     sectionId: "expected-outcomes",
     heading: "Expected Outcomes",
-    subheading: "Realistic performance benchmarks for enriched outreach to decision-makers in your service area",
+    subheading: "What enriched B2B cold email typically delivers for decision-makers in your service area",
     benchmarks: [
       {
         title: "Positive Reply Rate",
-        value: "1–4%",
+        value: "1–3%",
         description: "of contacted decision-makers respond with genuine interest",
         subtext:
           "These are real responses from decision-makers — not auto-replies, bounces, or unsubscribes.",
       },
       {
         title: "Conversation to Call",
-        value: "30–50%",
+        value: "20–35%",
         description: "of positive responses convert to a booked call",
         subtext: "Once someone expresses interest, our follow-up process books them directly on your calendar.",
       },
       {
         title: "Call Show-Up Rate",
-        value: "75–85%",
+        value: "65–80%",
         description: "of booked calls actually happen",
         subtext:
           "Driven by proper confirmation sequences and pre-qualified interest.",
@@ -86,7 +86,7 @@ export const commercialCleaningContent: FunnelContent = {
         value: "2–3/mo",
         description: "new cleaning contracts per month at typical close rates",
         subtext:
-          "8+ qualified calls, 20–30% close rate. Each contract worth $500–$2,400/month recurring. Revenue compounds — every month the system runs, new contracts stack on top of existing ones.",
+          "5–15 qualified calls, 20–30% close rate. Each contract worth $500–$2,400/month recurring. Revenue compounds — every month the system runs, new contracts stack on top of existing ones.",
       },
       {
         title: "Deliverability Health",
@@ -309,7 +309,7 @@ export const commercialCleaningContent: FunnelContent = {
           text: "Once the system goes live, **monthly management begins**",
         },
         {
-          text: "If the system does **not produce at least 8 qualified sales calls within 30 days** of the first email sent: **both the setup fee and the first month's management fee are fully refunded**",
+          text: "If the system does **not produce at least 5 qualified sales calls within 30 days** of the first email sent: **both the setup fee and the first month's management fee are fully refunded**",
           highlighted: true,
         },
       ],

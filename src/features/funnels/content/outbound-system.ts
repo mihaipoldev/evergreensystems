@@ -25,14 +25,14 @@ export const outboundSystemContent: FunnelContent = {
     ctaButtonText: "Book a Qualification Call",
     ctaUrl: "https://calendly.com/hello-evergreensystems/evergreensystems",
     ctaId: "20960721-c403-4696-888e-3493de125658",
-    bottomText: "10 booked calls a month ((guaranteed!))",
+    bottomText: "5–15 booked calls a month ((guaranteed!))",
     videoPlaceholderText: "Watch the overview",
   },
 
   outcomes: {
     heading: "Get Consistent, Qualified Sales Calls",
     subheading:
-      "At least 10 qualified sales calls within 30 days of the system going live",
+      "At least 5–15 qualified sales calls within 30 days of the system going live",
     benefits: [
       "Without spending tens of thousands on ads",
       'Without paying bloated retainers for "leads" that go nowhere',
@@ -60,13 +60,13 @@ export const outboundSystemContent: FunnelContent = {
       },
       {
         title: "Conversation to Call",
-        value: "25–40%",
+        value: "20–35%",
         description: "of qualified conversations book a call",
         subtext: "Measured after fit checks and intent validation.",
       },
       {
         title: "Call Show-Up Rate",
-        value: "75–90%",
+        value: "65–80%",
         description: "attendance on booked calls",
         subtext:
           "Driven by proper framing, confirmation, and reminder logic.",
@@ -306,7 +306,7 @@ export const outboundSystemContent: FunnelContent = {
           text: "Once the system goes live, **monthly management begins**",
         },
         {
-          text: "If the system does **not produce at least 10 qualified sales calls within 30 days** of going live: **both the setup fee and the first month's management fee are fully refunded**",
+          text: "If the system does **not produce at least 5 qualified sales calls within 30 days** of going live: **both the setup fee and the first month's management fee are fully refunded**",
           highlighted: true,
         },
       ],

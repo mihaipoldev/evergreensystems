@@ -1,9 +1,8 @@
 import { createClient, createServiceRoleClient, fetchAllRows } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import type { Database } from "@/lib/supabase/types";
 import { headers } from "next/headers";
-
-type AnalyticsEventInsert = Database["public"]["Tables"]["analytics_events"]["Insert"];
+import { isbot } from "isbot";
+import { insertAnalyticsEvent } from "@/lib/analytics-insert";
 
 export async function GET(request: Request) {
   try {
@@ -88,9 +87,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const ua = headersList.get("user-agent") || "";
+    if (isbot(ua)) {
+      return NextResponse.json({ skipped: "bot" }, { status: 200 });
+    }
+
     // Public endpoint - no authentication required for tracking
-    // Use service role client to bypass RLS for public analytics tracking
-    const supabase = createServiceRoleClient();
     const body = await request.json();
     
     const { 
@@ -125,42 +127,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Extract geolocation from Vercel headers
-    const country = headersList.get("x-vercel-ip-country") || null;
-    const city = headersList.get("x-vercel-ip-city") || null;
-
-    // Extract user agent and referrer from request if not provided in body
-    const finalUserAgent = user_agent || headersList.get("user-agent") || null;
-    const finalReferrer = referrer || headersList.get("referer") || null;
-
-    // Untyped client — generated types are stale, DB has workspaces + workspace_id
-    const db = supabase as any;
-
-    // Look up evergreen workspace ID (this website is always evergreen)
-    const { data: workspace } = await db
-      .from("workspaces")
-      .select("id")
-      .eq("slug", "evergreen")
-      .single();
-
-    const insertData = {
+    const { data, error } = await insertAnalyticsEvent({
       event_type,
       entity_type,
       entity_id,
-      session_id: session_id || null,
-      country,
-      city,
-      user_agent: finalUserAgent,
-      referrer: finalReferrer,
-      metadata: metadata || null,
-      workspace_id: workspace?.id,
-    };
-
-    const { data, error } = await db
-      .from("analytics_events")
-      .insert(insertData)
-      .select()
-      .single();
+      session_id,
+      user_agent,
+      referrer,
+      metadata,
+    });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
