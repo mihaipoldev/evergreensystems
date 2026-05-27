@@ -18,9 +18,11 @@ const TimelineSection = ({ content }: TimelineSectionProps) => {
           <h2 className="md:heading-lg heading-md md:mb-4 mb-3">
             {content.heading}
           </h2>
-          <p className="md:body-lg body-md text-foreground/80 max-w-3xl mx-auto">
-            {content.subheading}
-          </p>
+          {content.subheading && (
+            <p className="md:body-lg body-md text-foreground/80 max-w-3xl mx-auto">
+              {content.subheading}
+            </p>
+          )}
         </div>
 
         {/* Timeline Steps */}
@@ -60,22 +62,24 @@ const TimelineSection = ({ content }: TimelineSectionProps) => {
         </motion.div>
 
         {/* Success Definition */}
-        <div className="relative md:mt-20 mt-12">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 rounded-2xl" />
-          <div className="relative md:p-8 p-4 md:p-10 bg-primary/5 rounded-2xl border-2 border-primary/20">
-            <div className="text-center max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 md:mb-4 mb-3">
-                <span className="text-xs font-semibold text-primary uppercase tracking-wider">{content.successBox.badgeText}</span>
+        {content.successBox && (
+          <div className="relative md:mt-20 mt-12">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 rounded-2xl" />
+            <div className="relative md:p-8 p-4 md:p-10 bg-primary/5 rounded-2xl border-2 border-primary/20">
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 md:mb-4 mb-3">
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">{content.successBox.badgeText}</span>
+                </div>
+                <h3 className="md:heading-md heading-sm md:mb-4 mb-3">{content.successBox.heading}</h3>
+                <RichText
+                  text={content.successBox.text}
+                  as="p"
+                  className="md:body-md body-sm leading-relaxed"
+                />
               </div>
-              <h3 className="md:heading-md heading-sm md:mb-4 mb-3">{content.successBox.heading}</h3>
-              <RichText
-                text={content.successBox.text}
-                as="p"
-                className="md:body-md body-sm leading-relaxed"
-              />
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

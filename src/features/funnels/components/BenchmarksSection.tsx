@@ -16,9 +16,11 @@ const BenchmarksSection = ({ content }: BenchmarksSectionProps) => {
         {/* Header */}
         <div className="text-center md:mb-12 mb-6">
           <h2 className="md:heading-lg heading-md md:mb-2 mb-3">{content.heading}</h2>
-          <p className="md:body-lg body-md text-foreground/80 max-w-2xl mx-auto">
-            {content.subheading}
-          </p>
+          {content.subheading && (
+            <p className="md:body-lg body-md text-foreground/80 max-w-2xl mx-auto">
+              {content.subheading}
+            </p>
+          )}
         </div>
 
         {/* Benchmarks Grid */}
@@ -60,13 +62,15 @@ const BenchmarksSection = ({ content }: BenchmarksSectionProps) => {
         </motion.div>
 
         {/* Bottom Statement */}
-        <div className="text-center">
-          <RichText
-            text={content.bottomStatement}
-            as="p"
-            className="md:body-lg body-sm font-semibold text-foreground max-w-2xl mx-auto px-3 md:px-0"
-          />
-        </div>
+        {content.bottomStatement && (
+          <div className="text-center">
+            <RichText
+              text={content.bottomStatement}
+              as="p"
+              className="md:body-lg body-sm font-semibold text-foreground max-w-2xl mx-auto px-3 md:px-0"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

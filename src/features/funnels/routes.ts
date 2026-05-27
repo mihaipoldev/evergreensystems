@@ -12,14 +12,10 @@ export function isFunnelRoute(pathname: string): boolean {
 
 /**
  * Derive the CSS preset class for a given pathname.
- * Funnel pages get `preset-{slug}`, everything else gets `preset-landing-page`.
+ * All funnel pages share the same preset; non-funnel routes fall back to landing-page.
  */
 export function getFunnelPresetClass(pathname: string): string {
-  const entries = getAllFunnelEntries();
-  const match = entries.find(
-    (e) => pathname === `/${e.routePath}` || pathname.startsWith(`/${e.routePath}/`)
-  );
-  return match ? `preset-${match.slug}` : "preset-landing-page";
+  return isFunnelRoute(pathname) ? "preset-outbound-system" : "preset-landing-page";
 }
 
 /**

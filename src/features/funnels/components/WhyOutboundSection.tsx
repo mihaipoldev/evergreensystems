@@ -120,39 +120,43 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
             </div>
 
             {/* Comparison Cards */}
-            <div className="grid md:grid-cols-2 md:gap-4 gap-3 md:mb-8 mb-6">
-              <div className="md:p-6 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-                <div className="flex items-center gap-2 md:mb-2 mb-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-destructive font-bold text-sm">✗</span>
+            {traditionalFails.oldWay && traditionalFails.newWay && (
+              <div className="grid md:grid-cols-2 md:gap-4 gap-3 md:mb-8 mb-6">
+                <div className="md:p-6 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+                  <div className="flex items-center gap-2 md:mb-2 mb-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-destructive font-bold text-sm">✗</span>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold">{traditionalFails.oldWay.label}</p>
                   </div>
-                  <p className="text-xs md:text-sm font-semibold">{traditionalFails.oldWay.label}</p>
+                  <p className="md:body-sm text-sm text-foreground/80">
+                    {traditionalFails.oldWay.text}
+                  </p>
                 </div>
-                <p className="md:body-sm text-sm text-foreground/80">
-                  {traditionalFails.oldWay.text}
-                </p>
-              </div>
 
-              <div className="md:p-6 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2 md:mb-2 mb-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary font-bold text-sm">✓</span>
+                <div className="md:p-6 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2 md:mb-2 mb-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-primary font-bold text-sm">✓</span>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold">{traditionalFails.newWay.label}</p>
                   </div>
-                  <p className="text-xs md:text-sm font-semibold">{traditionalFails.newWay.label}</p>
+                  <RichText
+                    text={traditionalFails.newWay.text}
+                    as="p"
+                    className="md:body-sm text-sm text-foreground/80"
+                  />
                 </div>
-                <RichText
-                  text={traditionalFails.newWay.text}
-                  as="p"
-                  className="md:body-sm text-sm text-foreground/80"
-                />
               </div>
-            </div>
+            )}
 
-            <RichText
-              text={traditionalFails.closingStatement}
-              as="p"
-              className="md:body-lg body-md hero-align font-semibold text-foreground text-center"
-            />
+            {traditionalFails.closingStatement && (
+              <RichText
+                text={traditionalFails.closingStatement}
+                as="p"
+                className="md:body-lg body-md hero-align font-semibold text-foreground text-center"
+              />
+            )}
           </div>
 
           {/* Divider */}

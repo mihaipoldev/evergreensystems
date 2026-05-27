@@ -22,9 +22,11 @@ const WhatYouGetSection = ({ content }: WhatYouGetSectionProps) => {
             as="h2"
             className="md:heading-lg heading-md md:mb-4 mb-3"
           />
-          <p className="md:body-lg body-md text-foreground/80 max-w-2xl mx-auto">
-            {content.subheading}
-          </p>
+          {content.subheading && (
+            <p className="md:body-lg body-md text-foreground/80 max-w-2xl mx-auto">
+              {content.subheading}
+            </p>
+          )}
         </div>
 
         {/* Deliverables Grid */}

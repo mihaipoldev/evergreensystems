@@ -47,10 +47,10 @@ export interface BenchmarkItem {
 export interface BenchmarksContent {
   sectionId: string;
   heading: string;
-  subheading: string;
+  subheading?: string;
   benchmarks: BenchmarkItem[];
   /** Supports rich text */
-  bottomStatement: string;
+  bottomStatement?: string;
 }
 
 export interface WhyOutboundContent {
@@ -72,10 +72,10 @@ export interface WhyOutboundContent {
     failurePoints: string[];
     /** Supports rich text */
     keyMessage: string;
-    oldWay: { label: string; text: string };
-    newWay: { label: string; text: string };
+    oldWay?: { label: string; text: string };
+    newWay?: { label: string; text: string };
     /** Supports rich text */
-    closingStatement: string;
+    closingStatement?: string;
   };
   /** Subsection 3: Enrichment explained */
   enrichment: {
@@ -108,7 +108,7 @@ export interface WhatYouGetContent {
   sectionId: string;
   /** Supports rich text */
   heading: string;
-  subheading: string;
+  subheading?: string;
   deliverables: string[];
   bottomNegatives: string[];
   closingStatement: string;
@@ -136,9 +136,9 @@ export interface TimelineStep {
 
 export interface TimelineContent {
   heading: string;
-  subheading: string;
+  subheading?: string;
   steps: TimelineStep[];
-  successBox: {
+  successBox?: {
     badgeText: string;
     heading: string;
     /** Supports rich text */
@@ -154,9 +154,18 @@ export interface GuaranteeStep {
 
 export interface PricingContent {
   sectionId: string;
-  includedHeading: string;
-  includedSubheading: string;
-  includes: string[];
+  price?: {
+    badgeText?: string;
+    setupAmount: string;
+    setupLabel: string;
+    monthlyAmount: string;
+    monthlyLabel: string;
+    /** Supports rich text */
+    roiNote?: string;
+  };
+  includedHeading?: string;
+  includedSubheading?: string;
+  includes?: string[];
   /** Supports rich text */
   pricingNote: string;
   guarantee: {
@@ -181,13 +190,13 @@ export interface FAQContent {
 export interface FinalCTAContent {
   heading: string;
   subheading: string;
-  worstCase: { label: string; text: string };
-  bestCase: { label: string; text: string };
+  worstCase?: { label: string; text: string };
+  bestCase?: { label: string; text: string };
   ctaButtonText: string;
   ctaUrl?: string;
   ctaId?: string;
   /** Supports rich text */
-  subtext: string;
+  subtext?: string;
 }
 
 export interface FooterContent {
@@ -209,7 +218,7 @@ export interface FunnelContent {
   benchmarks: BenchmarksContent;
   whyOutbound: WhyOutboundContent;
   whatYouGet: WhatYouGetContent;
-  comparison: ComparisonContent;
+  comparison?: ComparisonContent;
   timeline: TimelineContent;
   pricing: PricingContent;
   faq: FAQContent;

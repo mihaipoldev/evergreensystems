@@ -1,10 +1,12 @@
 import { outboundSystemContent } from "./outbound-system";
 import { commercialCleaningContent } from "./commercial-cleaning";
+import { recruitingAgenciesContent } from "./recruiting-agencies";
 import type { FunnelContent } from "../types";
 
 const funnelContentMap: Record<string, FunnelContent> = {
   "outbound-system": outboundSystemContent,
   "commercial-cleaning": commercialCleaningContent,
+  "recruiting-agencies": recruitingAgenciesContent,
 };
 
 export function getFunnelContent(slug: string): FunnelContent | null {
