@@ -18,6 +18,7 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { ConsoleLogFilter } from "@/components/shared/ConsoleLogFilter";
 import { SEO_CONFIG, ALL_KEYWORDS } from "@/lib/seo";
 import { getTimestamp, getDuration, debugServerTiming, timeAsync } from "@/lib/debug-performance";
+import { getFunnelPresetClass } from "@/features/funnels/routes";
 
 // Force dynamic rendering since we use headers() to detect admin pages
 export const dynamic = 'force-dynamic';
@@ -252,7 +253,7 @@ export default async function RootLayout({
     <html 
       lang="en" 
       suppressHydrationWarning 
-      className={`${fontClasses}${isAdminPage ? ` ${adminFontClass} preset-admin` : " preset-landing-page"}`}
+      className={`${fontClasses}${isAdminPage ? ` ${adminFontClass} preset-admin` : ` ${getFunnelPresetClass(pathname)}`}`}
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
         {/* Server-side font injection */}
