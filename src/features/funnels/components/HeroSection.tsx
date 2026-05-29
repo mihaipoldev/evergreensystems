@@ -107,7 +107,7 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
       {/* Primary CTA */}
       <motion.div {...heroEntrance(0.3)}>
         <motion.div {...ctaHover} className="inline-block">
-          <Button variant="cta" size="xl" className="hover:-translate-y-0" asChild>
+          <Button variant="cta" size="xl" className="rounded-full hover:-translate-y-0" asChild>
             <Link
               href={content.ctaUrl || "#"}
               target="_blank"
@@ -134,7 +134,7 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
         <RichText
           text={content.bottomText}
           as="p"
-          className="text-muted-foreground/80 max-w-2xl mx-auto mt-3"
+          className="text-muted-foreground/80 max-w-2xl mx-auto mt-4"
         />
       </motion.div>
     </section>

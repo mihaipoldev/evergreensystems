@@ -1,8 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from "@/components/ui/RichText";
 import { staggerContainer, staggerItem, staggerItemTransition } from "../animations";
+import SectionEyebrow from "./SectionEyebrow";
 import type { WhyOutboundContent } from "../types";
 
 interface WhyOutboundSectionProps {
@@ -32,18 +35,19 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
         />
       </div>
 
-      <div className="max-w-5xl mx-auto relative z-10 md:pt-20 pt-12 md:pb-20 pb-12 md:px-6 px-0">
+      <div className="max-w-5xl mx-auto relative z-10 md:pt-16 pt-10 md:pb-16 pb-10 md:px-6 px-0">
 
         {/* Main Card Container */}
-        <div className="rounded-2xl md:p-12 px-0 py-12">
+        <div className="rounded-2xl md:p-8 px-0 py-8 text-center">
 
           {/* Why Outbound Works */}
-          <div className="md:mb-16 mb-8">
-            <h2 className="md:heading-lg heading-md md:mb-6 mb-4 hero-align">
+          <div className="md:mb-12 mb-6">
+            {content.eyebrow && <SectionEyebrow label={content.eyebrow} />}
+            <h2 className="text-2xl md:text-4xl font-semibold tracking-tight text-foreground md:mb-6 mb-4">
               {whyItWorks.heading}
             </h2>
 
-            <p className="md:body-md body-sm md:mb-8 mb-4 hero-align">
+            <p className="text-sm md:text-base text-foreground/85 leading-relaxed md:mb-8 mb-4 max-w-2xl mx-auto">
               {whyItWorks.introText}
             </p>
 
@@ -72,40 +76,38 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
                 key={index}
                 text={paragraph}
                 as="p"
-                className="md:body-md body-sm md:mb-6 mb-4 hero-align"
+                className="text-sm md:text-base text-foreground/85 leading-relaxed md:mb-6 mb-4 max-w-2xl mx-auto"
               />
             ))}
 
             <RichText
               text={whyItWorks.closingStatement}
               as="p"
-              className="md:body-lg body-md text-foreground font-semibold hero-align"
+              className="text-base md:text-lg text-foreground font-semibold leading-relaxed max-w-2xl mx-auto"
             />
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/50 md:mb-16 mb-8 max-w-4xl mx-auto"></div>
+          <div className="border-t border-border/50 md:mb-12 mb-6 max-w-4xl mx-auto"></div>
 
           {/* The Problem with Traditional Lead Gen */}
-          <div className="max-w-4xl mx-auto">
-            <h2 className="md:heading-lg heading-md md:mb-6 mb-4 hero-align">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-xl md:text-3xl font-semibold tracking-tight text-foreground md:mb-6 mb-4">
               {traditionalFails.heading}
             </h2>
 
-            <p className="md:body-md body-sm md:mb-6 mb-4 hero-align">
+            <p className="text-sm md:text-base text-foreground/85 leading-relaxed md:mb-6 mb-4 max-w-2xl mx-auto">
               {traditionalFails.introText}
             </p>
 
-            <ul className="md:space-y-3 space-y-2 md:mb-10 mb-6">
+            <ul className="max-w-md mx-auto md:space-y-3 space-y-2 md:mb-10 mb-6 text-left">
               {traditionalFails.failurePoints.map((item, index) => (
                 <li
                   key={index}
-                  className="md:body-md body-sm flex items-start hero-align-bullet gap-3"
+                  className="text-sm md:text-base text-foreground leading-relaxed flex items-baseline gap-3"
                 >
-                  <span className="w-6 h-6 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-destructive font-bold text-sm">✗</span>
-                  </span>
-                  <span className="pt-0.5">{item}</span>
+                  <span className="text-destructive font-bold flex-shrink-0">✗</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -115,7 +117,7 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
               <RichText
                 text={traditionalFails.keyMessage}
                 as="p"
-                className="md:body-lg body-md hero-align text-foreground font-semibold text-center"
+                className="text-base md:text-lg text-foreground font-semibold leading-relaxed"
               />
             </div>
 
@@ -154,23 +156,23 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
               <RichText
                 text={traditionalFails.closingStatement}
                 as="p"
-                className="md:body-lg body-md hero-align font-semibold text-foreground text-center"
+                className="md:body-lg body-md font-semibold text-foreground"
               />
             )}
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/50 md:mb-16 mb-8 md:mt-16 mt-8 max-w-4xl mx-auto"></div>
+          <div className="border-t border-border/50 md:mb-12 mb-6 md:mt-12 mt-6 max-w-4xl mx-auto"></div>
 
           {/* How the System Works - Enrichment */}
-          <div className="md:mb-16 mb-8 max-w-4xl mx-auto">
-            <h3 className="md:heading-lg heading-md md:mb-6 mb-4">
+          <div className="md:mb-12 mb-6 max-w-5xl mx-auto">
+            <h3 className="text-lg md:text-2xl font-semibold tracking-tight text-foreground md:mb-4 mb-3">
               {enrichment.heading}
             </h3>
             <RichText
               text={enrichment.introText}
               as="p"
-              className="md:body-md body-sm md:mb-8 mb-6 leading-relaxed"
+              className="text-sm md:text-base text-foreground/85 leading-relaxed md:mb-6 mb-5 max-w-2xl mx-auto"
             />
 
             <motion.div
@@ -180,14 +182,14 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
               {enrichment.checks.map((item, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-start gap-3 md:p-4 p-3 rounded-xl bg-primary/5 border border-primary/10"
+                  className="flex items-start gap-3 md:p-4 p-3 rounded-xl bg-background/70 backdrop-blur-sm border border-border/70 hover:border-primary/30 hover:bg-background hover:shadow-sm transition-all text-left group"
                   variants={staggerItem}
                   transition={staggerItemTransition}
                 >
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-primary/20 transition-colors">
                     <span className="text-primary font-bold text-sm">✓</span>
                   </div>
-                  <span className="md:body-sm text-sm font-medium text-foreground pt-0.5">{item}</span>
+                  <p className="text-sm md:text-base text-foreground font-medium leading-relaxed">{item}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -195,29 +197,29 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
             <RichText
               text={enrichment.closingText}
               as="p"
-              className="md:body-lg body-md text-foreground/80 text-center font-medium"
+              className="text-base md:text-lg text-foreground font-medium leading-relaxed max-w-2xl mx-auto"
             />
           </div>
 
           {/* Divider */}
-          <div className="border-t border-border/50 md:mb-16 mb-8 max-w-4xl mx-auto"></div>
+          <div className="border-t border-border/50 md:mb-12 mb-6 max-w-4xl mx-auto"></div>
 
           {/* Sending Infrastructure */}
-          <div className="md:mb-8 mb-6 max-w-4xl mx-auto">
-            <h3 className="md:heading-lg heading-md md:mb-6 mb-4">
+          <div className="md:mb-8 mb-6 max-w-3xl mx-auto">
+            <h3 className="text-lg md:text-2xl font-semibold tracking-tight text-foreground md:mb-4 mb-3">
               {sending.heading}
             </h3>
             <RichText
               text={sending.introText}
               as="p"
-              className="md:body-md body-sm md:mb-8 mb-6 leading-relaxed"
+              className="text-sm md:text-base text-foreground/85 leading-relaxed md:mb-6 mb-5 max-w-2xl mx-auto"
             />
 
-            <ul className="md:space-y-3 space-y-2 md:mb-8 mb-6">
+            <ul className="max-w-md mx-auto md:space-y-3 space-y-2 md:mb-8 mb-6 text-left">
               {sending.items.map((item, index) => (
                 <li
                   key={index}
-                  className="md:body-md body-sm flex items-start gap-3"
+                  className="text-sm md:text-base text-foreground leading-relaxed flex items-start gap-3"
                 >
                   <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <span className="w-2 h-2 rounded-full bg-primary" />
@@ -227,14 +229,14 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
               ))}
             </ul>
 
-            <div className="md:p-6 p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border/50">
+            <div className="md:p-6 p-4 bg-primary/[0.04] rounded-xl border border-primary/15 text-left">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary font-bold">ℹ</span>
+                  <FontAwesomeIcon icon={faCircleInfo} className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="md:body-sm text-sm font-semibold text-foreground md:mb-2 mb-1">{sending.infoBox.title}</p>
-                  <p className="md:body-sm text-sm text-foreground/80 leading-relaxed">
+                  <p className="text-sm md:text-base font-semibold text-foreground md:mb-2 mb-1">{sending.infoBox.title}</p>
+                  <p className="text-sm md:text-base text-foreground/85 leading-relaxed">
                     {sending.infoBox.text}
                   </p>
                 </div>
@@ -242,36 +244,43 @@ const WhyOutboundSection = ({ content }: WhyOutboundSectionProps) => {
             </div>
           </div>
 
-          {/* Why This Matters */}
-          <div className="relative max-w-4xl mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl" />
-            <div className="relative bg-primary/5 rounded-2xl md:p-8 p-4 md:p-10 border-2 border-primary/20">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 md:mb-6 mb-4">
-                <span className="text-xs font-semibold text-primary uppercase tracking-wider">{keyInsight.badgeText}</span>
+          {/* Why This Matters — optional, omit on funnels that don't need a summary block */}
+          {keyInsight && (
+            <>
+              {/* Divider */}
+              <div className="border-t border-border/50 md:mb-12 mb-6 md:mt-12 mt-6 max-w-4xl mx-auto"></div>
+
+              <div className="relative max-w-4xl mx-auto text-left">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl" />
+                <div className="relative bg-primary/5 rounded-2xl md:p-8 p-4 md:p-10 border-2 border-primary/20">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 md:mb-6 mb-4">
+                    <span className="text-xs font-semibold text-primary uppercase tracking-wider">{keyInsight.badgeText}</span>
+                  </div>
+
+                  <h3 className="md:heading-md heading-sm md:mb-6 mb-4">{keyInsight.heading}</h3>
+
+                  <p className="md:body-md body-sm md:mb-6 mb-4 text-foreground/90">
+                    {keyInsight.introText}
+                  </p>
+
+                  <ul className="md:space-y-3 space-y-2 md:mb-8 mb-6">
+                    {keyInsight.failureReasons.map((reason, index) => (
+                      <li key={index} className="md:body-md body-sm flex items-start gap-3">
+                        <span className="text-destructive font-bold">✗</span>
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="md:pt-6 pt-4 border-t border-primary/20">
+                    <p className="md:body-lg body-md font-semibold text-foreground">
+                      {keyInsight.closingStatement}
+                    </p>
+                  </div>
+                </div>
               </div>
-
-              <h3 className="md:heading-md heading-sm md:mb-6 mb-4">{keyInsight.heading}</h3>
-
-              <p className="md:body-md body-sm md:mb-6 mb-4 text-foreground/90">
-                {keyInsight.introText}
-              </p>
-
-              <ul className="md:space-y-3 space-y-2 md:mb-8 mb-6">
-                {keyInsight.failureReasons.map((reason, index) => (
-                  <li key={index} className="md:body-md body-sm flex items-start gap-3">
-                    <span className="text-destructive font-bold">✗</span>
-                    <span>{reason}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="md:pt-6 pt-4 border-t border-primary/20">
-                <p className="md:body-lg body-md font-semibold text-foreground">
-                  {keyInsight.closingStatement}
-                </p>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
 
         </div>
       </div>

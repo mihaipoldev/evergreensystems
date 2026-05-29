@@ -6,6 +6,7 @@ import type { HeroVideoProps } from "./HeroSection";
 import OutcomesSection from "./OutcomesSection";
 import BenchmarksSection from "./BenchmarksSection";
 import WhyOutboundSection from "./WhyOutboundSection";
+import SystemDiagramSection from "./SystemDiagramSection";
 import WhatYouGetSection from "./WhatYouGetSection";
 import ComparisonSection from "./ComparisonSection";
 import TimelineSection from "./TimelineSection";
@@ -45,6 +46,12 @@ const FunnelPage = ({ content, heroVideo }: FunnelPageProps) => {
         <div className="relative">
           <WhyOutboundSection content={content.whyOutbound} />
         </div>
+
+        {content.systemDiagram && (
+          <div className="relative">
+            <SystemDiagramSection content={content.systemDiagram} />
+          </div>
+        )}
 
         <div className="relative">
           <WhatYouGetSection content={content.whatYouGet} />

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { RichText } from "@/components/ui/RichText";
 import { staggerContainer, staggerItem, staggerItemTransition } from "../animations";
+import SectionEyebrow from "./SectionEyebrow";
 import type { TimelineContent } from "../types";
 
 interface TimelineSectionProps {
@@ -14,8 +15,9 @@ const TimelineSection = ({ content }: TimelineSectionProps) => {
     <section className="section-spacing">
       <div className="max-w-4xl mx-auto px-3 md:px-0">
         {/* Header */}
-        <div className="text-center md:mb-12 mb-6">
-          <h2 className="md:heading-lg heading-md md:mb-4 mb-3">
+        <div className="text-center md:mb-16 mb-8">
+          {content.eyebrow && <SectionEyebrow label={content.eyebrow} />}
+          <h2 className="text-2xl md:text-4xl font-semibold tracking-tight text-foreground md:mb-4 mb-3">
             {content.heading}
           </h2>
           {content.subheading && (
@@ -33,7 +35,7 @@ const TimelineSection = ({ content }: TimelineSectionProps) => {
           {content.steps.map((item, index) => (
             <motion.div
               key={index}
-              className="flex md:gap-6 gap-2"
+              className="group flex md:gap-6 gap-2"
               variants={staggerItem}
               transition={staggerItemTransition}
             >
@@ -51,10 +53,10 @@ const TimelineSection = ({ content }: TimelineSectionProps) => {
 
               {/* Content Card */}
               <div className="flex-1 pb-2">
-                <div className="group h-full md:px-6 px-4 md:mb-6 mb-4 rounded-xl transition-all">
+                <div className="h-full md:px-6 px-4 md:mb-6 mb-4 rounded-xl transition-all">
                   <p className="text-xs font-semibold text-primary uppercase tracking-wider md:mb-2 mb-1">{item.step}</p>
-                  <h3 className="md:heading-sm text-sm font-semibold md:mb-3 mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
-                  <p className="md:body-md body-sm text-foreground/80 leading-relaxed">{item.description}</p>
+                  <h3 className="text-base md:text-lg font-semibold md:mb-3 mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
+                  <p className="text-sm md:text-base text-foreground/85 leading-relaxed">{item.description}</p>
                 </div>
               </div>
             </motion.div>

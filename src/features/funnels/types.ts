@@ -27,6 +27,8 @@ export interface HeroContent {
 }
 
 export interface OutcomesContent {
+  /** Optional small section label rendered above the heading. */
+  eyebrow?: string;
   heading: string;
   subheading: string;
   benefits: string[];
@@ -46,6 +48,8 @@ export interface BenchmarkItem {
 
 export interface BenchmarksContent {
   sectionId: string;
+  /** Optional small section label rendered above the heading. */
+  eyebrow?: string;
   heading: string;
   subheading?: string;
   benchmarks: BenchmarkItem[];
@@ -55,6 +59,8 @@ export interface BenchmarksContent {
 
 export interface WhyOutboundContent {
   sectionId: string;
+  /** Optional small section label rendered above the first subsection heading. */
+  eyebrow?: string;
   /** Subsection 1: Why outbound works */
   whyItWorks: {
     heading: string;
@@ -94,8 +100,8 @@ export interface WhyOutboundContent {
     items: string[];
     infoBox: { title: string; text: string };
   };
-  /** Subsection 5: Key insight / why it matters */
-  keyInsight: {
+  /** Subsection 5: Key insight / why it matters. Optional — omit to drop the entire summary block. */
+  keyInsight?: {
     badgeText: string;
     heading: string;
     introText: string;
@@ -104,8 +110,24 @@ export interface WhyOutboundContent {
   };
 }
 
+export interface SystemDiagramContent {
+  sectionId?: string;
+  /** Optional small section label rendered above the heading. */
+  eyebrow?: string;
+  heading: string;
+  subheading?: string;
+  /** Path to the image asset, served from /public. e.g. "/diagrams/email-infrastructure.png" */
+  imageSrc: string;
+  /** Alt text for accessibility. */
+  imageAlt: string;
+  /** Optional caption rendered below the image. */
+  caption?: string;
+}
+
 export interface WhatYouGetContent {
   sectionId: string;
+  /** Optional small section label rendered above the heading. */
+  eyebrow?: string;
   /** Supports rich text */
   heading: string;
   subheading?: string;
@@ -135,6 +157,8 @@ export interface TimelineStep {
 }
 
 export interface TimelineContent {
+  /** Optional small section label rendered above the heading. */
+  eyebrow?: string;
   heading: string;
   subheading?: string;
   steps: TimelineStep[];
@@ -154,6 +178,10 @@ export interface GuaranteeStep {
 
 export interface PricingContent {
   sectionId: string;
+  /** Opt-in two-column layout (price card left, guarantee card right). Default stacks. */
+  layout?: "two-column" | "stacked";
+  /** Big section headline rendered above the cards in two-column layout. */
+  sectionTitle?: string;
   price?: {
     badgeText?: string;
     setupAmount: string;
@@ -168,6 +196,12 @@ export interface PricingContent {
   includes?: string[];
   /** Supports rich text */
   pricingNote: string;
+  /** Optional inline CTA rendered below the cards in two-column layout. */
+  cta?: {
+    label: string;
+    url: string;
+    id?: string;
+  };
   guarantee: {
     badgeText: string;
     heading: string;
@@ -189,6 +223,8 @@ export interface FAQContent {
 
 export interface FinalCTAContent {
   heading: string;
+  /** Optional italic-serif accent rendered inline after `heading` (minimal layout only). */
+  headingAccent?: string;
   subheading: string;
   worstCase?: { label: string; text: string };
   bestCase?: { label: string; text: string };
@@ -217,6 +253,7 @@ export interface FunnelContent {
   outcomes: OutcomesContent;
   benchmarks: BenchmarksContent;
   whyOutbound: WhyOutboundContent;
+  systemDiagram?: SystemDiagramContent;
   whatYouGet: WhatYouGetContent;
   comparison?: ComparisonContent;
   timeline: TimelineContent;

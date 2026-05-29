@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500;1,600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -568,6 +569,14 @@
 /* JSON/code textarea – JetBrains Mono + fallbacks (shared JsonTextarea) */
 .font-mono-code {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', 'Courier New', Courier, 'Liberation Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace !important;
+}
+
+/* Serif italic accent — used for editorial flourish on funnel CTA headlines.
+   Needs !important to beat the global Gotham override on html:not(.preset-admin) body *. */
+html:not(.preset-admin) .font-serif-italic,
+html:not(.preset-admin) .font-serif-italic * {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+  font-style: italic;
 }
 
 /* JSON textarea – caret (cursor) uses foreground */

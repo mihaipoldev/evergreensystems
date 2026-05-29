@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { RichText } from "@/components/ui/RichText";
 import { staggerContainer, staggerItem, staggerItemTransition } from "../animations";
+import SectionEyebrow from "./SectionEyebrow";
 import type { BenchmarksContent } from "../types";
 
 interface BenchmarksSectionProps {
@@ -12,10 +13,11 @@ interface BenchmarksSectionProps {
 const BenchmarksSection = ({ content }: BenchmarksSectionProps) => {
   return (
     <section id={content.sectionId} className="section-spacing">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center md:mb-12 mb-6">
-          <h2 className="md:heading-lg heading-md md:mb-2 mb-3">{content.heading}</h2>
+          {content.eyebrow && <SectionEyebrow label={content.eyebrow} />}
+          <h2 className="text-2xl md:text-4xl font-semibold tracking-tight text-foreground md:mb-2 mb-3">{content.heading}</h2>
           {content.subheading && (
             <p className="md:body-lg body-md text-foreground/80 max-w-2xl mx-auto">
               {content.subheading}
@@ -25,13 +27,13 @@ const BenchmarksSection = ({ content }: BenchmarksSectionProps) => {
 
         {/* Benchmarks Grid */}
         <motion.div
-          className="grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 gap-4 md:mb-12 mb-4"
+          className="grid md:grid-cols-3 md:gap-6 gap-4 md:mb-12 mb-4"
           {...staggerContainer}
         >
           {content.benchmarks.map((benchmark, index) => (
             <motion.div
               key={index}
-              className="bg-gradient-to-br from-background to-background/50 rounded-xl p-6 border border-border/50 hover:border-primary/30 hover:shadow-md transition-all"
+              className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 hover:shadow-md transition-all"
               variants={staggerItem}
               transition={staggerItemTransition}
             >
@@ -48,12 +50,12 @@ const BenchmarksSection = ({ content }: BenchmarksSectionProps) => {
                 {benchmark.value}
               </p>
 
-              <p className="md:body-sm text-sm font-medium text-foreground md:mb-3 mb-2">
+              <p className="text-sm md:text-base font-medium text-foreground leading-relaxed md:mb-3 mb-2">
                 {benchmark.description}
               </p>
 
-              <div className="pt-3 border-t border-border/50">
-                <p className="text-xs text-muted-foreground leading-relaxed">
+              <div className="pt-3 border-t border-border">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {benchmark.subtext}
                 </p>
               </div>

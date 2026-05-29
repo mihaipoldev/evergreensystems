@@ -8,6 +8,7 @@ import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from "@/components/ui/RichText";
 import { trackEvent } from "@/lib/analytics";
 import { ctaHover } from "../animations";
+import SectionEyebrow from "./SectionEyebrow";
 import type { FinalCTAContent } from "../types";
 
 interface FinalCTASectionProps {
@@ -15,6 +16,76 @@ interface FinalCTASectionProps {
 }
 
 const FinalCTASection = ({ content }: FinalCTASectionProps) => {
+  const hasRiskCards = Boolean(content.worstCase && content.bestCase);
+
+  const trackCtaClick = () => {
+    if (content.ctaId) {
+      trackEvent({
+        event_type: "link_click",
+        entity_type: "cta_button",
+        entity_id: content.ctaId,
+        metadata: { location: "funnel_final_cta" },
+      });
+    }
+  };
+
+  if (!hasRiskCards) {
+    return (
+      <section className="px-4 md:px-0 pt-10 md:pt-16 pb-28 md:pb-48">
+        <div className="max-w-3xl mx-auto text-center">
+          <SectionEyebrow label="Let's Talk" className="mb-8 md:mb-10" />
+
+          {/* Headline — plain Gotham with optional serif-italic accent.
+              `whitespace-pre-line` honors \n in the heading copy. */}
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-5 md:mb-6 text-foreground whitespace-pre-line">
+            {content.heading}
+            {content.headingAccent && (
+              <>
+                {" "}
+                <span className="font-serif-italic font-normal text-primary/55 whitespace-normal">
+                  {content.headingAccent}
+                </span>
+              </>
+            )}
+          </h2>
+
+          {/* Subhead — fits on one line on desktop */}
+          <p className="text-base md:text-lg leading-relaxed text-muted-foreground mb-10 md:mb-12">
+            {content.subheading}
+          </p>
+
+          {/* Slim pill CTA */}
+          <motion.div {...ctaHover} className="inline-block">
+            <Button
+              variant="cta"
+              className="rounded-full h-12 md:h-14 px-7 md:px-8 text-sm md:text-base font-medium shadow-sm hover:shadow-md transition-shadow hover:-translate-y-0"
+              asChild
+            >
+              <Link
+                href={content.ctaUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={trackCtaClick}
+              >
+                {content.ctaButtonText}
+                <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </motion.div>
+
+          {/* Subtext */}
+          {content.subtext && (
+            <RichText
+              text={content.subtext}
+              as="p"
+              className="text-xs text-muted-foreground max-w-md mx-auto mt-6"
+            />
+          )}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="section-spacing">
       <div className="max-w-4xl mx-auto">
@@ -35,22 +106,20 @@ const FinalCTASection = ({ content }: FinalCTASectionProps) => {
             </p>
 
             {/* Risk Reversal Cards */}
-            {content.worstCase && content.bestCase && (
-              <div className="grid md:grid-cols-2 md:gap-4 gap-3 md:mb-10 mb-6 max-w-4xl mx-auto">
-                <div className="md:p-6 p-4 bg-background/80 backdrop-blur-sm rounded-xl border border-border/50 text-left">
-                  <p className="text-xs md:text-sm font-semibold text-muted-foreground md:mb-2 mb-1">{content.worstCase.label}</p>
-                  <p className="md:body-sm text-sm text-foreground">
-                    {content.worstCase.text}
-                  </p>
-                </div>
-                <div className="md:p-6 p-4 bg-primary/10 backdrop-blur-sm rounded-xl border border-primary/20 text-left">
-                  <p className="text-xs md:text-sm font-semibold text-primary md:mb-2 mb-1">{content.bestCase.label}</p>
-                  <p className="md:body-sm text-sm text-foreground">
-                    {content.bestCase.text}
-                  </p>
-                </div>
+            <div className="grid md:grid-cols-2 md:gap-4 gap-3 md:mb-10 mb-6 max-w-4xl mx-auto">
+              <div className="md:p-6 p-4 bg-background/80 backdrop-blur-sm rounded-xl border border-border/50 text-left">
+                <p className="text-xs md:text-sm font-semibold text-muted-foreground md:mb-2 mb-1">{content.worstCase!.label}</p>
+                <p className="md:body-sm text-sm text-foreground">
+                  {content.worstCase!.text}
+                </p>
               </div>
-            )}
+              <div className="md:p-6 p-4 bg-primary/10 backdrop-blur-sm rounded-xl border border-primary/20 text-left">
+                <p className="text-xs md:text-sm font-semibold text-primary md:mb-2 mb-1">{content.bestCase!.label}</p>
+                <p className="md:body-sm text-sm text-foreground">
+                  {content.bestCase!.text}
+                </p>
+              </div>
+            </div>
 
             {/* CTA Button */}
             <div className="md:mb-4 mb-3">
@@ -60,16 +129,7 @@ const FinalCTASection = ({ content }: FinalCTASectionProps) => {
                     href={content.ctaUrl || "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => {
-                      if (content.ctaId) {
-                        trackEvent({
-                          event_type: "link_click",
-                          entity_type: "cta_button",
-                          entity_id: content.ctaId,
-                          metadata: { location: "funnel_final_cta" },
-                        });
-                      }
-                    }}
+                    onClick={trackCtaClick}
                   >
                     {content.ctaButtonText}
                     <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />

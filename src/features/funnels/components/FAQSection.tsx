@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import SectionEyebrow from "./SectionEyebrow";
 import type { FAQContent } from "../types";
 
 interface FAQSectionProps {
@@ -16,7 +17,9 @@ const FAQSection = ({ content }: FAQSectionProps) => {
   return (
     <section className="section-spacing">
       <div className="max-w-3xl mx-auto px-3 md:px-0">
-        <h2 className="md:heading-lg heading-md md:mb-10 mb-6 text-center">
+        <SectionEyebrow label="FAQ" />
+
+        <h2 className="text-2xl md:text-4xl font-semibold tracking-tight text-foreground md:mb-10 mb-6 text-center">
           {content.heading}
         </h2>
 
@@ -27,8 +30,8 @@ const FAQSection = ({ content }: FAQSectionProps) => {
               value={`item-${index}`}
               className="border-b border-border"
             >
-              <AccordionTrigger className="text-left md:py-5 py-4 hover:no-underline">
-                <span className="md:heading-sm text-sm font-medium md:pr-4 pr-2">{faq.question}</span>
+              <AccordionTrigger className="group text-left md:py-5 py-4 hover:no-underline hover:bg-transparent transition-colors duration-200 hover:text-primary">
+                <span className="md:heading-sm text-sm font-medium md:pr-4 pr-2 transition-colors duration-200 group-hover:text-primary">{faq.question}</span>
               </AccordionTrigger>
               <AccordionContent className="md:pb-5 pb-4">
                 <p className="md:body-md body-sm md:leading-[26px] leading-relaxed text-foreground">{faq.answer}</p>

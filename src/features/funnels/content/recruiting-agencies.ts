@@ -20,45 +20,44 @@ export const recruitingAgenciesContent: FunnelContent = {
 
   hero: {
     badgeText: "For Tech Recruiting Agency Owners Who Want a Steady BD Pipeline",
-    headline: "We Build & Run Outbound Systems That \n [[Book Qualified Hiring-Manager Calls]]",
+    headline: "We Build & Run Outbound Systems That \n [[Book Hiring-Manager Calls]]",
     subheadline:
       "An always-on BD pipeline that runs while you're buried in delivery.",
-    ctaButtonText: "Book a Qualification Call",
+    ctaButtonText: "Book a qualification call",
     ctaUrl: "https://calendly.com/mihai-evergreensystems/growth-strategy-call",
     bottomText: "10 qualified hiring-manager calls in 90 days ((guaranteed!))",
     videoPlaceholderText: "Watch the overview",
   },
 
   outcomes: {
-    heading: "Get Consistent, Qualified Hiring-Manager Calls",
+    eyebrow: "Outcomes",
+    heading: "Get consistent, qualified hiring-manager calls",
     subheading:
-      "At least 10 qualified hiring-manager calls within 90 days of campaign launch",
+      "At least 10 qualified hiring-manager calls within 90 days of campaign launch.",
     benefits: [
       "Without managing a BDR who quits inside 14 months",
       "Without paying $5K-$15K/month for a fractional VP who designs the playbook and never runs it",
       "Without waiting six months for a content agency to produce a single meeting",
     ],
     valueProp:
-      "We build and run the entire outbound system for you, end-to-end.",
+      "We build and run the entire outbound system end-to-end.",
     valueSubtext:
       "You only show up to calls booked directly on your calendar.",
-    qualifiedDefinition:
-      "A booked call with a hiring decision-maker (VP Engineering, Head of Talent, CTO, or founder/CEO) at a US or Canada tech company actively hiring engineers.",
     qualifierText:
-      "**ℹ️ Only for owners or managing partners of boutique tech recruiting agencies in the US or Canada.** Not for solo recruiters, generalist staffing firms, or agencies looking for guaranteed placements.",
+      "**Only for owners or managing partners of boutique tech recruiting agencies in the US or Canada.** Not for solo recruiters, generalist staffing firms, or agencies looking for guaranteed placements.",
   },
 
   benchmarks: {
     sectionId: "expected-outcomes",
-    heading: "What Changes for You",
-    subheading: "What changes the moment the system is live.",
+    eyebrow: "The Numbers",
+    heading: "What changes for you",
     benchmarks: [
       {
         title: "Qualified Hiring-Manager Calls",
         value: "10-15",
         description: "booked in 90 days from kickoff",
         subtext:
-          "Floor of 10 is guaranteed. First ~30 days is infrastructure warmup, so calls land in months 2 and 3 at roughly 5-7 per month during active sending.",
+          "Floor of 10 is guaranteed. The first ~30 days goes to infrastructure warmup, so calls land in months 2 and 3 at roughly 5-7 per month during active sending.",
       },
       {
         title: "Your Hours on BD",
@@ -69,7 +68,7 @@ export const recruitingAgenciesContent: FunnelContent = {
       },
       {
         title: "Your Pipeline",
-        value: "Always on",
+        value: "Always-on",
         description: "runs in parallel with delivery, even when reqs pile up",
         subtext:
           "The feast-or-famine cycle breaks. New hiring-manager conversations keep landing through every delivery spike, because the engine does not depend on your time.",
@@ -79,21 +78,22 @@ export const recruitingAgenciesContent: FunnelContent = {
 
   whyOutbound: {
     sectionId: "why-outbound",
+    eyebrow: "Why Outbound",
     whyItWorks: {
-      heading: "Why Cold Outreach Works When Other Channels Stop Working",
+      heading: "Why cold outreach works",
       introText:
-        "Those calls come from one channel the others can't replace: cold outreach to hiring managers, run from outside your business. Recruiting agencies have three ways to find new clients, and two of them break down at the worst possible moment.",
+        "Recruiting agencies have three ways to find new clients. Two break exactly when delivery loads up.",
       methods: ["Referrals", "LinkedIn InMail", "Cold Outreach"],
       paragraphs: [
-        "Referrals dry up when delivery loads up. LinkedIn InMail response rates dropped from 20-25% to 6-8% in three years. Both channels break exactly when the pipeline needs to refill.",
-        "Cold outreach run from outside the business is the one channel that keeps producing through every delivery spike.",
+        "Referrals dry up when delivery is heavy. LinkedIn InMail response rates dropped from 20-25% to 6-8% in three years.",
+        "Cold outreach — run from outside the business — keeps producing through every delivery spike.",
       ],
       closingStatement:
         "**Hiring-manager conversations** at companies actively building tech teams, every month.",
     },
     traditionalFails: {
-      heading: "Why Traditional Cold Email Fails in Recruiting",
-      introText: "Most cold email aimed at recruiting agencies looks the same:",
+      heading: "Why traditional cold email fails in recruiting",
+      introText: "Most cold email sent by recruiting agencies looks the same:",
       failurePoints: [
         "Broad scraped lists, no signal filtering",
         "Generic templates that don't know the agency",
@@ -104,7 +104,7 @@ export const recruitingAgenciesContent: FunnelContent = {
         "You don't need more names.\nYou need ((hiring-manager conversations at companies actively building tech teams)).",
     },
     enrichment: {
-      heading: 'What "Enrichment" Actually Means',
+      heading: 'What "enrichment" actually means',
       introText:
         "Every prospect is processed through an enrichment layer before any message goes out. We add real context:",
       checks: [
@@ -117,7 +117,7 @@ export const recruitingAgenciesContent: FunnelContent = {
         "Every email lands with **information**, not assumptions.",
     },
     sending: {
-      heading: "How We Protect Your Sender Reputation",
+      heading: "How we protect your sender reputation",
       introText:
         "Great targeting means nothing if emails land in spam. The sending infrastructure is built to **protect your sender reputation** from day one:",
       items: [
@@ -127,50 +127,46 @@ export const recruitingAgenciesContent: FunnelContent = {
         "Every reply handled by us, no manual inbox triage on your side",
       ],
       infoBox: {
-        title: "Why Warmup Matters",
-        text: "Email providers don't trust new sending domains. Sending too much from a cold domain triggers spam filtering or burns the domain permanently. Recruiting buyers are extra-sensitive because they're pitched daily by job boards, ATSes, and rival agencies.",
+        title: "Why warmup matters",
+        text: "Email providers don't trust new sending domains. Sending too much from a cold domain triggers spam filtering or burns the domain permanently. Hiring managers are extra-sensitive because they're pitched daily by job boards, ATSes, and rival agencies.",
       },
     },
-    keyInsight: {
-      badgeText: "Key Insight",
-      heading: "The Bottom Line",
-      introText: "Cold email in recruiting fails for many reasons:",
-      failureReasons: [
-        "Wrong angle (candidate-side framing instead of BD-side)",
-        "Generic copy with no signal verification",
-        "Broad scraped lists with no ICP filtering",
-        "Cold domains that land straight in spam",
-        "Positive replies that pile up and die because no one handles the inbox",
-      ],
-      closingStatement: "This system handles all of them. That's what produces hiring-manager calls instead of activity reports.",
-    },
+  },
+
+  systemDiagram: {
+    sectionId: "the-system",
+    eyebrow: "Inside the System",
+    heading: "The machine we run for you",
+    subheading:
+      "Apollo sources hiring decision-makers, the Evergreen Portal orchestrates, 24 dedicated mailboxes send, replies route back. You touch none of it.",
+    imageSrc: "/diagrams/email-infrastructure.png",
+    imageAlt:
+      "Diagram of the Evergreen sending system: Evergreen Portal at the top, 8 sending domains with 3 inboxes each, flowing through Apollo Leads and Instantly down to Sales Calls and Paying Clients.",
   },
 
   whatYouGet: {
     sectionId: "what-you-get",
-    heading: "What You Get ((Done For You))",
+    eyebrow: "Deliverables",
+    heading: "What you get ((done for you))",
     deliverables: [
       "ICP research and targeting for funded tech companies actively hiring engineers",
       "Lead sourcing across VP Engineering, Head of Talent, CTOs, and founders at your target accounts",
       "Per-prospect enrichment (funding stage, open roles, leadership changes, hiring signals)",
-      "Purchase and setup of dedicated secondary sending domains, separated from your main domain",
-      "Provisioning of sending inboxes across those domains, scaled to your target volume",
+      "Dedicated secondary sending domains purchased and configured, separated from your main domain",
+      "Sending inboxes provisioned across those domains, scaled to your target volume",
       "Full deliverability setup: domain authentication, warmup, and reputation monitoring",
       "Custom sequence written in your voice for the recruiting niche, with per-prospect personalization at send time",
-      "We reply to every inbound, end-to-end, with no inbox triage on your side",
+      "Every inbound reply handled end-to-end, with no inbox triage on your side",
       "Qualified hiring-manager calls booked directly to your calendar with a pre-call brief",
       "Ongoing performance diagnostic and funnel reporting",
     ],
-    bottomNegatives: [
-      "✗ You do not manage tools",
-      "✗ You do not chase replies",
-      "✗ You do not babysit campaigns",
-    ],
+    bottomNegatives: [],
     closingStatement: "You show up to calls with hiring managers actively building tech teams.",
   },
 
   timeline: {
-    heading: "How This Works",
+    eyebrow: "How It Works",
+    heading: "From kickoff to qualified calls",
     steps: [
       {
         step: "Step 1",
@@ -182,7 +178,7 @@ export const recruitingAgenciesContent: FunnelContent = {
         step: "Step 2",
         title: "Infrastructure Setup",
         description:
-          "Dedicated secondary domains and sending inboxes are purchased and configured, scaled to your target volume. Full domain authentication setup. Your main domain is never used.",
+          "Dedicated secondary domains and sending inboxes are purchased, configured, and scaled to your target volume — with full domain authentication. Your main domain is never touched.",
       },
       {
         step: "Step 3",
@@ -200,19 +196,21 @@ export const recruitingAgenciesContent: FunnelContent = {
         step: "Step 5",
         title: "Sequence Build and Reply Handling Setup",
         description:
-          "A sequence is written in your voice for the recruiting niche, scaled to what fits your prospects, with per-prospect personalization. Reply handling and booking flow configured.",
+          "A sequence is written in your voice for the recruiting niche, with per-prospect personalization at send time. Reply handling and booking flow configured.",
       },
       {
         step: "Step 6",
         title: "Launch and Optimization",
         description:
-          "Cold sends go live. We handle every inbound reply end-to-end. Qualified hiring-manager calls book directly to your calendar with a pre-call brief. Performance reported and the system tuned continuously based on real data.",
+          "Cold sends go live. We handle every inbound end-to-end and book qualified hiring-manager calls directly to your calendar with a pre-call brief. Performance is reported, the system tuned on real data.",
       },
     ],
   },
 
   pricing: {
     sectionId: "pricing",
+    layout: "two-column",
+    sectionTitle: "Simple, transparent, performance-backed",
     price: {
       badgeText: "Founding Rate",
       setupAmount: "$2,000",
@@ -224,9 +222,13 @@ export const recruitingAgenciesContent: FunnelContent = {
     },
     pricingNote:
       "Founding-cohort rate for the first agencies we work with. Exact scope confirmed on a quick call.",
+    cta: {
+      label: "Book a 15-minute call",
+      url: "https://calendly.com/mihai-evergreensystems/growth-strategy-call",
+    },
     guarantee: {
       badgeText: "Performance Guarantee",
-      heading: "We Remove the Downside Completely",
+      heading: "We remove the downside completely",
       steps: [
         {
           text: "A **one-time setup fee** builds your system.",
@@ -249,7 +251,7 @@ export const recruitingAgenciesContent: FunnelContent = {
   },
 
   faq: {
-    heading: "Frequently Asked Questions",
+    heading: "Questions, answered.",
     faqs: [
       {
         question: "We get most of our clients through referrals. Why do we need this?",
@@ -257,7 +259,7 @@ export const recruitingAgenciesContent: FunnelContent = {
           "Referrals are the best clients you'll ever get. The problem is they dry up exactly when you need them most, when delivery is heavy and you stop showing up in the network. This isn't a replacement for referrals. It runs in parallel: you keep the referrals, we add a second channel that produces conversations whether you're networking or not.",
       },
       {
-        question: "We have tried cold email before, what's different here?",
+        question: "We've tried cold email before. What's different here?",
         answer:
           "Most boutique recruiting agencies that have tried cold email stopped because of one of two failure patterns: (1) doing it yourself and stopping when delivery loads up, or (2) hiring a generalist agency with niche-agnostic copy and broad lists. We run recruiting-only, signal-verified prospects (companies with open engineering roles and recent hiring signals), and the system does not stop when your delivery ramps. That is the structural difference.",
       },
@@ -274,7 +276,7 @@ export const recruitingAgenciesContent: FunnelContent = {
       {
         question: "Tech companies are bringing recruiting in-house. Why invest in BD now?",
         answer:
-          "Real concern. That has been the macro story since the 2025 tech layoffs. Two things: the agencies that survive are the ones who deliver specialized roles in-house teams cannot fill (AI/ML, staff+ IC, security, niche stacks), and the agencies that survive and grow are the ones who fixed their BD before the market shrank. A shrinking market is exactly why investing in BD now matters: the agencies that show up are taking share.",
+          "Real concern. That has been the macro story since the 2025 tech layoffs. Two things: the agencies that survive are the ones who deliver specialized roles that in-house teams cannot fill (AI/ML, staff+ IC, security, niche stacks), and the agencies that survive and grow are the ones who fixed their BD before the market shrank. A shrinking market is exactly why investing in BD now matters: the agencies that show up are taking share.",
       },
       {
         question: "Does this take time away from delivery?",
@@ -290,13 +292,12 @@ export const recruitingAgenciesContent: FunnelContent = {
   },
 
   finalCta: {
-    heading: "Let's Talk",
+    heading: "Book a 15-minute\ncall to see",
+    headingAccent: "if it's a fit.",
     subheading:
-      "Book a 15-minute call to see if this fits your agency.",
-    ctaButtonText: "Book a Call",
-    ctaUrl: "https://calendly.com/mihai-evergreensystems/growth-strategy-call",
-    subtext:
       "No pitch, no pressure. Just an honest read on whether we can help.",
+    ctaButtonText: "Book a 15-minute call",
+    ctaUrl: "https://calendly.com/mihai-evergreensystems/growth-strategy-call",
   },
 
   footer: {
