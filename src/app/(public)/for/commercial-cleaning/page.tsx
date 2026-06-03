@@ -25,6 +25,6 @@ export default async function CommercialCleaningPage() {
     : null;
 
   return (
-    <FunnelPage content={commercialCleaningContent} heroVideo={heroVideo} />
+    <FunnelPage content={commercialCleaningContent} heroVideo={heroVideo} pageSlug="for-commercial-cleaning" />
   );
 }

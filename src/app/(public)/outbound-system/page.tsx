@@ -25,6 +25,6 @@ export default async function OutboundSystemPage() {
     : null;
 
   return (
-    <FunnelPage content={outboundSystemContent} heroVideo={heroVideo} />
+    <FunnelPage content={outboundSystemContent} heroVideo={heroVideo} pageSlug="outbound-system" />
   );
 }

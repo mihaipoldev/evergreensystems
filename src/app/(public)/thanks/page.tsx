@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
+import { AnalyticsTracker } from "@/components/landing/AnalyticsTracker";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 
@@ -13,6 +15,9 @@ export const metadata: Metadata = {
 export default function ThanksPage() {
   return (
     <>
+      <ErrorBoundary>
+        <AnalyticsTracker pageId="thanks" pageSlug="thanks" />
+      </ErrorBoundary>
       <Navbar sections={[]} headerSection={undefined} />
       <main className="min-h-screen bg-background text-foreground">
         <section className="py-24 md:py-32">
