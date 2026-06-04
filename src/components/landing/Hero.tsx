@@ -87,29 +87,13 @@ function VideoPlayerWithTracking({
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    // Use sessionStorage to persist tracking state
-    const trackingKey = `video_play_tracked_${media.id}`;
-    
     const handlePlay = () => {
-      // Check if we've already tracked this video in this session
-      let hasTracked = false;
-      try {
-        hasTracked = !!sessionStorage.getItem(trackingKey);
-      } catch (e) {
-        // sessionStorage might not be available
-        return;
-      }
-      
-      // Only track if we haven't already tracked a play for this video
-      if (!hasTracked) {
-        try {
-          sessionStorage.setItem(trackingKey, 'true');
-        } catch (e) {
-          // If sessionStorage fails, skip tracking
-          return;
-        }
-        onFirstPlay(media.id);
-      }
+      // Dedup is owned by the parent's onFirstPlay handler (single source of
+      // truth for the sessionStorage guard). Fire on every play; the parent
+      // records only the first. Guarding here too double-consumed the shared
+      // `video_play_tracked_*` key, so the parent always saw it set and the
+      // event was suppressed entirely.
+      onFirstPlay(media.id);
     };
 
     videoElement.addEventListener('play', handlePlay);

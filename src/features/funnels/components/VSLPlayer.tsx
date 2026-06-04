@@ -37,14 +37,9 @@ function VideoPlayerWithTracking({
     if (media.source_type === "wistia") return;
     const el = videoRef.current;
     if (!el) return;
-    const key = `video_play_tracked_${media.id}`;
     const handlePlay = () => {
-      try {
-        if (!!sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, "true");
-      } catch {
-        return;
-      }
+      // Dedup is owned by the parent's onFirstPlay handler (single source of
+      // truth). Fire on every play; the parent records only the first.
       onFirstPlay(media.id);
     };
     el.addEventListener("play", handlePlay);
