@@ -22,7 +22,7 @@ export const homeContent: LandingPageContent = {
     subtitle:
       "An always-on outbound system that runs in the background while you focus on closing.",
     eyebrow: "For B2B Founders Who Need Predictable Clients",
-    mainMediaId: "c75d439e-00de-40ae-a874-30a7acb9d0ef",
+    mainMediaId: "c4a55c31-051c-4d14-92c9-b566515bfd32",
     ctas: [
       {
         id: "hero-book-qualification-call",
