@@ -103,9 +103,9 @@ export const homeContent: LandingPageContent = {
       },
       {
         id: "crm-integration",
-        title: "CRM & Pipeline Integration",
+        title: "Full Visibility & Tracking",
         subtitle:
-          "We track every lead, message, reply, and booked call inside our internal systems so nothing is lost and performance is fully documented as the system runs.",
+          "We track every lead, reply, and booked call so nothing slips, and you get full visibility into your pipeline and performance as the system runs.",
         icon: "fa-diagram-project",
       },
       {

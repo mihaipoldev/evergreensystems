@@ -272,8 +272,9 @@ export const Hero = ({ section, ctaButtons }: HeroProps) => {
       hasTracked = hasTrackedPlayRef.current;
     }
     
-    // Double-check: if already tracked, immediately return
-    if (hasTracked) {
+    // Double-check: if already tracked, immediately return.
+    // Debug mode skips the per-session guard so repeated test plays each record.
+    if (hasTracked && process.env.NEXT_PUBLIC_ANALYTICS_DEBUG !== '1') {
       return;
     }
     

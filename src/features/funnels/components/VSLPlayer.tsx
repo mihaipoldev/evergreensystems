@@ -169,7 +169,8 @@ export function VSLPlayer({
     if (isTrackingRef.current) return;
     const key = `video_play_tracked_${id}`;
     try {
-      if (!!sessionStorage.getItem(key)) return;
+      // Debug mode skips the per-session guard so repeated test plays each record.
+      if (!!sessionStorage.getItem(key) && process.env.NEXT_PUBLIC_ANALYTICS_DEBUG !== "1") return;
       sessionStorage.setItem(key, "true");
     } catch {
       if (isTrackingRef.current) return;

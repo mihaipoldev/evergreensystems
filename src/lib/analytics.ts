@@ -16,6 +16,13 @@ export type EntityType = "cta_button" | "site_section" | "page" | "testimonial" 
  * Prevents analytics events from being tracked during development
  */
 function isDevelopment(): boolean {
+  // Debug override: force analytics ON even in dev so video/CTA tracking can be
+  // tested without a deploy. Set NEXT_PUBLIC_ANALYTICS_DEBUG=1 in .env.local ONLY
+  // — never on Vercel/prod.
+  if (process.env.NEXT_PUBLIC_ANALYTICS_DEBUG === '1') {
+    return false;
+  }
+
   // Check NODE_ENV first (most reliable)
   if (process.env.NODE_ENV === 'development') {
     return true;
@@ -110,6 +117,9 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
   const userAgent = navigator.userAgent || null;
   const referrer = document.referrer || null;
 
+  // In debug mode, tag events so dev/test rows are trivially filterable/deletable
+  // (DELETE FROM analytics_events WHERE metadata->>'debug' = 'true').
+  const debugMode = process.env.NEXT_PUBLIC_ANALYTICS_DEBUG === '1';
   const payload = {
     event_type: params.event_type,
     entity_type: params.entity_type,
@@ -117,7 +127,7 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
     session_id: sessionId,
     user_agent: userAgent,
     referrer: referrer,
-    metadata: params.metadata || null,
+    metadata: debugMode ? { ...(params.metadata || {}), debug: true } : params.metadata || null,
   };
 
   console.log("Sending analytics event:", payload);

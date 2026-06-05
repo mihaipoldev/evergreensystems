@@ -2,7 +2,7 @@ import type { FunnelContent } from "../types";
 
 export const recruitingAgenciesContent: FunnelContent = {
   slug: "recruiting-agencies",
-  displayName: "Tech Recruiting Agencies",
+  displayName: "Recruiting Agencies",
   routePath: "for/recruiting-agencies",
 
   header: {
@@ -19,7 +19,7 @@ export const recruitingAgenciesContent: FunnelContent = {
   },
 
   hero: {
-    badgeText: "For Tech Recruiting Agency Owners Who Want a Steady BD Pipeline",
+    badgeText: "For Recruiting Agency Owners Who Want a Steady BD Pipeline",
     headline: "We Build & Run Outbound Systems That \n [[Book Hiring-Manager Calls]]",
     subheadline:
       "An always-on BD pipeline that runs while you're buried in delivery.",
@@ -44,7 +44,7 @@ export const recruitingAgenciesContent: FunnelContent = {
     valueSubtext:
       "You only show up to calls booked directly on your calendar.",
     qualifierText:
-      "**Only for owners or managing partners of boutique tech recruiting agencies in the US or Canada.** Not for solo recruiters, generalist staffing firms, or agencies looking for guaranteed placements.",
+      "**Only for owners or managing partners of boutique recruiting or search agencies in the US or Canada that place permanent hires.** Not for solo recruiters, temp or contract-labor staffing firms, or agencies looking for guaranteed placements.",
   },
 
   benchmarks: {
@@ -86,10 +86,10 @@ export const recruitingAgenciesContent: FunnelContent = {
       methods: ["Referrals", "LinkedIn InMail", "Cold Outreach"],
       paragraphs: [
         "Referrals dry up when delivery is heavy. LinkedIn InMail response rates dropped from 20-25% to 6-8% in three years.",
-        "Cold outreach — run from outside the business — keeps producing through every delivery spike.",
+        "Cold outreach, run from outside the business, keeps producing through every delivery spike.",
       ],
       closingStatement:
-        "**Hiring-manager conversations** at companies actively building tech teams, every month.",
+        "**Hiring-manager conversations** at companies actively hiring for the roles you place, every month.",
     },
     traditionalFails: {
       heading: "Why traditional cold email fails in recruiting",
@@ -101,17 +101,17 @@ export const recruitingAgenciesContent: FunnelContent = {
         "Replies that pile up because no one works the inbox",
       ],
       keyMessage:
-        "You don't need more names.\nYou need ((hiring-manager conversations at companies actively building tech teams)).",
+        "You don't need more names.\nYou need ((hiring-manager conversations at companies actively hiring for the roles you place)).",
     },
     enrichment: {
       heading: 'What "enrichment" actually means',
       introText:
         "Every prospect is processed through an enrichment layer before any message goes out. We add real context:",
       checks: [
-        "Decision-maker identification (VP Engineering / Head of Talent / CTO / founder)",
-        "Funding stage, headcount growth, recent leadership changes",
-        "Open engineering roles by stack and seniority",
-        "Recent buying signals (funded in the last 6 months, posted reqs in the last 30 days)",
+        "Decision-maker identification (founder, hiring manager, or head of talent)",
+        "Recent funding or growth, headcount changes, leadership changes",
+        "Open roles that match what you place, by seniority and location",
+        "Recent buying signals (recently funded or expanding, posted reqs in the last 30 days)",
       ],
       closingText:
         "Every email lands with **information**, not assumptions.",
@@ -149,19 +149,17 @@ export const recruitingAgenciesContent: FunnelContent = {
     eyebrow: "Deliverables",
     heading: "What you get ((done for you))",
     deliverables: [
-      "ICP research and targeting for funded tech companies actively hiring engineers",
-      "Lead sourcing across VP Engineering, Head of Talent, CTOs, and founders at your target accounts",
-      "Per-prospect enrichment (funding stage, open roles, leadership changes, hiring signals)",
-      "Dedicated secondary sending domains purchased and configured, separated from your main domain",
-      "Sending inboxes provisioned across those domains, scaled to your target volume",
-      "Full deliverability setup: domain authentication, warmup, and reputation monitoring",
-      "Custom sequence written in your voice for the recruiting niche, with per-prospect personalization at send time",
-      "Every inbound reply handled end-to-end, with no inbox triage on your side",
-      "Qualified hiring-manager calls booked directly to your calendar with a pre-call brief",
-      "Ongoing performance diagnostic and funnel reporting",
+      "A precise ICP and targeting blueprint, so outreach only hits buyers who can convert",
+      "Dedicated sending domains, kept separate from yours so your reputation stays safe",
+      "Verified companies that are actively hiring for the roles you place",
+      "Email sequences written in your voice and personalized per prospect",
+      "We answer every reply for you, in your voice, and qualify real interest",
+      "Qualified calls booked straight to your calendar, with each prospect prepped",
+      "Reminders and confirmations on every call to cut no-shows",
+      "Live tracking of every lead and call, with ongoing optimization",
     ],
     bottomNegatives: [],
-    closingStatement: "You show up to calls with hiring managers actively building tech teams.",
+    closingStatement: "You just show up to calls with people who are hiring.",
   },
 
   timeline: {
@@ -178,7 +176,7 @@ export const recruitingAgenciesContent: FunnelContent = {
         step: "Step 2",
         title: "Infrastructure Setup",
         description:
-          "Dedicated secondary domains and sending inboxes are purchased, configured, and scaled to your target volume — with full domain authentication. Your main domain is never touched.",
+          "Dedicated secondary domains and sending inboxes are purchased, configured, and scaled to your target volume, with full domain authentication. Your main domain is never touched.",
       },
       {
         step: "Step 3",
@@ -190,7 +188,7 @@ export const recruitingAgenciesContent: FunnelContent = {
         step: "Step 4",
         title: "Prospect Sourcing and Enrichment",
         description:
-          "While inboxes warm up, hiring decision-makers at funded tech companies are sourced and enriched. One contact per company.",
+          "While inboxes warm up, hiring decision-makers at companies actively hiring for the roles you place are sourced and enriched. One contact per company.",
       },
       {
         step: "Step 5",
@@ -218,7 +216,7 @@ export const recruitingAgenciesContent: FunnelContent = {
       monthlyAmount: "$2,000",
       monthlyLabel: "per month",
       roiNote:
-        "((One senior tech placement covers the full year.)) At a typical 20% fee on a $150K+ hire, that's a $30K+ fee from a single close.",
+        "((One placement covers the full year.)) At a typical 15-25% fee on a single hire, one close can pay for the entire engagement.",
     },
     pricingNote:
       "Founding-cohort rate for the first agencies we work with. Exact scope confirmed on a quick call.",
@@ -261,7 +259,7 @@ export const recruitingAgenciesContent: FunnelContent = {
       {
         question: "We've tried cold email before. What's different here?",
         answer:
-          "Most boutique recruiting agencies that have tried cold email stopped because of one of two failure patterns: (1) doing it yourself and stopping when delivery loads up, or (2) hiring a generalist agency with niche-agnostic copy and broad lists. We run recruiting-only, signal-verified prospects (companies with open engineering roles and recent hiring signals), and the system does not stop when your delivery ramps. That is the structural difference.",
+          "Most boutique recruiting agencies that have tried cold email stopped because of one of two failure patterns: (1) doing it yourself and stopping when delivery loads up, or (2) hiring a generalist agency with niche-agnostic copy and broad lists. We run recruiting-only, signal-verified prospects (companies with open roles you can fill and recent hiring signals), and the system does not stop when your delivery ramps. That is the structural difference.",
       },
       {
         question: "Hiring managers get pitched constantly. Why would they respond?",
@@ -274,9 +272,9 @@ export const recruitingAgenciesContent: FunnelContent = {
           "Either, depending on what you've got. Most agencies we talk to have tried one or two things before us: an in-house BDR, a fractional sales lead, their own LinkedIn outreach. The reason they layer us in or switch is that those options all stop working the moment delivery ramps, because they depend on someone inside the business having time. We don't. So we either replace what isn't working or run alongside what is.",
       },
       {
-        question: "Tech companies are bringing recruiting in-house. Why invest in BD now?",
+        question: "Companies are bringing recruiting in-house. Why invest in BD now?",
         answer:
-          "Real concern. That has been the macro story since the 2025 tech layoffs. Two things: the agencies that survive are the ones who deliver specialized roles that in-house teams cannot fill (AI/ML, staff+ IC, security, niche stacks), and the agencies that survive and grow are the ones who fixed their BD before the market shrank. A shrinking market is exactly why investing in BD now matters: the agencies that show up are taking share.",
+          "Real concern, and it's been the macro story across most markets lately. Two things. The agencies that survive are the ones who place specialized or hard-to-fill roles that in-house teams can't cover. The agencies that grow are the ones who fixed their BD before the market tightened. A tighter market is exactly why BD matters now: the agencies that show up are taking share.",
       },
       {
         question: "Does this take time away from delivery?",

@@ -80,7 +80,9 @@ export async function POST(request: Request) {
       host.startsWith('192.168.') ||
       host.startsWith('10.0.');
 
-    if (isDevelopment || isLocalhost) {
+    // Debug override: ANALYTICS_DEBUG=1 in .env.local (never on Vercel) lets
+    // local/dev requests record, so tracking can be tested without a deploy.
+    if ((isDevelopment || isLocalhost) && process.env.ANALYTICS_DEBUG !== '1') {
       return NextResponse.json(
         { message: "Analytics tracking skipped (development mode)" },
         { status: 200 }
