@@ -25,6 +25,8 @@ export function CtaLink({
     <a
       href={href}
       className={className}
+      target="_blank"
+      rel="noopener noreferrer"
       onClick={() => {
         trackEvent({
           event_type: "link_click",

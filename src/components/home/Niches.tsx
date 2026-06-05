@@ -54,7 +54,9 @@ export function Niches() {
 
         <p className="niche-foot">
           {niches.foot.text}
-          <a href={niches.foot.linkHref}>{niches.foot.linkLabel}</a>
+          <a href={niches.foot.linkHref} target="_blank" rel="noopener noreferrer">
+            {niches.foot.linkLabel}
+          </a>
           {niches.foot.tail}
         </p>
       </div>

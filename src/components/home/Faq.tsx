@@ -9,7 +9,7 @@ import { trackEvent } from "@/lib/analytics";
 // numbering, accent on open). Native to .eg-home — not the old shadcn component.
 export function Faq() {
   const { faq } = home;
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
 
   function toggle(i: number) {
     const willOpen = open !== i;
