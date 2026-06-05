@@ -1,4 +1,5 @@
 import { home } from "@/features/home/content";
+import { CtaLink } from "./CtaLink";
 
 // Sticky top nav. Anchor links scroll in-page (CSS scroll-behavior:smooth on
 // the .eg-home subtree). No interactivity → server component. On mobile the
@@ -19,9 +20,15 @@ export function Navbar() {
             </a>
           ))}
         </nav>
-        <a href={nav.cta.href} className="btn btn-solid btn-sm">
+        <CtaLink
+          href={nav.cta.href}
+          entityId={nav.cta.id}
+          label={nav.cta.label}
+          location="navbar"
+          className="btn btn-solid btn-sm"
+        >
           {nav.cta.label}
-        </a>
+        </CtaLink>
       </div>
     </header>
   );

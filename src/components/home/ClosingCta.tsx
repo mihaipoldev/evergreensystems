@@ -1,6 +1,7 @@
 import { home } from "@/features/home/content";
 import { Icon, LinkedInIcon } from "./icons";
 import { TextureCanvas } from "./TextureCanvas";
+import { CtaLink } from "./CtaLink";
 
 export function ClosingCta() {
   const { close } = home;
@@ -43,9 +44,15 @@ export function ClosingCta() {
                 <div className="founder-line">{close.founder.line}</div>
               </div>
             </div>
-            <a href={close.cta.href} className="btn on-accent">
+            <CtaLink
+              href={close.cta.href}
+              entityId={close.cta.id}
+              label={close.cta.label}
+              location="closing_cta"
+              className="btn on-accent"
+            >
               {close.cta.label} <Icon name="arrow-right" />
-            </a>
+            </CtaLink>
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ export const home: HomeContent = {
       { label: "Guarantee", href: "#guarantee" },
       { label: "Who it's for", href: "#niches" },
     ],
-    cta: { label: "Book a call", href: CALENDLY },
+    cta: { id: "nav-book-call", label: "Book a call", href: CALENDLY },
   },
 
   hero: {
@@ -29,7 +29,7 @@ export const home: HomeContent = {
     titleEm: "Booked sales calls,",
     titleDim: "without the blast.",
     lead: "We build and run the outbound system — infrastructure, targeting, and reply handling — that puts qualified calls on your calendar. Done for you.",
-    cta: { label: "Book a call", href: CALENDLY },
+    cta: { id: "hero-book-call", label: "Book a call", href: CALENDLY },
   },
 
   trust: [
@@ -143,30 +143,37 @@ export const home: HomeContent = {
     headingDim: "answered straight.",
     items: [
       {
+        id: "faq-handle",
         q: "What do you handle, and what's actually on my plate?",
         a: "We build, run, and manage the entire outbound system from end to end: targeting, sourcing, writing, sending, follow-ups, reply handling, and ongoing optimization. At kickoff we align on your offer, your voice, and what a qualified call looks like. After that it runs hands-off. Your only job is showing up to the qualified calls that land on your calendar.",
       },
       {
+        id: "faq-guarantee",
         q: "How does your guarantee work?",
         a: "You get a floor of 10 qualified calls in 90 days. A qualified call is a real decision-maker at a company that fits your profile who books and shows up. Miss that floor, and every dollar comes back: setup and retainer both. The only carve-out is third-party tool costs. You pay for booked conversations, not for activity.",
       },
       {
+        id: "faq-differentiation",
         q: "How is this different from a lead-gen agency, a VA, or just buying the tools myself?",
         a: "Most agencies rent you hours or hand you a list and wish you luck, and tools still need someone to run them every day. We build and operate the whole machine on our own platform, and we only win when calls land on your calendar. You're buying an outcome, not a software seat you have to learn or a freelancer you have to manage.",
       },
       {
+        id: "faq-timeline",
         q: "How quickly will I see calls?",
         a: "The first couple of weeks go to building and warming your sending infrastructure, usually two to three weeks, so messages land in the inbox instead of spam. After that the system goes live and conversations start coming in, with the guarantee measured across the full 90 days.",
       },
       {
+        id: "faq-ongoing",
         q: "Is this a one-time campaign or an ongoing system?",
         a: "Ongoing. This is a system, not a one-off blast. It compounds: targeting and messaging get sharper on real data, and most clients keep it running to build a steady, predictable pipeline instead of relying on timing or referrals.",
       },
       {
+        id: "faq-trust",
         q: "Why should I trust you when you're newer and don't have a wall of case studies?",
         a: "Two reasons. You work directly with me, the person who builds and runs your system, not an account manager you'll never reach. And the risk sits with us, not you: if we miss the floor, you pay nothing. We'd rather earn the case study than borrow someone else's.",
       },
       {
+        id: "faq-fit",
         q: "Who is this a good fit for, and who isn't?",
         a: "It works best for B2B businesses with a clear offer and the capacity to take on new sales conversations. It's not a fit if you can't follow up on the calls, or if you're after an instant one-week spike instead of a channel that builds over time.",
       },
@@ -184,7 +191,7 @@ export const home: HomeContent = {
       linkedin: LINKEDIN,
       line: "You'll talk to me directly — the person who built and runs the system.",
     },
-    cta: { label: "Book a 15-minute call", href: CALENDLY },
+    cta: { id: "close-book-call", label: "Book a 15-minute call", href: CALENDLY },
   },
 
   footer: {

@@ -3,12 +3,28 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { home } from "@/features/home/content";
+import { trackEvent } from "@/lib/analytics";
 
 // FAQ in the new design language (editorial accordion: hairline rows, mono
 // numbering, accent on open). Native to .eg-home — not the old shadcn component.
 export function Faq() {
   const { faq } = home;
   const [open, setOpen] = useState<number | null>(0);
+
+  function toggle(i: number) {
+    const willOpen = open !== i;
+    setOpen(willOpen ? i : null);
+    if (willOpen) {
+      const item = faq.items[i];
+      // Matches the old FAQ component's tracking (entity_type: faq_item).
+      trackEvent({
+        event_type: "link_click",
+        entity_type: "faq_item",
+        entity_id: item.id,
+        metadata: { question: item.q, position: i },
+      });
+    }
+  }
 
   return (
     <section className="faq" id="faq">
@@ -33,7 +49,7 @@ export function Faq() {
                   className="faq-q"
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  onClick={() => setOpen(isOpen ? null : i)}
+                  onClick={() => toggle(i)}
                 >
                   <span className="faq-num">{String(i + 1).padStart(2, "0")}</span>
                   <span className="faq-qtext">{item.q}</span>

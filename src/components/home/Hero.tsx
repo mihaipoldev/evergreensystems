@@ -1,6 +1,7 @@
 import { home } from "@/features/home/content";
 import { Icon } from "./icons";
 import { TextureCanvas } from "./TextureCanvas";
+import { CtaLink } from "./CtaLink";
 
 // Hero + trust band. The dot-matrix "terrain" canvas is the one client island.
 export function Hero() {
@@ -17,9 +18,15 @@ export function Hero() {
             </h1>
             <p className="lead">{hero.lead}</p>
             <div className="hero-actions">
-              <a href={hero.cta.href} className="btn btn-solid">
+              <CtaLink
+                href={hero.cta.href}
+                entityId={hero.cta.id}
+                label={hero.cta.label}
+                location="hero"
+                className="btn btn-solid"
+              >
                 {hero.cta.label} <Icon name="arrow-right" />
-              </a>
+              </CtaLink>
             </div>
           </div>
 

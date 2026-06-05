@@ -20,6 +20,8 @@ export interface NavLink {
 }
 
 export interface Cta {
+  /** Stable id used as the analytics entity_id for cta_button events. */
+  id: string;
   label: string;
   href: string;
 }
@@ -128,7 +130,8 @@ export interface HomeContent {
     eyebrow: string;
     headingEm: string;
     headingDim: string;
-    items: { q: string; a: string }[];
+    /** id is the analytics entity_id for faq_item events. */
+    items: { id: string; q: string; a: string }[];
   };
   niches: {
     eyebrow: string;
