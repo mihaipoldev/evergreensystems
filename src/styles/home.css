@@ -236,9 +236,9 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 
 /* ---- GUARANTEE ---- */
 .eg-home .guarantee{ background:var(--ink); color:var(--on-fill); position:relative; overflow:hidden; }
-.eg-home .gua-tex{ position:absolute; left:0; top:-8%; width:82%; height:116%; z-index:0; pointer-events:none; opacity:.5;
-  -webkit-mask-image:radial-gradient(125% 100% at 0% 40%, #000 46%, rgba(0,0,0,.32) 74%, transparent 96%);
-  mask-image:radial-gradient(125% 100% at 0% 40%, #000 46%, rgba(0,0,0,.32) 74%, transparent 96%); }
+.eg-home .gua-tex{ position:absolute; left:0; top:-8%; width:100%; height:116%; z-index:0; pointer-events:none; opacity:.5;
+  -webkit-mask-image:radial-gradient(160% 110% at 0% 40%, #000 62%, rgba(0,0,0,.3) 88%, transparent 100%);
+  mask-image:radial-gradient(160% 110% at 0% 40%, #000 62%, rgba(0,0,0,.3) 88%, transparent 100%); }
 .eg-home .guarantee .wrap{ position:relative; z-index:1; display:grid; grid-template-columns:.95fr 1.05fr; gap:64px; align-items:center; }
 .eg-home .guarantee .eyebrow{ color:rgba(255,255,255,.55); margin-bottom:20px; }
 .eg-home .guarantee h2{ color:#fff; font-size:var(--fs-h2); max-width:16ch; }
