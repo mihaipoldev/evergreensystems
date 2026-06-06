@@ -375,6 +375,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
   .eg-home .close-body{ grid-template-columns:1fr; gap:38px; }
   .eg-home .niche-grid{ grid-template-columns:1fr; }
   .eg-home .niche{ border-right:0; }
+  .eg-home .nav .brand img{ height:52px; }
   .eg-home .nav-links{ display:none; }
   .eg-home .nav-toggle{ display:inline-flex; }
   .eg-home .tband .wrap{ flex-wrap:wrap; gap:18px 30px; }
