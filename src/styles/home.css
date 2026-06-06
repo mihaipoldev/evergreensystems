@@ -126,7 +126,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .nav{ position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--hairline); }
 .eg-home .nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:76px; }
 .eg-home .nav .brand{ display:flex; align-items:center; }
-.eg-home .nav .brand img{ height:58px; }
+.eg-home .nav .brand img{ height:56px; }
 .eg-home .nav-links{ display:flex; gap:34px; align-items:center; }
 .eg-home .nav-links a{ color:var(--text); font-size:var(--fs-small); font-weight:500; letter-spacing:.01em; text-decoration:none; }
 .eg-home .nav-links a:hover{ color:var(--ink); }
