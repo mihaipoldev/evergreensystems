@@ -345,9 +345,9 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 /* ---- FOOTER ---- */
 .eg-home .foot{ padding:64px 0 48px; border-top:1px solid var(--hairline); }
 .eg-home .foot .wrap{ display:flex; justify-content:space-between; gap:50px; flex-wrap:wrap; align-items:flex-start; }
-.eg-home .foot img{ height:22px; margin-bottom:16px; }
-.eg-home .foot .tag{ font-size:var(--fs-small); color:var(--muted); max-width:30ch; }
-.eg-home .foot .col h4{ font-size:var(--fs-micro); font-family:var(--font-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 14px; }
+.eg-home .foot img{ height:36px; margin-bottom:16px; }
+.eg-home .foot .tag{ font-size:var(--fs-small); color:var(--text); max-width:30ch; }
+.eg-home .foot .col h4{ font-size:var(--fs-micro); font-family:var(--font-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink); font-weight:600; margin:0 0 14px; }
 .eg-home .foot .col a{ display:flex; align-items:center; gap:7px; color:var(--ink); font-size:var(--fs-small); padding:5px 0; text-decoration:none; }
 .eg-home .foot .col a:hover{ color:var(--accent); }
 .eg-home .foot .copy{ width:100%; margin-top:36px; padding-top:24px; border-top:1px solid var(--hairline); font-family:var(--font-mono); font-size:var(--fs-micro); color:var(--muted); letter-spacing:.04em; }
