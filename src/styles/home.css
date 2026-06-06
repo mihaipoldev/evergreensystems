@@ -360,7 +360,8 @@ html:has(.eg-home){ scroll-behavior: smooth; }
   .eg-home .wrap{ padding:0 24px; }
   /* size to content (no forced 100vh) + pull the headline to the top */
   .eg-home .hero{ min-height:0; padding:0; }
-  .eg-home .hero-main{ padding:32px 0 20px; align-items:flex-start; }
+  .eg-home .hero-main{ padding:52px 0 20px; align-items:flex-start; }
+  .eg-home .hero h1{ font-size:2.4rem; }
   .eg-home .hero-grid{ grid-template-columns:1fr; gap:0; }
   /* decorative shape adds no value on mobile and forces a scroll-past — hide it */
   .eg-home .hero-visual{ display:none; }
