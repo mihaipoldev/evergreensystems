@@ -16,13 +16,6 @@ export type EntityType = "cta_button" | "site_section" | "page" | "testimonial" 
  * Prevents analytics events from being tracked during development
  */
 function isDevelopment(): boolean {
-  // Debug override: force analytics ON even in dev so video/CTA tracking can be
-  // tested without a deploy. Set NEXT_PUBLIC_ANALYTICS_DEBUG=1 in .env.local ONLY
-  // — never on Vercel/prod.
-  if (process.env.NEXT_PUBLIC_ANALYTICS_DEBUG === '1') {
-    return false;
-  }
-
   // Check NODE_ENV first (most reliable)
   if (process.env.NODE_ENV === 'development') {
     return true;
@@ -41,6 +34,75 @@ function isDevelopment(): boolean {
   }
 
   return false;
+}
+
+// ── Per-browser analytics toggle ──────────────────────────────────────────
+// A localStorage mode flag lets a specific browser opt out of (or force on)
+// tracking, without affecting anyone else. Flipped via `?analytics=on|off|default`
+// (see applyAnalyticsToggleFromUrl). Replaces the old build-time debug env flag.
+export const ANALYTICS_MODE_KEY = "eg_analytics_mode";
+export type AnalyticsMode = "on" | "off" | "default";
+
+export function getAnalyticsMode(): AnalyticsMode {
+  if (typeof window === "undefined") return "default";
+  try {
+    const v = window.localStorage.getItem(ANALYTICS_MODE_KEY);
+    return v === "on" || v === "off" ? v : "default";
+  } catch {
+    return "default";
+  }
+}
+
+export function setAnalyticsMode(mode: AnalyticsMode): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (mode === "default") window.localStorage.removeItem(ANALYTICS_MODE_KEY);
+    else window.localStorage.setItem(ANALYTICS_MODE_KEY, mode);
+  } catch {
+    // localStorage unavailable (private mode) — nothing we can do
+  }
+}
+
+/**
+ * Reads `?analytics=on|off|default` (also accepts reset/clear), applies it to the
+ * per-browser flag, strips the param from the address bar, and returns the applied
+ * mode (or null if the param was absent). Safe to call on every mount.
+ */
+export function applyAnalyticsToggleFromUrl(): AnalyticsMode | null {
+  if (typeof window === "undefined") return null;
+  let raw: string | null = null;
+  try {
+    raw = new URLSearchParams(window.location.search).get("analytics");
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+
+  const v = raw.toLowerCase();
+  const mode: AnalyticsMode =
+    v === "on" ? "on" : v === "off" ? "off" : "default"; // default/reset/clear/anything → default
+  setAnalyticsMode(mode);
+
+  // strip the param so it doesn't linger / get shared
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("analytics");
+    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  } catch {
+    // ignore
+  }
+  return mode;
+}
+
+/**
+ * Whether to skip sending an event for this browser:
+ *   mode "off" → always skip · mode "on" → always send (even in dev) · else → dev gate.
+ */
+function shouldSkipTracking(): boolean {
+  const mode = getAnalyticsMode();
+  if (mode === "off") return true;
+  if (mode === "on") return false;
+  return isDevelopment();
 }
 
 export interface TrackEventParams {
@@ -105,9 +167,9 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
     return;
   }
 
-  // Skip tracking in development/localhost mode
-  if (isDevelopment()) {
-    console.log("Analytics tracking skipped (development mode):", params);
+  // Skip if this browser opted out, or in dev (unless forced on via the toggle)
+  if (shouldSkipTracking()) {
+    console.log("Analytics tracking skipped:", params);
     return;
   }
 
@@ -183,9 +245,9 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
  * Should be called once per session when the page loads
  */
 export function trackSessionStart(): void {
-  // Skip tracking in development/localhost mode
-  if (isDevelopment()) {
-    console.log("Analytics session start skipped (development mode)");
+  // Skip if this browser opted out, or in dev (unless forced on via the toggle)
+  if (shouldSkipTracking()) {
+    console.log("Analytics session start skipped");
     return;
   }
 

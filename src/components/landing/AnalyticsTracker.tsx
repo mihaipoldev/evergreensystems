@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { trackEvent, trackSessionStart, getOrCreateSessionId } from "@/lib/analytics";
+import { useEffect, useRef, useState } from "react";
+import {
+  trackEvent,
+  trackSessionStart,
+  getOrCreateSessionId,
+  applyAnalyticsToggleFromUrl,
+  getAnalyticsMode,
+  type AnalyticsMode,
+} from "@/lib/analytics";
+import { AnalyticsToggleBadge } from "./AnalyticsToggleBadge";
 
 interface AnalyticsTrackerProps {
   pageId: string;
@@ -10,9 +18,15 @@ interface AnalyticsTrackerProps {
 
 export function AnalyticsTracker({ pageId, pageSlug }: AnalyticsTrackerProps) {
   const fired = useRef(false);
+  const [badge, setBadge] = useState<{ mode: AnalyticsMode; flash: boolean } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // Apply ?analytics=on|off|default BEFORE any event fires, so the opt-out
+    // flag is in effect for this page load.
+    const applied = applyAnalyticsToggleFromUrl();
+    setBadge({ mode: getAnalyticsMode(), flash: applied !== null });
 
     getOrCreateSessionId();
 
@@ -58,5 +72,6 @@ export function AnalyticsTracker({ pageId, pageSlug }: AnalyticsTrackerProps) {
     return cleanup;
   }, [pageId, pageSlug]);
 
-  return null;
+  if (!badge) return null;
+  return <AnalyticsToggleBadge mode={badge.mode} flash={badge.flash} />;
 }
