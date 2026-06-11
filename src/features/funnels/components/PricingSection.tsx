@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faStar, faShieldHalved, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/components/ui/button";
 import { RichText } from "@/components/ui/RichText";
-import { trackEvent } from "@/lib/analytics";
 import { staggerContainer, staggerItem, staggerItemTransition, ctaHover } from "../animations";
 import SectionEyebrow from "./SectionEyebrow";
 import type { PricingContent } from "../types";
@@ -314,16 +313,11 @@ const PricingSectionTwoColumn = ({ content }: PricingSectionProps) => {
                   href={content.cta.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => {
-                    if (content.cta?.id) {
-                      trackEvent({
-                        event_type: "link_click",
-                        entity_type: "cta_button",
-                        entity_id: content.cta.id,
-                        metadata: { location: "funnel_pricing" },
-                      });
-                    }
-                  }}
+                  // Declarative tracking: the global SiteAnalytics tracker fires the
+                  // link_click; the type/id attrs also feed the impression observer.
+                  data-analytics-type="cta_button"
+                  data-analytics-id={content.cta.id || undefined}
+                  data-analytics-label={content.cta.label}
                 >
                   {content.cta.label}
                   <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-4 w-4" />

@@ -8,8 +8,27 @@
 const SESSION_COOKIE_NAME = "analytics_session_id";
 const SESSION_DURATION = 30 * 60; // 30 minutes in seconds
 
-export type EventType = "page_view" | "link_click" | "section_view" | "session_start";
-export type EntityType = "cta_button" | "site_section" | "page" | "testimonial" | "faq_item" | "media";
+export type EventType =
+  | "page_view"
+  | "link_click"
+  | "section_view"
+  | "session_start"
+  | "impression"
+  | "scroll_depth"
+  | "page_engagement";
+export type EntityType =
+  | "cta_button"
+  | "site_section"
+  | "page"
+  | "testimonial"
+  | "faq_item"
+  | "media"
+  | "nav_link"
+  | "niche_card"
+  | "social_link"
+  | "footer_link"
+  | "inline_link"
+  | "ui_element";
 
 /**
  * Check if we're in development/localhost mode
@@ -105,6 +124,49 @@ function shouldSkipTracking(): boolean {
   return isDevelopment();
 }
 
+// ── Campaign attribution (UTM) ─────────────────────────────────────────────
+// First-touch per session: parsed once from the landing URL, kept in
+// sessionStorage, and merged into every event's metadata so the dashboard can
+// slice any metric by campaign without session joins. Per-campaign only —
+// never per-person (no lead ids, no emails).
+const UTM_STORAGE_KEY = "eg_utm";
+const UTM_PARAMS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "gclid",
+  "fbclid",
+] as const;
+
+export function captureUtmFromUrl(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const utm: Record<string, string> = {};
+    for (const key of UTM_PARAMS) {
+      const value = params.get(key);
+      if (value) utm[key] = value.slice(0, 200);
+    }
+    if (Object.keys(utm).length > 0) {
+      window.sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utm));
+    }
+  } catch {
+    // sessionStorage unavailable — attribution degrades gracefully
+  }
+}
+
+export function getStoredUtm(): Record<string, string> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(UTM_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface TrackEventParams {
   event_type: EventType;
   entity_type: EntityType;
@@ -157,8 +219,41 @@ export function getOrCreateSessionId(): string {
 }
 
 /**
+ * Assemble the POST payload shared by trackEvent (fetch) and trackEventBeacon
+ * (sendBeacon): session id, browser context, stored UTM, and the debug tag.
+ */
+function buildPayload(params: TrackEventParams) {
+  const sessionId = getOrCreateSessionId();
+
+  // Get user agent and referrer from browser
+  const userAgent = navigator.userAgent || null;
+  const referrer = document.referrer || null;
+
+  // Stored campaign attribution rides along on every event; the event's own
+  // metadata keys win on collision.
+  const utm = getStoredUtm();
+  let metadata: Record<string, any> | null = params.metadata || null;
+  if (utm) metadata = { ...utm, ...(metadata || {}) };
+
+  // In debug mode, tag events so dev/test rows are trivially filterable/deletable
+  // (DELETE FROM analytics_events WHERE metadata->>'debug' = 'true').
+  const debugMode = process.env.NEXT_PUBLIC_ANALYTICS_DEBUG === '1';
+  if (debugMode) metadata = { ...(metadata || {}), debug: true };
+
+  return {
+    event_type: params.event_type,
+    entity_type: params.entity_type,
+    entity_id: params.entity_id,
+    session_id: sessionId,
+    user_agent: userAgent,
+    referrer: referrer,
+    metadata,
+  };
+}
+
+/**
  * Track an analytics event
- * Automatically includes session_id, user_agent, and referrer
+ * Automatically includes session_id, user_agent, referrer, and stored UTM
  * Includes timeout to prevent hanging on mobile Safari
  * Uses keepalive for link clicks to ensure tracking completes even if navigation occurs
  */
@@ -173,24 +268,7 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
     return;
   }
 
-  const sessionId = getOrCreateSessionId();
-
-  // Get user agent and referrer from browser
-  const userAgent = navigator.userAgent || null;
-  const referrer = document.referrer || null;
-
-  // In debug mode, tag events so dev/test rows are trivially filterable/deletable
-  // (DELETE FROM analytics_events WHERE metadata->>'debug' = 'true').
-  const debugMode = process.env.NEXT_PUBLIC_ANALYTICS_DEBUG === '1';
-  const payload = {
-    event_type: params.event_type,
-    entity_type: params.entity_type,
-    entity_id: params.entity_id,
-    session_id: sessionId,
-    user_agent: userAgent,
-    referrer: referrer,
-    metadata: debugMode ? { ...(params.metadata || {}), debug: true } : params.metadata || null,
-  };
+  const payload = buildPayload(params);
 
   console.log("Sending analytics event:", payload);
 
@@ -237,6 +315,33 @@ export async function trackEvent(params: TrackEventParams): Promise<void> {
     if (error instanceof Error && error.name !== 'AbortError') {
       console.error("Error tracking event:", error);
     }
+  }
+}
+
+/**
+ * Track an analytics event via navigator.sendBeacon.
+ * Survives page unload — used for `page_engagement` on tab-hide/leave, where a
+ * normal fetch gets killed by the browser. Returns whether the beacon was queued.
+ */
+export function trackEventBeacon(params: TrackEventParams): boolean {
+  if (typeof window === "undefined" || typeof navigator.sendBeacon !== "function") {
+    return false;
+  }
+
+  // Skip if this browser opted out, or in dev (unless forced on via the toggle)
+  if (shouldSkipTracking()) {
+    console.log("Analytics beacon skipped:", params);
+    return false;
+  }
+
+  const payload = buildPayload(params);
+
+  try {
+    const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+    return navigator.sendBeacon("/api/admin/analytics", blob);
+  } catch (error) {
+    console.error("Error sending analytics beacon:", error);
+    return false;
   }
 }
 

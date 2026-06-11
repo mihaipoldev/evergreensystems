@@ -8,7 +8,7 @@ export default function PublicLayout({
   return (
     <PublicThemeProviderWrapper>
       {children}
-      <a href="/trap" aria-hidden="true" tabIndex={-1}
+      <a href="/trap" aria-hidden="true" tabIndex={-1} data-analytics-skip="true"
          style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }}>
         .
       </a>

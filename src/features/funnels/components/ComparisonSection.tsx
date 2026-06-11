@@ -11,7 +11,7 @@ interface ComparisonSectionProps {
 
 const ComparisonSection = ({ content }: ComparisonSectionProps) => {
   return (
-    <section className="section-spacing">
+    <section className="section-spacing" data-analytics-section="comparison">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center md:mb-12 mb-6">

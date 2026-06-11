@@ -14,7 +14,7 @@ import PricingSection from "./PricingSection";
 import FAQSection from "./FAQSection";
 import FinalCTASection from "./FinalCTASection";
 import Footer from "./Footer";
-import { AnalyticsTracker } from "@/components/landing/AnalyticsTracker";
+import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { FunnelContent } from "../types";
 
@@ -29,7 +29,7 @@ const FunnelPage = ({ content, heroVideo, pageSlug }: FunnelPageProps) => {
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
       <ErrorBoundary>
-        <AnalyticsTracker pageId={pageSlug} pageSlug={pageSlug} />
+        <SiteAnalytics pageSlug={pageSlug} />
       </ErrorBoundary>
       {/* Background texture + top glow */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">

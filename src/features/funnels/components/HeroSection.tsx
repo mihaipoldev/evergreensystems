@@ -7,7 +7,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { VSLPlayer } from "@/features/funnels/components/VSLPlayer";
 import { RichText } from "@/components/ui/RichText";
-import { trackEvent } from "@/lib/analytics";
 import { heroEntrance, ctaHover } from "../animations";
 import type { MediaWithSection } from "@/features/media/types";
 import type { HeroContent } from "../types";
@@ -27,7 +26,10 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
   const hasVideo = heroVideo && (heroVideo.mainMedia || heroVideo.videoId || heroVideo.mediaUrl);
 
   return (
-    <section className="section-spacing pt-24 md:pt-32 py-6 md:py-8 text-center">
+    <section
+      className="section-spacing pt-24 md:pt-32 py-6 md:py-8 text-center"
+      data-analytics-section="hero"
+    >
       {/* Badge */}
       <motion.div
         {...heroEntrance(0)}
@@ -112,16 +114,11 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
               href={content.ctaUrl || "#"}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => {
-                if (content.ctaId) {
-                  trackEvent({
-                    event_type: "link_click",
-                    entity_type: "cta_button",
-                    entity_id: content.ctaId,
-                    metadata: { location: "funnel_hero" },
-                  });
-                }
-              }}
+              // Declarative tracking: the global SiteAnalytics tracker fires the
+              // link_click; the type/id attrs also feed the impression observer.
+              data-analytics-type="cta_button"
+              data-analytics-id={content.ctaId || undefined}
+              data-analytics-label={content.ctaButtonText}
             >
               {content.ctaButtonText}
               <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />

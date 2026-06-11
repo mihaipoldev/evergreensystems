@@ -1,11 +1,9 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { trackEvent } from "@/lib/analytics";
 
-// Tracked CTA link. Fires a `link_click` / `cta_button` analytics event (matching
-// the old landing page's CTA tracking) then lets the <a> navigate normally —
-// trackEvent uses keepalive for link clicks, so the event survives navigation.
+// Tracked CTA link. Carries the data-analytics-* contract; the global
+// SiteAnalytics tracker fires the `link_click` / `cta_button` event on click
+// (keepalive fetch survives navigation) and the impression observer uses the
+// same attributes to record visibility for view→click CTR.
 export function CtaLink({
   href,
   entityId,
@@ -27,14 +25,10 @@ export function CtaLink({
       className={className}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => {
-        trackEvent({
-          event_type: "link_click",
-          entity_type: "cta_button",
-          entity_id: entityId,
-          metadata: { location, href, label },
-        });
-      }}
+      data-analytics-type="cta_button"
+      data-analytics-id={entityId}
+      data-analytics-label={label}
+      data-analytics-section={location}
     >
       {children}
     </a>

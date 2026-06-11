@@ -220,6 +220,7 @@ export const home: HomeContent = {
           { label: "LinkedIn", href: LINKEDIN, icon: "linkedin", external: true },
           { label: "hello@evergreensystems.ai", href: "mailto:hello@evergreensystems.ai", icon: "mail" },
           { label: "Book a call", href: CALENDLY, icon: "calendar", external: true },
+          { label: "Privacy", href: "/privacy" },
         ],
       },
     ],

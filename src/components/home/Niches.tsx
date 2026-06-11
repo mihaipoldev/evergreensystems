@@ -29,7 +29,14 @@ export function Niches() {
         <div className="niche-grid">
           {niches.items.map((n, i) =>
             n.live && n.href ? (
-              <a className="niche live" href={n.href} key={i}>
+              <a
+                className="niche live"
+                href={n.href}
+                key={i}
+                data-analytics-type="niche_card"
+                data-analytics-id={`niche-${n.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
+                data-analytics-label={n.label}
+              >
                 <div>
                   <div className="label">{n.label}</div>
                   <div className="meta">{n.meta}</div>
@@ -54,7 +61,14 @@ export function Niches() {
 
         <p className="niche-foot">
           {niches.foot.text}
-          <a href={niches.foot.linkHref} target="_blank" rel="noopener noreferrer">
+          <a
+            href={niches.foot.linkHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-analytics-type="cta_button"
+            data-analytics-id="niches-book-call"
+            data-analytics-label={niches.foot.linkLabel}
+          >
             {niches.foot.linkLabel}
           </a>
           {niches.foot.tail}

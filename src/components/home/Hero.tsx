@@ -7,7 +7,7 @@ import { CtaLink } from "./CtaLink";
 export function Hero() {
   const { hero, trust } = home;
   return (
-    <section className="hero" id="top">
+    <section className="hero" id="top" data-analytics-section="hero">
       <div className="hero-main">
         <div className="wrap hero-grid">
           <div>

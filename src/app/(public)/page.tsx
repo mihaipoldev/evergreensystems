@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "@/styles/home.css";
 import { egFontVars } from "@/components/home/fonts";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AnalyticsTracker } from "@/components/landing/AnalyticsTracker";
+import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 
 // New homepage — rebuilt from the Claude Design export
 // (design/v1-2026-06-05/project/site/index.html). The whole design lives in
@@ -85,7 +85,7 @@ export default function HomePage() {
 
       <div className={`eg-home ${egFontVars}`}>
         <ErrorBoundary>
-          <AnalyticsTracker pageId="home" pageSlug="home" />
+          <SiteAnalytics pageSlug="home" />
         </ErrorBoundary>
         <Navbar />
         <main>

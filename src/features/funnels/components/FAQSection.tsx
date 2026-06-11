@@ -15,7 +15,7 @@ interface FAQSectionProps {
 
 const FAQSection = ({ content }: FAQSectionProps) => {
   return (
-    <section className="section-spacing">
+    <section className="section-spacing" data-analytics-section="faq">
       <div className="max-w-3xl mx-auto px-3 md:px-0">
         <SectionEyebrow label="FAQ" />
 
@@ -30,7 +30,14 @@ const FAQSection = ({ content }: FAQSectionProps) => {
               value={`item-${index}`}
               className="border-b border-border"
             >
-              <AccordionTrigger className="group text-left md:py-5 py-4 hover:no-underline hover:bg-transparent transition-colors duration-200 hover:text-primary">
+              <AccordionTrigger
+                className="group text-left md:py-5 py-4 hover:no-underline hover:bg-transparent transition-colors duration-200 hover:text-primary"
+                // Classified for the global click tracker — funnel FAQ opens
+                // join the same faq_item taxonomy as the homepage accordion.
+                data-analytics-type="faq_item"
+                data-analytics-id={`faq-${index}`}
+                data-analytics-label={faq.question}
+              >
                 <span className="md:heading-sm text-sm font-medium md:pr-4 pr-2 transition-colors duration-200 group-hover:text-primary">{faq.question}</span>
               </AccordionTrigger>
               <AccordionContent className="md:pb-5 pb-4">

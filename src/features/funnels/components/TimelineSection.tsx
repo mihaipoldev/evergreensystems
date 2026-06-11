@@ -12,7 +12,7 @@ interface TimelineSectionProps {
 
 const TimelineSection = ({ content }: TimelineSectionProps) => {
   return (
-    <section className="section-spacing">
+    <section className="section-spacing" data-analytics-section="timeline">
       <div className="max-w-4xl mx-auto px-3 md:px-0">
         {/* Header */}
         <div className="text-center md:mb-16 mb-8">

@@ -6,7 +6,7 @@ import { CtaLink } from "./CtaLink";
 export function ClosingCta() {
   const { close } = home;
   return (
-    <section className="close">
+    <section className="close" data-analytics-section="closing">
       <TextureCanvas
         tex="field"
         color="on"

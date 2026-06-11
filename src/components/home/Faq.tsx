@@ -49,6 +49,9 @@ export function Faq() {
                   className="faq-q"
                   aria-expanded={isOpen}
                   aria-controls={panelId}
+                  // Fires its own faq_item event on open (below) — the global
+                  // SiteAnalytics click tracker must not double-count toggles.
+                  data-analytics-skip="true"
                   onClick={() => toggle(i)}
                 >
                   <span className="faq-num">{String(i + 1).padStart(2, "0")}</span>

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { RichText } from "@/components/ui/RichText";
-import { trackEvent } from "@/lib/analytics";
 import { ctaHover } from "../animations";
 import SectionEyebrow from "./SectionEyebrow";
 import type { FinalCTAContent } from "../types";
@@ -18,20 +17,12 @@ interface FinalCTASectionProps {
 const FinalCTASection = ({ content }: FinalCTASectionProps) => {
   const hasRiskCards = Boolean(content.worstCase && content.bestCase);
 
-  const trackCtaClick = () => {
-    if (content.ctaId) {
-      trackEvent({
-        event_type: "link_click",
-        entity_type: "cta_button",
-        entity_id: content.ctaId,
-        metadata: { location: "funnel_final_cta" },
-      });
-    }
-  };
-
   if (!hasRiskCards) {
     return (
-      <section className="px-4 md:px-0 pt-10 md:pt-16 pb-28 md:pb-48">
+      <section
+        className="px-4 md:px-0 pt-10 md:pt-16 pb-28 md:pb-48"
+        data-analytics-section="final-cta"
+      >
         <div className="max-w-3xl mx-auto text-center">
           <SectionEyebrow label="Let's Talk" className="mb-8 md:mb-10" />
 
@@ -65,7 +56,11 @@ const FinalCTASection = ({ content }: FinalCTASectionProps) => {
                 href={content.ctaUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={trackCtaClick}
+                // Declarative tracking: the global SiteAnalytics tracker fires the
+                // link_click; the type/id attrs also feed the impression observer.
+                data-analytics-type="cta_button"
+                data-analytics-id={content.ctaId || undefined}
+                data-analytics-label={content.ctaButtonText}
               >
                 {content.ctaButtonText}
                 <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-4 w-4" />
@@ -87,7 +82,7 @@ const FinalCTASection = ({ content }: FinalCTASectionProps) => {
   }
 
   return (
-    <section className="section-spacing">
+    <section className="section-spacing" data-analytics-section="final-cta">
       <div className="max-w-4xl mx-auto">
         {/* Contained closing block */}
         <div className="relative overflow-hidden rounded-3xl border border-primary/15 bg-gradient-to-b from-primary/[0.07] to-transparent shadow-xl shadow-primary/5">
@@ -129,7 +124,11 @@ const FinalCTASection = ({ content }: FinalCTASectionProps) => {
                     href={content.ctaUrl || "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={trackCtaClick}
+                    // Declarative tracking: the global SiteAnalytics tracker fires the
+                    // link_click; the type/id attrs also feed the impression observer.
+                    data-analytics-type="cta_button"
+                    data-analytics-id={content.ctaId || undefined}
+                    data-analytics-label={content.ctaButtonText}
                   >
                     {content.ctaButtonText}
                     <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />

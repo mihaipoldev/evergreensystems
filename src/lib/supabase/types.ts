@@ -25,8 +25,10 @@ export type Database = {
           id: string
           metadata: Json | null
           referrer: string | null
+          region: string | null
           session_id: string | null
           user_agent: string | null
+          workspace_id: string
         }
         Insert: {
           city?: string | null
@@ -38,8 +40,10 @@ export type Database = {
           id?: string
           metadata?: Json | null
           referrer?: string | null
+          region?: string | null
           session_id?: string | null
           user_agent?: string | null
+          workspace_id: string
         }
         Update: {
           city?: string | null
@@ -51,8 +55,10 @@ export type Database = {
           id?: string
           metadata?: Json | null
           referrer?: string | null
+          region?: string | null
           session_id?: string | null
           user_agent?: string | null
+          workspace_id?: string
         }
         Relationships: []
       }

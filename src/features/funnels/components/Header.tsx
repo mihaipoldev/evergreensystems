@@ -8,7 +8,6 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
-import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import type { HeaderContent } from "../types";
 import { Logo } from "@/components/shared/Logo";
@@ -203,16 +202,11 @@ const Header = ({ content }: HeaderProps) => {
                 href={content.ctaUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => {
-                  if (content.ctaId) {
-                    trackEvent({
-                      event_type: "link_click",
-                      entity_type: "cta_button",
-                      entity_id: content.ctaId,
-                      metadata: { location: "funnel_header" },
-                    });
-                  }
-                }}
+                // Declarative tracking: the global SiteAnalytics tracker fires the
+                // link_click; the type/id attrs also feed the impression observer.
+                data-analytics-type="cta_button"
+                data-analytics-id={content.ctaId || undefined}
+                data-analytics-label={content.ctaButtonText}
               >
                 <FontAwesomeIcon icon={faCalendar} className="h-4 w-4" />
                 <span className="text-sm font-medium">{content.ctaButtonText}</span>
