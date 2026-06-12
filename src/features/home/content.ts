@@ -9,7 +9,8 @@ import type { HomeContent } from "./types";
 
 const CALENDLY = "https://calendly.com/mihai-evergreensystems/growth-strategy-call";
 const LINKEDIN = "https://www.linkedin.com/in/mihai-pol/";
-const RECRUITING = "/for/recruiting-agencies";
+const CLEANING = "/for/commercial-cleaning";
+const HVAC = "/for/commercial-hvac";
 
 export const home: HomeContent = {
   nav: {
@@ -124,10 +125,8 @@ export const home: HomeContent = {
     headingAfter: " niche.",
     lead: "Each industry gets its own targeting, messaging, and guarantee. Pick yours — or book a call and we'll tell you straight whether outbound fits.",
     items: [
-      { label: "Recruiting agencies", meta: "10 hiring-manager calls / 90 days · live", live: true, href: RECRUITING },
-      { label: "B2B SaaS", meta: "Page coming soon", live: false },
-      { label: "Agencies & consultancies", meta: "Page coming soon", live: false },
-      { label: "Professional services", meta: "Page coming soon", live: false },
+      { label: "Commercial cleaning", meta: "10 qualified calls / 90 days · live", live: true, href: CLEANING },
+      { label: "Commercial HVAC", meta: "10 qualified calls / 90 days · live", live: true, href: HVAC },
     ],
     foot: {
       text: "Don't see your niche? ",
@@ -210,8 +209,8 @@ export const home: HomeContent = {
       {
         title: "Niches",
         links: [
-          { label: "Recruiting agencies", href: RECRUITING },
-          { label: "More coming soon", href: "#niches" },
+          { label: "Commercial cleaning", href: CLEANING },
+          { label: "Commercial HVAC", href: HVAC },
         ],
       },
       {

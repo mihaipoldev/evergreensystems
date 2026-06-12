@@ -145,12 +145,27 @@ export function captureUtmFromUrl(): void {
   try {
     const params = new URLSearchParams(window.location.search);
     const utm: Record<string, string> = {};
+    let found = false;
     for (const key of UTM_PARAMS) {
       const value = params.get(key);
-      if (value) utm[key] = value.slice(0, 200);
+      if (value) {
+        utm[key] = value.slice(0, 200);
+        found = true;
+      }
     }
-    if (Object.keys(utm).length > 0) {
+    if (found) {
       window.sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utm));
+
+      // Wipe the campaign tags from the address bar so the visitor sees a
+      // clean URL (this is a trust page — a bare evergreensystems.ai reads
+      // better than one carrying ?utm_campaign=...). The captured values live
+      // in sessionStorage and still ride on every event, so attribution is
+      // unaffected. Any non-UTM params the visitor had are preserved.
+      for (const key of UTM_PARAMS) params.delete(key);
+      const qs = params.toString();
+      const cleanUrl =
+        window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
     }
   } catch {
     // sessionStorage unavailable — attribution degrades gracefully

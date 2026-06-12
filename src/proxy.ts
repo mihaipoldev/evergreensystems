@@ -2,8 +2,48 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/supabase/types";
 
+// ── Cold-email sending-domain attribution ──────────────────────────────────
+// These domains (Coldshire / MailPool) are what a prospect sees in the From
+// line of the cold email. When one is typed into a browser, we redirect to the
+// trust page (the homepage) with a campaign tag. The domain name IS the signal,
+// so — unlike a registrar/Coldshire forward — nothing in the URL can be stripped
+// upstream: we read the Host header here and build the destination ourselves.
+// The analytics tracker reads the tag on arrival, then wipes it from the bar.
+//
+// Requires each domain to be added to this Vercel project + its DNS pointed at
+// Vercel (so the request actually reaches this proxy). Add new domains here.
+const SENDING_DOMAIN_CAMPAIGNS: Record<string, string> = {
+  // HVAC campaign
+  "tryevergreenlabs.com": "hvac",
+  "try-evergreenlabs.com": "hvac",
+  "getevergreenlabs.com": "hvac",
+  "get-evergreenlabs.com": "hvac",
+  "goevergreenlabs.com": "hvac",
+  // Cleaning campaign
+  "meet-evergreensystems.com": "cleaning",
+  "meetevergreensystems.com": "cleaning",
+  "withevergreensystems.com": "cleaning",
+  "with-evergreensystems.com": "cleaning",
+  "go-evergreensystems.com": "cleaning",
+  // MailPool (Microsoft) domains — add when ready.
+};
+const CANONICAL_HOME = "https://www.evergreensystems.ai/";
+
 export async function proxy(request: NextRequest) {
   try {
+    // Sending-domain attribution — runs before everything else. If the request
+    // arrived on one of our cold-email domains, redirect to the tagged homepage
+    // and skip the rest of the proxy entirely.
+    const rawHost = request.headers.get("host")?.toLowerCase() ?? "";
+    const host = rawHost.replace(/:\d+$/, "").replace(/^www\./, "");
+    const campaign = SENDING_DOMAIN_CAMPAIGNS[host];
+    if (campaign) {
+      const dest = new URL(CANONICAL_HOME);
+      dest.searchParams.set("utm_source", "email");
+      dest.searchParams.set("utm_campaign", campaign);
+      return NextResponse.redirect(dest, 302);
+    }
+
     // Safely get pathname - handle any encoding issues
     let pathname: string;
     try {

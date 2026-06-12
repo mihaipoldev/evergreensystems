@@ -235,7 +235,7 @@ export const recruitingAgenciesContent: FunnelContent = {
           text: "A **monthly fee** runs it once it goes live.",
         },
         {
-          text: "**10 qualified hiring-manager calls in 90 days. Miss it, and every retainer dollar comes back.** Tool costs excluded.",
+          text: "**10 qualified hiring-manager calls in 90 days. Miss it, and every dollar comes back, setup and retainer both.** Only tool costs are excluded.",
           highlighted: true,
         },
       ],

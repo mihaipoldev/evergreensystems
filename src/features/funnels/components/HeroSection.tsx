@@ -78,13 +78,14 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
         </p>
       </motion.div>
 
-      {/* VSL Video Player */}
-      <motion.div
-        className="max-w-3xl mx-auto mb-6 md:mb-8 md:px-0"
-        {...heroEntrance(0.2)}
-      >
-        <div className="relative aspect-video bg-muted rounded-xl overflow-hidden border border-border shadow-sm ">
-          {hasVideo ? (
+      {/* VSL Video Player — only rendered when a video actually exists.
+          No video = no block at all (not even a placeholder). */}
+      {hasVideo && (
+        <motion.div
+          className="max-w-3xl mx-auto mb-6 md:mb-8 md:px-0"
+          {...heroEntrance(0.2)}
+        >
+          <div className="relative aspect-video bg-muted rounded-xl overflow-hidden border border-border shadow-sm ">
             <div className="absolute inset-0 w-full h-full">
               <VSLPlayer
                 mainMedia={heroVideo!.mainMedia}
@@ -93,18 +94,9 @@ const HeroSection = ({ content, heroVideo }: HeroSectionProps) => {
                 className="w-full h-full"
               />
             </div>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <div className="w-0 h-0 border-l-[20px] border-l-primary border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1" />
-                </div>
-                <p className="body-sm">{content.videoPlaceholderText}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Primary CTA */}
       <motion.div {...heroEntrance(0.3)}>
