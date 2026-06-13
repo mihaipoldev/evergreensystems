@@ -123,7 +123,9 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .shead p{ font-size:var(--fs-lead); color:var(--text); margin:18px 0 0; max-width:52ch; }
 
 /* ---- NAV ---- */
-.eg-home .nav{ position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--hairline); }
+.eg-home .nav{ position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--hairline); transition:transform .3s ease; }
+.eg-home .nav.is-hidden{ transform:translateY(-100%); }
+@media (prefers-reduced-motion: reduce){ .eg-home .nav{ transition:none; } }
 .eg-home .nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:76px; }
 .eg-home .nav .brand{ display:flex; align-items:center; }
 .eg-home .nav .brand img{ height:56px; }

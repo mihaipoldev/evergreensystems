@@ -1,13 +1,18 @@
+"use client";
+
 import { home } from "@/features/home/content";
 import { CtaLink } from "./CtaLink";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 // Sticky top nav. Anchor links scroll in-page (CSS scroll-behavior:smooth on
-// the .eg-home subtree). No interactivity → server component. On mobile the
-// links collapse (matching the prototype) and only the CTA stays.
+// the .eg-home subtree). On mobile the links collapse (matching the prototype)
+// and only the CTA stays; the bar also hides on scroll-down / reveals on
+// scroll-up via useHideOnScroll (mobile only).
 export function Navbar() {
   const { nav } = home;
+  const hidden = useHideOnScroll();
   return (
-    <header className="nav">
+    <header className={`nav${hidden ? " is-hidden" : ""}`}>
       <div className="wrap">
         <a className="brand" href="#top" aria-label={nav.brandAlt}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { HeaderContent } from "../types";
 import { Logo } from "@/components/shared/Logo";
 import { MobileNavMenu, type MobileCTA } from "@/components/landing/MobileNavMenu";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 const SCROLL_THRESHOLD = 12;
 
@@ -23,6 +24,7 @@ const Header = ({ content }: HeaderProps) => {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const hidden = useHideOnScroll();
   const isFunnelPage = pathname !== "/";
 
   useEffect(() => {
@@ -153,7 +155,13 @@ const Header = ({ content }: HeaderProps) => {
 
   return (
     <>
-    <header className="fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8">
+    <header
+      className={cn(
+        "fixed md:top-8 top-0 left-0 right-0 z-50 w-full md:px-4 md:px-8 transition-transform duration-300 motion-reduce:transition-none",
+        // hide on scroll-down (mobile only); never hide while the menu is open
+        hidden && !isOpen && "-translate-y-full",
+      )}
+    >
       <div className="w-full md:max-w-2xl md:mx-auto">
         <nav
           className={cn(
