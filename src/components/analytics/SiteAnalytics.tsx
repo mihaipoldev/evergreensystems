@@ -207,10 +207,10 @@ export function SiteAnalytics({ pageSlug }: SiteAnalyticsProps) {
     );
     sectionEls.forEach((el) => sectionObserver.observe(el));
 
-    // ── impressions — CTA/niche-card visibility, the CTR denominator ──────
+    // ── impressions — CTA / niche-card / FAQ visibility, the CTR denominator ─
     const seenImpressions = new Set<string>();
     const impressionEls = document.querySelectorAll<HTMLElement>(
-      '[data-analytics-type="cta_button"], [data-analytics-type="niche_card"]',
+      '[data-analytics-type="cta_button"], [data-analytics-type="niche_card"], [data-analytics-type="faq_item"]',
     );
     const impressionObserver = new IntersectionObserver(
       (entries) => {

@@ -3,27 +3,18 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { home } from "@/features/home/content";
-import { trackEvent } from "@/lib/analytics";
 
 // FAQ in the new design language (editorial accordion: hairline rows, mono
 // numbering, accent on open). Native to .eg-home — not the old shadcn component.
+// Click tracking is inherited from the global SiteAnalytics click handler via
+// the data-analytics-* attributes on each question button (so faq_item clicks
+// carry section + page automatically, like every other tracked element).
 export function Faq() {
   const { faq } = home;
   const [open, setOpen] = useState<number | null>(null);
 
   function toggle(i: number) {
-    const willOpen = open !== i;
-    setOpen(willOpen ? i : null);
-    if (willOpen) {
-      const item = faq.items[i];
-      // Matches the old FAQ component's tracking (entity_type: faq_item).
-      trackEvent({
-        event_type: "link_click",
-        entity_type: "faq_item",
-        entity_id: item.id,
-        metadata: { question: item.q, position: i },
-      });
-    }
+    setOpen(open === i ? null : i);
   }
 
   return (
@@ -49,9 +40,9 @@ export function Faq() {
                   className="faq-q"
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  // Fires its own faq_item event on open (below) — the global
-                  // SiteAnalytics click tracker must not double-count toggles.
-                  data-analytics-skip="true"
+                  data-analytics-type="faq_item"
+                  data-analytics-id={item.id}
+                  data-analytics-label={item.q}
                   onClick={() => toggle(i)}
                 >
                   <span className="faq-num">{String(i + 1).padStart(2, "0")}</span>
