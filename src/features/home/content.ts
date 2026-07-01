@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════
-// EVERGREEN HOMEPAGE — all copy in one place.
+// EVERGREEN HOMEPAGE: all copy in one place.
 // Read directly by the components in src/components/home/. No adapter.
 // Source of truth for the visual layout: the Claude Design export at
 // design/v1-2026-06-05/project/site/index.html.
@@ -22,37 +22,37 @@ export const home: HomeContent = {
       { label: "Guarantee", href: "#guarantee" },
       { label: "Who it's for", href: "#niches" },
     ],
-    cta: { id: "nav-book-call", label: "Book a call", href: CALENDLY },
+    cta: { id: "nav-book-call", label: "Book a demo", href: CALENDLY },
   },
 
   hero: {
     eyebrow: "Done-for-you outbound",
     titleEm: "Booked sales calls,",
     titleDim: "without the blast.",
-    lead: "We build and run the outbound system — infrastructure, targeting, and reply handling — that puts qualified calls on your calendar. Done for you.",
-    cta: { id: "hero-book-call", label: "Book a call", href: CALENDLY },
+    lead: "We build and run the whole outbound system that puts qualified calls on your calendar: infrastructure, targeting, and reply handling. Done for you.",
+    cta: { id: "hero-book-call", label: "Get your free Growth Plan", href: CALENDLY },
   },
 
   trust: [
-    { icon: "shield-check", bold: "10 calls in 90 days", muted: "— or money back" },
-    { icon: "server", bold: "Our own in-house system", muted: "— no reselling" },
+    { icon: "shield-check", bold: "10 calls in 90 days,", muted: "or money back" },
+    { icon: "server", bold: "Our own in-house system,", muted: "no reselling" },
     { icon: "user-round", prefix: "Built by ", link: { label: "Mihai Pol", href: LINKEDIN } },
-    { icon: "zap", bold: "Founding clients", muted: "— limited spots" },
+    { icon: "zap", bold: "Founding clients,", muted: "limited spots" },
   ],
 
   platform: {
     eyebrow: "Built in-house",
     headingEm: "We built the machine,",
     headingDim: "you just take the calls.",
-    lead: "Most agencies run your outreach out of a stock Instantly login and a spreadsheet. We built our own platform to source, enrich, write, send, and handle every reply in one place. You never log in — we operate it, you show up to booked calls.",
+    lead: "Most agencies run your outreach out of a stock Instantly login and a spreadsheet. We built our own platform to source, enrich, write, send, and handle every reply in one place. You never log in. We operate it, you show up to booked calls.",
     points: [
-      { bold: "Our own platform", rest: "— not a reseller seat on another tool" },
-      { bold: "Built and operated in-house", rest: "— one owned system, nothing duct-taped" },
-      { bold: "Completely managed", rest: "— nothing lands on your plate" },
+      { bold: "Our own platform,", rest: "running the best tools" },
+      { bold: "Built and run in-house,", rest: "one owned system" },
+      { bold: "Completely managed,", rest: "nothing on your plate" },
     ],
     screenshots: [
-      { src: "/home/platform-leads.png", alt: "Evergreen platform — leads view showing sourced and enriched prospects" },
-      { src: "/home/platform-executions.png", alt: "Evergreen platform — executions log showing automated reply handling" },
+      { src: "/home/platform-leads.png", alt: "Evergreen platform, leads view showing sourced and enriched prospects" },
+      { src: "/home/platform-executions.png", alt: "Evergreen platform, executions log showing automated reply handling" },
     ],
   },
 
@@ -78,7 +78,110 @@ export const home: HomeContent = {
         num: "Always",
         unit: "-on",
         title: "Pipeline that doesn't stall",
-        body: "Runs in parallel with your busiest weeks — because the engine doesn't depend on your hours.",
+        body: "Runs in parallel with your busiest weeks, because the engine doesn't depend on your hours.",
+      },
+    ],
+  },
+
+  calculator: {
+    eyebrow: "See your numbers",
+    headingEm: "What you're leaving",
+    headingDim: "on the table.",
+    lead: "We book the calls, you close them. Here's what that's worth.",
+    inputs: {
+      calls: {
+        label: "Qualified calls a month",
+        min: 4,
+        max: 30,
+        step: 1,
+        default: 10,
+        presets: [5, 10, 15, 20],
+      },
+      clientValue: {
+        label: "What a new client is worth",
+        min: 1000,
+        max: 100000,
+        step: 500,
+        default: 15000,
+      },
+      closeRate: {
+        label: "Your close rate",
+        min: 5,
+        max: 60,
+        step: 1,
+        default: 25,
+      },
+    },
+    resultsTitle: "Your new business, every month",
+    headlineLabel: "in new revenue every month you're not getting today",
+    note: "We guarantee a floor of 10 qualified calls in your first 90 days, or every dollar back.",
+    cta: {
+      id: "calc-growth-plan",
+      label: "Get your free Growth Plan",
+      href: CALENDLY,
+    },
+  },
+
+  vsl: {
+    eyebrow: "Watch, the 3-minute breakdown",
+    headingEm: "See the system",
+    headingDim: "before you book a call.",
+    caption:
+      "No pitch, just the actual infrastructure, targeting, and reply handling, walked through end to end.",
+  },
+
+  pillars: {
+    eyebrow: "The system, in four moves",
+    headingEm: "Four pillars",
+    headingDim: "between a cold list and a booked call.",
+    items: [
+      {
+        k: "01",
+        label: "Infrastructure",
+        title: "Authenticated domains, warmed before they ever send.",
+        body: "The reputation layer nobody sees and everybody skips. We build it first, on separate domains, so your outreach lands in the inbox instead of spam.",
+        points: [
+          "Dedicated mailboxes on secondary domains, scaled to your target",
+          "A 2 to 3 week warmup before the first real send",
+          "SPF, DKIM and DMARC authenticated per domain",
+          "Your main domain never sends, so its reputation stays clean",
+        ],
+      },
+      {
+        k: "02",
+        label: "Targeting",
+        title: "A list built around your real buyer, not scraped.",
+        body: "We describe your ideal customer in plain terms, then build, verify, and segment the list around the people who can actually say yes.",
+        points: [
+          "Decision-makers at your ICP, enriched with real context",
+          "Every address checked for deliverability",
+          "Segmented by intent and buying signals",
+          "Personalization that reads human, not merge-tag theater",
+        ],
+      },
+      {
+        k: "03",
+        label: "Reply handling",
+        title: "Every reply worked, humans where it counts.",
+        body: "Replies are a workflow, not an inbox someone forgot about. We read, qualify, and route every one, and handle objections in your voice.",
+        points: [
+          "Every inbound read and qualified",
+          "Positive replies routed straight to your calendar",
+          "Objections handled in your voice",
+          "Zero inbox triage on your side",
+        ],
+      },
+      {
+        k: "04",
+        label: "Automation",
+        title: "Calendar and CRM wired so booked means booked.",
+        body: "The last mile most systems drop. A qualified reply becomes a confirmed call on your calendar, synced to your CRM, with a brief so you walk in ready.",
+        points: [
+          "Qualified calls land directly on your calendar",
+          "A pre-call brief on every meeting",
+          "Synced to your CRM automatically",
+          "Reminders so they actually show up",
+        ],
       },
     ],
   },
@@ -88,19 +191,19 @@ export const home: HomeContent = {
     headingEm: "What runs",
     headingDim: "while you close.",
     stages: [
-      { k: "01 · Targeting", title: "Sourced & enriched", body: "Decision-makers at your target accounts, enriched with real context — not a scraped list." },
-      { k: "02 · Infrastructure", title: "Sent, inbox-safe", body: "24 warmed mailboxes across 8 secondary domains. Your main domain never sends." },
+      { k: "01 · Targeting", title: "Sourced & enriched", body: "Decision-makers at your target accounts, enriched with real context, not a scraped list." },
+      { k: "02 · Infrastructure", title: "Sent, inbox-safe", body: "Dedicated sending infrastructure, warmed and scaled to your target. Your main domain never sends." },
       { k: "03 · Reply handling", title: "Worked by us", body: "Every inbound qualified and routed. No inbox triage on your side." },
       { k: "04 · Booked", title: "On your calendar", body: "Qualified calls land directly on your calendar from month two, each with a pre-call brief.", end: true },
     ],
     diagram: {
       src: "/home/email-infrastructure.avif",
-      alt: "Evergreen email infrastructure: a portal fanning out to 8 domains, each with dedicated inboxes, feeding Apollo leads through Instantly into sales calls and paying clients.",
+      alt: "Evergreen email infrastructure: a portal fanning out across dedicated sending domains and inboxes, feeding enriched leads into booked sales calls and paying clients.",
     },
     specs: [
       "Secondary domains",
       "Dedicated mailboxes",
-      "**21–28** day warmup",
+      "**2 to 3 week** warmup",
       "your main domain **never touched**",
     ],
   },
@@ -109,13 +212,124 @@ export const home: HomeContent = {
     eyebrow: "The guarantee",
     heading: "We remove the downside completely.",
     num: "90 days",
-    sub: "to hit your qualified-call floor — or every dollar comes back.",
+    sub: "to hit your qualified-call floor, or every dollar comes back.",
     steps: [
       { n: "01", text: "A **one-time setup fee** builds your system." },
       { n: "02", text: "A **monthly fee** runs it once it's live." },
-      { n: "03", text: "Miss the call floor in 90 days and **every dollar comes back — setup and retainer both.** Tool costs excluded." },
+      { n: "03", text: "Miss the call floor in 90 days and **every dollar comes back, setup and retainer both.** Tool costs excluded." },
     ],
     tags: ["No long-term contracts", "No hidden conditions", "Pay for results, not activity"],
+  },
+
+  pricing: {
+    eyebrow: "Pricing",
+    headingEm: "Booked calls,",
+    headingDim: "priced to pay for itself.",
+    sub: "Two ways to work with us. Pick the one that fits.",
+    plans: [
+      {
+        kicker: "Model 01 · Performance",
+        name: "Pay Per Qualified Lead",
+        descriptor: "Only pay for the qualified calls we actually book.",
+        tag: "Most flexible",
+        featured: true,
+        note: "Plus a small one-time setup fee to get started.",
+        omitFeatures: ["90-day qualified-call guarantee"],
+        cta: { id: "price-ppl", label: "Get a Quote", href: CALENDLY },
+      },
+      {
+        kicker: "Model 02 · Predictable",
+        name: "Flat Monthly Retainer",
+        descriptor: "One predictable monthly fee, however many we book.",
+        cta: { id: "price-retainer", label: "Get a Quote", href: CALENDLY },
+      },
+    ],
+    features: [
+      // What you get (top — it's about him)
+      "Qualified calls on your calendar",
+      "Fully done-for-you",
+      "90-day qualified-call guarantee",
+      "Pre-call brief on every meeting",
+      "Every reply handled for you",
+      "Your main domain stays protected",
+      "Cold email in your voice",
+      "Offer & positioning dialed in",
+      "Calls synced to your CRM",
+      "Direct access to the founder",
+      "Ongoing optimization on real data",
+      "Month-to-month, no contracts",
+      // How we do it (bottom — what we use)
+      "Decision-makers sourced & enriched",
+      "Intent & buying-signal targeting",
+      "AI-personalized at scale",
+      "Continuously A/B tested",
+      "Deliverability fully managed",
+      "Infrastructure scaled to your target",
+      "Our own in-house platform",
+      "Powered by top-tier tools",
+    ],
+  },
+
+  getInTouch: {
+    eyebrow: "Get in touch",
+    headingEm: "Not sure outbound fits?",
+    headingDim: "Let's find out, honestly.",
+    lead: "Tell us what you're working through. You'll get a straight read on whether a system makes sense, even if the answer is no.",
+    points: [
+      "No commitment, no pressure",
+      "A response within one business day",
+      "Actionable advice, even if we don't work together",
+    ],
+    form: {
+      nameLabel: "Full name",
+      namePlaceholder: "Your name",
+      emailLabel: "Work email",
+      emailPlaceholder: "you@company.com",
+      areaLabel: "What are you working through?",
+      areaPlaceholder: "Select an area",
+      areaOptions: [
+        "Commercial cleaning",
+        "Commercial HVAC",
+        "Another industry",
+        "Not sure yet",
+      ],
+      submit: "Start the conversation",
+    },
+    submitId: "getintouch-submit",
+    success: {
+      heading: "Got it. We'll be in touch.",
+      body: "Expect a straight read within one business day.",
+    },
+  },
+
+  bookBar: {
+    lead: "Like what the numbers say? Get your free Growth Plan and we'll show you how to book calls like these.",
+    placeholder: "Enter your work email",
+    buttonLabel: "Get my Growth Plan",
+    buttonId: "bookbar-growth-plan",
+    href: CALENDLY,
+  },
+
+  exitIntent: {
+    guaranteeKicker: "The guarantee",
+    guaranteeNumLines: ["10 calls", "in 90 days"],
+    guaranteeSub: "or every dollar comes back. Setup and retainer both.",
+    guaranteeTags: [
+      { icon: "shield-check", label: "Pay for results, not activity" },
+      { icon: "server", label: "Our own in-house system" },
+      { icon: "zap", label: "Founding clients, limited spots" },
+    ],
+    eyebrow: "Before you go",
+    heading: "Worst case, a sharper strategy.",
+    body: "Leave your work email and we'll send the honest read on whether outbound fits. No pitch, no pressure.",
+    emailPlaceholder: "you@company.com",
+    submit: "Send me the honest read",
+    submitId: "exit-honest-read",
+    footPrefix: "Prefer to talk? ",
+    footLinkLabel: "Get your free Growth Plan",
+    footHref: CALENDLY,
+    dismissLabel: "No thanks, I'll risk the silent inbox.",
+    success: "On its way. We'll email the honest read shortly.",
   },
 
   niches: {
@@ -123,16 +337,16 @@ export const home: HomeContent = {
     headingBefore: "Built around ",
     headingDim: "your",
     headingAfter: " niche.",
-    lead: "Each industry gets its own targeting, messaging, and guarantee. Pick yours — or book a call and we'll tell you straight whether outbound fits.",
+    lead: "Each industry gets its own targeting, messaging, and guarantee. Pick yours, or book a call and we'll tell you straight whether outbound fits.",
     items: [
       { label: "Commercial cleaning", meta: "10 qualified calls / 90 days · live", live: true, href: CLEANING },
       { label: "Commercial HVAC", meta: "10 qualified calls / 90 days · live", live: true, href: HVAC },
     ],
     foot: {
       text: "Don't see your niche? ",
-      linkLabel: "Book a call",
+      linkLabel: "Get your free Growth Plan",
       linkHref: CALENDLY,
-      tail: " — we'll tell you honestly whether it's a fit.",
+      tail: ". We'll tell you honestly whether it's a fit.",
     },
   },
 
@@ -180,17 +394,17 @@ export const home: HomeContent = {
   },
 
   close: {
-    pill: "Founding clients — limited spots",
+    pill: "Founding clients, limited spots",
     heading: "Worst case, a sharper strategy. Best case, a full calendar.",
-    sub: "No pitch, no pressure — just an honest read on whether we can help.",
+    sub: "No pitch, no pressure, just an honest read on whether we can help.",
     founder: {
-      name: "Mihai Pol — Founder",
+      name: "Mihai Pol, Founder",
       avatar: "/home/mihai.png",
       avatarAlt: "Mihai Pol, Founder of Evergreen Systems",
       linkedin: LINKEDIN,
-      line: "You'll talk to me directly — the person who built and runs the system.",
+      line: "You'll talk to me directly, the person who built and runs the system.",
     },
-    cta: { id: "close-book-call", label: "Book a 15-minute call", href: CALENDLY },
+    cta: { id: "close-book-call", label: "Get your free Growth Plan", href: CALENDLY },
   },
 
   footer: {
@@ -218,7 +432,7 @@ export const home: HomeContent = {
         links: [
           { label: "LinkedIn", href: LINKEDIN, icon: "linkedin", external: true },
           { label: "hello@evergreensystems.ai", href: "mailto:hello@evergreensystems.ai", icon: "mail" },
-          { label: "Book a call", href: CALENDLY, icon: "calendar", external: true },
+          { label: "Get your free Growth Plan", href: CALENDLY, icon: "calendar", external: true },
           { label: "Privacy", href: "/privacy" },
         ],
       },

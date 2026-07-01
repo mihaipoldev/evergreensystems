@@ -1,0 +1,28 @@
+/* ============================================================
+   INSIGHTS / PLAYBOOK (/insights) — placeholder blog index.
+   Scoped under `.eg-home`. DESIGN ONLY — content is placeholder.
+   ============================================================ */
+.eg-home .ins-annc{ background:var(--ink); color:#fff; }
+.eg-home .ins-annc .wrap{ display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 32px; font-size:var(--fs-small); text-align:center; flex-wrap:wrap; }
+.eg-home .ins-annc b{ color:#fff; font-weight:600; }
+.eg-home .ins-annc .mut{ color:rgba(255,255,255,.7); }
+.eg-home .ins-annc a{ color:#fff; font-weight:600; border-bottom:1.5px solid var(--accent); }
+
+.eg-home .ins-hero{ padding:72px 0 40px; }
+.eg-home .ins-hero .eyebrow{ margin-bottom:18px; }
+.eg-home .ins-hero h1{ font-size:var(--fs-h1); max-width:16ch; }
+.eg-home .ins-lead{ font-size:var(--fs-lead); color:var(--text); max-width:60ch; margin:20px 0 0; line-height:1.5; }
+
+.eg-home .ins-grid-sec{ padding:20px 0 96px; }
+.eg-home .ins-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; border-top:1px solid var(--hairline); padding-top:40px; }
+.eg-home .ins-card{ display:flex; flex-direction:column; gap:12px; border:1px solid var(--hairline); background:var(--surface); padding:26px 24px; transition:border-color var(--dur) var(--ease); }
+.eg-home .ins-card:hover{ border-color:var(--hairline-strong); }
+.eg-home .ins-card-tag{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+.eg-home .ins-card h3{ font-size:1.2rem; letter-spacing:-.01em; }
+.eg-home .ins-card p{ font-size:var(--fs-small); color:var(--text); line-height:1.5; margin:0; }
+.eg-home .ins-card-meta{ margin-top:auto; padding-top:8px; font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); }
+.eg-home .ins-note{ text-align:center; margin:40px 0 0; font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); }
+
+@media (max-width:920px){
+  .eg-home .ins-grid{ grid-template-columns:1fr; }
+}

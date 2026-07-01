@@ -9,6 +9,11 @@ import {
   ArrowRight,
   Mail,
   Calendar,
+  Check,
+  CheckCircle2,
+  CalendarCheck,
+  Search,
+  X,
   type LucideProps,
 } from "lucide-react";
 import type { IconName } from "@/features/home/types";
@@ -22,6 +27,11 @@ const LUCIDE: Record<Exclude<IconName, "linkedin">, React.ComponentType<LucidePr
   "arrow-right": ArrowRight,
   mail: Mail,
   calendar: Calendar,
+  "calendar-check": CalendarCheck,
+  check: Check,
+  "check-circle-2": CheckCircle2,
+  search: Search,
+  x: X,
 };
 
 export function LinkedInIcon({ className }: { className?: string }) {

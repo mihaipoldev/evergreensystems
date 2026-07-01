@@ -1,10 +1,20 @@
 import { home } from "@/features/home/content";
 import { renderEmphasis } from "./emphasis";
+import { TextureCanvas } from "./TextureCanvas";
 
 export function System() {
   const { system } = home;
   return (
     <section className="cred" id="system">
+      <TextureCanvas
+        tex="field"
+        color="ink"
+        dir="left"
+        step={13}
+        animate
+        speed={2.8}
+        className="sys-tex"
+      />
       <div className="wrap">
         <div className="shead">
           <div className="t-kicker eyebrow">{system.eyebrow}</div>

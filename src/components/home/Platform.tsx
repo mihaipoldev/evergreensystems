@@ -1,10 +1,20 @@
 import { home } from "@/features/home/content";
 import { PlatformCarousel } from "./PlatformCarousel";
+import { TextureCanvas } from "./TextureCanvas";
 
 export function Platform() {
   const { platform } = home;
   return (
     <section className="platform" id="platform">
+      <TextureCanvas
+        tex="field"
+        color="ink"
+        dir="up"
+        step={12}
+        animate
+        speed={2.8}
+        className="plat-tex"
+      />
       <div className="wrap">
         <div className="platform-row">
           <div className="platform-copy">

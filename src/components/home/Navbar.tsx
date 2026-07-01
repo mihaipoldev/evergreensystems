@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { home } from "@/features/home/content";
 import { CtaLink } from "./CtaLink";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
@@ -11,8 +12,18 @@ import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 export function Navbar() {
   const { nav } = home;
   const hidden = useHideOnScroll();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onScroll = () => setScrolled(window.scrollY > 14);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className={`nav${hidden ? " is-hidden" : ""}`}>
+    <header className={`nav${hidden ? " is-hidden" : ""}${scrolled ? " is-scrolled" : ""}`}>
       <div className="wrap">
         <a className="brand" href="#top" aria-label={nav.brandAlt}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
