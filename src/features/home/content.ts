@@ -37,13 +37,20 @@ export const home: HomeContent = {
     resources: {
       label: "Resources",
       items: [
-        {
-          id: "nav-insights",
-          icon: "notebook-pen",
-          title: "Insights",
-          desc: "Field notes on building outbound that compounds.",
-          ...(INSIGHTS_LIVE ? { href: "/insights" } : { soon: true }),
-        },
+        // No "Soon" teasers in the menu — unfinished resources are omitted
+        // entirely until they're real (Insights returns when a post is
+        // published; Case studies & guides return when their pages exist).
+        ...(INSIGHTS_LIVE
+          ? [
+              {
+                id: "nav-insights",
+                icon: "notebook-pen" as const,
+                title: "Insights",
+                desc: "Field notes on building outbound that compounds.",
+                href: "/insights",
+              },
+            ]
+          : []),
         {
           id: "nav-roi-calculator",
           icon: "calculator",
@@ -69,13 +76,6 @@ export const home: HomeContent = {
               },
             ]
           : []),
-        {
-          id: "nav-case-studies",
-          icon: "book-open",
-          title: "Case studies & guides",
-          desc: "Playbooks and results for owners.",
-          soon: true,
-        },
       ],
       foot: {
         id: "nav-resources-cta",
