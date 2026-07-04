@@ -1,0 +1,74 @@
+/* ============================================================
+   ABOUT (/about) — ported from Claude Design v3 site/about.html.
+   Founder page: portrait hero, navy pull quote, sticky-label story,
+   principles grid, accent closing band. Scoped under `.eg-home`;
+   uses the shared tokens + standard `.wrap` (1180px) — NOT the
+   export's bespoke 1120px chrome. Reuses `.btn`-family + `.eg-grain`.
+   ============================================================ */
+
+/* ---- hero ---- */
+.eg-home section.ab-hero{ padding:80px 0 72px; }
+.eg-home .ab-hero-in{ display:grid; grid-template-columns:1fr 0.82fr; gap:72px; align-items:center; }
+.eg-home .ab-eyebrow{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+.eg-home .ab-h{ font-size:clamp(2.2rem,4.8vw,3.4rem); letter-spacing:-.025em; line-height:1.04; margin:18px 0 0; max-width:16ch; }
+.eg-home .ab-hero-sub{ font-size:var(--fs-lead); color:var(--text); line-height:1.5; margin:22px 0 0; max-width:44ch; }
+.eg-home .ab-meta{ display:flex; flex-wrap:wrap; gap:10px 24px; margin:28px 0 0; }
+.eg-home .ab-meta span{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); }
+.eg-home .ab-meta span b{ color:var(--ink); font-weight:600; }
+
+/* portrait */
+.eg-home .ab-portrait{ position:relative; margin:0; }
+.eg-home .ab-portrait::before{ content:""; position:absolute; inset:auto -18px -18px auto; width:74%; height:74%; background:var(--accent-tint); z-index:0; }
+.eg-home .ab-portrait img{ position:relative; z-index:1; width:100%; aspect-ratio:1/1; object-fit:cover; display:block; border:1px solid var(--hairline); }
+.eg-home .ab-portrait figcaption{ position:relative; z-index:1; margin:16px 2px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.eg-home .ab-portrait .nm{ font-family:var(--font-head); font-weight:600; color:var(--ink); font-size:var(--fs-body); }
+.eg-home .ab-portrait .rl{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+
+/* ---- pull statement (navy band) ---- */
+.eg-home section.ab-pull{ background:var(--ink); color:#fff; padding:66px 0; }
+.eg-home .ab-pull blockquote{ margin:0; max-width:22ch; font-family:var(--font-head); font-weight:500; font-size:clamp(1.6rem,3.4vw,2.5rem); line-height:1.2; letter-spacing:-.02em; color:#fff; }
+.eg-home .ab-pull blockquote .ac{ color:var(--accent); }
+
+/* ---- story ---- */
+.eg-home section.ab-story{ padding:76px 0; }
+.eg-home .ab-story-in{ display:grid; grid-template-columns:0.34fr 0.66fr; gap:56px; }
+.eg-home .ab-story .lbl{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:600; position:sticky; top:100px; align-self:start; }
+.eg-home .ab-story .body{ max-width:62ch; }
+.eg-home .ab-story .body p{ font-size:var(--fs-lead); color:var(--text); line-height:1.62; margin:0 0 1.1em; }
+.eg-home .ab-story .body p:last-child{ margin-bottom:0; }
+.eg-home .ab-story .body strong{ color:var(--ink); font-weight:600; }
+
+/* ---- principles ---- */
+.eg-home section.ab-principles{ padding:72px 0; border-top:1px solid var(--hairline); }
+.eg-home .ab-sec-h{ font-size:var(--fs-h2); letter-spacing:-.02em; max-width:18ch; }
+.eg-home .ab-sec-h .dim{ color:var(--muted); }
+.eg-home .pr-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:0; border:1px solid var(--hairline); margin:40px 0 0; }
+.eg-home .pr{ padding:32px 30px; border-right:1px solid var(--hairline); }
+.eg-home .pr:last-child{ border-right:0; }
+.eg-home .pr .n{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.12em; color:var(--accent); font-weight:700; }
+.eg-home .pr h3{ font-size:1.2rem; letter-spacing:-.015em; margin:14px 0 10px; }
+.eg-home .pr p{ font-size:var(--fs-small); color:var(--text); line-height:1.55; margin:0; }
+
+/* ---- closing CTA (accent band) ---- */
+.eg-home section.ab-cta{ background:var(--accent); padding:64px 0; }
+.eg-home .ab-cta-in{ display:flex; align-items:center; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+.eg-home .ab-cta h2{ color:#fff; font-size:clamp(1.6rem,3vw,2.3rem); letter-spacing:-.02em; margin:0; max-width:20ch; line-height:1.1; }
+.eg-home .ab-cta p{ color:rgba(255,255,255,.82); font-size:var(--fs-body); margin:12px 0 0; max-width:40ch; }
+.eg-home .ab-cta-actions{ display:flex; gap:14px; flex-wrap:wrap; }
+.eg-home .ab-btn{ display:inline-flex; align-items:center; gap:.55em; border-radius:var(--radius-pill); padding:.95em 1.7em; font-family:var(--font-head); font-weight:600; font-size:var(--fs-body); text-decoration:none; transition:all var(--dur) var(--ease); white-space:nowrap; cursor:pointer; }
+.eg-home .ab-btn.solid{ background:#fff; color:var(--ink); border:1.5px solid #fff; }
+.eg-home .ab-btn.solid:hover{ background:var(--ink); color:#fff; border-color:var(--ink); }
+.eg-home .ab-btn.ghost{ border:1.5px solid rgba(255,255,255,.6); color:#fff; }
+.eg-home .ab-btn.ghost:hover{ border-color:#fff; background:rgba(255,255,255,.1); }
+.eg-home .ab-btn svg{ width:1.05em; height:1.05em; }
+
+@media (max-width:860px){
+  .eg-home .ab-hero-in{ grid-template-columns:1fr; gap:44px; }
+  .eg-home section.ab-hero{ padding:52px 0 56px; }
+  .eg-home .ab-portrait{ order:-1; max-width:360px; }
+  .eg-home .ab-story-in{ grid-template-columns:1fr; gap:20px; }
+  .eg-home .ab-story .lbl{ position:static; }
+  .eg-home .pr-grid{ grid-template-columns:1fr; }
+  .eg-home .pr{ border-right:0; border-bottom:1px solid var(--hairline); }
+  .eg-home .pr:last-child{ border-bottom:0; }
+}

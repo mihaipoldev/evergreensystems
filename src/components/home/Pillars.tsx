@@ -8,51 +8,35 @@ import { Icon } from "./icons";
 
 function PillarViz({ index }: { index: number }) {
   if (index === 0) {
+    const inboxes = [
+      { user: "sarah", domain: "getyourco.com", pct: "100%" },
+      { user: "mike", domain: "tryyourco.co", pct: "100%" },
+      { user: "jen", domain: "yourcohq.com", pct: "96%" },
+      { user: "dan", domain: "yourco-mail.com", pct: "88%" },
+    ];
     return (
       <div className="pv pv-infra">
         <div className="pv-head">
           <span className="lab">
             <b>01</b> · Infrastructure
           </span>
-          <span className="st">Domains warmed</span>
+          <span className="st">Inboxes warming</span>
         </div>
         <div className="pv-body">
           <div className="pv-rows">
+            {inboxes.map((b) => (
+              <div className="pv-row" key={b.user}>
+                <div className="dm">
+                  {b.user}@<span className="mut">{b.domain}</span>
+                </div>
+                <div className="pv-bar">
+                  <i style={{ width: b.pct }} />
+                </div>
+              </div>
+            ))}
             <div className="pv-row">
               <div className="dm">
-                outbound.<span className="mut">yourco-hq.com</span>
-              </div>
-              <div className="pv-bar">
-                <i style={{ width: "100%" }} />
-              </div>
-            </div>
-            <div className="pv-row">
-              <div className="dm">
-                mail.<span className="mut">yourco-team.com</span>
-              </div>
-              <div className="pv-bar">
-                <i style={{ width: "100%" }} />
-              </div>
-            </div>
-            <div className="pv-row">
-              <div className="dm">
-                hello.<span className="mut">yourco-reach.com</span>
-              </div>
-              <div className="pv-bar">
-                <i style={{ width: "96%" }} />
-              </div>
-            </div>
-            <div className="pv-row">
-              <div className="dm">
-                go.<span className="mut">yourco-mail.com</span>
-              </div>
-              <div className="pv-bar">
-                <i style={{ width: "88%" }} />
-              </div>
-            </div>
-            <div className="pv-row">
-              <div className="dm">
-                <span className="mut">+ more domains, scaled to your target</span>
+                <span className="mut">+ more inboxes, scaled to your target</span>
               </div>
               <div className="pv-bar">
                 <i style={{ width: "72%" }} />
@@ -125,17 +109,17 @@ function PillarViz({ index }: { index: number }) {
             </div>
             <div className="pv-reply-card">
               <div className="rh">
-                <b>Re: hiring this quarter</b>
+                <b>Re: your note</b>
                 <span className="pv-pill int">Interested</span>
               </div>
               <div className="rt">{'"Send a time, Tuesday AM ideally."'}</div>
             </div>
             <div className="pv-reply-card">
               <div className="rh">
-                <b>Re: outbound for Acme</b>
+                <b>Re: timing</b>
                 <span className="pv-pill rou">Routed</span>
               </div>
-              <div className="rt">Objection handled in your voice, then booked.</div>
+              <div className="rt">Not now. We replied in your voice and queued a follow-up.</div>
             </div>
           </div>
         </div>
@@ -146,10 +130,10 @@ function PillarViz({ index }: { index: number }) {
   // index === 3 — Automation: mini calendar week
   const week = [
     { d: "Mon", slots: [false, true, false] },
-    { d: "Tue", slots: [true, false, true] },
-    { d: "Wed", slots: [false, true, false] },
-    { d: "Thu", slots: [true, false, true] },
-    { d: "Fri", slots: [false, true, false] },
+    { d: "Tue", slots: [true, false, false] },
+    { d: "Wed", slots: [false, false, false] },
+    { d: "Thu", slots: [false, true, false] },
+    { d: "Fri", slots: [false, false, true] },
   ];
   return (
     <div className="pv pv-auto">

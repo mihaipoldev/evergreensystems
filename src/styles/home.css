@@ -115,6 +115,14 @@ html:has(.eg-home){ scroll-behavior: smooth; }
    ============================================================ */
 .eg-home .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
 .eg-home section{ padding:104px 0; }
+/* Collapse adjacent section borders: many sections carry both a top and a
+   bottom hairline, so at a junction the two 1px lines stack into a doubled
+   2px divider. Overlapping each section up by 1px merges them into one —
+   including the first section against the sticky nav's bottom border
+   (e.g. /roi-calculator, where the first section is the bordered calculator). */
+.eg-home main > section{ margin-top:-1px; }
+/* same collapse for the footer against the last section's bottom border */
+.eg-home .foot{ margin-top:-1px; }
 .eg-home .icon{ width:1.15em; height:1.15em; stroke-width:1.6; vertical-align:middle; }
 
 .eg-home .shead{ max-width:none; margin-bottom:54px; }
@@ -134,8 +142,55 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .nav .brand{ display:flex; align-items:center; }
 .eg-home .nav .brand img{ height:56px; transition:transform .35s cubic-bezier(.2,.7,.2,1); transform-origin:left center; }
 .eg-home .nav-links{ display:flex; gap:34px; align-items:center; }
-.eg-home .nav-links a{ color:var(--text); font-size:var(--fs-small); font-weight:500; letter-spacing:.01em; text-decoration:none; }
+.eg-home .nav-links a{ position:relative; color:var(--text); font-size:var(--fs-small); font-weight:500; letter-spacing:.01em; text-decoration:none; }
 .eg-home .nav-links a:hover{ color:var(--ink); }
+/* nav-link hover underline — ported verbatim from the design's polish.js
+   fx-underline. The popover rows are <a> inside .nav-links, so the same
+   growing-accent underline lands on them too, exactly like the v3 export. */
+.eg-home .nav-links a::after{
+  content:""; position:absolute; left:0; right:0; bottom:-7px; height:2px;
+  background:var(--accent); transform:scaleX(0); transform-origin:left;
+  transition:transform .32s cubic-bezier(.2,.7,.2,1);
+}
+.eg-home .nav-links a:hover::after{ transform:scaleX(1); }
+
+/* ---- Resources dropdown (desktop; hidden with nav-links on mobile) ----
+   v3 popover: right-aligned icon-tile menu, opened via the `is-open` class
+   (Navbar toggles it on hover + click, closes on Esc / outside-click). */
+.eg-home .nav-drop{ position:relative; display:flex; align-items:center; }
+.eg-home .nav-drop-trigger{ display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; cursor:pointer; color:var(--text); font-family:var(--font-head); font-size:var(--fs-small); font-weight:500; letter-spacing:.01em; transition:color var(--dur) var(--ease); }
+.eg-home .nav-drop-trigger svg{ width:15px; height:15px; transition:transform var(--dur) var(--ease); }
+.eg-home .nav-drop-trigger:hover, .eg-home .nav-drop.is-open .nav-drop-trigger{ color:var(--ink); }
+.eg-home .nav-drop.is-open .nav-drop-trigger svg{ transform:rotate(180deg); }
+.eg-home .nav-menu{ position:absolute; top:calc(100% + 16px); right:0; width:340px; background:var(--surface);
+  border:1px solid var(--hairline); border-radius:var(--radius-card); padding:8px;
+  box-shadow:0 2px 6px rgba(12,35,64,.05), 0 24px 54px -20px rgba(12,35,64,.3);
+  opacity:0; visibility:hidden; transform:translateY(-8px);
+  transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease), visibility var(--dur); z-index:60; }
+.eg-home .nav-drop.is-open .nav-menu{ opacity:1; visibility:visible; transform:none; }
+/* invisible bridge across the 16px gap so hover doesn't drop between trigger and menu */
+.eg-home .nav-menu::before{ content:""; position:absolute; top:-16px; left:0; right:0; height:16px; }
+.eg-home .nav-menu-item{ display:flex; gap:13px; align-items:flex-start; padding:12px; border-radius:calc(var(--radius-card) - 4px); text-decoration:none; transition:background var(--dur) var(--ease); }
+.eg-home a.nav-menu-item:hover{ background:var(--bg); }
+.eg-home .nmi-ic{ flex:none; width:34px; height:34px; border-radius:9px; background:var(--accent-tint); display:flex; align-items:center; justify-content:center; }
+/* lucide default 24px, in --text — matches how the export actually renders
+   (its .nmi-ic i rules are dead once lucide swaps <i> for <svg>). */
+.eg-home .nmi-ic svg{ width:24px; height:24px; color:var(--text); }
+.eg-home .nmi-txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+.eg-home .nmi-txt b{ font-size:var(--fs-small); font-weight:600; color:var(--ink); letter-spacing:-.005em; display:flex; align-items:center; gap:8px; }
+.eg-home .nmi-txt > span{ font-size:var(--fs-micro); color:var(--muted); line-height:1.4; }
+.eg-home .nmi-tag{ font-family:var(--font-mono); font-size:9px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-deep); background:var(--accent-tint); border-radius:var(--radius-pill); padding:2px 7px; }
+.eg-home .nav-menu-item.is-soon{ cursor:default; }
+.eg-home .nav-menu-item.is-soon .nmi-ic{ background:var(--bg); }
+.eg-home .nav-menu-item.is-soon .nmi-txt b{ color:var(--text); }
+.eg-home .nav-menu-foot{ margin-top:4px; padding-top:4px; border-top:1px solid var(--hairline); }
+.eg-home .nav-menu-foot a{ display:flex; align-items:center; gap:7px; padding:13px 12px; border-radius:calc(var(--radius-card) - 4px);
+  font-size:var(--fs-small); font-weight:600; color:var(--ink); text-decoration:none; transition:background var(--dur) var(--ease); }
+.eg-home .nav-menu-foot a span{ color:var(--muted); font-weight:400; margin-right:auto; }
+.eg-home .nav-menu-foot a svg{ width:15px; height:15px; color:var(--accent); transition:transform var(--dur) var(--ease); }
+.eg-home .nav-menu-foot a:hover{ background:var(--accent-tint); }
+.eg-home .nav-menu-foot a:hover svg{ transform:translateX(3px); }
+
 .eg-home .nav-toggle{ display:none; background:none; border:0; color:var(--ink); cursor:pointer; padding:6px; }
 
 /* ---- HERO ---- */
@@ -213,24 +268,6 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .pscreen{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top left; opacity:0; transition:opacity .9s ease; }
 .eg-home .pscreen.active{ opacity:1; }
 
-/* ---- SYSTEM (#system uses .cred) ---- */
-.eg-home .cred{ background:var(--surface); border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline); padding:88px 0; }
-.eg-home .cred-specs{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:30px; padding-top:24px; border-top:1px solid var(--hairline); }
-.eg-home .cred-specs span{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); }
-.eg-home .cred-specs span b{ color:var(--ink); font-weight:600; }
-.eg-home .sysrow{ display:grid; grid-template-columns:.82fr 1.18fr; gap:64px; align-items:center; }
-.eg-home .sysflow{ display:flex; flex-direction:column; }
-.eg-home .sysstage{ position:relative; padding:0 0 30px 28px; border-left:1.5px solid var(--hairline-strong); }
-.eg-home .sysstage:last-child{ padding-bottom:0; border-left-color:transparent; }
-.eg-home .sysstage .dot{ position:absolute; top:3px; left:-6.5px; width:11px; height:11px; border-radius:999px; background:var(--ink); }
-.eg-home .sysstage.is-end .dot{ background:var(--accent); }
-.eg-home .sysstage .fk{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
-.eg-home .sysstage h3{ font-size:1.2rem; margin:11px 0 8px; }
-.eg-home .sysstage.is-end h3{ color:var(--accent); }
-.eg-home .sysstage p{ font-size:var(--fs-small); color:var(--text); line-height:1.5; margin:0; }
-.eg-home .sysimg{ margin:0; background:#fff; border-radius:16px; overflow:hidden; }
-.eg-home .sysimg img{ display:block; width:100%; height:auto; }
-
 /* ---- OUTCOMES ---- */
 .eg-home .outcomes-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-top:1.5px solid var(--hairline-strong); }
 .eg-home .outcome{ padding:40px 34px 40px 0; border-right:1px solid var(--hairline); }
@@ -253,7 +290,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .guarantee .headline-num{ font-family:var(--font-head); font-weight:600; font-size:clamp(3rem,7vw,5rem); line-height:.92; letter-spacing:-.03em; color:var(--accent); margin:0 0 8px; }
 .eg-home .guarantee .headline-sub{ font-size:var(--fs-lead); color:#fff; margin:0 0 28px; max-width:24ch; line-height:1.3; }
 .eg-home .gua-steps{ list-style:none; padding:0; margin:0; }
-.eg-home .gua-steps li{ display:flex; gap:18px; padding:18px 0; border-top:1px solid rgba(255,255,255,.16); font-size:var(--fs-body); color:rgba(255,255,255,.9); line-height:1.45; }
+.eg-home .gua-steps li{ display:flex; gap:18px; padding:18px 0; border-top:1px solid rgba(255,255,255,.16); font-size:1.15rem; color:rgba(255,255,255,.9); line-height:1.5; }
 .eg-home .gua-steps li b{ color:#fff; font-weight:600; }
 .eg-home .gua-steps li .num{ font-family:var(--font-mono); font-size:var(--fs-small); color:var(--accent); flex:none; padding-top:2px; }
 .eg-home .gua-tags{ display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }
@@ -320,6 +357,8 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .close h2{ color:#fff; font-size:var(--fs-h2); margin:0 0 16px; max-width:18ch; }
 .eg-home .close p{ color:rgba(255,255,255,.86); font-size:var(--fs-body); margin:0; max-width:42ch; }
 .eg-home .close-cta{ display:flex; flex-direction:column; align-items:flex-start; gap:24px; }
+/* email + book pill embedded in the closing CTA — left-aligned, fills the column */
+.eg-home .close .bookbar-pill{ margin:0; width:100%; max-width:none; }
 .eg-home .founder-intro{ display:flex; align-items:center; gap:15px; text-align:left; }
 .eg-home .founder-avatar{ flex:none; width:58px; height:58px; border-radius:999px; overflow:hidden; border:2px solid rgba(255,255,255,.6); }
 .eg-home .founder-avatar img{ display:block; width:100%; height:100%; object-fit:cover; }
@@ -388,7 +427,6 @@ html:has(.eg-home){ scroll-behavior: smooth; }
   .eg-home .nav-toggle{ display:inline-flex; }
   .eg-home .tband .wrap{ flex-wrap:wrap; gap:18px 30px; }
   .eg-home .tband .ti{ flex:1 1 42%; }
-  .eg-home .sysrow{ grid-template-columns:1fr; gap:40px; }
 }
 
 /* ============================================================
@@ -428,7 +466,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 
 /* preset chips */
 .eg-home .calc-presets{ display:flex; flex-wrap:wrap; gap:8px; }
-.eg-home .calc-chip{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); background:transparent; border:1px solid var(--hairline); border-radius:var(--radius-pill); padding:6px 12px; cursor:pointer; transition:background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.eg-home .calc-chip{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--text); background:transparent; border:1px solid var(--hairline); border-radius:var(--radius-pill); padding:6px 12px; cursor:pointer; transition:background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
 .eg-home .calc-chip:hover{ border-color:var(--hairline-strong); color:var(--ink); }
 .eg-home .calc-chip.is-active{ background:var(--accent); border-color:var(--accent); color:#fff; }
 
@@ -459,7 +497,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
    ============================================================ */
 .eg-home .pricing{ position:relative; overflow:hidden; border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline); }
 .eg-home .pricing .wrap{ position:relative; z-index:1; }
-.eg-home .price-tex{ position:absolute; left:0; right:0; top:0; height:180%; z-index:0; pointer-events:none; opacity:.5;
+.eg-home .price-tex{ position:absolute; left:0; right:0; top:0; height:120%; z-index:0; pointer-events:none; opacity:.5;
   -webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 6%, #000 100%);
   mask-image:linear-gradient(180deg, transparent 0%, #000 6%, #000 100%); }
 .eg-home .pricing .shead{ text-align:center; max-width:840px; margin-left:auto; margin-right:auto; }
@@ -534,6 +572,9 @@ html:has(.eg-home){ scroll-behavior: smooth; }
   to{ opacity:1; transform:translateY(0); }
 }
 
+/* draft banner strip — dev-only marker on unfinished pages (SHOW_DRAFTS) */
+.eg-home .draft-note{ text-align:center; font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.08em; text-transform:uppercase; color:var(--accent-deep); background:var(--accent-tint); border-bottom:1px solid var(--hairline); padding:8px 16px; }
+
 /* film grain — subtle fixed overlay (static; rendered by page.tsx) */
 .eg-home .eg-grain{
   position:fixed; inset:0; z-index:75; pointer-events:none; opacity:.05;
@@ -549,7 +590,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
   background:var(--surface); border:1.5px solid var(--hairline); padding:.85em 1em; border-radius:var(--radius-card);
   width:100%; transition:border-color var(--dur) var(--ease); appearance:none;
 }
-.eg-home .ev-input:focus, .eg-home .ev-select:focus{ outline:none; border-color:var(--ink); }
+.eg-home .ev-input:focus, .eg-home .ev-select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-tint); }
 .eg-home .ev-input::placeholder{ color:var(--muted); }
 .eg-home .ev-select{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2397A0AB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -573,10 +614,10 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .talk-pts{ list-style:none; padding:0; margin:28px 0 0; display:flex; flex-direction:column; gap:14px; }
 .eg-home .talk-pts li{ display:flex; align-items:center; gap:12px; font-size:var(--fs-body); color:var(--text); }
 .eg-home .talk-pts li svg{ width:18px; height:18px; color:var(--accent); stroke-width:2.4; flex:none; }
-.eg-home .talk-form{ background:var(--surface); border:1px solid var(--hairline); padding:36px 34px; display:flex; flex-direction:column; gap:20px; }
+.eg-home .talk-form{ background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:36px 34px; display:flex; flex-direction:column; gap:20px; }
 .eg-home .talk-form .field label{ display:block; font-size:var(--fs-small); font-weight:600; color:var(--ink); margin-bottom:9px; }
 .eg-home .talk-form .btn-solid{ width:100%; justify-content:center; margin-top:4px; }
-.eg-home .form-done{ display:flex; flex-direction:column; align-items:flex-start; gap:14px; padding:8px 0; background:var(--surface); border:1px solid var(--hairline); padding:36px 34px; }
+.eg-home .form-done{ display:flex; flex-direction:column; align-items:flex-start; gap:14px; background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:36px 34px; }
 .eg-home .form-done .fd-ic{ width:46px; height:46px; border-radius:50%; background:var(--accent-tint); display:flex; align-items:center; justify-content:center; }
 .eg-home .form-done .fd-ic svg{ width:22px; height:22px; color:var(--accent); stroke-width:2.2; }
 .eg-home .form-done h3{ font-size:1.35rem; }
@@ -649,18 +690,18 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .pillar-row{ display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; padding:30px 0; }
 .eg-home .pillar-row:first-child{ padding-top:4px; }
 .eg-home .pillar-row.is-flip .pillar-viz{ order:-1; }
-.eg-home .pillar-copy .p-k{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.16em; text-transform:uppercase; color:var(--muted); display:flex; align-items:baseline; gap:12px; }
+.eg-home .pillar-copy .p-k{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.16em; text-transform:uppercase; color:var(--text); display:flex; align-items:baseline; gap:12px; }
 .eg-home .pillar-copy .p-k .mk{ color:var(--accent); font-weight:700; font-size:.95rem; }
 .eg-home .pillar-copy h3{ font-size:clamp(1.45rem,2.3vw,1.9rem); letter-spacing:-.02em; margin:14px 0 12px; max-width:19ch; }
 .eg-home .pillar-copy > p{ font-size:var(--fs-body); color:var(--text); line-height:1.55; margin:0 0 20px; max-width:46ch; }
 .eg-home .pillar-copy ul{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; }
 .eg-home .pillar-copy li{ display:flex; align-items:flex-start; gap:13px; padding:5px 0; font-size:var(--fs-small); color:var(--text); line-height:1.45; }
 .eg-home .pillar-copy li .pd{ width:7px; height:7px; border-radius:999px; background:var(--accent); flex:none; margin-top:6px; }
-.eg-home .pv{ border:1px solid var(--hairline); background:var(--bg); overflow:hidden; display:flex; flex-direction:column; min-height:330px; }
+.eg-home .pv{ border:1px solid var(--hairline); background:var(--bg); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; min-height:330px; box-shadow:0 2px 5px rgba(12,35,64,.04), 0 16px 34px -20px rgba(12,35,64,.16); }
 .eg-home .pv-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; border-bottom:1px solid var(--hairline); }
-.eg-home .pv-head .lab{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.eg-home .pv-head .lab{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.14em; text-transform:uppercase; color:var(--ink); }
 .eg-home .pv-head .lab b{ color:var(--accent); font-weight:700; }
-.eg-home .pv-head .st{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.08em; color:var(--muted); display:inline-flex; align-items:center; gap:7px; }
+.eg-home .pv-head .st{ font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.08em; color:var(--text); display:inline-flex; align-items:center; gap:7px; }
 .eg-home .pv-head .st::before{ content:""; width:7px; height:7px; border-radius:50%; background:#28C840; flex:none; }
 .eg-home .pv-body{ flex:1; padding:20px; display:flex; flex-direction:column; min-height:0; }
 
@@ -669,24 +710,24 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .pv-row{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:14px; padding:11px 0; border-top:1px solid var(--hairline); }
 .eg-home .pv-row:first-child{ border-top:0; }
 .eg-home .pv-row .dm{ font-family:var(--font-mono); font-size:var(--fs-small); color:var(--ink); }
-.eg-home .pv-row .dm .mut{ color:var(--muted); }
+.eg-home .pv-row .dm .mut{ color:var(--text); }
 .eg-home .pv-bar{ width:120px; height:6px; background:var(--hairline); border-radius:999px; overflow:hidden; }
 .eg-home .pv-bar i{ display:block; height:100%; background:var(--accent); border-radius:999px; }
-.eg-home .pv-callout{ margin-top:auto; padding-top:16px; font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); border-top:1px dashed var(--hairline-strong); }
+.eg-home .pv-callout{ margin-top:auto; padding-top:16px; font-family:var(--font-mono); font-size:var(--fs-small); letter-spacing:.02em; color:var(--text); border-top:1px dashed var(--hairline-strong); line-height:1.5; }
 .eg-home .pv-callout b{ color:var(--ink); }
 
 /* pillar 02 — targeting */
-.eg-home .pv-search{ display:flex; align-items:center; gap:10px; padding:11px 13px; border:1px solid var(--hairline-strong); background:var(--surface); font-family:var(--font-mono); font-size:var(--fs-small); color:var(--ink); margin-bottom:14px; }
+.eg-home .pv-search{ display:flex; align-items:center; gap:10px; padding:11px 13px; border:1px solid var(--hairline-strong); border-radius:10px; background:var(--surface); font-family:var(--font-mono); font-size:var(--fs-small); color:var(--ink); margin-bottom:14px; }
 .eg-home .pv-search svg{ width:15px; height:15px; color:var(--accent); flex:none; }
 .eg-home .pv-lead{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--hairline); font-size:var(--fs-small); }
 .eg-home .pv-lead:first-of-type{ border-top:0; }
 .eg-home .pv-lead .who b{ color:var(--ink); font-weight:600; }
-.eg-home .pv-lead .who span{ color:var(--muted); }
+.eg-home .pv-lead .who span{ color:var(--text); }
 .eg-home .pv-tag{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); border-radius:var(--radius-pill); padding:3px 9px; white-space:nowrap; }
 
 /* pillar 03 — reply handling */
 .eg-home .pv-thread{ display:flex; flex-direction:column; gap:12px; }
-.eg-home .pv-reply-card{ border:1px solid var(--hairline); background:var(--surface); padding:13px 15px; }
+.eg-home .pv-reply-card{ border:1px solid var(--hairline); border-radius:10px; background:var(--surface); padding:13px 15px; }
 .eg-home .pv-reply-card .rh{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
 .eg-home .pv-reply-card .rh b{ font-size:var(--fs-small); color:var(--ink); }
 .eg-home .pv-reply-card .rt{ font-size:var(--fs-small); color:var(--text); line-height:1.45; }
@@ -696,12 +737,12 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 
 /* pillar 04 — automation */
 .eg-home .pv-cal{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; flex:1; }
-.eg-home .pv-day{ border:1px solid var(--hairline); display:flex; flex-direction:column; }
-.eg-home .pv-day .dl{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:8px 8px 6px; border-bottom:1px solid var(--hairline); text-align:center; }
+.eg-home .pv-day{ border:1px solid var(--hairline); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; }
+.eg-home .pv-day .dl{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text); padding:8px 8px 6px; border-bottom:1px solid var(--hairline); text-align:center; }
 .eg-home .pv-day .slots{ flex:1; padding:7px 6px; display:flex; flex-direction:column; gap:6px; }
-.eg-home .pv-slot{ height:20px; border-radius:3px; background:color-mix(in srgb, var(--hairline) 60%, transparent); }
+.eg-home .pv-slot{ height:20px; border-radius:5px; background:color-mix(in srgb, var(--hairline) 60%, transparent); }
 .eg-home .pv-slot.book{ background:var(--accent); }
-.eg-home .pv-cal-foot{ margin-top:14px; font-family:var(--font-mono); font-size:var(--fs-micro); letter-spacing:.04em; color:var(--muted); display:flex; align-items:center; gap:8px; }
+.eg-home .pv-cal-foot{ margin-top:14px; font-family:var(--font-mono); font-size:var(--fs-small); letter-spacing:.02em; color:var(--text); display:flex; align-items:center; gap:8px; line-height:1.5; }
 .eg-home .pv-cal-foot svg{ width:14px; height:14px; color:var(--accent); }
 
 @media (max-width:920px){
@@ -711,7 +752,7 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 }
 
 /* ============================================================
-   SECTION TEXTURES — Platform / Outcomes / System (v2 tweak)
+   SECTION TEXTURES — Platform / Outcomes (v2 tweak)
    ============================================================ */
 .eg-home .plat-tex{ position:absolute; left:0; bottom:0; width:50%; height:72%; z-index:0; pointer-events:none; opacity:.5;
   -webkit-mask-image:radial-gradient(115% 100% at 0% 100%, #000 42%, rgba(0,0,0,.32) 72%, transparent 95%);
@@ -722,12 +763,6 @@ html:has(.eg-home){ scroll-behavior: smooth; }
 .eg-home .out-tex{ position:absolute; right:0; top:0; width:56%; height:64%; z-index:0; pointer-events:none; opacity:.5;
   -webkit-mask-image:radial-gradient(120% 100% at 100% 0%, #000 40%, rgba(0,0,0,.3) 70%, transparent 94%);
   mask-image:radial-gradient(120% 100% at 100% 0%, #000 40%, rgba(0,0,0,.3) 70%, transparent 94%); }
-
-.eg-home .cred{ position:relative; overflow:hidden; }
-.eg-home .cred .wrap{ position:relative; z-index:1; }
-.eg-home .sys-tex{ position:absolute; left:0; top:0; width:42%; height:80%; z-index:0; pointer-events:none; opacity:.42;
-  -webkit-mask-image:radial-gradient(120% 90% at 0% 0%, #000 40%, rgba(0,0,0,.3) 70%, transparent 94%);
-  mask-image:radial-gradient(120% 90% at 0% 0%, #000 40%, rgba(0,0,0,.3) 70%, transparent 94%); }
 
 /* ============================================================
    VSL — founder video (built, hidden until a video exists)
@@ -741,3 +776,33 @@ html:has(.eg-home){ scroll-behavior: smooth; }
   box-shadow:0 2px 5px rgba(12,35,64,.04), 0 22px 50px -20px rgba(12,35,64,.28), 0 60px 100px -50px rgba(12,35,64,.34); }
 .eg-home .vsl-placeholder{ aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#0C2340,#16335a); color:rgba(255,255,255,.7); font-family:var(--font-mono); font-size:var(--fs-small); letter-spacing:.06em; text-transform:uppercase; }
 .eg-home .vsl-cap{ text-align:center; max-width:56ch; margin:26px auto 0; font-size:var(--fs-small); color:var(--muted); line-height:1.55; }
+
+/* ============================================================
+   FAQ (shared) — one accordion used on the homepage AND articles.
+   Content comes from home.faq (single source). Prefix afaq-*.
+   ============================================================ */
+.eg-home .afaq{ max-width:900px; margin:0 auto; padding:104px 0; }
+.eg-home .afaq-head{ text-align:center; margin-bottom:44px; }
+.eg-home .afaq-head .eyebrow{ margin-bottom:16px; }
+.eg-home .afaq-head h2{ font-size:var(--fs-h1); letter-spacing:-.02em; }
+.eg-home .afaq-head p{ font-size:var(--fs-lead); color:var(--text); margin:14px 0 0; }
+.eg-home .afaq-item{ border:1px solid var(--hairline); border-radius:16px; margin-bottom:12px; background:var(--surface); overflow:hidden; }
+.eg-home .afaq-q{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:24px 28px; background:transparent; border:0; cursor:pointer; text-align:left; font-family:var(--font-head); font-weight:600; color:var(--ink); font-size:1.18rem; line-height:1.3; }
+.eg-home .afaq-pm{ flex:none; width:22px; height:22px; position:relative; }
+.eg-home .afaq-pm::before, .eg-home .afaq-pm::after{ content:""; position:absolute; background:var(--ink); transition:transform var(--dur) var(--ease), background var(--dur) var(--ease); }
+.eg-home .afaq-pm::before{ left:0; top:10px; width:22px; height:2px; }
+.eg-home .afaq-pm::after{ left:10px; top:0; width:2px; height:22px; }
+.eg-home .afaq-item.open .afaq-pm::after{ transform:scaleY(0); }
+.eg-home .afaq-item.open .afaq-pm::before{ background:var(--accent); }
+.eg-home .afaq-a{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s var(--ease); }
+.eg-home .afaq-item.open .afaq-a{ grid-template-rows:1fr; }
+.eg-home .afaq-a-inner{ overflow:hidden; }
+.eg-home .afaq-a-inner > div{ padding:0 28px 26px; font-size:var(--fs-body); color:var(--text); line-height:1.66; white-space:pre-line; }
+.eg-home .afaq-a-inner b{ color:var(--ink); font-weight:600; }
+
+/* /roi-calculator: blend the calculator + FAQ into one light block — no divider
+   between them, FAQ on the calculator's background, tighter gap. Scoped to the
+   page so the homepage calculator keeps its dividers. #F2F4F8 = the calculator
+   gradient's bottom colour, so the junction is seamless. */
+.eg-home.calc-page .calc{ border-bottom:0; padding-bottom:72px; }
+.eg-home.calc-page .afaq{ background:#F2F4F8; padding-top:64px; }

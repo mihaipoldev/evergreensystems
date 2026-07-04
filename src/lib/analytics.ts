@@ -15,7 +15,10 @@ export type EventType =
   | "session_start"
   | "impression"
   | "scroll_depth"
-  | "page_engagement";
+  | "page_engagement"
+  | "form_start"
+  | "form_abandon"
+  | "form_submit";
 export type EntityType =
   | "cta_button"
   | "site_section"
@@ -28,7 +31,8 @@ export type EntityType =
   | "social_link"
   | "footer_link"
   | "inline_link"
-  | "ui_element";
+  | "ui_element"
+  | "form";
 
 /**
  * Check if we're in development/localhost mode

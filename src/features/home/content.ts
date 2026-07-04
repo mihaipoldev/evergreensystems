@@ -6,6 +6,18 @@
 // Edit copy here; structure/markup lives in the components.
 // ════════════════════════════════════════════════════════════════════
 import type { HomeContent } from "./types";
+import { hasPublishedPosts, SHOW_DRAFTS } from "@/features/insights/posts";
+
+// Insights is "live" once at least one post is published (or in dev, where
+// drafts are visible). While not live, the nav item shows "Soon" and the
+// footer link is omitted — the /insights routes 404 in production anyway.
+const INSIGHTS_LIVE = hasPublishedPosts || SHOW_DRAFTS;
+
+// Contact is dev-only until the capture backend exists (the form must never
+// promise a reply it can't deliver). Its links are omitted rather than marked
+// "Soon" — a business that "can't be contacted yet" reads wrong; email and
+// LinkedIn stay in the footer either way. /contact 404s in production.
+const CONTACT_LIVE = SHOW_DRAFTS;
 
 const CALENDLY = "https://calendly.com/mihai-evergreensystems/growth-strategy-call";
 const LINKEDIN = "https://www.linkedin.com/in/mihai-pol/";
@@ -18,10 +30,60 @@ export const home: HomeContent = {
     brandAlt: "Evergreen Systems",
     links: [
       { label: "What you get", href: "#outcomes" },
-      { label: "How it works", href: "#system" },
+      { label: "How it works", href: "#pillars" },
       { label: "Guarantee", href: "#guarantee" },
       { label: "Who it's for", href: "#niches" },
     ],
+    resources: {
+      label: "Resources",
+      items: [
+        {
+          id: "nav-insights",
+          icon: "notebook-pen",
+          title: "Insights",
+          desc: "Field notes on building outbound that compounds.",
+          ...(INSIGHTS_LIVE ? { href: "/insights" } : { soon: true }),
+        },
+        {
+          id: "nav-roi-calculator",
+          icon: "calculator",
+          title: "ROI Calculator",
+          desc: "See the revenue you're leaving on the table.",
+          href: "/roi-calculator",
+        },
+        {
+          id: "nav-about",
+          icon: "user",
+          title: "About the founder",
+          desc: "Why Mihai built Evergreen, and how he works.",
+          href: "/about",
+        },
+        ...(CONTACT_LIVE
+          ? [
+              {
+                id: "nav-contact",
+                icon: "message-square" as const,
+                title: "Contact",
+                desc: "Reach a human: form, email, or a call.",
+                href: "/contact",
+              },
+            ]
+          : []),
+        {
+          id: "nav-case-studies",
+          icon: "book-open",
+          title: "Case studies & guides",
+          desc: "Playbooks and results for owners.",
+          soon: true,
+        },
+      ],
+      foot: {
+        id: "nav-resources-cta",
+        text: "Not sure where to start? ",
+        linkLabel: "Book a call",
+        href: CALENDLY,
+      },
+    },
     cta: { id: "nav-book-call", label: "Book a demo", href: CALENDLY },
   },
 
@@ -183,28 +245,6 @@ export const home: HomeContent = {
           "Reminders so they actually show up",
         ],
       },
-    ],
-  },
-
-  system: {
-    eyebrow: "Inside the system",
-    headingEm: "What runs",
-    headingDim: "while you close.",
-    stages: [
-      { k: "01 · Targeting", title: "Sourced & enriched", body: "Decision-makers at your target accounts, enriched with real context, not a scraped list." },
-      { k: "02 · Infrastructure", title: "Sent, inbox-safe", body: "Dedicated sending infrastructure, warmed and scaled to your target. Your main domain never sends." },
-      { k: "03 · Reply handling", title: "Worked by us", body: "Every inbound qualified and routed. No inbox triage on your side." },
-      { k: "04 · Booked", title: "On your calendar", body: "Qualified calls land directly on your calendar from month two, each with a pre-call brief.", end: true },
-    ],
-    diagram: {
-      src: "/home/email-infrastructure.avif",
-      alt: "Evergreen email infrastructure: a portal fanning out across dedicated sending domains and inboxes, feeding enriched leads into booked sales calls and paying clients.",
-    },
-    specs: [
-      "Secondary domains",
-      "Dedicated mailboxes",
-      "**2 to 3 week** warmup",
-      "your main domain **never touched**",
     ],
   },
 
@@ -416,8 +456,16 @@ export const home: HomeContent = {
         title: "Explore",
         links: [
           { label: "What you get", href: "#outcomes" },
-          { label: "How it works", href: "#system" },
+          { label: "How it works", href: "#pillars" },
           { label: "Guarantee", href: "#guarantee" },
+          { label: "About the founder", href: "/about" },
+        ],
+      },
+      {
+        title: "Resources",
+        links: [
+          ...(INSIGHTS_LIVE ? [{ label: "Insights", href: "/insights" }] : []),
+          { label: "ROI Calculator", href: "/roi-calculator" },
         ],
       },
       {
@@ -432,6 +480,9 @@ export const home: HomeContent = {
         links: [
           { label: "LinkedIn", href: LINKEDIN, icon: "linkedin", external: true },
           { label: "hello@evergreensystems.ai", href: "mailto:hello@evergreensystems.ai", icon: "mail" },
+          ...(CONTACT_LIVE
+            ? [{ label: "Contact", href: "/contact", icon: "message-square" as const }]
+            : []),
           { label: "Get your free Growth Plan", href: CALENDLY, icon: "calendar", external: true },
           { label: "Privacy", href: "/privacy" },
         ],

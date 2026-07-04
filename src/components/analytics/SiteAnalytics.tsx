@@ -12,6 +12,7 @@ import {
   type AnalyticsMode,
   type EntityType,
 } from "@/lib/analytics";
+import { initFormTracking } from "@/lib/form-tracking";
 import { AnalyticsToggleBadge } from "@/components/landing/AnalyticsToggleBadge";
 
 // ── SiteAnalytics ───────────────────────────────────────────────────────────
@@ -26,6 +27,8 @@ import { AnalyticsToggleBadge } from "@/components/landing/AnalyticsToggleBadge"
 //   • scroll-depth milestones (25/50/75/100)
 //   • a page_engagement summary beacon on first tab-hide/leave
 //     (engaged_seconds, max_scroll_pct, clicks — the dead-session detector)
+//   • form_start / form_abandon for forms tagged data-analytics-form
+//     (behavior only, never field values — see src/lib/form-tracking.ts)
 //
 // Element contract (data attributes):
 //   data-analytics-skip      — element manages its own tracking; the delegated
@@ -292,6 +295,9 @@ export function SiteAnalytics({ pageSlug }: SiteAnalyticsProps) {
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("pagehide", sendEngagement);
 
+    // ── form_start / form_abandon for tagged forms (behavior only) ────────
+    const cleanupFormTracking = initFormTracking(pageSlug);
+
     return () => {
       document.removeEventListener("click", onClick, { capture: true });
       window.removeEventListener("scroll", onScroll);
@@ -299,6 +305,7 @@ export function SiteAnalytics({ pageSlug }: SiteAnalyticsProps) {
       window.removeEventListener("pagehide", sendEngagement);
       sectionObserver.disconnect();
       impressionObserver.disconnect();
+      cleanupFormTracking();
     };
   }, [pageSlug]);
 

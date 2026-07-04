@@ -10,16 +10,18 @@ import { useEffect } from "react";
 // plain static layout — no flash, no hidden content.
 const REVEAL_SELECTORS = [
   ".shead",
+  ".calc-card",
   ".outcome",
   ".platform-copy",
   ".platform-fig",
-  ".sysstage",
-  ".sysimg",
   ".guarantee .wrap > div",
   ".niche",
   ".close-body > div",
-  ".price-card",
+  ".price-models",
   ".pillar-row",
+  ".faq-item",
+  ".talk-copy",
+  ".talk-slot",
 ];
 
 export function HomeMotion() {

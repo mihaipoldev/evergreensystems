@@ -4,11 +4,9 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { home } from "@/features/home/content";
 
-// FAQ in the new design language (editorial accordion: hairline rows, mono
-// numbering, accent on open). Native to .eg-home — not the old shadcn component.
-// Click tracking is inherited from the global SiteAnalytics click handler via
-// the data-analytics-* attributes on each question button (so faq_item clicks
-// carry section + page automatically, like every other tracked element).
+// Homepage FAQ — the editorial accordion (mono numbering, hairline rows, accent
+// on open). Content comes from home.faq (the single source shared with the
+// article-page FAQ, which renders the same content in a different design).
 export function Faq() {
   const { faq } = home;
   const [open, setOpen] = useState<number | null>(null);

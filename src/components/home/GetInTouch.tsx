@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { home } from "@/features/home/content";
+import { trackFormSubmit } from "@/lib/form-tracking";
 import { Icon } from "./icons";
 import { TextureCanvas } from "./TextureCanvas";
 
@@ -15,6 +16,7 @@ export function GetInTouch() {
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    trackFormSubmit("getintouch");
     setDone(true);
   }
 
@@ -57,7 +59,7 @@ export function GetInTouch() {
                 <p>{g.success.body}</p>
               </div>
             ) : (
-              <form className="talk-form" onSubmit={onSubmit}>
+              <form className="talk-form" data-analytics-form="getintouch" onSubmit={onSubmit}>
                 <div className="field">
                   <label htmlFor="git-name">{g.form.nameLabel}</label>
                   <input

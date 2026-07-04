@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { SHOW_DRAFTS } from "@/lib/drafts";
 import "@/styles/home.css";
 import "@/styles/book.css";
 import { egFontVars } from "@/components/home/fonts";
@@ -24,6 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function BookPage() {
+  // Dev-only: the widget isn't wired to a real scheduler — a visitor who found
+  // this URL could "book" a call that doesn't exist. Un-gate when it's real.
+  if (!SHOW_DRAFTS) notFound();
   return (
     <div className={`eg-home ${egFontVars} bk-page`}>
       <ErrorBoundary>

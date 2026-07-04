@@ -1,7 +1,9 @@
 import { home } from "@/features/home/content";
+import { SHOW_DRAFTS } from "@/lib/drafts";
+import { CtaLink } from "./CtaLink";
 import { Icon, LinkedInIcon } from "./icons";
 import { TextureCanvas } from "./TextureCanvas";
-import { CtaLink } from "./CtaLink";
+import { EmailBookBar } from "./EmailBookBar";
 
 export function ClosingCta() {
   const { close } = home;
@@ -44,15 +46,21 @@ export function ClosingCta() {
                 <div className="founder-line">{close.founder.line}</div>
               </div>
             </div>
-            <CtaLink
-              href={close.cta.href}
-              entityId={close.cta.id}
-              label={close.cta.label}
-              location="closing_cta"
-              className="btn on-accent"
-            >
-              {close.cta.label} <Icon name="arrow-right" />
-            </CtaLink>
+            {/* Email pill is dev-only until the capture backend exists; prod
+                gets the plain tracked Growth Plan button. */}
+            {SHOW_DRAFTS ? (
+              <EmailBookBar lead="" />
+            ) : (
+              <CtaLink
+                href={close.cta.href}
+                entityId={close.cta.id}
+                label={close.cta.label}
+                location="closing"
+                className="btn on-accent"
+              >
+                {close.cta.label} <Icon name="arrow-right" />
+              </CtaLink>
+            )}
           </div>
         </div>
       </div>

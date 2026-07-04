@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { home } from "@/features/home/content";
+import { trackFormSubmit } from "@/lib/form-tracking";
 import { Icon } from "./icons";
 
 // Exit-intent modal — opens once per session when the cursor leaves the top of
@@ -54,6 +55,7 @@ export function ExitIntentModal() {
       input.reportValidity();
       return;
     }
+    trackFormSubmit("exit-intent");
     setDone(true);
   }
 
@@ -99,7 +101,7 @@ export function ExitIntentModal() {
             </div>
           ) : (
             <>
-              <form className="exit-form" onSubmit={onSubmit}>
+              <form className="exit-form" data-analytics-form="exit-intent" onSubmit={onSubmit}>
                 <input
                   type="email"
                   className="ev-input"

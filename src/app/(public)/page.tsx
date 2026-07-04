@@ -12,7 +12,6 @@ import { Hero } from "@/components/home/Hero";
 import { Platform } from "@/components/home/Platform";
 import { Outcomes } from "@/components/home/Outcomes";
 import { Calculator } from "@/components/home/Calculator";
-import { System } from "@/components/home/System";
 import { Guarantee } from "@/components/home/Guarantee";
 import { Pricing } from "@/components/home/Pricing";
 import { Niches } from "@/components/home/Niches";
@@ -20,12 +19,12 @@ import { Faq } from "@/components/home/Faq";
 import { ClosingCta } from "@/components/home/ClosingCta";
 import { Footer } from "@/components/home/Footer";
 import { HomeMotion } from "@/components/home/HomeMotion";
-import { EmailBookBar } from "@/components/home/EmailBookBar";
 import { GetInTouch } from "@/components/home/GetInTouch";
 import { ExitIntentModal } from "@/components/home/ExitIntentModal";
 import { Pillars } from "@/components/home/Pillars";
 import { Vsl } from "@/components/home/Vsl";
 import { home } from "@/features/home/content";
+import { SHOW_DRAFTS } from "@/lib/drafts";
 
 import {
   SEO_CONFIG,
@@ -106,20 +105,20 @@ export default function HomePage() {
           {/* Founder video — built but hidden until a real video exists. */}
           {SHOW_VSL && <Vsl />}
           <Platform />
-          <Pillars />
           <Outcomes />
           <Calculator />
-          <EmailBookBar />
-          <System />
+          <Pillars />
           <Guarantee />
           <Pricing />
-          <Niches />
           <Faq />
-          <GetInTouch />
+          <Niches />
+          {/* Capture surfaces are dev-only until the backend exists — a form
+              that promises a reply and saves nothing must not ship. */}
+          {SHOW_DRAFTS && <GetInTouch />}
           <ClosingCta />
         </main>
         <Footer />
-        <ExitIntentModal />
+        {SHOW_DRAFTS && <ExitIntentModal />}
       </div>
     </>
   );

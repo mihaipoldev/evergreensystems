@@ -101,19 +101,26 @@ export function TextureCanvas({
           ? tok("--on-fill", "#FFFFFF")
           : tok("--ink", "#0C2340");
 
+    // One context for the lifetime of the canvas. Sizing the canvas
+    // (canvas.width/height) re-allocates its whole pixel buffer, so it must NOT
+    // happen per frame — only on mount + resize. Doing it per frame is what made
+    // the page get heavier over time (GC thrash from re-allocating every frame).
+    const ctx = canvas.getContext("2d")!;
+    let w = 0;
+    let h = 0;
+
     function fit() {
-      const r = Math.min(window.devicePixelRatio || 1, 2);
-      const w = canvas!.clientWidth,
-        h = canvas!.clientHeight;
+      // Decorative dots don't need retina resolution — cap DPR at 1 to quarter
+      // the pixel buffer and fill cost on 2x displays.
+      const r = 1;
+      w = canvas!.clientWidth;
+      h = canvas!.clientHeight;
       canvas!.width = Math.max(1, Math.round(w * r));
       canvas!.height = Math.max(1, Math.round(h * r));
-      const ctx = canvas!.getContext("2d")!;
       ctx.setTransform(r, 0, 0, r, 0, 0);
-      return { ctx, w, h };
     }
 
     function drawTerrain(animTime: number) {
-      const { ctx, w, h } = fit();
       ctx.clearRect(0, 0, w, h);
       const stp = step ?? 7;
       const k = intensity();
@@ -155,7 +162,6 @@ export function TextureCanvas({
     }
 
     function drawField(animTime: number) {
-      const { ctx, w, h } = fit();
       ctx.clearRect(0, 0, w, h);
       const stp = step ?? 9;
       const k = intensity();
@@ -207,6 +213,7 @@ export function TextureCanvas({
 
     let raf = 0;
     let lastFrame = 0;
+    let running = false;
     function loop(ts: number) {
       if (ts - lastFrame > 38) {
         draw(ts);
@@ -214,23 +221,52 @@ export function TextureCanvas({
       }
       raf = requestAnimationFrame(loop);
     }
+    function start() {
+      if (running || !animated) return;
+      running = true;
+      raf = requestAnimationFrame(loop);
+    }
+    function stop() {
+      running = false;
+      cancelAnimationFrame(raf);
+    }
 
-    // initial static render
+    // size once, render the static frame immediately
+    fit();
     draw(0);
-    if (animated) raf = requestAnimationFrame(loop);
+
+    // Only run the animation loop while the canvas is actually on-screen, so
+    // the page isn't paying for every texture at once regardless of scroll.
+    let io: IntersectionObserver | null = null;
+    if (animated) {
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) start();
+            else stop();
+          }
+        },
+        { threshold: 0 },
+      );
+      io.observe(canvas);
+    }
 
     // refit + redraw on resize (debounced)
     let rt: ReturnType<typeof setTimeout>;
     const ro = new ResizeObserver(() => {
       clearTimeout(rt);
-      rt = setTimeout(() => draw(animated ? performance.now() : 0), 120);
+      rt = setTimeout(() => {
+        fit();
+        draw(animated ? performance.now() : 0);
+      }, 120);
     });
     ro.observe(canvas);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stop();
       clearTimeout(rt);
       ro.disconnect();
+      io?.disconnect();
     };
   }, [tex, color, step, dir, animate, speed]);
 

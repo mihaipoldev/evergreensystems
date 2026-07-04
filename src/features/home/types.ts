@@ -16,12 +16,40 @@ export type IconName =
   | "check"
   | "check-circle-2"
   | "search"
+  | "newspaper"
+  | "calculator"
+  | "bar-chart"
+  | "graduation-cap"
+  | "message-square"
+  | "notebook-pen"
+  | "user"
+  | "book-open"
   | "x"
   | "linkedin";
 
 export interface NavLink {
   label: string;
   href: string;
+}
+
+/** One row in the Resources header dropdown. */
+export interface ResourceItem {
+  /** Stable analytics entity_id. */
+  id: string;
+  icon: IconName;
+  title: string;
+  desc: string;
+  /** Destination; omit for a not-yet-built ("soon") item. */
+  href?: string;
+  soon?: boolean;
+}
+
+/** The Resources header dropdown (desktop only; hidden on mobile like the other nav links). */
+export interface NavResources {
+  label: string;
+  items: ResourceItem[];
+  /** Soft CTA footer inside the menu. */
+  foot: { id: string; text: string; linkLabel: string; href: string };
 }
 
 export interface Cta {
@@ -58,13 +86,6 @@ export interface Outcome {
   accent?: boolean;
   title: string;
   body: string;
-}
-
-export interface SystemStage {
-  k: string;
-  title: string;
-  body: string;
-  end?: boolean;
 }
 
 /** Inline `**bold**` markers are supported in spec/step text via renderEmphasis. */
@@ -230,6 +251,7 @@ export interface HomeContent {
     brandLogo: string;
     brandAlt: string;
     links: NavLink[];
+    resources: NavResources;
     cta: Cta;
   };
   hero: {
@@ -267,15 +289,6 @@ export interface HomeContent {
     headingEm: string;
     headingDim: string;
     items: Pillar[];
-  };
-  system: {
-    eyebrow: string;
-    headingEm: string;
-    headingDim: string;
-    stages: SystemStage[];
-    diagram: Screenshot;
-    /** Each entry may contain inline `**bold**`. */
-    specs: string[];
   };
   guarantee: {
     eyebrow: string;
