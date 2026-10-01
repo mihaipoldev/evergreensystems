@@ -9,8 +9,8 @@ import { FontLoadingGuard } from "@/components/admin/styling/FontLoadingGuard";
 import { WebsiteColorStyle } from "@/components/admin/styling/WebsiteColorStyle";
 import { WebsiteFontStyle } from "@/components/admin/styling/WebsiteFontStyle";
 import { getSelectedFontVariables, getAllFontVariables, nunitoSans } from "@/lib/fonts";
-import { parseFontFamily, getDefaultFontFamily } from "@/lib/font-utils";
-import { createServiceRoleClient } from "@/lib/supabase/server";
+import { getDefaultFontFamily } from "@/lib/font-utils";
+import { siteLookForRoute } from "@/lib/site-look";
 import type { FontId } from "@/types/fonts";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -123,13 +123,10 @@ export default async function RootLayout({
         font: "nunito-sans"
       });
     } else {
-      // For public pages: ALWAYS get fonts from website_settings preset based on route
-      // Don't use cookie - always query database to get the correct preset fonts
+      // For public pages: the fonts of the route's look (src/lib/site-look.ts)
       try {
         const publicFontStartTime = getTimestamp();
-        const supabase = createServiceRoleClient();
-        const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
-        
+
         // Determine route from pathname
         let route = '/';
         try {
@@ -140,47 +137,23 @@ export default async function RootLayout({
         } catch {
           // Default to landing page if headers unavailable
         }
-        
-        const { data: settings } = await (supabase
-          .from("website_settings") as any)
-          .select(`
-            preset_id,
-            website_settings_presets (
-              font_family
-            )
-          `)
-          .eq("environment", environment)
-          .eq("route", route)
-          .maybeSingle();
-        
-        if (settings?.website_settings_presets) {
-          const preset = Array.isArray(settings.website_settings_presets) 
-            ? settings.website_settings_presets[0] 
-            : settings.website_settings_presets;
-          
-          if (preset?.font_family) {
-            const fonts = parseFontFamily(preset.font_family);
-            // Add landing fonts from preset (these are the correct ones for the current route)
-            if (fonts.landing?.heading) {
-              fontsToLoad.push(fonts.landing.heading);
-            }
-            if (fonts.landing?.body) {
-              fontsToLoad.push(fonts.landing.body);
-            }
-          }
+
+        // Heading first, then body, as the preset's fonts were pushed
+        const look = siteLookForRoute(route);
+        if (look) {
+          fontsToLoad.push(look.fonts.heading, look.fonts.body);
         }
         const publicFontDuration = getDuration(publicFontStartTime);
-        debugServerTiming("Root Layout", "Public font query", publicFontDuration, { 
-          environment,
+        debugServerTiming("Root Layout", "Public font selection", publicFontDuration, {
           route,
-          fontsLoaded: fontsToLoad.length 
+          fontsLoaded: fontsToLoad.length
         });
       } catch (error) {
-        // Database query failed, will fall back to defaults below
-        debugServerTiming("Root Layout", "Public font query (ERROR)", getDuration(getTimestamp()), {
+        // Route detection failed, will fall back to defaults below
+        debugServerTiming("Root Layout", "Public font selection (ERROR)", getDuration(getTimestamp()), {
           error: error instanceof Error ? error.message : 'Unknown error'
         });
-        console.warn('Failed to get fonts from preset:', error);
+        console.warn('Failed to get fonts for the route:', error);
       }
     }
     

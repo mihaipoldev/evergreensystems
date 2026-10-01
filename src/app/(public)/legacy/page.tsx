@@ -33,8 +33,8 @@ const Timeline = dynamic(() => import('@/components/landing/Timeline').then(mod 
   loading: () => <div className="h-96" />,
 });
 
-import { createServiceRoleClient } from '@/lib/supabase/server';
-import { getMediaById } from '@/features/media/queries';
+import { videoById } from '@/features/media/videos';
+import { siteLookForRoute } from '@/lib/site-look';
 import type { Metadata } from 'next';
 import { SEO_CONFIG, generatePageMetadata, generateOrganizationSchema, generateServiceSchema, generateWebSiteSchema } from '@/lib/seo';
 
@@ -53,7 +53,7 @@ import {
   adaptSectionsForNavbar,
 } from '@/features/landing/adapter';
 
-// Enable ISR - revalidate every 1 minute (for styling options + media)
+// Enable ISR - revalidate every 1 minute
 export const revalidate = 60;
 
 // Generate dynamic metadata for SEO
@@ -91,45 +91,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LegacyLandingPage() {
-  // ─── Remaining DB queries (styling + media only) ──────────
-  const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
-
-  // Fetch styling options and hero media in parallel
-  const supabase = createServiceRoleClient();
-  const [settingsResult, heroMedia] = await Promise.all([
-    // Styling options (stays in DB — per-environment theming)
-    (supabase.from("website_settings") as any)
-      .select(`preset_id, website_settings_presets (styling_options)`)
-      .eq("environment", environment)
-      .eq("route", '/')
-      .maybeSingle()
-      .then((r: any) => r.data)
-      .catch(() => null),
-    // Hero video media (single query replacing 9 junction table joins)
-    getMediaById(homeContent.hero.mainMediaId).catch(() => null),
-  ]);
-
-  // Parse styling options
-  let dotsEnabled = false;
-  let waveGradientEnabled = false;
-  let noiseTextureEnabled = false;
-  if (settingsResult?.website_settings_presets) {
-    const preset = Array.isArray(settingsResult.website_settings_presets)
-      ? settingsResult.website_settings_presets[0]
-      : settingsResult.website_settings_presets;
-    if (preset?.styling_options) {
-      try {
-        const stylingOptions = typeof preset.styling_options === 'string'
-          ? JSON.parse(preset.styling_options)
-          : preset.styling_options;
-        dotsEnabled = stylingOptions?.dots_enabled === true;
-        waveGradientEnabled = stylingOptions?.wave_gradient_enabled === true;
-        noiseTextureEnabled = stylingOptions?.noise_texture_enabled === true;
-      } catch {
-        // defaults stay false
-      }
-    }
-  }
+  // ─── The landing look's background effects and the hero video, from code ──────────
+  const styling = siteLookForRoute('/')?.styling;
+  const dotsEnabled = styling?.dots === true;
+  const waveGradientEnabled = styling?.waveGradient === true;
+  const noiseTextureEnabled = styling?.noiseTexture === true;
+  const heroMedia = videoById(homeContent.hero.mainMediaId);
 
   // ─── Adapt content for existing components ────────────────
   const header = adaptHeader(homeContent);
