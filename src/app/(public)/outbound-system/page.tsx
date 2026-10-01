@@ -1,11 +1,11 @@
-import { getMediaById } from "@/features/media/queries";
+import { videoById } from "@/features/media/videos";
 import FunnelPage from "@/features/funnels/components/FunnelPage";
 import { outboundSystemContent } from "@/features/funnels/content/outbound-system";
 import { homeContent } from "@/features/landing/content/home";
 
 export default async function OutboundSystemPage() {
   // Reuse the hero media ID from the landing page content
-  const media = await getMediaById(homeContent.hero.mainMediaId).catch(() => null);
+  const media = videoById(homeContent.hero.mainMediaId);
 
   const heroVideo = media
     ? {

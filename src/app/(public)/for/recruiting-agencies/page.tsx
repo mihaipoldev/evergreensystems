@@ -1,11 +1,11 @@
-import { getMediaById } from "@/features/media/queries";
+import { videoById } from "@/features/media/videos";
 import FunnelPage from "@/features/funnels/components/FunnelPage";
 import { recruitingAgenciesContent } from "@/features/funnels/content/recruiting-agencies";
 
 const RECRUITING_AGENCIES_VIDEO_ID = "c4a55c31-051c-4d14-92c9-b566515bfd32";
 
 export default async function RecruitingAgenciesPage() {
-  const media = await getMediaById(RECRUITING_AGENCIES_VIDEO_ID);
+  const media = videoById(RECRUITING_AGENCIES_VIDEO_ID);
 
   const heroVideo = media
     ? {
