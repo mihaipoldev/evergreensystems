@@ -268,34 +268,41 @@
     --chart-5: 340 75% 55%;
   }
 
-  /* Landing Page Preset - Bright, vibrant, welcoming */
+  /* The site's one look (POR-608): every public page wears the landing page's palette, the values
+     src/styles/home.css gives .eg-home — bg #F4F5F6, surface #FFFFFF, ink #0C2340, text #3F4651,
+     muted #97A0AB, hairline #D9DCE0, accent #D4742C, accent tint #F1E2D3. */
   .preset-landing-page {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 210 10% 96%;
+    --foreground: 213 68% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 213 68% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover-foreground: 213 68% 15%;
 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted: 210 10% 96%;
+    --muted-foreground: 213 11% 63%;
 
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 30 52% 89%;
+    --accent-foreground: 213 68% 15%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
+    --border: 214 10% 86%;
+    --input: 214 10% 86%;
     --input-background: 0 0% 100%;
-    --ring: 0 0% 3.9%;
+    --ring: 213 68% 15%;
     --radius: 0.75rem;
 
-    --primary: 208 80% 50%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 213 68% 15%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 26 66% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --text-primary: 213 68% 15%;
+    --text-secondary: 215 12% 28%;
+    --text-muted: 213 11% 63%;
+    --surface-elevated: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -357,93 +364,6 @@
     --success-muted: 160 40% 20%;
   }
 
-  /* Outbound Systems Preset - Same structure as landing page, can be customized separately */
-  .preset-outbound-system {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --input-background: 0 0% 100%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.75rem;
-
-    --primary: 208 80% 50%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-  }
-
-  .preset-outbound-system.dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --input-background: 0 0% 3.9%;
-    --ring: 0 0% 83.1%;
-
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-
-    /* Custom tokens for funnel pages - dark mode */
-    --text-primary: 220 10% 95%;
-    --text-secondary: 220 10% 75%;
-    --text-muted: 220 10% 60%;
-    
-    --surface-elevated: 220 18% 12%;
-    --surface-subtle: 220 15% 15%;
-    
-    --cta-bg: var(--primary);
-    --cta-hover: 220 15% 95%;
-    --cta-text: 220 20% 10%;
-
-    --success: 160 60% 50%;
-    --success-muted: 160 40% 20%;
-  }
 }
 
 @layer base {

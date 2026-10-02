@@ -254,21 +254,17 @@ The API route (`src/app/api/admin/analytics/route.ts`) enriches events with:
 
 ## How Styling / Theming Works
 
-### One look per route, in code
+### One look for the whole site, in code
 
-`src/lib/site-look.ts` holds each route's look: its theme (light or dark), its heading and body fonts, its primary and secondary colour, and the `/legacy` page's background effects. Routes are what `getRouteForPathname` returns: `/` for every page that is not a funnel, `/<routePath>` for each funnel. Every environment renders the same look, so a local `next dev` shows production's.
+Every public page has the landing page's look, the one `src/styles/home.css` defines on `.eg-home`: light, Inter, ink navy `#0C2340`, accent terracotta `#D4742C`, background `#F4F5F6`. No page, funnel or other, has a look of its own.
 
-| Route | Look | Theme | Heading / body |
-|---|---|---|---|
-| `/` and every page that is not a funnel | Midnight Ember | light | Lato / Rubik |
-| `/outbound-system` | GreenDark v2 | dark | Nunito Sans / Lato |
-| `/for/commercial-cleaning`, `/for/commercial-hvac`, `/for/recruiting-agencies` | Midnight Ember | light | Lato / Rubik |
-
-A page wears a preset class (`preset-landing-page`, or `preset-outbound-system` on a funnel: `getFunnelPresetClass`) whose palette is in `globals.css`. The look's primary and secondary override that class's `--primary` and `--secondary` (`WebsiteColorStyle`); its fonts are loaded by the root layout and applied by `WebsiteFontStyle`; its theme is forced by `PublicThemeProviderWrapper`.
+- `src/styles/home.css`: the landing design's tokens, used by the pages built on `.eg-home` (home, about, contact, book, insights, ROI calculator).
+- `src/app/globals.css` → `.preset-landing-page`: the same palette in the shadcn tokens the other pages use (funnels, legal pages, `/legacy`). Every public page wears this class (`getFunnelPresetClass`).
+- `src/lib/site-look.ts` → `SITE_LOOK`: the theme (light), the fonts (Inter), the primary and secondary colours `WebsiteColorStyle` injects, and `/legacy`'s background effects (none).
 
 ### Change the look
 
-Edit the route's entry in `src/lib/site-look.ts` (a new funnel gets an entry of its own; a route without one renders dark with the default fonts), then deploy.
+Change it in all three places together, so every page keeps one look, then deploy.
 
 ---
 
