@@ -11,11 +11,11 @@ export function isFunnelRoute(pathname: string): boolean {
 }
 
 /**
- * Derive the CSS preset class for a given pathname.
- * All funnel pages share the same preset; non-funnel routes fall back to landing-page.
+ * The CSS preset class a public page wears: the landing page's, on every page, funnels included
+ * (POR-608: the whole site has one look). The pathname is kept for callers that pass it.
  */
-export function getFunnelPresetClass(pathname: string): string {
-  return isFunnelRoute(pathname) ? "preset-outbound-system" : "preset-landing-page";
+export function getFunnelPresetClass(_pathname: string): string {
+  return "preset-landing-page";
 }
 
 /**
@@ -28,18 +28,4 @@ export function getRouteForPathname(pathname: string): string {
     (e) => pathname === `/${e.routePath}` || pathname.startsWith(`/${e.routePath}/`)
   );
   return match ? `/${match.routePath}` : "/";
-}
-
-/**
- * All route options for admin UI (RouteSelector).
- * Landing page + every registered funnel.
- */
-export function getAllRouteOptions(): { value: string; label: string }[] {
-  return [
-    { value: "/", label: "Landing Page" },
-    ...getAllFunnelEntries().map((e) => ({
-      value: `/${e.routePath}`,
-      label: e.displayName,
-    })),
-  ];
 }

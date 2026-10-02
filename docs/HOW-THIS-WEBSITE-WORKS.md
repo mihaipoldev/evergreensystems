@@ -4,19 +4,13 @@
 
 This is a Next.js 16 application deployed on Vercel. All content is managed as **TypeScript files** (content-as-code), not through a database admin UI. AI (Claude) is the primary content editor.
 
-### What's in the Database (5 tables)
+### What's in the Database
 
-| Table | Purpose |
-|-------|---------|
-| `media` | Images/videos stored in Bunny CDN. Tracked by URL, type, thumbnail, duration. |
-| `analytics_events` | All user tracking: page views, CTA clicks, FAQ expansions, sessions. |
-| `website_settings` | Per-environment route config (links routes to styling presets). |
-| `website_settings_presets` | Styling presets (colors, visual effects like dots/wave/noise). |
-| `website_colors` | Color palette definitions. |
+The site reads one table, `analytics_events`: page views, CTA clicks, FAQ expansions, video plays and sessions. Everything else is code, the look of every page and the videos included. The `media`, `website_settings`, `website_settings_presets` and `website_colors` rows the site used to read are still in the database, unread (POR-608).
 
 ### What's in Code (everything else)
 
-All page content — CTAs, FAQs, features, timelines, results, testimonials, social links, logos — lives in TypeScript files under `src/features/`.
+All page content — CTAs, FAQs, features, timelines, results, testimonials, social links, logos — lives in TypeScript files under `src/features/`. Each route's look (theme, fonts, brand colours) is in `src/lib/site-look.ts`, and the videos are in `src/features/media/videos.ts`.
 
 ---
 
@@ -34,16 +28,12 @@ src/
       robots.ts
     admin/                       # Admin panel
       analytics/                 # Analytics dashboard + detail pages
-      media/                     # Media library (upload/manage videos & images)
-      settings/                  # Admin settings (appearance)
-      website-settings/          # Website styling presets
+      settings/                  # Admin account settings
       login/
     api/
       admin/
         analytics/               # Analytics API (events, stats, CTA/FAQ drill-down)
-        media/                   # Media CRUD API
-        upload/                  # File upload to Bunny CDN
-        ai/                      # AI preset generation
+        ai/                      # Admin and web-app preset generators (no page calls them)
       auth/                      # Login/logout
   features/
     landing/                     # Home page content system
@@ -59,11 +49,9 @@ src/
         commercial-cleaning.ts   # Commercial cleaning funnel content
         index.ts                 # Registry: getFunnelContent(slug)
       components/                # Funnel-specific components
-    media/                       # Media module (DB-backed)
+    media/                       # Videos, in code
       types.ts                   # Media, MediaWithSection, legacy types
-      queries.ts                 # getMediaById, getAllMedia, createMedia, etc.
-      hooks/                     # useMedia React Query hook
-      components/                # MediaLibrary, MediaForm, MediaSelector
+      videos.ts                  # Every video the site plays, by id: videoById(id)
     analytics/                   # Analytics module
       data.ts                    # Server-side analytics data fetching
       components/                # Dashboard components
@@ -75,6 +63,7 @@ src/
     analytics.ts                 # Client-side event tracking (trackEvent)
     supabase/                    # Supabase client setup + auto-generated types
     seo.ts                       # SEO config, schemas, metadata
+    site-look.ts                 # Each route's theme, fonts and brand colours
 ```
 
 ---
@@ -83,7 +72,7 @@ src/
 
 ### 1. Landing Page (`src/features/landing/`)
 
-The home page at `/` uses the **landing content system**.
+The previous home page, kept at `/legacy`, uses the **landing content system** (the home page at `/` is the v2 design in `src/components/home/`).
 
 **Content file**: `src/features/landing/content/home.ts`
 - Exports `homeContent: LandingPageContent`
@@ -99,16 +88,16 @@ The home page at `/` uses the **landing content system**.
 - Each function (`adaptHero`, `adaptFAQ`, etc.) builds the section + data arrays
 - This is a bridge layer — components still expect the old shape with `section_cta_button`, `section_feature`, etc.
 
-**How the page renders** (`src/app/(public)/page.tsx`):
+**How the page renders** (`src/app/(public)/legacy/page.tsx`):
 ```
 1. Import homeContent from content file
-2. Fetch styling options from DB (dots, wave gradient, noise texture)
-3. Fetch hero media by ID from DB (single query)
+2. Read the background effects (dots, wave gradient, noise texture) from the `/` look in src/lib/site-look.ts
+3. Get the hero video by its id from src/features/media/videos.ts
 4. Run adapter functions to transform content -> component props
 5. Render components with adapted data
 ```
 
-**DB queries per page load: 2** (styling preset + hero media). Everything else is from code.
+**DB queries per page load: none.** Everything is code.
 
 ### 2. Funnels (`src/features/funnels/`)
 
@@ -213,18 +202,15 @@ FAQ answers support `\n` for line breaks. The component renders each line as a s
 
 ## How Media Works
 
-Media is the **one thing that stays in the database**. Files are uploaded to Bunny CDN, and the `media` table tracks metadata.
+Videos are code. `src/features/media/videos.ts` lists every video the site plays, each with the fields the old `media` table had: `id`, `type`, `source_type`, `url`, `embed_id`, `name`, `thumbnail_url`, `duration`. A page names its video by id (a funnel page's `…_VIDEO_ID`, or `mainMediaId` in a content file) and gets it with `videoById(id)`; nothing is fetched at render time.
 
-### Media Flow
+### Why the id never changes
 
-1. Upload via admin (`/admin/media`) -> Bunny CDN
-2. `media` table stores: `id`, `type`, `source_type`, `url`, `embed_id`, `name`, `thumbnail_url`, `duration`
-3. Content files reference media by UUID: `mainMediaId: "c75d439e-00de-40ae-a874-30a7acb9d0ef"`
-4. At render time, `getMediaById(id)` fetches the media record (single query)
+Video plays are tracked by the video's id (`analytics_events`, `entity_type: "media"`). A replaced video is a new entry with a new id (`crypto.randomUUID()`); the old entry stays until no page names it.
 
 ### Supported Media Types
 
-- **Videos**: Wistia, YouTube, Vimeo (via embed ID), or direct URL
+- **Videos**: Wistia (`source_type: "wistia"`, its id in `embed_id`), YouTube or Vimeo (via embed ID), or a file on Bunny CDN (`source_type: "upload"`, its address in `url`, a poster in `thumbnail_url`)
 - **Images**: Direct URL from Bunny CDN
 
 ---
@@ -268,23 +254,17 @@ The API route (`src/app/api/admin/analytics/route.ts`) enriches events with:
 
 ## How Styling / Theming Works
 
-### Per-Environment Presets
+### One look for the whole site, in code
 
-`website_settings` links a route + environment to a preset:
-- Route `/` in `production` -> preset with specific colors & effects
-- Route `/` in `development` -> can have different preset
+Every public page has the landing page's look, the one `src/styles/home.css` defines on `.eg-home`: light, Inter, ink navy `#0C2340`, accent terracotta `#D4742C`, background `#F4F5F6`. No page, funnel or other, has a look of its own.
 
-### Visual Effects
+- `src/styles/home.css`: the landing design's tokens, used by the pages built on `.eg-home` (home, about, contact, book, insights, ROI calculator).
+- `src/app/globals.css` → `.preset-landing-page`: the same palette in the shadcn tokens the other pages use (funnels, legal pages, `/legacy`). Every public page wears this class (`getFunnelPresetClass`).
+- `src/lib/site-look.ts` → `SITE_LOOK`: the theme (light), the fonts (Inter), the primary and secondary colours `WebsiteColorStyle` injects, and `/legacy`'s background effects (none).
 
-Each preset's `styling_options` JSON controls:
-- `dots_enabled` — dot pattern background
-- `wave_gradient_enabled` — radial gradient wave effect
-- `noise_texture_enabled` — noise texture overlay
+### Change the look
 
-### Admin UI
-
-`/admin/settings` — appearance/theme settings
-`/admin/website-settings` — per-route preset assignment
+Change it in all three places together, so every page keeps one look, then deploy.
 
 ---
 
@@ -304,12 +284,11 @@ Edit `src/features/landing/content/home.ts`. All sections are in one file:
 2. Register it in `src/features/funnels/content/index.ts`
 3. Create the route at `src/app/(public)/for/my-funnel/page.tsx`
 
-### Add/Change Media
+### Add/Change a Video
 
-1. Go to `/admin/media`
-2. Upload new media (goes to Bunny CDN)
-3. Copy the media UUID
-4. Reference it in the content file: `mainMediaId: "the-uuid"`
+1. Put the file on Bunny CDN, or the video on Wistia
+2. Add an entry to `src/features/media/videos.ts` with a new id (`crypto.randomUUID()`)
+3. Name that id where the page names its video (a funnel page's `…_VIDEO_ID`, or `mainMediaId` in the content file)
 
 ### Update Analytics Tracking for a New CTA
 
@@ -323,4 +302,4 @@ Just give the CTA a unique `id` in the content file. The components automaticall
 - **FAQ IDs**: Use kebab-case slugs like `"what-does-evergreen-handle"`.
 - **Rich text**: Use `[[**text**]]` for gradient+bold, `**text**` for bold, `\n` for line breaks. The `RichText` component renders these.
 - **Icons**: Use FontAwesome class names like `"fa-bullseye"`. The `resolveIconFromClass()` utility in `src/lib/icon-utils.ts` resolves them.
-- **Media references**: Always use the UUID from the `media` table, never hardcode URLs.
+- **Video references**: a page names a video by its id in `src/features/media/videos.ts`; its address lives only there.

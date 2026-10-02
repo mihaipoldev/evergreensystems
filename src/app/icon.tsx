@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { headers } from 'next/headers';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { siteLookForRoute } from '@/lib/site-look';
 import { getRouteForPathname } from '@/features/funnels/routes';
 
 // Image metadata
@@ -35,54 +35,18 @@ export default async function Icon() {
     
     let primaryColorHex = '#000000'; // Default to black
     
-    // Try to get primary color from database
+    // The primary colour of the route's look (src/lib/site-look.ts)
+    let route = '/';
     try {
-      const supabase = createServiceRoleClient();
-      const environment = process.env.NODE_ENV === 'development' ? 'development' : 'production';
-      
-      // Determine route from headers
-      let route = '/';
-      try {
-        const headersList = await headers();
-        const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
-        route = getRouteForPathname(pathname);
-      } catch {
-        // Default to landing page if headers unavailable
-      }
-      
-      // Get website settings with preset join
-      const { data: settings } = await (supabase
-        .from("website_settings") as any)
-        .select(`
-          preset_id,
-          website_settings_presets (
-            primary_color_h,
-            primary_color_s,
-            primary_color_l
-          )
-        `)
-        .eq("environment", environment)
-        .eq("route", route)
-        .maybeSingle();
-
-      // Get color values directly from preset
-      if (settings?.website_settings_presets) {
-        const preset = Array.isArray(settings.website_settings_presets) 
-          ? settings.website_settings_presets[0] 
-          : settings.website_settings_presets;
-        
-        // Primary color
-        if (preset?.primary_color_h !== null && preset?.primary_color_s !== null && preset?.primary_color_l !== null) {
-          primaryColorHex = hslToHex(
-            preset.primary_color_h,
-            preset.primary_color_s,
-            preset.primary_color_l
-          );
-        }
-      }
-    } catch (error) {
-      // Silently continue - will use default black color
-      console.error('Error fetching primary color for icon:', error);
+      const headersList = await headers();
+      const pathname = headersList.get("x-pathname") || headersList.get("referer") || "";
+      route = getRouteForPathname(pathname);
+    } catch {
+      // Default to landing page if headers unavailable
+    }
+    const look = siteLookForRoute(route);
+    if (look) {
+      primaryColorHex = hslToHex(look.primary.h, look.primary.s, look.primary.l);
     }
     
     // Set the parent group's fill to white (for outer structure)
