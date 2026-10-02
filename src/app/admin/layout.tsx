@@ -8,7 +8,6 @@ import { AdminThemeProvider } from "@/providers/AdminThemeProvider";
 import { QueryClientProvider } from "@/providers/QueryClientProvider";
 import { PageTransitionLoader } from "@/components/admin/layout/PageTransitionLoader";
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getTimestamp, getDuration, debugClientTiming } from "@/lib/debug-performance";
 
@@ -17,11 +16,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const mountStartTime = useRef<number>(getTimestamp());
   const providersInitTime = useRef<number | null>(null);
   const firstRenderTime = useRef<number | null>(null);
-  const isWebsiteSettingsPage = pathname === '/admin/website-settings';
 
   useEffect(() => {
     const mountDuration = getDuration(mountStartTime.current);
@@ -58,14 +55,14 @@ export default function AdminLayout({
               <main className="flex flex-1 flex-col min-w-0 px-4 md:px-10 lg:px-12">
                 <div className={cn(
                   "mx-auto w-full max-w-[1400px] flex flex-col min-w-0 pt-[40px] md:pt-[84px]",
-                  !isWebsiteSettingsPage && "pb-32"
+                  "pb-32"
                 )}>
                   <div className="relative flex flex-col py-6 space-y-4 md:space-y-6 min-w-0">
                     {children}
                   </div>
                 </div>
               </main>
-              {!isWebsiteSettingsPage && <AdminFooter />}
+              <AdminFooter />
               <PageTransitionLoader />
             </div>
           </div>

@@ -16,7 +16,6 @@ const pageNames: Record<string, string> = {
   analytics: "Analytics",
   media: "Media Library",
   settings: "Settings",
-  "website-settings": "Website Settings",
 };
 
 export function AdminBreadcrumb() {

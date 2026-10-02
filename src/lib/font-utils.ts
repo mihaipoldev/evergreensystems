@@ -4,56 +4,6 @@ import { getFontVariable as getFontVariableLightweight } from "./font-variables"
 import { getFunnelPresetClass } from "@/features/funnels/routes";
 
 /**
- * Parse font_family JSON string from database
- */
-export function parseFontFamily(fontFamilyJson: string | null | undefined): FontConfig {
-  if (!fontFamilyJson) {
-    return DEFAULT_FONT_CONFIG;
-  }
-
-  try {
-    // Handle both JSON strings and already-parsed objects
-    const parsed = typeof fontFamilyJson === 'object' ? fontFamilyJson : JSON.parse(fontFamilyJson);
-    
-    // Validate structure - must have admin, landing is optional
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      typeof parsed.admin === "object" &&
-      typeof parsed.admin?.heading === "string" &&
-      typeof parsed.admin?.body === "string"
-    ) {
-      const config: FontConfig = {
-        admin: parsed.admin,
-      };
-      
-      // Include landing fonts if present
-      if (
-        typeof parsed.landing === "object" &&
-        parsed.landing !== null &&
-        typeof parsed.landing.heading === "string" &&
-        typeof parsed.landing.body === "string"
-      ) {
-        config.landing = parsed.landing;
-      }
-      
-      return config;
-    }
-  } catch (error) {
-    console.error("Error parsing font_family JSON:", error);
-  }
-
-  return DEFAULT_FONT_CONFIG;
-}
-
-/**
- * Serialize FontConfig to JSON string for database storage
- */
-export function serializeFontFamily(fonts: FontConfig): string {
-  return JSON.stringify(fonts);
-}
-
-/**
  * Get default font configuration
  */
 export function getDefaultFontFamily(): FontConfig {

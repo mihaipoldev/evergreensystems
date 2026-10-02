@@ -29,17 +29,3 @@ export function getRouteForPathname(pathname: string): string {
   );
   return match ? `/${match.routePath}` : "/";
 }
-
-/**
- * All route options for admin UI (RouteSelector).
- * Landing page + every registered funnel.
- */
-export function getAllRouteOptions(): { value: string; label: string }[] {
-  return [
-    { value: "/", label: "Landing Page" },
-    ...getAllFunnelEntries().map((e) => ({
-      value: `/${e.routePath}`,
-      label: e.displayName,
-    })),
-  ];
-}
