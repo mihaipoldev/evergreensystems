@@ -1,6 +1,5 @@
 import {
   faChartLine,
-  faImages,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import type { SidebarItem } from "./types";
@@ -10,12 +9,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     title: "Analytics",
     href: "/admin/analytics",
     icon: faChartLine,
-    section: "overview",
-  },
-  {
-    title: "Media Library",
-    href: "/admin/media",
-    icon: faImages,
     section: "overview",
   },
   {

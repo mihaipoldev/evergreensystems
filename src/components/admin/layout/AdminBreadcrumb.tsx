@@ -14,7 +14,6 @@ import {
 // Map route segments to display names
 const pageNames: Record<string, string> = {
   analytics: "Analytics",
-  media: "Media Library",
   settings: "Settings",
 };
 
