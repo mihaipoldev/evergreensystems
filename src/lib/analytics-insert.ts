@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { parseDevice } from "@/lib/ua-device";
+import { EVERGREEN_WORKSPACE_ID } from "@/lib/analytics-workspace";
 
 interface InsertAnalyticsEventParams {
   event_type: string;
@@ -34,12 +35,6 @@ export async function insertAnalyticsEvent(params: InsertAnalyticsEventParams) {
   const supabase = createServiceRoleClient();
   const db = supabase as any;
 
-  const { data: workspace } = await db
-    .from("workspaces")
-    .select("id")
-    .eq("slug", "evergreen")
-    .single();
-
   const { data, error } = await db
     .from("analytics_events")
     .insert({
@@ -53,7 +48,7 @@ export async function insertAnalyticsEvent(params: InsertAnalyticsEventParams) {
       user_agent: finalUserAgent,
       referrer: finalReferrer,
       metadata: finalMetadata,
-      workspace_id: workspace?.id,
+      workspace_id: EVERGREEN_WORKSPACE_ID,
     })
     .select()
     .single();

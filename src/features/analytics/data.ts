@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
+import { EVERGREEN_WORKSPACE_ID } from "@/lib/analytics-workspace";
 
 type DailyPoint = { date: string; count: number };
 type AnalyticsEvent = Database["public"]["Tables"]["analytics_events"]["Row"];
@@ -96,6 +97,7 @@ export async function getAnalyticsData(scope: string = "30"): Promise<AnalyticsD
     const eventsQuery = supabase
       .from("analytics_events")
       .select("*")
+      .eq("workspace_id", EVERGREEN_WORKSPACE_ID)
       .gte("created_at", lookbackISO);
 
     const { data: events, error: eventsError } = await eventsQuery as { data: AnalyticsEvent[] | null; error: any };

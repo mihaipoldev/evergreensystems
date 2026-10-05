@@ -1,6 +1,7 @@
 import { createClient, createServiceRoleClient, fetchAllRows } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { Database } from "@/lib/supabase/types";
+import { EVERGREEN_WORKSPACE_ID } from "@/lib/analytics-workspace";
 
 type DailyPoint = { date: string; count: number };
 type AnalyticsEvent = Database["public"]["Tables"]["analytics_events"]["Row"];
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
     let eventsQuery = supabase
       .from("analytics_events")
       .select("*")
+      .eq("workspace_id", EVERGREEN_WORKSPACE_ID)
       .gte("created_at", lookbackISO);
 
     // Filter by country if provided

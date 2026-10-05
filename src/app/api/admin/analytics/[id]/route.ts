@@ -1,5 +1,6 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { EVERGREEN_WORKSPACE_ID } from "@/lib/analytics-workspace";
 
 export async function GET(
   request: Request,
@@ -18,6 +19,7 @@ export async function GET(
     const { data, error } = await supabase
       .from("analytics_events")
       .select("*")
+      .eq("workspace_id", EVERGREEN_WORKSPACE_ID)
       .eq("id", id)
       .single();
 
@@ -55,6 +57,7 @@ export async function DELETE(
     const { error } = await supabase
       .from("analytics_events")
       .delete()
+      .eq("workspace_id", EVERGREEN_WORKSPACE_ID)
       .eq("id", id);
 
     if (error) {

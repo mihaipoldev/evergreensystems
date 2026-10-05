@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { isbot } from "isbot";
 import { insertAnalyticsEvent } from "@/lib/analytics-insert";
+import { EVERGREEN_WORKSPACE_ID } from "@/lib/analytics-workspace";
 
 export async function GET(request: Request) {
   try {
@@ -24,7 +25,8 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("analytics_events")
-      .select("*");
+      .select("*")
+      .eq("workspace_id", EVERGREEN_WORKSPACE_ID);
 
     if (eventType) {
       query = query.eq("event_type", eventType);
